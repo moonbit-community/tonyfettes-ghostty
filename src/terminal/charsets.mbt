@@ -24,11 +24,11 @@ pub enum Charset {
 pub type CharsetTable = ReadOnlyArray[UInt16]
 
 ///|
-let table_len = 256
+const TableLen : Int = 256
 
 ///|
 fn init_table() -> FixedArray[UInt16] {
-  FixedArray::makei(table_len, fn(i) { i.to_uint16() })
+  FixedArray::makei(TableLen, fn(i) { i.to_uint16() })
 }
 
 ///|

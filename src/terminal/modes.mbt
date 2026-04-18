@@ -49,10 +49,10 @@ pub struct ModeTag {
 } derive(Eq, Debug)
 
 ///|
-let mode_tag_value_mask : UInt16 = 0x7FFF
+const ModeTagValueMask : UInt16 = 0x7FFF
 
 ///|
-let mode_tag_ansi_mask : UInt16 = 0x8000
+const ModeTagAnsiMask : UInt16 = 0x8000
 
 ///|
 pub fn ModeTag::raw(self : ModeTag) -> UInt16 {
@@ -61,20 +61,17 @@ pub fn ModeTag::raw(self : ModeTag) -> UInt16 {
 
 ///|
 pub fn ModeTag::value(self : ModeTag) -> UInt16 {
-  self.raw & mode_tag_value_mask
+  self.raw & ModeTagValueMask
 }
 
 ///|
 pub fn ModeTag::ansi(self : ModeTag) -> Bool {
-  (self.raw & mode_tag_ansi_mask) != 0
+  (self.raw & ModeTagAnsiMask) != 0
 }
 
 ///|
 pub fn mode_tag(value : UInt16, ansi : Bool) -> ModeTag {
-  {
-    raw: (value & mode_tag_value_mask) |
-    (if ansi { mode_tag_ansi_mask } else { 0 }),
-  }
+  { raw: (value & ModeTagValueMask) | (if ansi { ModeTagAnsiMask } else { 0 }) }
 }
 
 ///|
@@ -344,7 +341,7 @@ pub struct Report {
 
 ///|
 fn max_report() -> Report {
-  { tag: mode_tag(mode_tag_value_mask, false), state: PermanentlyReset }
+  { tag: mode_tag(ModeTagValueMask, false), state: PermanentlyReset }
 }
 
 ///|
