@@ -31,6 +31,38 @@
 - Prefer line-by-line translation over stylistic rewrites. Refactor only when
   needed to express the same semantics safely in MoonBit.
 
+## Delegation First
+
+- Before deep reading or editing, decide whether the task should be split into
+  explorer and worker subagents.
+
+- Default to delegation for non-trivial planning, file mapping, translation,
+  and test-porting work when subagents are available and authorized.
+
+- Treat the main agent as planner, boundary owner, reviewer, and integrator.
+  Do not pull large implementation tasks back into the main context unless
+  delegation is blocked or the user wants the work kept local.
+
+- If a task crosses parser layers, first use an explorer subagent to produce
+  the dependency map and must-preserve invariants before any worker starts
+  porting.
+
+## Delegation rules
+
+- Use a separate worktree per worker when available.
+
+- In every worker prompt, include the exact upstream file set, the MoonBit
+  target module(s), the write ownership boundary, acceptance criteria, and the
+  validation commands.
+
+- Prefer explorers for mapping upstream behavior, hidden dependencies, and test
+  surfaces. Prefer workers for isolated code or doc changes in distinct write
+  sets.
+
+- Review the boundary and acceptance criteria after a worker finishes; do not
+  redo the entire implementation in the main context unless the boundary check
+  fails.
+
 ## Git workflow
 
 - Use Conventional Commits.
