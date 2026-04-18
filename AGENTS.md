@@ -36,6 +36,34 @@ You can browse and install extra skills here:
 - When a task is split into multiple steps, make one commit per completed step
   before moving to the next step.
 
+## Project goal
+
+- The current goal of this repository is a faithful MoonBit translation of the
+  upstream Ghostty terminal parser stack under `upstream/ghostty`.
+
+- The authoritative setup documents are:
+  - `docs/architecture.md` for the upstream parser architecture and boundaries.
+  - `docs/plan.md` for the ordered execution plan.
+
+- Unless the user explicitly changes scope, treat the parser stack as the
+  target. Do not expand the work to unrelated Ghostty UI, renderer, or platform
+  frontend code.
+
+## Plan discipline
+
+- Follow `docs/plan.md` in order. Do not skip ahead to later tasks unless an
+  earlier task is fully complete or the user explicitly reprioritizes.
+
+- When working on a task, update the plan file status in the same commit as the
+  work that completed that task.
+
+- Keep the translation faithful to upstream structure: preserve module
+  boundaries, state machines, action ordering, and data contracts whenever
+  MoonBit can express them directly.
+
+- Prefer line-by-line translation over stylistic rewrites. Refactor only when
+  needed to express the same semantics safely in MoonBit.
+
 ## Tooling
 
 - `moon fmt` is used to format your code properly.
