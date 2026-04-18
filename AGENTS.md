@@ -24,6 +24,10 @@
 - When a planned task is completed, update `docs/plan.md` in the same commit as
   the work for that task.
 
+- Do not structure tasks so they require a red intermediate commit. Every
+  implementation task should be able to finish in a green state with its tests
+  and validation in the same commit batch.
+
 - Keep the translation faithful to upstream structure: preserve module
   boundaries, state machines, action ordering, and data contracts whenever
   MoonBit can express them directly.
@@ -59,9 +63,16 @@
   surfaces. Prefer workers for isolated code or doc changes in distinct write
   sets.
 
-- Review the boundary and acceptance criteria after a worker finishes; do not
-  redo the entire implementation in the main context unless the boundary check
-  fails.
+- For non-trivial delegated work, require a task-specific subplan under
+  `docs/plans/` that records goal, upstream files, MoonBit targets,
+  dependencies, acceptance criteria, validation commands, and audit notes.
+
+- After a worker finishes, review the boundary and acceptance criteria yourself
+  or spawn a dedicated review task. If you find bugs or missed requirements,
+  resume the worker and keep the task open.
+
+- Do not redo the entire implementation in the main context unless the boundary
+  review fails so badly that resuming the worker is no longer efficient.
 
 ## Git workflow
 
@@ -75,4 +86,11 @@
 
 ## Validation
 
-- For MoonBit source changes, run `moon info && moon fmt` before handoff.
+- For MoonBit source changes, the expected quality gate is:
+  - `moon check`
+  - `moon test`
+  - `moon fmt`
+  - `moon info`
+
+- Review any `.mbti` or formatting churn and confirm it is intentional before
+  handoff or commit.
