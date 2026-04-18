@@ -24,6 +24,18 @@ You can browse and install extra skills here:
 - Try to keep deprecated blocks in file called `deprecated.mbt` in each
   directory.
 
+## Git workflow
+
+- Use Conventional Commits for every commit. Prefer clear commit subjects such
+  as `docs: add architecture overview` or `chore: add upstream ghostty
+  submodule`.
+
+- Keep commits clean and atomic. Each commit should represent one logical step
+  in the work, and should not mix unrelated edits.
+
+- When a task is split into multiple steps, make one commit per completed step
+  before moving to the next step.
+
 ## Tooling
 
 - `moon fmt` is used to format your code properly.
