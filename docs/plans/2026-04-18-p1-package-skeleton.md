@@ -51,8 +51,18 @@ This task is limited to layout and package boundaries. It must remain green.
 - The updated target is one package under `src/terminal`, with worker ownership
   handled by file boundaries rather than package boundaries.
 - No implementation or placeholder tests should land in this task.
+- Main-agent review: the landed package boundary is exactly one
+  `src/terminal/moon.pkg` file, with no speculative source files yet.
 
 ## Audit/result notes
 
-- Pending. The earlier multi-package local scaffold was intentionally not
-  landed.
+- Created `src/terminal/moon.pkg`.
+- Validation completed successfully:
+  - `moon check`
+  - `moon test`
+  - `moon fmt`
+  - `moon info`
+- `moon test` reported `0` tests, which is expected for this layout-only step.
+- `moon info` generated interface summaries for:
+  - the root package: `pkg.generated.mbti`
+  - the new terminal package: `src/terminal/pkg.generated.mbti`
