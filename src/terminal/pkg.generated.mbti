@@ -12,6 +12,12 @@ pub fn cursor_style_from_int(Int) -> CursorStyle?
 
 pub fn default_mode_packed() -> ModePacked
 
+pub fn device_status_request_from_int(UInt16, Bool) -> DeviceStatusRequest?
+
+pub fn device_status_tag(UInt16, Bool) -> DeviceStatusTag
+
+pub fn device_status_tag_from_raw(UInt16) -> DeviceStatusTag
+
 pub fn empty_mode_packed() -> ModePacked
 
 pub fn encode(Style, Size) -> String
@@ -24,6 +30,8 @@ pub fn mode_tag_from_raw(UInt16) -> ModeTag
 
 pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
 
+pub fn mouse_event_sends_motion(MouseEvent) -> Bool
+
 pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
 
 pub let report_max_size : Int
@@ -34,7 +42,12 @@ pub fn status_line_type_from_int(UInt16) -> StatusLineType?
 
 pub fn table(Charset) -> ReadOnlyArray[UInt16]
 
+pub fn x11_color_lookup(String) -> RGB?
+
 // Errors
+pub(all) suberror ColorParseError {
+  InvalidFormat
+} derive(Eq, @debug.Debug)
 
 // Types and methods
 pub enum ActiveSlot {
@@ -66,6 +79,28 @@ pub enum Charset {
   DecSpecial
 } derive(Eq, @debug.Debug)
 
+pub enum ColorScheme {
+  Light
+  Dark
+} derive(Eq, @debug.Debug)
+
+pub enum ConformanceLevel {
+  Vt100
+  Vt132
+  Vt102
+  Vt131
+  Vt125
+  Vt220
+  Vt240
+  Vt320
+  Vt340
+  Vt420
+  Vt510
+  Vt520
+  Vt525
+} derive(Eq, @debug.Debug)
+pub fn ConformanceLevel::code(Self) -> UInt16
+
 pub struct Coordinate {
   x : UInt16
   y : UInt
@@ -81,6 +116,64 @@ pub enum CursorStyle {
   SteadyBar
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::ordinal(Self) -> Int
+
+pub enum DeviceAttributeRequest {
+  Primary
+  Secondary
+  Tertiary
+} derive(Eq, @debug.Debug)
+
+pub struct DeviceAttributes {
+  primary : PrimaryDeviceAttributes
+  secondary : SecondaryDeviceAttributes
+  tertiary : TertiaryDeviceAttributes
+} derive(Eq, @debug.Debug)
+pub fn DeviceAttributes::default() -> Self
+pub fn DeviceAttributes::encode(Self, DeviceAttributeRequest) -> String
+
+pub enum DeviceStatusRequest {
+  OperatingStatus
+  CursorPosition
+  ColorScheme
+} derive(Eq, @debug.Debug)
+pub fn DeviceStatusRequest::tag(Self) -> DeviceStatusTag
+
+pub struct DeviceStatusTag {
+  raw : UInt16
+} derive(Eq, @debug.Debug)
+pub fn DeviceStatusTag::question(Self) -> Bool
+pub fn DeviceStatusTag::raw(Self) -> UInt16
+pub fn DeviceStatusTag::value(Self) -> UInt16
+
+pub enum DeviceType {
+  Vt100
+  Vt220
+  Vt240
+  Vt330
+  Vt340
+  Vt320
+  Vt382
+  Vt420
+  Vt510
+  Vt520
+  Vt525
+} derive(Eq, @debug.Debug)
+pub fn DeviceType::code(Self) -> UInt16
+
+pub enum Dynamic {
+  Foreground
+  Background
+  Cursor
+  PointerForeground
+  PointerBackground
+  TektronixForeground
+  TektronixBackground
+  HighlightBackground
+  TektronixCursor
+  HighlightForeground
+} derive(Eq, @debug.Debug)
+pub fn Dynamic::code(Self) -> UInt16
+pub fn Dynamic::next(Self) -> Self?
 
 pub enum Mode {
   DisableKeyboard
@@ -163,6 +256,81 @@ pub enum ModifyKeyFormat {
 } derive(Eq, @debug.Debug)
 pub fn ModifyKeyFormat::ordinal(Self) -> Int
 
+pub enum MouseEvent {
+  None
+  X10
+  Normal
+  Button
+  Any
+} derive(Eq, @debug.Debug)
+
+pub enum MouseFormat {
+  X10
+  Utf8
+  Sgr
+  Urxvt
+  SgrPixels
+} derive(Eq, @debug.Debug)
+
+pub enum MouseShape {
+  Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  AllScroll
+  ColResize
+  RowResize
+  NResize
+  EResize
+  SResize
+  WResize
+  NeResize
+  NwResize
+  SeResize
+  SwResize
+  EwResize
+  NsResize
+  NeswResize
+  NwseResize
+  ZoomIn
+  ZoomOut
+} derive(Eq, @debug.Debug)
+pub fn MouseShape::from_string(String) -> Self?
+
+pub enum Name {
+  Black
+  Red
+  Green
+  Yellow
+  Blue
+  Magenta
+  Cyan
+  White
+  BrightBlack
+  BrightRed
+  BrightGreen
+  BrightYellow
+  BrightBlue
+  BrightMagenta
+  BrightCyan
+  BrightWhite
+} derive(Eq, @debug.Debug)
+pub fn Name::code(Self) -> Byte
+pub fn Name::default_rgb(Self) -> RGB
+
 pub enum Point {
   Active(Coordinate)
   Viewport(Coordinate)
@@ -171,11 +339,45 @@ pub enum Point {
 } derive(Eq, @debug.Debug)
 pub fn Point::coord(Self) -> Coordinate
 
+pub enum PrimaryDeviceAttributeFeature {
+  Columns132
+  Printer
+  Regis
+  Sixel
+  SelectiveErase
+  UserDefinedKeys
+  NationalReplacement
+  TechnicalCharacters
+  Locator
+  TerminalState
+  Windowing
+  HorizontalScrolling
+  AnsiColor
+  RectangularEditing
+  AnsiTextLocator
+  Clipboard
+} derive(Eq, @debug.Debug)
+pub fn PrimaryDeviceAttributeFeature::code(Self) -> UInt16
+
+pub struct PrimaryDeviceAttributes {
+  conformance_level : ConformanceLevel
+  features : ReadOnlyArray[PrimaryDeviceAttributeFeature]
+} derive(Eq, @debug.Debug)
+pub fn PrimaryDeviceAttributes::default() -> Self
+pub fn PrimaryDeviceAttributes::encode(Self) -> String
+
 pub enum ProtectedMode {
   Off
   Iso
   Dec
 } derive(Eq, @debug.Debug)
+
+pub struct RGB {
+  r : Byte
+  g : Byte
+  b : Byte
+} derive(Eq, @debug.Debug)
+pub fn RGB::parse(String) -> Self raise ColorParseError
 
 pub enum RenditionAspect {
   Default
@@ -200,6 +402,14 @@ pub enum ReportState {
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
 
+pub struct SecondaryDeviceAttributes {
+  device_type : DeviceType
+  firmware_version : UInt16
+  rom_cartridge : UInt16
+} derive(Eq, @debug.Debug)
+pub fn SecondaryDeviceAttributes::default() -> Self
+pub fn SecondaryDeviceAttributes::encode(Self) -> String
+
 pub struct Size {
   rows : UInt16
   columns : UInt16
@@ -213,6 +423,15 @@ pub enum Slots {
   G2
   G3
 } derive(Eq, @debug.Debug)
+
+pub enum Special {
+  Bold
+  Underline
+  Blink
+  Reverse
+  Italic
+} derive(Eq, @debug.Debug)
+pub fn Special::osc4(Self) -> UInt16
 
 pub enum StatusDisplay {
   Main
@@ -240,6 +459,12 @@ pub enum Tag {
   Screen
   History
 } derive(Eq, @debug.Debug)
+
+pub struct TertiaryDeviceAttributes {
+  unit_id : UInt
+} derive(Eq, @debug.Debug)
+pub fn TertiaryDeviceAttributes::default() -> Self
+pub fn TertiaryDeviceAttributes::encode(Self) -> String
 
 // Type aliases
 pub type CellCountInt = UInt16
