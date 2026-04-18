@@ -146,7 +146,7 @@ post-implementation auditing.
 ### Phase 0: Translation control plane
 
 Gate: `[S]`  
-Status: `active`
+Status: `done`
 
 This phase is docs-only. It must not generate failing code or tests.
 
@@ -155,14 +155,20 @@ This phase is docs-only. It must not generate failing code or tests.
 | P0.1 | done | repo setup | `AGENTS.md` | none | none | main | repo workflow policy documented | doc review | `[R]` main | `docs` |
 | P0.2 | done | `ghostty-org/ghostty` | `upstream/ghostty` submodule | none | none | main | upstream source pinned locally | submodule sanity check | `[R]` main | `chore` |
 | P0.3 | done | parser stack docs | `docs/architecture.md` | P0.2 | none | main + `[E]` | architecture and data flow documented | doc review | `[R]` main | `docs` |
-| P0.4 | todo | parser slice inventory | file mapping table in this doc or linked doc | P0.3 | P0.5, P0.6, P0.7 | `[E]` | exact upstream->MoonBit file map recorded | doc review | `[R]` main | `docs` |
-| P0.5 | todo | parser/test files | translated-test inventory only | P0.3 | P0.4, P0.6, P0.7 | `[E]` | test sources and target locations recorded as inventory, not created as runnable code | doc review | `[R]` main | `docs` |
-| P0.6 | todo | parser/terminal edges | dependency and ownership map | P0.3 | P0.4, P0.5, P0.7 | `[E]` | serial gates and worker write sets recorded | doc review | `[R]` main | `docs` |
-| P0.7 | todo | delegated workflow pattern | `docs/plans/` convention and template | P0.3 | P0.4, P0.5, P0.6 | main | delegated task plan convention is documented and available | doc review | `[R]` main | `docs` |
+| P0.4 | done | parser slice inventory | file mapping table in this doc or linked doc | P0.3 | P0.5, P0.6, P0.7 | `[E]` | exact upstream->MoonBit file map recorded | doc review | `[R]` main | `docs` |
+| P0.5 | done | parser/test files | translated-test inventory only | P0.3 | P0.4, P0.6, P0.7 | `[E]` | test sources and target locations recorded as inventory, not created as runnable code | doc review | `[R]` main | `docs` |
+| P0.6 | done | parser/terminal edges | dependency and ownership map | P0.3 | P0.4, P0.5, P0.7 | `[E]` | serial gates and worker write sets recorded | doc review | `[R]` main | `docs` |
+| P0.7 | done | delegated workflow pattern | `docs/plans/` convention and template | P0.3 | P0.4, P0.5, P0.6 | main | delegated task plan convention is documented and available | doc review | `[R]` main | `docs` |
 
 Phase 0 gate:
 
 - P0.4, P0.5, P0.6, and P0.7 are `done`
+
+#### Phase 0 outputs
+
+- Detailed file mapping, translated-test inventory, dependency notes, and
+  worker ownership for this gate live in:
+  [2026-04-18-p0-control-plane.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-18-p0-control-plane.md)
 
 ### Phase 1: Foundations
 
