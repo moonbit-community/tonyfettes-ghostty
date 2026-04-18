@@ -6,15 +6,162 @@ import {
 }
 
 // Values
+pub fn c0_from_byte(Byte) -> C0?
+
+pub fn cursor_style_from_int(Int) -> CursorStyle?
+
+pub fn default_mode_packed() -> ModePacked
+
+pub fn empty_mode_packed() -> ModePacked
+
 pub fn encode(Style, Size) -> String
+
+pub fn mode_from_int(UInt16, Bool) -> Mode?
+
+pub fn mode_tag(UInt16, Bool) -> ModeTag
+
+pub fn mode_tag_from_raw(UInt16) -> ModeTag
+
+pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
+
+pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
+
+pub let report_max_size : Int
+
+pub fn status_display_from_int(Int) -> StatusDisplay?
+
+pub fn status_line_type_from_int(UInt16) -> StatusLineType?
+
+pub fn table(Charset) -> ReadOnlyArray[UInt16]
 
 // Errors
 
 // Types and methods
+pub enum ActiveSlot {
+  Gl
+  Gr
+} derive(Eq, @debug.Debug)
+
+pub enum C0 {
+  Nul
+  Soh
+  Stx
+  Enq
+  Bel
+  Bs
+  Ht
+  Lf
+  Vt
+  Ff
+  Cr
+  So
+  Si
+} derive(Eq, @debug.Debug)
+pub fn C0::code(Self) -> Byte
+
+pub enum Charset {
+  Utf8
+  Ascii
+  British
+  DecSpecial
+} derive(Eq, @debug.Debug)
+
 pub struct Coordinate {
   x : UInt16
   y : UInt
 } derive(Eq, @debug.Debug)
+
+pub enum CursorStyle {
+  Default
+  BlinkingBlock
+  SteadyBlock
+  BlinkingUnderline
+  SteadyUnderline
+  BlinkingBar
+  SteadyBar
+} derive(Eq, @debug.Debug)
+pub fn CursorStyle::ordinal(Self) -> Int
+
+pub enum Mode {
+  DisableKeyboard
+  Insert
+  SendReceiveMode
+  Linefeed
+  CursorKeys
+  Mode132Column
+  SlowScroll
+  ReverseColors
+  Origin
+  Wraparound
+  Autorepeat
+  MouseEventX10
+  CursorBlinking
+  CursorVisible
+  EnableMode3
+  ReverseWrap
+  AltScreenLegacy
+  KeypadKeys
+  BackarrowKeyMode
+  EnableLeftAndRightMargin
+  MouseEventNormal
+  MouseEventButton
+  MouseEventAny
+  FocusEvent
+  MouseFormatUtf8
+  MouseFormatSgr
+  MouseAlternateScroll
+  MouseFormatUrxvt
+  MouseFormatSgrPixels
+  IgnoreKeypadWithNumlock
+  AltEscPrefix
+  AltSendsEscape
+  ReverseWrapExtended
+  AltScreen
+  SaveCursor
+  AltScreenSaveCursorClearEnter
+  BracketedPaste
+  SynchronizedOutput
+  GraphemeCluster
+  ReportColorScheme
+  InBandSizeReports
+} derive(Eq, @debug.Debug)
+pub fn Mode::tag(Self) -> ModeTag
+
+pub struct ModePacked {
+  mut bits : UInt64
+} derive(Eq, @debug.Debug)
+pub fn ModePacked::get(Self, Mode) -> Bool
+pub fn ModePacked::set(Self, Mode, Bool) -> Unit
+
+pub struct ModeState {
+  mut values : ModePacked
+  mut saved : ModePacked
+  default : ModePacked
+} derive(Eq, @debug.Debug)
+pub fn ModeState::get(Self, Mode) -> Bool
+pub fn ModeState::get_report(Self, ModeTag) -> Report
+pub fn ModeState::new() -> Self
+pub fn ModeState::reset(Self) -> Unit
+pub fn ModeState::restore(Self, Mode) -> Bool
+pub fn ModeState::save(Self, Mode) -> Unit
+pub fn ModeState::set(Self, Mode, Bool) -> Unit
+
+pub struct ModeTag {
+  raw : UInt16
+} derive(Eq, @debug.Debug)
+pub fn ModeTag::ansi(Self) -> Bool
+pub fn ModeTag::raw(Self) -> UInt16
+pub fn ModeTag::value(Self) -> UInt16
+
+pub enum ModifyKeyFormat {
+  Legacy
+  CursorKeys
+  FunctionKeys
+  OtherKeysNone
+  OtherKeysNumericExcept
+  OtherKeysNumeric
+} derive(Eq, @debug.Debug)
+pub fn ModifyKeyFormat::ordinal(Self) -> Int
 
 pub enum Point {
   Active(Coordinate)
@@ -24,12 +171,61 @@ pub enum Point {
 } derive(Eq, @debug.Debug)
 pub fn Point::coord(Self) -> Coordinate
 
+pub enum ProtectedMode {
+  Off
+  Iso
+  Dec
+} derive(Eq, @debug.Debug)
+
+pub enum RenditionAspect {
+  Default
+  Bold
+  DefaultFg
+  DefaultBg
+} derive(Eq, @debug.Debug)
+pub fn RenditionAspect::code(Self) -> UInt16
+
+pub struct Report {
+  tag : ModeTag
+  state : ReportState
+} derive(Eq, @debug.Debug)
+pub fn Report::encode(Self) -> String
+
+pub enum ReportState {
+  NotRecognized
+  Set
+  Reset
+  PermanentlySet
+  PermanentlyReset
+} derive(Eq, @debug.Debug)
+pub fn ReportState::code(Self) -> Int
+
 pub struct Size {
   rows : UInt16
   columns : UInt16
   cell_width : UInt
   cell_height : UInt
 } derive(Eq, @debug.Debug)
+
+pub enum Slots {
+  G0
+  G1
+  G2
+  G3
+} derive(Eq, @debug.Debug)
+
+pub enum StatusDisplay {
+  Main
+  StatusLine
+} derive(Eq, @debug.Debug)
+pub fn StatusDisplay::ordinal(Self) -> Int
+
+pub enum StatusLineType {
+  None
+  Indicator
+  HostWritable
+} derive(Eq, @debug.Debug)
+pub fn StatusLineType::code(Self) -> UInt16
 
 pub enum Style {
   Mode2048
@@ -47,6 +243,8 @@ pub enum Tag {
 
 // Type aliases
 pub type CellCountInt = UInt16
+
+pub type CharsetTable = ReadOnlyArray[UInt16]
 
 // Traits
 
