@@ -66,62 +66,93 @@ Complete the remaining Phase 0 tasks in `docs/plan.md`:
   - semantic decoders
   - stream integration
   - terminal application surface
-- The file-mapping proposal was tightened to use a stable MoonBit target root:
-  `src/terminal/{core,semantic,support,terminal}/...`
+- The initial multi-package proposal was rejected after a dependency review.
+- The control-plane mapping now uses a single MoonBit package root:
+  `src/terminal/...`
 - The test inventory was adjusted so no implementation phase depends on a
   standalone failing-test commit.
-- The dependency/ownership notes were incorporated into `docs/plan.md` to make
-  later worker write sets explicit.
+- Worker ownership remains useful, but it should be expressed as file ownership
+  inside one package, not as separate packages.
+
+## Packaging decision
+
+Decision:
+
+- Use one MoonBit package under `src/terminal`.
+
+Rejected alternative:
+
+- one MoonBit package per translated Zig file
+
+Why:
+
+- `Parser.zig` and `parse_table.zig` are mutually coupled at the type level.
+- `dcs.zig` imports `main.zig` for `terminal.DCS`, while `main.zig` re-exports
+  both `dcs` and `Parser`.
+- `osc.zig` imports `kitty/color.zig`, and `kitty/color.zig` imports
+  `../main.zig` for `terminal.color.RGB` and `terminal.osc.Terminator`.
+- `sgr.zig` depends on `Parser.Action.CSI.SepList`.
+- `stream.zig` is already the integrator over nearly the entire parser slice.
+
+These edges are natural file-level dependencies in Zig, but they would force
+either package cycles or premature refactors in MoonBit.
+
+Source references:
+
+- `Parser.zig:9` <-> `parse_table.zig:13`
+- `dcs.zig:5-6` and `main.zig:9,36-44`
+- `osc.zig:16` and `kitty/color.zig:2-4`
+- `sgr.zig:8`
+- `stream.zig:9-20`
 
 ## Upstream-to-MoonBit file mapping
 
 MoonBit root for the parser slice:
 
-- `src/terminal/core/...`
-- `src/terminal/semantic/...`
-- `src/terminal/support/...`
-- `src/terminal/terminal/...`
+- `src/terminal/...`
 
 Mapping rule:
 
-- keep one upstream file per target module where possible
-- add only small shared type/helper modules where upstream boundaries or later
-  terminal-model dependencies force the split
+- keep one upstream file per target MoonBit file where possible
+- keep all translated parser-slice files in one package unless a later
+  dependency review shows a clean package split
+- add only small helper files when MoonBit or generated data organization forces
+  it, not to simulate package boundaries
 
 | Upstream file | Proposed MoonBit target | Layer | Notes |
 |---|---|---|---|
-| `src/terminal/Parser.zig` | `src/terminal/core/parser.mbt` | core | keep `parser_types`, `parse_table`, and OSC core separate so `Parser` can land as its own green commit |
-| `src/terminal/parse_table.zig` | `src/terminal/core/parse_table.mbt` | core | keep table-driven and separate; share only `State`/`TransitionAction` through `core/parser_types.mbt` |
-| `src/terminal/UTF8Decoder.zig` | `src/terminal/core/utf8_decoder.mbt` | core | keep separate because stream depends on its retry-on-error contract |
-| `src/terminal/stream.zig` | `src/terminal/core/stream.mbt` | core | keep parser, decoder, SGR, OSC, CSI, and support enums separate rather than folding into one module |
-| `src/terminal/osc.zig` | `src/terminal/semantic/osc/core.mbt` | semantic | keep core capture/state separate from long-tail subparsers |
-| `src/terminal/osc/encoding.zig` | `src/terminal/semantic/osc/encoding.mbt` | semantic | separate helper so encoding tests can land independently |
-| `src/terminal/osc/parsers.zig` | `src/terminal/semantic/osc/parsers/index.mbt` | semantic | thin registry only |
-| `src/terminal/osc/parsers/*.zig` | `src/terminal/semantic/osc/parsers/*.mbt` | semantic | keep each subparser separate so high-frequency and long-tail OSC commands can ship in different green commits |
-| `src/terminal/dcs.zig` | `src/terminal/semantic/dcs.mbt` | semantic | keep parser-facing DCS types separate from a future full terminal package |
-| `src/terminal/sgr.zig` | `src/terminal/semantic/sgr.mbt` | semantic | keep iterator parser separate; use shared parser types from `core/parser_types.mbt` |
-| `src/terminal/apc.zig` | `src/terminal/semantic/apc.mbt` | semantic | parser-facing protocol logic, not terminal mutation |
-| `src/terminal/lib.zig` | `src/terminal/support/lib.mbt` | support | small helper layer reused by parser-facing enums/unions |
-| `src/terminal/ansi.zig` | `src/terminal/support/ansi.mbt` | support | keep separate from CSI and mode values |
-| `src/terminal/charsets.zig` | `src/terminal/support/charsets.mbt` | support | shared by stream and terminal-model code |
-| `src/terminal/csi.zig` | `src/terminal/support/csi.mbt` | support | shared request/report/value helpers consumed by `stream` and `stream_terminal` |
-| `src/terminal/device_attributes.zig` | `src/terminal/support/device_attributes.mbt` | support | separate report/value module |
-| `src/terminal/device_status.zig` | `src/terminal/support/device_status.mbt` | support | separate report/value module |
-| `src/terminal/modes.zig` | `src/terminal/support/modes.mbt` | support | shared contract between parsing and terminal application |
-| `src/terminal/mouse.zig` | `src/terminal/support/mouse.mbt` | support | keep separate even if only a small parser-facing slice lands first |
-| `src/terminal/color.zig` | `src/terminal/support/color.mbt` | support | shared by SGR and OSC color parsing |
-| `src/terminal/kitty.zig` | `src/terminal/support/kitty.mbt` | support | keep parser-facing kitty flags separate from APC helpers |
-| `src/terminal/kitty/color.zig` | `src/terminal/support/kitty_color.mbt` | support | needed by OSC and terminal handler |
-| `src/terminal/size_report.zig` | `src/terminal/support/size_report.mbt` | support | small shared value/report module |
-| `src/terminal/point.zig` | `src/terminal/support/point.mbt` | support | small shared geometry module |
-| `src/terminal/main.zig` parser-facing aliases | `src/terminal/support/terminal_types.mbt` | support | copy only DCS/APC/tmux-facing parser-slice types, not the whole barrel |
-| `src/terminal/stream_terminal.zig` | `src/terminal/terminal/stream_terminal.mbt` | terminal | integrate after the minimum model exists |
-| `src/terminal/Terminal.zig` | `src/terminal/terminal/terminal_model.mbt` | terminal | keep separate so the terminal model can be ported in bounded slices |
-| `src/terminal/Screen.zig` | `src/terminal/terminal/screen_model.mbt` | terminal | keep separate from `terminal_model.mbt` |
-| `src/terminal/style.zig` | `src/terminal/terminal/style.mbt` | terminal | terminal-model support, not parser-phase code |
-| `src/terminal/page.zig` | `src/terminal/terminal/page.mbt` | terminal | minimal terminal-model lane |
-| `src/terminal/Tabstops.zig` | `src/terminal/terminal/tabstops.mbt` | terminal | minimal terminal-model lane |
-| `src/terminal/hyperlink.zig` | `src/terminal/terminal/hyperlink.mbt` | terminal | minimal terminal-model lane |
+| `src/terminal/Parser.zig` | `src/terminal/parser.mbt` | parser core | keep as a direct file-level translation target |
+| `src/terminal/parse_table.zig` | `src/terminal/parse_table.mbt` | parser core | keep table-driven and adjacent to `parser.mbt` because of mutual dependency |
+| `src/terminal/UTF8Decoder.zig` | `src/terminal/utf8_decoder.mbt` | parser core | leaf-like file, but keep in the same package |
+| `src/terminal/stream.zig` | `src/terminal/stream.mbt` | parser core | stream remains the parser/action integrator |
+| `src/terminal/osc.zig` | `src/terminal/osc.mbt` | semantic | keep as one primary file first; split helpers only if needed later |
+| `src/terminal/osc/encoding.zig` | `src/terminal/osc_encoding.mbt` | semantic helper | flatten into the same package unless a stronger reason appears |
+| `src/terminal/osc/parsers.zig` | `src/terminal/osc_parsers.mbt` | semantic helper | registry/helper file in the same package |
+| `src/terminal/osc/parsers/*.zig` | `src/terminal/osc_parser_*.mbt` | semantic helper | keep parser-specific files in the same package |
+| `src/terminal/dcs.zig` | `src/terminal/dcs.mbt` | semantic | keep near `parser.mbt` and `stream.mbt` because of `DCS` ties |
+| `src/terminal/sgr.zig` | `src/terminal/sgr.mbt` | semantic | keep in-package because it depends on parser CSI separator types |
+| `src/terminal/apc.zig` | `src/terminal/apc.mbt` | semantic | same package; parser-facing protocol logic |
+| `src/terminal/lib.zig` | `src/terminal/lib.mbt` | support | file-level helper only |
+| `src/terminal/ansi.zig` | `src/terminal/ansi.mbt` | support | same package support file |
+| `src/terminal/charsets.zig` | `src/terminal/charsets.mbt` | support | same package support file |
+| `src/terminal/csi.zig` | `src/terminal/csi.mbt` | support | same package support file |
+| `src/terminal/device_attributes.zig` | `src/terminal/device_attributes.mbt` | support | same package support file |
+| `src/terminal/device_status.zig` | `src/terminal/device_status.mbt` | support | same package support file |
+| `src/terminal/modes.zig` | `src/terminal/modes.mbt` | support | same package support file |
+| `src/terminal/mouse.zig` | `src/terminal/mouse.mbt` | support | same package support file |
+| `src/terminal/color.zig` | `src/terminal/color.mbt` | support | same package support file |
+| `src/terminal/kitty.zig` | `src/terminal/kitty.mbt` | support | same package support file |
+| `src/terminal/kitty/color.zig` | `src/terminal/kitty_color.mbt` | support helper | flattened helper in same package |
+| `src/terminal/size_report.zig` | `src/terminal/size_report.mbt` | support | same package support file |
+| `src/terminal/point.zig` | `src/terminal/point.mbt` | support | same package support file |
+| `src/terminal/main.zig` parser-facing aliases | `src/terminal/terminal_aliases.mbt` | support | only if alias consolidation is still needed after direct translation begins |
+| `src/terminal/stream_terminal.zig` | `src/terminal/stream_terminal.mbt` | terminal integration | same package, later phase |
+| `src/terminal/Terminal.zig` | `src/terminal/terminal_model.mbt` | terminal model | same package, later phase |
+| `src/terminal/Screen.zig` | `src/terminal/screen_model.mbt` | terminal model | same package, later phase |
+| `src/terminal/style.zig` | `src/terminal/style.mbt` | terminal model | same package, later phase |
+| `src/terminal/page.zig` | `src/terminal/page.mbt` | terminal model | same package, later phase |
+| `src/terminal/Tabstops.zig` | `src/terminal/tabstops.mbt` | terminal model | same package, later phase |
+| `src/terminal/hyperlink.zig` | `src/terminal/hyperlink.mbt` | terminal model | same package, later phase |
 
 ## Translated-test inventory
 
@@ -197,23 +228,26 @@ Mapping rule:
 
 - Serial gate 1: package skeleton and shared ownership map
   - owner: main agent
-  - output: package layout, shared type locations, docs/plans entry for the task
+  - output: single-package layout, shared type locations, docs/plans entry for
+    the task
   - green rule: no placeholder tests that fail; only land skeletons that keep
     `moon check`, `moon test`, `moon fmt`, and `moon info` green
 
 - Parallel worker lane A: foundational enums and charsets
   - upstream: `ansi.zig`, `charsets.zig`, `modes.zig`
-  - write set: foundational parser-support modules and their tests
+  - write set: `src/terminal/{ansi,charsets,modes}*.mbt` and their tests
   - do not edit parser core, stream, or terminal-model files
 
 - Parallel worker lane B: reports and device-facing value types
   - upstream: `device_attributes.zig`, `device_status.zig`, `mouse.zig`, `color.zig`
-  - write set: parser-facing report/color/mouse/device modules and tests
+  - write set:
+    `src/terminal/{device_attributes,device_status,mouse,color}*.mbt` and
+    their tests
   - do not edit lane A, parser core, stream, or terminal-model files
 
 - Parallel worker lane C: small geometry and report helpers
   - upstream: `point.zig`, `size_report.zig`, parser-local small structs
-  - write set: small shared value modules and tests only
+  - write set: `src/terminal/{point,size_report}*.mbt` and their tests only
   - do not edit lanes A/B or parser core
 
 - Serial gate 2: parser prerequisites contract freeze
@@ -223,22 +257,23 @@ Mapping rule:
 
 - Parallel worker lane D: UTF-8 decoder
   - upstream: `UTF8Decoder.zig`
-  - write set: UTF-8 decoder and direct tests only
+  - write set: `src/terminal/utf8_decoder*.mbt` and direct tests only
   - do not edit parse table, parser, or stream
 
 - Parallel worker lane E: parse table
   - upstream: `parse_table.zig`
-  - write set: parse table module or generated representation and smoke tests
+  - write set: `src/terminal/parse_table*.mbt` and smoke tests
   - do not edit decoder, OSC, or parser implementation
 
 - Parallel worker lane F: minimal OSC parser core
   - upstream: parser-facing subset of `osc.zig`
-  - write set: OSC core parser module and parser-local tests
+  - write set: `src/terminal/osc*.mbt` parser-core subset and parser-local
+    tests
   - do not edit parse table, UTF-8 decoder, or long-tail OSC semantic modules
 
 - Serial gate 3: `Parser`
   - upstream: `Parser.zig`
-  - write set: parser module and direct tests only
+  - write set: `src/terminal/parser*.mbt` and direct tests only
   - do not edit stream, semantic decoders, or terminal-model files in this lane
 
 - Parallel worker lanes after `Parser` is green:
