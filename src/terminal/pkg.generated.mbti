@@ -1,13 +1,52 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/ghostty/src/terminal"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
+pub fn encode(Style, Size) -> String
 
 // Errors
 
 // Types and methods
+pub struct Coordinate {
+  x : UInt16
+  y : UInt
+} derive(Eq, @debug.Debug)
+
+pub enum Point {
+  Active(Coordinate)
+  Viewport(Coordinate)
+  Screen(Coordinate)
+  History(Coordinate)
+} derive(Eq, @debug.Debug)
+pub fn Point::coord(Self) -> Coordinate
+
+pub struct Size {
+  rows : UInt16
+  columns : UInt16
+  cell_width : UInt
+  cell_height : UInt
+} derive(Eq, @debug.Debug)
+
+pub enum Style {
+  Mode2048
+  Csi14t
+  Csi16t
+  Csi18t
+} derive(Eq, @debug.Debug)
+
+pub enum Tag {
+  Active
+  Viewport
+  Screen
+  History
+} derive(Eq, @debug.Debug)
 
 // Type aliases
+pub type CellCountInt = UInt16
 
 // Traits
 

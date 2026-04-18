@@ -183,7 +183,7 @@ format/interface checks. Tests land with the code they validate.
 | P1.0 | done | package boundary decisions | single `src/terminal` package skeleton and file map | P0.4, P0.6, P0.7 | none | main | one `src/terminal` package exists and the planned file layout matches the mapping table | `moon check && moon test && moon fmt && moon info` | `[R]` main | `feat(parser)` |
 | P1.A | todo | `ansi.zig`, `charsets.zig`, `modes.zig` | corresponding MoonBit modules + tests | P1.0 | P1.B, P1.C | `[W]` | modules compile, tests pass, no missing shared types for downstream parser work | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
 | P1.B | todo | `color.zig`, `mouse.zig`, `device_attributes.zig`, `device_status.zig` | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.C | `[W]` | modules compile, tests pass, parser-facing contracts preserved | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
-| P1.C | todo | `point.zig`, `size_report.zig`, small report/value types | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.B | `[W]` | modules compile, tests pass, shared constants/types stable | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
+| P1.C | done | `point.zig`, `size_report.zig`, small report/value types | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.B | `[W]` | modules compile, tests pass, shared constants/types stable | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
 
 Phase 1 gate:
 
