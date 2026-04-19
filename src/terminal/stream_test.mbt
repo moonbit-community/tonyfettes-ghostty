@@ -110,7 +110,8 @@ test "stream/next handles escape state incrementally" {
   stream.next(b'[')
   stream.next(b'm')
   stream.next(b'z')
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
+  guard actions ==
+    [StreamSetAttribute(SgrAttribute::Unset), StreamPrint(b'z'.to_uint())] else {
     fail("expected printable text after incremental CSI")
   }
 }
@@ -629,6 +630,61 @@ test "stream/csi device and protected invalid forms stay silent" {
   let expected_empty : Array[StreamAction] = []
   guard actions == expected_empty else {
     fail("expected invalid CSI device and protected forms to stay silent")
+  }
+}
+
+///|
+test "stream/csi sgr subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[m\x1B[1m\x1B[4:3m\x1B[38;2;1;2;3m\x1B[1:2m\x1B[58:5:9m",
+  )
+  guard actions ==
+    [
+      StreamSetAttribute(SgrAttribute::Unset),
+      StreamSetAttribute(SgrAttribute::Bold),
+      StreamSetAttribute(SgrAttribute::Underline(SgrUnderline::Curly)),
+      StreamSetAttribute(SgrAttribute::DirectColorFg(RGB::new(1, 2, 3))),
+      StreamSetAttribute(
+        SgrAttribute::Unknown({ full: [1, 2], partial: [1, 2] }),
+      ),
+      StreamSetAttribute(SgrAttribute::Color256Underline(9)),
+    ] else {
+    fail("expected CSI m SGR subset")
+  }
+}
+
+///|
+test "stream/csi modify key format subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[>m\x1B[>0m\x1B[>1m\x1B[>2m\x1B[>4m\x1B[>4;2m\x1B[>0;9m\x1B[>1;9m\x1B[>2;9m",
+  )
+  guard actions ==
+    [
+      StreamModifyKeyFormat(ModifyKeyFormat::Legacy),
+      StreamModifyKeyFormat(ModifyKeyFormat::Legacy),
+      StreamModifyKeyFormat(ModifyKeyFormat::CursorKeys),
+      StreamModifyKeyFormat(ModifyKeyFormat::FunctionKeys),
+      StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNone),
+      StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNumeric),
+      StreamModifyKeyFormat(ModifyKeyFormat::Legacy),
+      StreamModifyKeyFormat(ModifyKeyFormat::CursorKeys),
+      StreamModifyKeyFormat(ModifyKeyFormat::FunctionKeys),
+    ] else {
+    fail("expected CSI > m modify-key-format subset")
+  }
+}
+
+///|
+test "stream/csi modify key format invalid forms stay silent" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[>3m\x1B[>5m\x1B[>4;1m\x1B[>4;2;3m\x1B[=1m\x1B[?4m\x1B[0~",
+  )
+  let expected_empty : Array[StreamAction] = []
+  guard actions == expected_empty else {
+    fail("expected invalid CSI > m forms to stay silent")
   }
 }
 

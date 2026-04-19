@@ -71,6 +71,7 @@ pub(all) enum StreamAction {
   StreamDeleteChars(UInt16)
   StreamEraseChars(UInt16)
   StreamInsertLines(UInt16)
+  StreamSetAttribute(SgrAttribute)
   StreamCursorStyle(CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
@@ -288,6 +289,18 @@ fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit 
 }
 
 ///|
+fn[H : StreamHandler] Stream::emit_sgr(
+  self : Stream[H],
+  params : Array[UInt16],
+  params_sep : SepList,
+) -> Unit {
+  let parser : SgrParser = { params, params_sep, idx: 0 }
+  while parser.next() is Some(attribute) {
+    self.emit(StreamSetAttribute(attribute))
+  }
+}
+
+///|
 fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
   if byte > 0x7F {
     self.esc_dispatch({ intermediates: [], final_byte: byte - 0x40 })
@@ -462,6 +475,15 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         self.emit(
           StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNumericExcept),
         )
+      }
+    b'm' =>
+      match _csi.intermediates {
+        [] => self.emit_sgr(_csi.params, _csi.params_sep)
+        [b'>'] =>
+          if modify_key_format_action(_csi.params) is Some(format) {
+            self.emit(StreamModifyKeyFormat(format))
+          }
+        _ => ()
       }
     b'p' =>
       if request_mode_tag(_csi.intermediates, _csi.params) is Some(tag) {
@@ -815,6 +837,21 @@ fn request_mode_tag(
   match (intermediates, params) {
     ([b'$'], [value]) => Some(mode_tag(value, true))
     ([b'?', b'$'], [value]) => Some(mode_tag(value, false))
+    _ => None
+  }
+}
+
+///|
+fn modify_key_format_action(params : Array[UInt16]) -> ModifyKeyFormat? {
+  match params {
+    [] | [0] => Some(ModifyKeyFormat::Legacy)
+    [1] => Some(ModifyKeyFormat::CursorKeys)
+    [2] => Some(ModifyKeyFormat::FunctionKeys)
+    [4] => Some(ModifyKeyFormat::OtherKeysNone)
+    [4, 2] => Some(ModifyKeyFormat::OtherKeysNumeric)
+    [0, _] => Some(ModifyKeyFormat::Legacy)
+    [1, _] => Some(ModifyKeyFormat::CursorKeys)
+    [2, _] => Some(ModifyKeyFormat::FunctionKeys)
     _ => None
   }
 }

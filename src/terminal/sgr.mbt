@@ -1,5 +1,5 @@
 ///|
-priv enum Underline {
+pub(all) enum SgrUnderline {
   None
   Single
   Double
@@ -9,21 +9,21 @@ priv enum Underline {
 } derive(Eq, Debug)
 
 ///|
-priv struct Unknown {
+pub(all) struct SgrUnknown {
   full : Array[UInt16]
   partial : Array[UInt16]
 } derive(Eq, Debug)
 
 ///|
-priv enum Attribute {
+pub(all) enum SgrAttribute {
   Unset
-  Unknown(Unknown)
+  Unknown(SgrUnknown)
   Bold
   ResetBold
   Italic
   ResetItalic
   Faint
-  Underline(Underline)
+  Underline(SgrUnderline)
   UnderlineColor(RGB)
   Color256Underline(Byte)
   ResetUnderlineColor
@@ -62,7 +62,7 @@ fn SgrParser::empty() -> SgrParser {
 }
 
 ///|
-fn SgrParser::next(self : SgrParser) -> Attribute? {
+fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
   let current = self.idx
   if current >= self.params.length() {
     if current == 0 {
@@ -116,28 +116,28 @@ fn SgrParser::next(self : SgrParser) -> Attribute? {
           Some(
             Underline(
               match self.params[current + 1] {
-                0 => Underline::None
-                1 => Underline::Single
-                2 => Underline::Double
-                3 => Underline::Curly
-                4 => Underline::Dotted
-                5 => Underline::Dashed
-                _ => Underline::Single
+                0 => SgrUnderline::None
+                1 => SgrUnderline::Single
+                2 => SgrUnderline::Double
+                3 => SgrUnderline::Curly
+                4 => SgrUnderline::Dotted
+                5 => SgrUnderline::Dashed
+                _ => SgrUnderline::Single
               },
             ),
           )
         }
       } else {
-        Some(Underline(Underline::Single))
+        Some(Underline(SgrUnderline::Single))
       }
     5 | 6 => Some(Blink)
     7 => Some(Inverse)
     8 => Some(Invisible)
     9 => Some(Strikethrough)
-    21 => Some(Underline(Underline::Double))
+    21 => Some(Underline(SgrUnderline::Double))
     22 => Some(ResetBold)
     23 => Some(ResetItalic)
-    24 => Some(Underline(Underline::None))
+    24 => Some(Underline(SgrUnderline::None))
     25 => Some(ResetBlink)
     27 => Some(ResetInverse)
     28 => Some(ResetInvisible)
@@ -168,7 +168,7 @@ fn parse_color_selector(
   current : Int,
   colon : Bool,
   foreground : Bool,
-) -> Attribute? {
+) -> SgrAttribute? {
   if remaining_len(parser, current) < 2 {
     return Some(parser.unknown_from(current))
   }
@@ -205,7 +205,7 @@ fn parse_underline_color_selector(
   parser : SgrParser,
   current : Int,
   colon : Bool,
-) -> Attribute? {
+) -> SgrAttribute? {
   if remaining_len(parser, current) < 2 {
     return Some(parser.unknown_from(current))
   }
@@ -296,7 +296,7 @@ fn SgrParser::consume_unknown_colon(self : SgrParser) -> Unit {
 }
 
 ///|
-fn SgrParser::unknown_from(self : SgrParser, current : Int) -> Attribute {
+fn SgrParser::unknown_from(self : SgrParser, current : Int) -> SgrAttribute {
   Unknown({
     full: clone_params(self.params),
     partial: clone_param_range(self.params, current, self.params.length()),

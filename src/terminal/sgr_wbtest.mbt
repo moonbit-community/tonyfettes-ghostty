@@ -1,5 +1,5 @@
 ///|
-fn test_parse(params : Array[UInt16]) -> Attribute {
+fn test_parse(params : Array[UInt16]) -> SgrAttribute {
   let parser : SgrParser = { params, params_sep: SepList::init_empty(), idx: 0 }
   parser.next().unwrap()
 }
@@ -18,8 +18,8 @@ fn parser_with_colons(
 
 ///|
 fn expect_attr_eq(
-  actual : Attribute,
-  expected : Attribute,
+  actual : SgrAttribute,
+  expected : SgrAttribute,
   message : String,
 ) -> Unit raise {
   guard actual == expected else { fail(message) }
@@ -28,7 +28,7 @@ fn expect_attr_eq(
 ///|
 fn expect_next_eq(
   parser : SgrParser,
-  expected : Attribute,
+  expected : SgrAttribute,
   message : String,
 ) -> Unit raise {
   guard parser.next() == Some(expected) else { fail(message) }
@@ -125,7 +125,7 @@ test "sgr/private helpers and fallback branches" {
 
   expect_next_eq(
     parser_with_colons([4, 9], [0]),
-    Attribute::Underline(Underline::Single),
+    SgrAttribute::Underline(SgrUnderline::Single),
     "expected unknown underline style to fall back to single",
   )
   expect_attr_eq(test_parse([39]), ResetFg, "expected reset fg")
@@ -195,48 +195,48 @@ test "sgr/private helpers and fallback branches" {
 test "sgr/underline forms and styles" {
   expect_attr_eq(
     test_parse([4]),
-    Attribute::Underline(Underline::Single),
+    SgrAttribute::Underline(SgrUnderline::Single),
     "expected single underline",
   )
   expect_attr_eq(
     test_parse([24]),
-    Attribute::Underline(Underline::None),
+    SgrAttribute::Underline(SgrUnderline::None),
     "expected underline none",
   )
   expect_attr_eq(
     test_parse([21]),
-    Attribute::Underline(Underline::Double),
+    SgrAttribute::Underline(SgrUnderline::Double),
     "expected double underline",
   )
 
   expect_next_eq(
     parser_with_colons([4, 0], [0]),
-    Attribute::Underline(Underline::None),
+    SgrAttribute::Underline(SgrUnderline::None),
     "expected underline style none",
   )
   expect_next_eq(
     parser_with_colons([4, 1], [0]),
-    Attribute::Underline(Underline::Single),
+    SgrAttribute::Underline(SgrUnderline::Single),
     "expected underline style single",
   )
   expect_next_eq(
     parser_with_colons([4, 2], [0]),
-    Attribute::Underline(Underline::Double),
+    SgrAttribute::Underline(SgrUnderline::Double),
     "expected underline style double",
   )
   expect_next_eq(
     parser_with_colons([4, 3], [0]),
-    Attribute::Underline(Underline::Curly),
+    SgrAttribute::Underline(SgrUnderline::Curly),
     "expected underline style curly",
   )
   expect_next_eq(
     parser_with_colons([4, 4], [0]),
-    Attribute::Underline(Underline::Dotted),
+    SgrAttribute::Underline(SgrUnderline::Dotted),
     "expected underline style dotted",
   )
   expect_next_eq(
     parser_with_colons([4, 5], [0]),
-    Attribute::Underline(Underline::Dashed),
+    SgrAttribute::Underline(SgrUnderline::Dashed),
     "expected underline style dashed",
   )
 }
@@ -246,7 +246,7 @@ test "sgr/underline colon regressions preserve continuation" {
   let extra = parser_with_colons([4, 2, 1], [0])
   expect_next_eq(
     extra,
-    Attribute::Underline(Underline::Double),
+    SgrAttribute::Underline(SgrUnderline::Double),
     "expected double underline",
   )
   expect_next_eq(extra, Bold, "expected bold after underline style")
@@ -342,7 +342,7 @@ test "sgr/underline fg and bg mixed sequence" {
   }
   expect_next_eq(
     parser,
-    Attribute::Underline(Underline::Single),
+    SgrAttribute::Underline(SgrUnderline::Single),
     "expected first underline",
   )
   guard parser.next() is Some(DirectColorFg(fg)) &&
@@ -355,7 +355,7 @@ test "sgr/underline fg and bg mixed sequence" {
   }
   expect_next_eq(
     parser,
-    Attribute::Underline(Underline::Single),
+    SgrAttribute::Underline(SgrUnderline::Single),
     "expected final underline",
   )
   expect_none(parser, "expected mixed underline fg bg parser to finish")
@@ -454,7 +454,7 @@ test "sgr/kakoune and trailing-colon regressions stay non-panicking" {
   expect_next_eq(kakoune, Unset, "expected kakoune unset")
   expect_next_eq(
     kakoune,
-    Attribute::Underline(Underline::Curly),
+    SgrAttribute::Underline(SgrUnderline::Curly),
     "expected kakoune underline",
   )
   guard kakoune.next() is Some(DirectColorFg(fg)) &&
@@ -472,7 +472,7 @@ test "sgr/kakoune and trailing-colon regressions stay non-panicking" {
   )
   expect_next_eq(
     kakoune2,
-    Attribute::Underline(Underline::Curly),
+    SgrAttribute::Underline(SgrUnderline::Curly),
     "expected second kakoune underline",
   )
   guard kakoune2.next() is Some(DirectColorFg(fg2)) &&

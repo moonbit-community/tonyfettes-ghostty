@@ -485,6 +485,54 @@ pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
 pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
 pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
 
+pub(all) enum SgrAttribute {
+  Unset
+  Unknown(SgrUnknown)
+  Bold
+  ResetBold
+  Italic
+  ResetItalic
+  Faint
+  Underline(SgrUnderline)
+  UnderlineColor(RGB)
+  Color256Underline(Byte)
+  ResetUnderlineColor
+  Overline
+  ResetOverline
+  Blink
+  ResetBlink
+  Inverse
+  ResetInverse
+  Invisible
+  ResetInvisible
+  Strikethrough
+  ResetStrikethrough
+  DirectColorFg(RGB)
+  DirectColorBg(RGB)
+  Color8Bg(Name)
+  Color8Fg(Name)
+  ResetFg
+  ResetBg
+  BrightColor8Bg(Name)
+  BrightColor8Fg(Name)
+  Color256Bg(Byte)
+  Color256Fg(Byte)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SgrUnderline {
+  None
+  Single
+  Double
+  Curly
+  Dotted
+  Dashed
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SgrUnknown {
+  full : Array[UInt16]
+  partial : Array[UInt16]
+} derive(Eq, @debug.Debug)
+
 type Size derive(Eq, @debug.Debug)
 pub fn Size::cell_height(Self) -> UInt
 pub fn Size::cell_width(Self) -> UInt
@@ -578,6 +626,7 @@ pub(all) enum StreamAction {
   StreamDeleteChars(UInt16)
   StreamEraseChars(UInt16)
   StreamInsertLines(UInt16)
+  StreamSetAttribute(SgrAttribute)
   StreamCursorStyle(CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
