@@ -319,7 +319,7 @@ each lane must include its own test batch and finish green.
 |---|---|---|---|---|---|---|---|---|---|---|
 | P5.0 | done | `stream.zig` contracts | stream dependency checklist and subplan boundaries | P4.A, P4.B, P4.C, P4.D, P4.E | none | `[E]` | handler contract and dispatch split recorded | doc review | `[R]` main | `docs` |
 | P5.1 | done | `stream.zig` driver core | `StreamAction`, handler contract, fast-path scaffolding + base tests | P5.0 | none | main | core compiles, replay ordering is preserved, and base tests pass | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(stream)` |
-| P5.A | active | `execute`, ESC, CSI subsets | dispatch modules + matching tests | P5.1 | P5.B, P5.C | `[W]` | covered finals behave like upstream and tests pass in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
+| P5.A | active | `execute`, `escDispatch`, `csiDispatch` workstream | bounded dispatch sub-slices + matching tests | P5.1 | P5.B, P5.C | `[W]` | each `P5.A*` sub-slice lands green, and the workstream closes only after a final execute / ESC / CSI parity audit | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 | P5.B | todo | OSC dispatch wiring | dispatch modules + matching tests | P5.1 | P5.A, P5.C | `[W]` | typed OSC commands route correctly and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 | P5.C | todo | DCS/APC passthrough | dispatch modules + matching tests | P5.1 | P5.A, P5.B | `[W]` | passthrough lifecycle matches upstream and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 
@@ -328,6 +328,8 @@ Phase 5 gate:
 - P5.0 and P5.1 are `done`
 - P5.A is `active`
 - P5.B and P5.C are pending
+- `P5.A` is now tracked as an umbrella workstream; see the dedicated roadmap
+  for done vs remaining sub-slices
 
 #### Phase 5 outputs
 
@@ -335,6 +337,8 @@ Phase 5 gate:
   [2026-04-19-p5-stream-contracts.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-stream-contracts.md)
 - Phase 5 driver-core implementation audit lives in:
   [2026-04-19-p5-1-stream-driver-core.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-1-stream-driver-core.md)
+- Phase 5A workstream roadmap lives in:
+  [2026-04-19-p5-a-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-roadmap.md)
 - Active Phase 5A slice audits live in:
   [2026-04-19-p5-a-foundational-esc-csi.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-foundational-esc-csi.md),
   [2026-04-19-p5-a-tab-and-cursor-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-tab-and-cursor-controls.md),
@@ -343,6 +347,11 @@ Phase 5 gate:
   [2026-04-19-p5-a-margins-and-mode-save-restore.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-margins-and-mode-save-restore.md),
   [2026-04-19-p5-a-device-report-and-esc-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-device-report-and-esc-controls.md),
   [2026-04-19-p5-a-sgr-and-modify-key-format.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-sgr-and-modify-key-format.md)
+
+Current remaining `P5.A` implementation slice:
+
+- `P5.A8` kitty keyboard protocol (`CSI u`)
+- then one docs-only `P5.A9` closeout parity audit
 
 ### Phase 6: Terminal application surface
 
