@@ -32,6 +32,10 @@ pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
 
 pub fn mouse_event_sends_motion(MouseEvent) -> Bool
 
+pub fn parser_state_count() -> Int
+
+pub fn parser_state_from_int(Int) -> ParserState?
+
 pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
 
 pub let report_max_size : Int
@@ -41,6 +45,10 @@ pub fn status_display_from_int(Int) -> StatusDisplay?
 pub fn status_line_type_from_int(UInt16) -> StatusLineType?
 
 pub fn table(Charset) -> ReadOnlyArray[UInt16]
+
+pub fn transition_action_from_int(Int) -> TransitionAction?
+
+pub fn transition_for(Byte, ParserState) -> Transition
 
 pub fn x11_color_lookup(String) -> RGB?
 
@@ -331,6 +339,24 @@ pub enum Name {
 pub fn Name::code(Self) -> Byte
 pub fn Name::default_rgb(Self) -> RGB
 
+pub enum ParserState {
+  Ground
+  Escape
+  EscapeIntermediate
+  CsiEntry
+  CsiIntermediate
+  CsiParam
+  CsiIgnore
+  DcsEntry
+  DcsParam
+  DcsIntermediate
+  DcsPassthrough
+  DcsIgnore
+  OscString
+  SosPmApcString
+} derive(Eq, @debug.Debug)
+pub fn ParserState::ordinal(Self) -> Int
+
 pub enum Point {
   Active(Coordinate)
   Viewport(Coordinate)
@@ -465,6 +491,26 @@ pub struct TertiaryDeviceAttributes {
 } derive(Eq, @debug.Debug)
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> String
+
+pub struct Transition {
+  state : ParserState
+  action : TransitionAction
+} derive(Eq, @debug.Debug)
+
+pub enum TransitionAction {
+  None
+  Ignore
+  Print
+  Execute
+  Collect
+  Param
+  EscDispatch
+  CsiDispatch
+  Put
+  OscPut
+  ApcPut
+} derive(Eq, @debug.Debug)
+pub fn TransitionAction::ordinal(Self) -> Int
 
 pub struct Utf8Decoder {
   mut accumulator : UInt
