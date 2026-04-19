@@ -285,21 +285,26 @@ Status: `active`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P4.0 | done | decoder contracts | per-decoder invariants checklist and subplan boundaries | P3.1 | none | `[E]` | SGR/OSC/DCS/APC contracts and hidden dependencies are recorded before worker tasks start | doc review | `[R]` main | `docs` |
-| P4.A | todo | `sgr.zig` | SGR module + tests | P4.0 | P4.B, P4.C, P4.D, P4.E | `[W]` | colon/semicolon parsing and attribute outputs match upstream with tests in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
-| P4.B | todo | `dcs.zig` | DCS handler + tests | P4.0 | P4.A, P4.C, P4.D, P4.E | `[W]` | `hook/put/unhook` semantics and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
-| P4.C | todo | `osc.zig` core + high-frequency subparsers | OSC core, title/icon, hyperlink, report pwd, color, semantic prompt, mouse shape + tests | P4.0 | P4.A, P4.B, P4.D, P4.E | `[W]` | high-frequency commands compile and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
-| P4.D | todo | remaining OSC subparsers | clipboard, kitty color/clipboard, iTerm2, rxvt, context signal, text sizing + tests | P4.0 | P4.A, P4.B, P4.C, P4.E | `[W]` | long-tail fidelity surface lands in a green state | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
-| P4.E | todo | APC-facing helpers | APC support modules + tests | P4.0 | P4.A, P4.B, P4.C, P4.D | `[W]` | helpers compile and match parser-facing expectations with tests | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.A | done | `sgr.zig` | SGR module + tests | P4.0 | P4.B, P4.C, P4.D, P4.E | `[W]` | colon/semicolon parsing and attribute outputs match upstream with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.B | done | `dcs.zig` | DCS handler + tests | P4.0 | P4.A, P4.C, P4.D, P4.E | `[W]` | `hook/put/unhook` semantics and tests pass in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.C | todo | `osc.zig` core + high-frequency subparsers | OSC core, title/icon, hyperlink, report pwd, color, semantic prompt, mouse shape + tests | P4.0 | P4.A, P4.B, P4.D, P4.E | `[W]` | high-frequency commands compile and tests pass in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.D | todo | remaining OSC subparsers | clipboard, kitty color/clipboard, iTerm2, rxvt, context signal, text sizing + tests | P4.0 | P4.A, P4.B, P4.C, P4.E | `[W]` | long-tail fidelity surface lands in a green state | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.E | done | APC-facing helpers | APC support modules + tests | P4.0 | P4.A, P4.B, P4.C, P4.D | `[W]` | helpers compile and match parser-facing expectations with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 
 Phase 4 gate:
 
 - P4.0 is `done`
-- P4.A, P4.B, P4.C, P4.D, and P4.E are pending
+- P4.A, P4.B, and P4.E are `done`
+- P4.C and P4.D are pending
 
 #### Phase 4 outputs
 
 - Phase 4 decoder boundary notes and worker write sets live in:
   [2026-04-19-p4-semantic-decoder-contracts.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-semantic-decoder-contracts.md)
+- Completed Phase 4 task audits live in:
+  [2026-04-19-p4-a-sgr.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-a-sgr.md),
+  [2026-04-19-p4-b-dcs.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-b-dcs.md),
+  [2026-04-19-p4-e-apc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-e-apc.md)
 
 ### Phase 5: Stream integration
 
