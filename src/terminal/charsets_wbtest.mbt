@@ -47,3 +47,20 @@ test "charsets/dec special mappings preserve line drawing entries" {
   assert_eq(table_[0x7C], 0x2260)
   assert_eq(table_[0x7D], 0x00A3)
 }
+
+///|
+test "charsets/slot enums are comparable" {
+  guard Slots::G0 == Slots::G0 else { fail("expected g0 equality") }
+  guard Slots::G0 != Slots::G1 else { fail("expected distinct slots") }
+  ignore(Slots::G2)
+  ignore(Slots::G3)
+  guard ActiveSlot::Gl == ActiveSlot::Gl else { fail("expected gl equality") }
+  guard ActiveSlot::Gl != ActiveSlot::Gr else {
+    fail("expected distinct active slots")
+  }
+}
+
+///|
+test "panic charsets/utf8 table aborts" {
+  ignore(table(Charset::Utf8))
+}

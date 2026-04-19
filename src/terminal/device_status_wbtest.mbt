@@ -25,3 +25,28 @@ test "device status/request lookup and packed tag layout" {
   assert_eq(roundtrip.value(), 5)
   assert_eq(roundtrip.question(), true)
 }
+
+///|
+test "device status/tag helpers mask the raw value bit correctly" {
+  ignore(ColorScheme::Light)
+  ignore(ColorScheme::Dark)
+
+  let operating = DeviceStatusRequest::OperatingStatus.tag()
+  assert_eq(operating.raw(), 5)
+  assert_eq(operating.value(), 5)
+  assert_eq(operating.question(), false)
+
+  let cursor = DeviceStatusRequest::CursorPosition.tag()
+  assert_eq(cursor.raw(), 6)
+  assert_eq(cursor.value(), 6)
+  assert_eq(cursor.question(), false)
+
+  let masked = device_status_tag(0xFFFF, false)
+  assert_eq(masked.value(), 0x7FFF)
+  assert_eq(masked.question(), false)
+  assert_eq(masked.raw(), 0x7FFF)
+
+  let direct = device_status_tag_from_raw(0x0006)
+  assert_eq(direct.value(), 6)
+  assert_eq(direct.question(), false)
+}

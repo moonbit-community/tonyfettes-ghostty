@@ -165,3 +165,74 @@ test "modes/report encode" {
     .length(),
   )
 }
+
+///|
+test "modes/packed state exercises set clear no-op and reset paths" {
+  let packed = empty_mode_packed()
+  guard !packed.get(Mode::CursorKeys) else {
+    fail("expected cursor keys to start unset")
+  }
+  packed.set(Mode::CursorKeys, false)
+  guard !packed.get(Mode::CursorKeys) else {
+    fail("expected clearing an unset mode to remain unset")
+  }
+  packed.set(Mode::CursorKeys, true)
+  guard packed.get(Mode::CursorKeys) else {
+    fail("expected cursor keys to be set")
+  }
+  packed.set(Mode::CursorKeys, false)
+  guard !packed.get(Mode::CursorKeys) else {
+    fail("expected cursor keys to clear")
+  }
+
+  let state = ModeState::new()
+  state.set(Mode::CursorKeys, true)
+  state.save(Mode::CursorKeys)
+  state.set(Mode::CursorKeys, false)
+  state.reset()
+  guard !state.get(Mode::CursorKeys) else {
+    fail("expected reset to restore defaults")
+  }
+  guard !state.restore(Mode::ReverseWrap) else {
+    fail("expected unsaved mode restore to remain false")
+  }
+}
+
+///|
+test "modes/report state codes and bit helpers cover edge modes" {
+  assert_eq(ReportState::NotRecognized.code(), 0)
+  assert_eq(ReportState::Set.code(), 1)
+  assert_eq(ReportState::Reset.code(), 2)
+  assert_eq(ReportState::PermanentlySet.code(), 3)
+  assert_eq(ReportState::PermanentlyReset.code(), 4)
+
+  assert_eq(mode_bit_index(Mode::DisableKeyboard), 0)
+  assert_eq(mode_bit_index(Mode::Linefeed), 3)
+  assert_eq(mode_bit_index(Mode::Mode132Column), 5)
+  assert_eq(mode_bit_index(Mode::SlowScroll), 6)
+  assert_eq(mode_bit_index(Mode::ReverseColors), 7)
+  assert_eq(mode_bit_index(Mode::Origin), 8)
+  assert_eq(mode_bit_index(Mode::MouseEventX10), 11)
+  assert_eq(mode_bit_index(Mode::CursorBlinking), 12)
+  assert_eq(mode_bit_index(Mode::Autorepeat), 10)
+  assert_eq(mode_bit_index(Mode::EnableMode3), 14)
+  assert_eq(mode_bit_index(Mode::AltScreenLegacy), 16)
+  assert_eq(mode_bit_index(Mode::KeypadKeys), 17)
+  assert_eq(mode_bit_index(Mode::BackarrowKeyMode), 18)
+  assert_eq(mode_bit_index(Mode::EnableLeftAndRightMargin), 19)
+  assert_eq(mode_bit_index(Mode::MouseEventNormal), 20)
+  assert_eq(mode_bit_index(Mode::MouseEventButton), 21)
+  assert_eq(mode_bit_index(Mode::MouseEventAny), 22)
+  assert_eq(mode_bit_index(Mode::MouseFormatUrxvt), 27)
+  assert_eq(mode_bit_index(Mode::MouseFormatSgrPixels), 28)
+  assert_eq(mode_bit_index(Mode::AltSendsEscape), 31)
+  assert_eq(mode_bit_index(Mode::ReverseWrapExtended), 32)
+  assert_eq(mode_bit_index(Mode::AltScreen), 33)
+  assert_eq(mode_bit_index(Mode::SaveCursor), 34)
+  assert_eq(mode_bit_index(Mode::AltScreenSaveCursorClearEnter), 35)
+  assert_eq(mode_bit_index(Mode::BracketedPaste), 36)
+  assert_eq(mode_bit_index(Mode::SynchronizedOutput), 37)
+  assert_eq(mode_bit_index(Mode::InBandSizeReports), 40)
+  assert_eq(mode_mask(Mode::DisableKeyboard), 1UL)
+  assert_eq(mode_mask(Mode::InBandSizeReports), 1UL << 40)
+}

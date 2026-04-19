@@ -131,3 +131,21 @@ test "parse table/osc and apc transitions" {
     fail("expected APC payload byte")
   }
 }
+
+///|
+test "parse table/decode transition unpacks state and action nibbles" {
+  let decoded = decode_transition(0x58)
+  guard decoded.state == CsiParam && decoded.action == Put else {
+    fail("expected packed transition decode")
+  }
+}
+
+///|
+test "panic parse table/decode transition rejects invalid state nibble" {
+  ignore(decode_transition(0xE0))
+}
+
+///|
+test "panic parse table/decode transition rejects invalid action nibble" {
+  ignore(decode_transition(0x0B))
+}

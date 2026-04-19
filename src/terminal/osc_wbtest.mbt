@@ -1,4 +1,33 @@
 ///|
+fn feed_bytes(parser : OscParser, bytes : Bytes) -> Unit {
+  for byte in bytes {
+    parser.next(byte)
+  }
+}
+
+///|
+fn expect_color_command(
+  bytes : Bytes,
+  terminator : Byte?,
+  op : ColorOperation,
+  requests : Array[ColorRequest],
+  expected_terminator : Terminator,
+) -> Unit raise {
+  let parser = OscParser::new()
+  feed_bytes(parser, bytes)
+  guard parser.end(terminator) is Some(ColorOperation(command)) else {
+    fail("expected OSC color command")
+  }
+  guard command.op == op else { fail("unexpected OSC color operation") }
+  guard command.requests == requests else {
+    fail("unexpected OSC color requests")
+  }
+  guard command.terminator == expected_terminator else {
+    fail("unexpected OSC terminator")
+  }
+}
+
+///|
 test "osc/title with bel terminator" {
   let parser = OscParser::new()
   parser.next(b'0')
@@ -199,4 +228,251 @@ test "osc/color palette set parses rgb payload" {
     [Set({ target: Palette(1), color: { r: 255, g: 0, b: 0 } })] else {
     fail("expected palette set request")
   }
+}
+
+///|
+test "osc/parser deinit resets state and start has no command" {
+  let parser = OscParser::new()
+  guard parser.end(Some(0x07)) == None else {
+    fail("expected empty parser to produce no command")
+  }
+
+  feed_bytes(parser, b"0;stale")
+  parser.deinit()
+  guard parser.end(Some(0x07)) == None else {
+    fail("expected deinit to restore start state")
+  }
+
+  feed_bytes(parser, b"2;fresh")
+  guard parser.end(Some(0x07)) is Some(ChangeWindowTitle(title)) &&
+    title == "fresh" else {
+    fail("expected parser to be reusable after deinit")
+  }
+}
+
+///|
+test "osc/invalid prefix transitions short circuit parser state" {
+  for
+    bytes in [
+      b"0x;ignored", b"2x;ignored", b"4x;ignored", b"5x;ignored", b"7x;ignored",
+      b"10x;ignored", b"12x;ignored", b"13x;ignored", b"14x;ignored", b"15x;ignored",
+      b"16x;ignored", b"17x;ignored", b"18x;ignored", b"19x;ignored", b"22x;ignored",
+      b"104x;ignored", b"110x;ignored", b"111x;ignored", b"112x;ignored", b"113x;ignored",
+      b"114x;ignored", b"115x;ignored", b"116x;ignored", b"117x;ignored", b"118x;ignored",
+      b"119x;ignored",
+    ] {
+    let parser = OscParser::new()
+    feed_bytes(parser, bytes)
+    guard parser.end(Some(0x07)) == None else {
+      fail("expected invalid prefix transition to abort OSC parsing")
+    }
+  }
+}
+
+///|
+test "osc/color ansi operations handle special targets queries and invalid bodies" {
+  expect_color_command(
+    b"5;4;red;1;?",
+    Some(0x07),
+    Osc5,
+    [
+      Set({ target: Special(Italic), color: { r: 255, g: 0, b: 0 } }),
+      Query(Special(Underline)),
+    ],
+    Bel,
+  )
+
+  expect_color_command(
+    b"4;260;?",
+    Some(0x1B),
+    Osc4,
+    [Query(Special(Italic))],
+    St,
+  )
+
+  expect_color_command(
+    b"4;1;red;bogus;blue",
+    Some(0x07),
+    Osc4,
+    [Set({ target: Palette(1), color: { r: 255, g: 0, b: 0 } })],
+    Bel,
+  )
+
+  expect_color_command(b"4;;red", Some(0x07), Osc4, [], Bel)
+  expect_color_command(b"5;9;red", Some(0x07), Osc5, [], Bel)
+  expect_color_command(b"5;1;not-a-color", Some(0x07), Osc5, [], Bel)
+}
+
+///|
+test "osc/color reset ansi accepts palette and special targets and skips invalid entries" {
+  expect_color_command(
+    b"104;1;;260;bogus;999",
+    Some(0x07),
+    Osc104,
+    [Reset(Palette(1)), Reset(Special(Italic))],
+    Bel,
+  )
+}
+
+///|
+test "osc/dynamic color get set query and truncation behave per prefix" {
+  expect_color_command(
+    b"10;?",
+    Some(0x07),
+    Osc10,
+    [Query(Dynamic(Foreground))],
+    Bel,
+  )
+  expect_color_command(
+    b"11;red",
+    Some(0x07),
+    Osc11,
+    [Set({ target: Dynamic(Background), color: { r: 255, g: 0, b: 0 } })],
+    Bel,
+  )
+  expect_color_command(
+    b"12;?",
+    Some(0x07),
+    Osc12,
+    [Query(Dynamic(Cursor))],
+    Bel,
+  )
+  expect_color_command(
+    b"13;red",
+    Some(0x07),
+    Osc13,
+    [Set({ target: Dynamic(PointerForeground), color: { r: 255, g: 0, b: 0 } })],
+    Bel,
+  )
+  expect_color_command(
+    b"14;?",
+    Some(0x07),
+    Osc14,
+    [Query(Dynamic(PointerBackground))],
+    Bel,
+  )
+  expect_color_command(
+    b"15;red",
+    Some(0x07),
+    Osc15,
+    [
+      Set({
+        target: Dynamic(TektronixForeground),
+        color: { r: 255, g: 0, b: 0 },
+      }),
+    ],
+    Bel,
+  )
+  expect_color_command(
+    b"16;?",
+    Some(0x07),
+    Osc16,
+    [Query(Dynamic(TektronixBackground))],
+    Bel,
+  )
+  expect_color_command(
+    b"17;red",
+    Some(0x07),
+    Osc17,
+    [
+      Set({
+        target: Dynamic(HighlightBackground),
+        color: { r: 255, g: 0, b: 0 },
+      }),
+    ],
+    Bel,
+  )
+  expect_color_command(
+    b"18;?",
+    Some(0x07),
+    Osc18,
+    [Query(Dynamic(TektronixCursor))],
+    Bel,
+  )
+  expect_color_command(
+    b"19;red;blue",
+    Some(0x07),
+    Osc19,
+    [
+      Set({
+        target: Dynamic(HighlightForeground),
+        color: { r: 255, g: 0, b: 0 },
+      }),
+    ],
+    Bel,
+  )
+}
+
+///|
+test "osc/dynamic color rejects empty and invalid specs" {
+  expect_color_command(b"10;", Some(0x07), Osc10, [], Bel)
+  expect_color_command(b"11;not-a-color", Some(0x07), Osc11, [], Bel)
+}
+
+///|
+test "osc/dynamic reset variants accept empty bodies and reject non-empty bodies" {
+  expect_color_command(
+    b"110;",
+    Some(0x07),
+    Osc110,
+    [Reset(Dynamic(Foreground))],
+    Bel,
+  )
+  expect_color_command(
+    b"111;",
+    Some(0x07),
+    Osc111,
+    [Reset(Dynamic(Background))],
+    Bel,
+  )
+  expect_color_command(
+    b"112;",
+    Some(0x07),
+    Osc112,
+    [Reset(Dynamic(Cursor))],
+    Bel,
+  )
+  expect_color_command(b"113;ignored", Some(0x07), Osc113, [], Bel)
+  expect_color_command(
+    b"114;",
+    Some(0x07),
+    Osc114,
+    [Reset(Dynamic(PointerBackground))],
+    Bel,
+  )
+  expect_color_command(
+    b"115;",
+    Some(0x07),
+    Osc115,
+    [Reset(Dynamic(TektronixForeground))],
+    Bel,
+  )
+  expect_color_command(
+    b"116;",
+    Some(0x07),
+    Osc116,
+    [Reset(Dynamic(TektronixBackground))],
+    Bel,
+  )
+  expect_color_command(
+    b"117;",
+    Some(0x07),
+    Osc117,
+    [Reset(Dynamic(HighlightBackground))],
+    Bel,
+  )
+  expect_color_command(
+    b"118;",
+    Some(0x07),
+    Osc118,
+    [Reset(Dynamic(TektronixCursor))],
+    Bel,
+  )
+  expect_color_command(
+    b"119;",
+    Some(0x07),
+    Osc119,
+    [Reset(Dynamic(HighlightForeground))],
+    Bel,
+  )
 }

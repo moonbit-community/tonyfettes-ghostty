@@ -26,3 +26,25 @@ test "point/constructors cover all point tags" {
   ignore(Point::Screen(coord))
   ignore(Point::History(coord))
 }
+
+///|
+test "point/coord handles every point variant" {
+  let coords : Array[Coordinate] = [
+    { x: 3, y: 4 },
+    { x: 5, y: 6 },
+    { x: 7, y: 8 },
+    { x: 9, y: 10 },
+  ]
+  let points : Array[Point] = [
+    Point::Active(coords[0]),
+    Point::Viewport(coords[1]),
+    Point::Screen(coords[2]),
+    Point::History(coords[3]),
+  ]
+
+  for i in 0..<points.length() {
+    guard points[i].coord() == coords[i] else {
+      fail("expected point variant to preserve coordinate payload")
+    }
+  }
+}
