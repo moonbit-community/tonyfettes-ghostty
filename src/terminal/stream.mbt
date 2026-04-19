@@ -47,6 +47,9 @@ pub(all) enum StreamAction {
   StreamInsertBlanks(UInt16)
   StreamLeftAndRightMarginAmbiguous
   StreamMouseShiftCapture(Bool)
+  StreamSizeReport(SizeReportStyle)
+  StreamTitlePush(UInt16)
+  StreamTitlePop(UInt16)
 } derive(Eq, Debug)
 
 ///|
@@ -361,6 +364,15 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         ([b'>'], [1]) => self.emit(StreamMouseShiftCapture(true))
         _ => ()
       }
+    b't' =>
+      if _csi.intermediates == [] {
+        match xtwinops_action(_csi.params) {
+          Some(StreamSizeReport(style)) => self.emit(StreamSizeReport(style))
+          Some(StreamTitlePush(index)) => self.emit(StreamTitlePush(index))
+          Some(StreamTitlePop(index)) => self.emit(StreamTitlePop(index))
+          _ => ()
+        }
+      }
     b'u' => if _csi.intermediates == [] { self.emit(StreamRestoreCursor) }
     b'@' =>
       if _csi.intermediates == [] {
@@ -535,6 +547,39 @@ fn insert_blanks_count(params : Array[UInt16]) -> UInt16? {
     [] => Some(1)
     [value] => if value == 0 { Some(1) } else { Some(value) }
     _ => None
+  }
+}
+
+///|
+fn xtwinops_action(params : Array[UInt16]) -> StreamAction? {
+  match params {
+    [14] => Some(StreamSizeReport(SizeReportStyle::Csi14t))
+    [16] => Some(StreamSizeReport(SizeReportStyle::Csi16t))
+    [18] => Some(StreamSizeReport(SizeReportStyle::Csi18t))
+    [21] => Some(StreamSizeReport(SizeReportStyle::Csi21t))
+    [22, scope] => title_push_action(scope, 0)
+    [22, scope, index] => title_push_action(scope, index)
+    [23, scope] => title_pop_action(scope, 0)
+    [23, scope, index] => title_pop_action(scope, index)
+    _ => None
+  }
+}
+
+///|
+fn title_push_action(scope : UInt16, index : UInt16) -> StreamAction? {
+  if scope == 0 || scope == 2 {
+    Some(StreamTitlePush(index))
+  } else {
+    None
+  }
+}
+
+///|
+fn title_pop_action(scope : UInt16, index : UInt16) -> StreamAction? {
+  if scope == 0 || scope == 2 {
+    Some(StreamTitlePop(index))
+  } else {
+    None
   }
 }
 

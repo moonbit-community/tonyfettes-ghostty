@@ -337,7 +337,8 @@ Phase 5 gate:
   [2026-04-19-p5-1-stream-driver-core.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-1-stream-driver-core.md)
 - Active Phase 5A slice audits live in:
   [2026-04-19-p5-a-foundational-esc-csi.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-foundational-esc-csi.md),
-  [2026-04-19-p5-a-tab-and-cursor-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-tab-and-cursor-controls.md)
+  [2026-04-19-p5-a-tab-and-cursor-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-tab-and-cursor-controls.md),
+  [2026-04-19-p5-a-xtwinops-and-title-stack.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-xtwinops-and-title-stack.md)
 
 ### Phase 6: Terminal application surface
 

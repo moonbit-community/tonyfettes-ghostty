@@ -482,6 +482,13 @@ pub fn Size::columns(Self) -> UInt16
 pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
 pub fn Size::rows(Self) -> UInt16
 
+pub(all) enum SizeReportStyle {
+  Csi14t
+  Csi16t
+  Csi18t
+  Csi21t
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Slots {
   G0
   G1
@@ -549,6 +556,9 @@ pub(all) enum StreamAction {
   StreamInsertBlanks(UInt16)
   StreamLeftAndRightMarginAmbiguous
   StreamMouseShiftCapture(Bool)
+  StreamSizeReport(SizeReportStyle)
+  StreamTitlePush(UInt16)
+  StreamTitlePop(UInt16)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Style {

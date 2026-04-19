@@ -447,6 +447,60 @@ test "stream/csi save and restore cursor controls" {
 }
 
 ///|
+test "stream/csi size report subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[14t\x1B[16t\x1B[18t\x1B[21t")
+  guard actions ==
+    [
+      StreamSizeReport(SizeReportStyle::Csi14t),
+      StreamSizeReport(SizeReportStyle::Csi16t),
+      StreamSizeReport(SizeReportStyle::Csi18t),
+      StreamSizeReport(SizeReportStyle::Csi21t),
+    ] else {
+    fail("expected XTWINOPS size-report subset")
+  }
+}
+
+///|
+test "stream/csi invalid size report forms stay silent" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[19t\x1B[14;1t\x1B[21;2t\x1B[>14t")
+  let expected_empty : Array[StreamAction] = []
+  guard actions == expected_empty else {
+    fail("expected invalid CSI t size-report forms to stay silent")
+  }
+}
+
+///|
+test "stream/csi title stack subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[22;0t\x1B[22;2t\x1B[22;0;5t\x1B[23;0t\x1B[23;2t\x1B[23;0;5t",
+  )
+  guard actions ==
+    [
+      StreamTitlePush(0),
+      StreamTitlePush(0),
+      StreamTitlePush(5),
+      StreamTitlePop(0),
+      StreamTitlePop(0),
+      StreamTitlePop(5),
+    ] else {
+    fail("expected title push/pop subset")
+  }
+}
+
+///|
+test "stream/csi title stack rejects unsupported scopes and arity" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[22;1t\x1B[23;1t\x1B[22t\x1B[23t\x1B[22;0;5;9t")
+  let expected_empty : Array[StreamAction] = []
+  guard actions == expected_empty else {
+    fail("expected invalid title stack forms to stay silent")
+  }
+}
+
+///|
 test "stream/deinit delegates to handler" {
   let (stream, _, deinitialized) = new_stream()
   stream.deinit()
