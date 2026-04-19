@@ -20,7 +20,7 @@ pub fn device_status_tag_from_raw(UInt16) -> DeviceStatusTag
 
 pub fn empty_mode_packed() -> ModePacked
 
-pub fn encode(Style, Size) -> String
+pub fn encode(Style, Size) -> Bytes
 
 pub fn mode_from_int(UInt16, Bool) -> Mode?
 
@@ -225,7 +225,7 @@ pub struct DeviceAttributes {
   tertiary : TertiaryDeviceAttributes
 } derive(Eq, @debug.Debug)
 pub fn DeviceAttributes::default() -> Self
-pub fn DeviceAttributes::encode(Self, DeviceAttributeRequest) -> String
+pub fn DeviceAttributes::encode(Self, DeviceAttributeRequest) -> Bytes
 
 pub enum DeviceStatusRequest {
   OperatingStatus
@@ -511,7 +511,7 @@ pub struct PrimaryDeviceAttributes {
   features : ReadOnlyArray[PrimaryDeviceAttributeFeature]
 } derive(Eq, @debug.Debug)
 pub fn PrimaryDeviceAttributes::default() -> Self
-pub fn PrimaryDeviceAttributes::encode(Self) -> String
+pub fn PrimaryDeviceAttributes::encode(Self) -> Bytes
 
 pub enum ProtectedMode {
   Off
@@ -538,7 +538,7 @@ pub struct Report {
   tag : ModeTag
   state : ReportState
 } derive(Eq, @debug.Debug)
-pub fn Report::encode(Self) -> String
+pub fn Report::encode(Self) -> Bytes
 
 pub enum ReportState {
   NotRecognized
@@ -555,7 +555,7 @@ pub struct SecondaryDeviceAttributes {
   rom_cartridge : UInt16
 } derive(Eq, @debug.Debug)
 pub fn SecondaryDeviceAttributes::default() -> Self
-pub fn SecondaryDeviceAttributes::encode(Self) -> String
+pub fn SecondaryDeviceAttributes::encode(Self) -> Bytes
 
 pub struct SepList {
   mut bits : UInt64
@@ -624,7 +624,7 @@ pub struct TertiaryDeviceAttributes {
   unit_id : UInt
 } derive(Eq, @debug.Debug)
 pub fn TertiaryDeviceAttributes::default() -> Self
-pub fn TertiaryDeviceAttributes::encode(Self) -> String
+pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
 
 pub struct Transition {
   state : ParserState

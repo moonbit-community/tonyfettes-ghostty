@@ -132,15 +132,16 @@ pub fn PrimaryDeviceAttributes::default() -> PrimaryDeviceAttributes {
 }
 
 ///|
-pub fn PrimaryDeviceAttributes::encode(
-  self : PrimaryDeviceAttributes,
-) -> String {
-  let parts : Array[String] = ["\u{001B}[?\{self.conformance_level.code()}"]
+pub fn PrimaryDeviceAttributes::encode(self : PrimaryDeviceAttributes) -> Bytes {
+  let buffer = @buffer.new()
+  buffer.write_bytes(b"\x1B[?")
+  write_uint_ascii(buffer, self.conformance_level.code().to_uint64())
   for feature in self.features {
-    parts.push(";\{feature.code()}")
+    buffer.write_byte(b';')
+    write_uint_ascii(buffer, feature.code().to_uint64())
   }
-  parts.push("c")
-  parts.join("")
+  buffer.write_byte(b'c')
+  buffer.contents()
 }
 
 ///|
@@ -158,8 +159,16 @@ pub fn SecondaryDeviceAttributes::default() -> SecondaryDeviceAttributes {
 ///|
 pub fn SecondaryDeviceAttributes::encode(
   self : SecondaryDeviceAttributes,
-) -> String {
-  "\u{001B}[>\{self.device_type.code()};\{self.firmware_version};\{self.rom_cartridge}c"
+) -> Bytes {
+  let buffer = @buffer.new()
+  buffer.write_bytes(b"\x1B[>")
+  write_uint_ascii(buffer, self.device_type.code().to_uint64())
+  buffer.write_byte(b';')
+  write_uint_ascii(buffer, self.firmware_version.to_uint64())
+  buffer.write_byte(b';')
+  write_uint_ascii(buffer, self.rom_cartridge.to_uint64())
+  buffer.write_byte(b'c')
+  buffer.contents()
 }
 
 ///|
@@ -175,8 +184,12 @@ pub fn TertiaryDeviceAttributes::default() -> TertiaryDeviceAttributes {
 ///|
 pub fn TertiaryDeviceAttributes::encode(
   self : TertiaryDeviceAttributes,
-) -> String {
-  "\u{001B}P!|\{hex8(self.unit_id)}\u{001B}\\"
+) -> Bytes {
+  let buffer = @buffer.new(size_hint=15)
+  buffer.write_bytes(b"\x1BP!|")
+  write_hex8(buffer, self.unit_id)
+  buffer.write_bytes(b"\x1B\\")
+  buffer.contents()
 }
 
 ///|
@@ -199,31 +212,10 @@ pub fn DeviceAttributes::default() -> DeviceAttributes {
 pub fn DeviceAttributes::encode(
   self : DeviceAttributes,
   request : DeviceAttributeRequest,
-) -> String {
+) -> Bytes {
   match request {
     Primary => self.primary.encode()
     Secondary => self.secondary.encode()
     Tertiary => self.tertiary.encode()
-  }
-}
-
-///|
-fn hex8(value : UInt) -> String {
-  let builder = StringBuilder::new()
-  let mut shift = 28
-  while shift >= 0 {
-    let nibble = ((value >> shift) & 0xF).reinterpret_as_int()
-    builder.write_char(hex_digit_upper(nibble))
-    shift -= 4
-  }
-  builder.to_string()
-}
-
-///|
-fn hex_digit_upper(value : Int) -> Char {
-  if value < 10 {
-    (value + '0'.to_int()).unsafe_to_char()
-  } else {
-    (value - 10 + 'A'.to_int()).unsafe_to_char()
   }
 }

@@ -142,21 +142,21 @@ test "modes/get report for known ansi mode and unknown mode" {
 
 ///|
 test "modes/report encode" {
-  inspect(
+  assert_eq(
     { tag: mode_tag(1, false), state: ReportState::Set }.encode(),
-    content="\u{001B}[?1;1$y",
+    b"\x1B[?1;1$y",
   )
-  inspect(
+  assert_eq(
     { tag: mode_tag(1, false), state: ReportState::Reset }.encode(),
-    content="\u{001B}[?1;2$y",
+    b"\x1B[?1;2$y",
   )
-  inspect(
+  assert_eq(
     { tag: mode_tag(4, true), state: ReportState::Set }.encode(),
-    content="\u{001B}[4;1$y",
+    b"\x1B[4;1$y",
   )
-  inspect(
+  assert_eq(
     { tag: mode_tag(9999, false), state: ReportState::NotRecognized }.encode(),
-    content="\u{001B}[?9999;0$y",
+    b"\x1B[?9999;0$y",
   )
   assert_eq(
     report_max_size,
@@ -223,6 +223,9 @@ test "modes/report state codes and bit helpers cover edge modes" {
   assert_eq(mode_bit_index(Mode::MouseEventNormal), 20)
   assert_eq(mode_bit_index(Mode::MouseEventButton), 21)
   assert_eq(mode_bit_index(Mode::MouseEventAny), 22)
+  assert_eq(mode_bit_index(Mode::FocusEvent), 23)
+  assert_eq(mode_bit_index(Mode::MouseFormatUtf8), 24)
+  assert_eq(mode_bit_index(Mode::MouseFormatSgr), 25)
   assert_eq(mode_bit_index(Mode::MouseFormatUrxvt), 27)
   assert_eq(mode_bit_index(Mode::MouseFormatSgrPixels), 28)
   assert_eq(mode_bit_index(Mode::AltSendsEscape), 31)
@@ -232,6 +235,8 @@ test "modes/report state codes and bit helpers cover edge modes" {
   assert_eq(mode_bit_index(Mode::AltScreenSaveCursorClearEnter), 35)
   assert_eq(mode_bit_index(Mode::BracketedPaste), 36)
   assert_eq(mode_bit_index(Mode::SynchronizedOutput), 37)
+  assert_eq(mode_bit_index(Mode::GraphemeCluster), 38)
+  assert_eq(mode_bit_index(Mode::ReportColorScheme), 39)
   assert_eq(mode_bit_index(Mode::InBandSizeReports), 40)
   assert_eq(mode_mask(Mode::DisableKeyboard), 1UL)
   assert_eq(mode_mask(Mode::InBandSizeReports), 1UL << 40)

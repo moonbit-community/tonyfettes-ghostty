@@ -242,6 +242,20 @@ Phase 3 gate:
   in:
   [2026-04-19-p3-parser-state-machine.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p3-parser-state-machine.md)
 
+### Phase 3.5: Outbound encoder byte normalization
+
+Gate: `[S]` after Phase 3 / before broader Phase 4 protocol work  
+Status: `done`
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P3.5 | done | `size_report.zig`, `device_attributes.zig`, `modes.zig` writer-based output | outbound encoder APIs + tests + subplan | P3.1 | none | main + `[R]` | protocol encoders return `Bytes`, tests stay green, semantic text payloads remain `String` | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `refactor(parser-foundation)` |
+
+#### Phase 3.5 outputs
+
+- Protocol-byte refactor notes, validation evidence, and audit details live in:
+  [2026-04-19-p3-5-outbound-encoder-bytes.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p3-5-outbound-encoder-bytes.md)
+
 ### Phase 4: Semantic decoders
 
 Gate: `[P]` after Phase 3  

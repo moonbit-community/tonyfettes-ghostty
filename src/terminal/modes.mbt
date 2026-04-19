@@ -340,17 +340,20 @@ pub struct Report {
 } derive(Eq, Debug)
 
 ///|
-fn max_report() -> Report {
-  { tag: mode_tag(ModeTagValueMask, false), state: PermanentlyReset }
-}
+pub let report_max_size : Int = b"\x1B[?32767;4$y".length()
 
 ///|
-pub let report_max_size : Int = max_report().encode().length()
-
-///|
-pub fn Report::encode(self : Report) -> String {
-  let prefix = if self.tag.ansi() { "" } else { "?" }
-  "\u{001B}[\{prefix}\{self.tag.value()};\{self.state.code()}$y"
+pub fn Report::encode(self : Report) -> Bytes {
+  let buffer = @buffer.new(size_hint=report_max_size)
+  buffer.write_bytes(b"\x1B[")
+  if !self.tag.ansi() {
+    buffer.write_byte(b'?')
+  }
+  write_uint_ascii(buffer, self.tag.value().to_uint64())
+  buffer.write_byte(b';')
+  write_uint_ascii(buffer, self.state.code().to_uint64())
+  buffer.write_bytes(b"$y")
+  buffer.contents()
 }
 
 ///|

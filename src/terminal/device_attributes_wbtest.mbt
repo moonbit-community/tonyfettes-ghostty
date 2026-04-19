@@ -1,6 +1,13 @@
 ///|
+fn encode_hex8(value : UInt) -> Bytes {
+  let buffer = @buffer.new(size_hint=8)
+  write_hex8(buffer, value)
+  buffer.contents()
+}
+
+///|
 test "device attributes/primary encodes defaults and features" {
-  assert_eq(PrimaryDeviceAttributes::default().encode(), "\u{001B}[?62;22c")
+  assert_eq(PrimaryDeviceAttributes::default().encode(), b"\x1B[?62;22c")
   assert_eq(
     {
       conformance_level: ConformanceLevel::Vt220,
@@ -9,7 +16,7 @@ test "device attributes/primary encodes defaults and features" {
         PrimaryDeviceAttributeFeature::Clipboard,
       ],
     }.encode(),
-    "\u{001B}[?62;22;52c",
+    b"\x1B[?62;22;52c",
   )
   assert_eq(
     {
@@ -20,38 +27,35 @@ test "device attributes/primary encodes defaults and features" {
         PrimaryDeviceAttributeFeature::AnsiColor,
       ],
     }.encode(),
-    "\u{001B}[?64;1;6;22c",
+    b"\x1B[?64;1;6;22c",
   )
   assert_eq(
     { conformance_level: ConformanceLevel::Vt100, features: [] }.encode(),
-    "\u{001B}[?1c",
+    b"\x1B[?1c",
   )
 }
 
 ///|
 test "device attributes/secondary and tertiary encodings" {
-  assert_eq(SecondaryDeviceAttributes::default().encode(), "\u{001B}[>1;0;0c")
+  assert_eq(SecondaryDeviceAttributes::default().encode(), b"\x1B[>1;0;0c")
   assert_eq(
     TertiaryDeviceAttributes::default().encode(),
-    "\u{001B}P!|00000000\u{001B}\\",
+    b"\x1BP!|00000000\x1B\\",
   )
-  assert_eq({ unit_id: 0xAABBCCDD }.encode(), "\u{001B}P!|AABBCCDD\u{001B}\\")
+  assert_eq({ unit_id: 0xAABBCCDD }.encode(), b"\x1BP!|AABBCCDD\x1B\\")
 }
 
 ///|
 test "device attributes/container encode dispatches by request" {
   let attributes = DeviceAttributes::default()
-  assert_eq(
-    attributes.encode(DeviceAttributeRequest::Primary),
-    "\u{001B}[?62;22c",
-  )
+  assert_eq(attributes.encode(DeviceAttributeRequest::Primary), b"\x1B[?62;22c")
   assert_eq(
     attributes.encode(DeviceAttributeRequest::Secondary),
-    "\u{001B}[>1;0;0c",
+    b"\x1B[>1;0;0c",
   )
   assert_eq(
     attributes.encode(DeviceAttributeRequest::Tertiary),
-    "\u{001B}P!|00000000\u{001B}\\",
+    b"\x1BP!|00000000\x1B\\",
   )
 }
 
@@ -118,11 +122,11 @@ test "device attributes/code helpers cover shared aliases" {
 
 ///|
 test "device attributes/private hex helpers produce fixed width uppercase text" {
-  assert_eq(hex8(0), "00000000")
-  assert_eq(hex8(0x1234), "00001234")
-  assert_eq(hex8(0x89ABCDEF), "89ABCDEF")
-  assert_eq(hex_digit_upper(0), '0')
-  assert_eq(hex_digit_upper(9), '9')
-  assert_eq(hex_digit_upper(10), 'A')
-  assert_eq(hex_digit_upper(15), 'F')
+  assert_eq(encode_hex8(0), b"00000000")
+  assert_eq(encode_hex8(0x1234), b"00001234")
+  assert_eq(encode_hex8(0x89ABCDEF), b"89ABCDEF")
+  assert_eq(hex_digit_upper(0), b'0')
+  assert_eq(hex_digit_upper(9), b'9')
+  assert_eq(hex_digit_upper(10), b'A')
+  assert_eq(hex_digit_upper(15), b'F')
 }
