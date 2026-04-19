@@ -14,9 +14,17 @@ Required contents:
 4. Dependencies and invariants
 5. Acceptance criteria
 6. Validation commands
-7. Commit scope
-8. Review findings
-9. Audit/result notes
+7. Coverage findings for touched files
+8. Commit scope
+9. Review findings
+10. Audit/result notes
+
+Coverage findings should record:
+
+- whether `moon coverage analyze` was run
+- which touched files still had uncovered lines, if any
+- whether those lines were covered in the task or intentionally deferred with
+  reviewer signoff
 
 These files are meant to support both:
 

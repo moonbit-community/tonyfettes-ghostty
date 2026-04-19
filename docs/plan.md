@@ -50,9 +50,14 @@ end in a green state.
 - For MoonBit source changes, the task is not complete until:
   - `moon check` passes
   - `moon test` passes
+  - `moon coverage analyze` is run
+  - uncovered lines in the touched files are reviewed
   - `moon fmt` is run
   - `moon info` is run
   - any formatter/interface churn is reviewed and intentional
+- If touched executable lines remain uncovered, the task stays open until the
+  gap is either covered by tests or explicitly recorded in the task audit with
+  reviewer signoff.
 - Docs-only tasks do not require MoonBit validation, but they still require a
   review pass for consistency with `docs/architecture.md`, this plan, and
   `AGENTS.md`.
@@ -102,7 +107,8 @@ Task fields:
 - Explorer subagent: map upstream contracts, hidden dependencies, tests, and
   must-preserve invariants. Output should be a short checklist, not code.
 - Worker subagent: implement a bounded translation in a distinct write set with
-  explicit validation commands and a green end state.
+  explicit validation commands, coverage review evidence, and a green end
+  state.
 - Reviewer: the main agent by default, or a dedicated review subagent when the
   change is large enough to benefit from an extra pass.
 
@@ -113,7 +119,8 @@ Default flow for each non-trivial delegated task:
    mapped
 3. worker creates or updates its subplan under `docs/plans/`
 4. worker implements and runs validation
-5. reviewer checks the boundary and validation evidence
+5. reviewer checks the boundary, validation evidence, and coverage findings for
+   the touched files
 6. if issues are found, resume the worker and keep the task `active`
 7. only then update this plan and land the commit
 
@@ -134,6 +141,7 @@ Required contents:
 - dependency notes
 - acceptance criteria
 - validation commands
+- coverage findings for touched files
 - commit scope
 - review findings
 - audit/result notes after implementation

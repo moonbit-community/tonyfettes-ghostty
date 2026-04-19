@@ -89,8 +89,21 @@
 - For MoonBit source changes, the expected quality gate is:
   - `moon check`
   - `moon test`
+  - `moon coverage analyze`
   - `moon fmt`
   - `moon info`
+
+- Treat coverage as a completion gate, not a nice-to-have. After
+  `moon coverage analyze`, review uncovered lines in the files touched by the
+  task.
+
+- Do not close a MoonBit implementation task while touched executable lines are
+  left uncovered without an explicit note in the task subplan or audit trail
+  explaining why the uncovered lines are acceptable for now.
+
+- The main agent is responsible for enforcing this coverage gate on both local
+  work and delegated work. Worker validation is not complete until coverage
+  findings for the touched files have been reviewed.
 
 - Review any `.mbti` or formatting churn and confirm it is intentional before
   handoff or commit.
