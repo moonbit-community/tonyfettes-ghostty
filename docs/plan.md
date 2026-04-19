@@ -263,6 +263,20 @@ Status: `done`
 - Protocol-byte refactor notes, validation evidence, and audit details live in:
   [2026-04-19-p3-5-outbound-encoder-bytes.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p3-5-outbound-encoder-bytes.md)
 
+### Phase 3.6: Parser API visibility tightening
+
+Gate: `[S]` after Phase 3.5 / before Phase 7 host-facing API work  
+Status: `done`
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P3.6 | done | parser-core internals are implementation detail until host API phase | parser/parse-table/osc visibility + subplan | P3.5 | none | main + `[R]` | parser-core scaffolding is removed from package API, mode-state fields are opaque, and `.mbti` only retains the intended semantic/value surface | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `refactor(api)` |
+
+#### Phase 3.6 outputs
+
+- Parser visibility notes, validation evidence, and audit details live in:
+  [2026-04-19-p3-6-parser-api-visibility.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p3-6-parser-api-visibility.md)
+
 ### Phase 4: Semantic decoders
 
 Gate: `[P]` after Phase 3  

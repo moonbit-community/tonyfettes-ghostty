@@ -1,5 +1,5 @@
 ///|
-pub enum ParserState {
+priv enum ParserState {
   Ground
   Escape
   EscapeIntermediate
@@ -20,7 +20,7 @@ pub enum ParserState {
 const ParserStateCount : Int = 14
 
 ///|
-pub fn ParserState::ordinal(self : ParserState) -> Int {
+fn ParserState::ordinal(self : ParserState) -> Int {
   match self {
     Ground => 0
     Escape => 1
@@ -40,7 +40,7 @@ pub fn ParserState::ordinal(self : ParserState) -> Int {
 }
 
 ///|
-pub fn parser_state_from_int(value : Int) -> ParserState? {
+fn parser_state_from_int(value : Int) -> ParserState? {
   match value {
     0 => Some(Ground)
     1 => Some(Escape)
@@ -61,12 +61,12 @@ pub fn parser_state_from_int(value : Int) -> ParserState? {
 }
 
 ///|
-pub fn parser_state_count() -> Int {
+fn parser_state_count() -> Int {
   ParserStateCount
 }
 
 ///|
-pub enum TransitionAction {
+priv enum TransitionAction {
   None
   Ignore
   Print
@@ -81,7 +81,7 @@ pub enum TransitionAction {
 } derive(Eq, Debug)
 
 ///|
-pub fn TransitionAction::ordinal(self : TransitionAction) -> Int {
+fn TransitionAction::ordinal(self : TransitionAction) -> Int {
   match self {
     None => 0
     Ignore => 1
@@ -98,7 +98,7 @@ pub fn TransitionAction::ordinal(self : TransitionAction) -> Int {
 }
 
 ///|
-pub fn transition_action_from_int(value : Int) -> TransitionAction? {
+fn transition_action_from_int(value : Int) -> TransitionAction? {
   match value {
     0 => Some(None)
     1 => Some(Ignore)
@@ -116,7 +116,7 @@ pub fn transition_action_from_int(value : Int) -> TransitionAction? {
 }
 
 ///|
-pub struct Transition {
+priv struct Transition {
   state : ParserState
   action : TransitionAction
 } derive(Eq, Debug)

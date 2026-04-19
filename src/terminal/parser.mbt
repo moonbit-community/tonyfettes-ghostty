@@ -11,27 +11,27 @@ const MaxParamDigits : Int = 255
 const MaxParamValue : UInt16 = 65535
 
 ///|
-pub struct SepList {
+priv struct SepList {
   mut bits : UInt64
 } derive(Eq, Debug)
 
 ///|
-pub fn SepList::init_empty() -> SepList {
+fn SepList::init_empty() -> SepList {
   { bits: 0UL }
 }
 
 ///|
-pub fn SepList::set(self : SepList, index : Int) -> Unit {
+fn SepList::set(self : SepList, index : Int) -> Unit {
   self.bits = self.bits | (1UL << index)
 }
 
 ///|
-pub fn SepList::is_set(self : SepList, index : Int) -> Bool {
+fn SepList::is_set(self : SepList, index : Int) -> Bool {
   (self.bits & (1UL << index)) != 0UL
 }
 
 ///|
-pub fn SepList::count(self : SepList) -> Int {
+fn SepList::count(self : SepList) -> Int {
   let mut result = 0
   for index in 0..<MaxParams {
     if self.is_set(index) {
@@ -42,7 +42,7 @@ pub fn SepList::count(self : SepList) -> Int {
 }
 
 ///|
-pub struct Csi {
+priv struct Csi {
   intermediates : Array[Byte]
   params : Array[UInt16]
   params_sep : SepList
@@ -50,20 +50,20 @@ pub struct Csi {
 } derive(Eq, Debug)
 
 ///|
-pub struct Esc {
+priv struct Esc {
   intermediates : Array[Byte]
   final_byte : Byte
 } derive(Eq, Debug)
 
 ///|
-pub struct Dcs {
+priv struct Dcs {
   intermediates : Array[Byte]
   params : Array[UInt16]
   final_byte : Byte
 } derive(Eq, Debug)
 
 ///|
-pub enum Action {
+priv enum Action {
   Print(UInt)
   Execute(Byte)
   CsiDispatch(Csi)
@@ -78,10 +78,10 @@ pub enum Action {
 } derive(Eq, Debug)
 
 ///|
-pub type ActionList = FixedArray[Action?]
+type ActionList = FixedArray[Action?]
 
 ///|
-pub struct Parser {
+priv struct Parser {
   mut state : ParserState
   mut intermediates : Array[Byte]
   mut params : Array[UInt16]
@@ -92,7 +92,7 @@ pub struct Parser {
 } derive(Debug)
 
 ///|
-pub fn Parser::new() -> Parser {
+fn Parser::new() -> Parser {
   {
     state: Ground,
     intermediates: [],
@@ -105,12 +105,12 @@ pub fn Parser::new() -> Parser {
 }
 
 ///|
-pub fn Parser::deinit(self : Parser) -> Unit {
+fn Parser::deinit(self : Parser) -> Unit {
   self.osc_parser.deinit()
 }
 
 ///|
-pub fn Parser::next(self : Parser, c : Byte) -> ActionList {
+fn Parser::next(self : Parser, c : Byte) -> ActionList {
   let effect = transition_for(c, self.state)
   let next_state = effect.state
   let action = effect.action
@@ -253,7 +253,7 @@ fn Parser::consume_param(self : Parser, c : Byte) -> Action? {
 }
 
 ///|
-pub fn Parser::clear(self : Parser) -> Unit {
+fn Parser::clear(self : Parser) -> Unit {
   self.intermediates = []
   self.params = []
   self.params_sep = SepList::init_empty()

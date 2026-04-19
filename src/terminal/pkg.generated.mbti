@@ -32,13 +32,7 @@ pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
 
 pub fn mouse_event_sends_motion(MouseEvent) -> Bool
 
-pub fn parser_state_count() -> Int
-
-pub fn parser_state_from_int(Int) -> ParserState?
-
 pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
-
-pub let report_max_size : Int
 
 pub fn status_display_from_int(Int) -> StatusDisplay?
 
@@ -48,10 +42,6 @@ pub fn table(Charset) -> ReadOnlyArray[UInt16]
 
 pub fn terminator_init(Byte?) -> Terminator
 
-pub fn transition_action_from_int(Int) -> TransitionAction?
-
-pub fn transition_for(Byte, ParserState) -> Transition
-
 pub fn x11_color_lookup(String) -> RGB?
 
 // Errors
@@ -60,20 +50,6 @@ pub(all) suberror ColorParseError {
 } derive(Eq, @debug.Debug)
 
 // Types and methods
-pub enum Action {
-  Print(UInt)
-  Execute(Byte)
-  CsiDispatch(Csi)
-  EscDispatch(Esc)
-  OscDispatch(Command)
-  DcsHook(Dcs)
-  DcsPut(Byte)
-  DcsUnhook
-  ApcStart
-  ApcPut(Byte)
-  ApcEnd
-} derive(Eq, @debug.Debug)
-
 pub enum ActiveSlot {
   Gl
   Gr
@@ -189,13 +165,6 @@ pub struct Coordinate {
   y : UInt
 } derive(Eq, @debug.Debug)
 
-pub struct Csi {
-  intermediates : Array[Byte]
-  params : Array[UInt16]
-  params_sep : SepList
-  final_byte : Byte
-} derive(Eq, @debug.Debug)
-
 pub enum CursorStyle {
   Default
   BlinkingBlock
@@ -206,12 +175,6 @@ pub enum CursorStyle {
   SteadyBar
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::ordinal(Self) -> Int
-
-pub struct Dcs {
-  intermediates : Array[Byte]
-  params : Array[UInt16]
-  final_byte : Byte
-} derive(Eq, @debug.Debug)
 
 pub enum DeviceAttributeRequest {
   Primary
@@ -271,11 +234,6 @@ pub enum Dynamic {
 pub fn Dynamic::code(Self) -> UInt16
 pub fn Dynamic::next(Self) -> Self?
 
-pub struct Esc {
-  intermediates : Array[Byte]
-  final_byte : Byte
-} derive(Eq, @debug.Debug)
-
 pub enum Mode {
   DisableKeyboard
   Insert
@@ -321,17 +279,11 @@ pub enum Mode {
 } derive(Eq, @debug.Debug)
 pub fn Mode::tag(Self) -> ModeTag
 
-pub struct ModePacked {
-  mut bits : UInt64
-} derive(Eq, @debug.Debug)
+type ModePacked derive(Eq, @debug.Debug)
 pub fn ModePacked::get(Self, Mode) -> Bool
 pub fn ModePacked::set(Self, Mode, Bool) -> Unit
 
-pub struct ModeState {
-  mut values : ModePacked
-  mut saved : ModePacked
-  default : ModePacked
-} derive(Eq, @debug.Debug)
+type ModeState derive(Eq, @debug.Debug)
 pub fn ModeState::get(Self, Mode) -> Bool
 pub fn ModeState::get_report(Self, ModeTag) -> Report
 pub fn ModeState::new() -> Self
@@ -340,9 +292,7 @@ pub fn ModeState::restore(Self, Mode) -> Bool
 pub fn ModeState::save(Self, Mode) -> Unit
 pub fn ModeState::set(Self, Mode, Bool) -> Unit
 
-pub struct ModeTag {
-  raw : UInt16
-} derive(Eq, @debug.Debug)
+type ModeTag derive(Eq, @debug.Debug)
 pub fn ModeTag::ansi(Self) -> Bool
 pub fn ModeTag::raw(Self) -> UInt16
 pub fn ModeTag::value(Self) -> UInt16
@@ -432,51 +382,7 @@ pub enum Name {
 pub fn Name::code(Self) -> Byte
 pub fn Name::default_rgb(Self) -> RGB
 
-pub struct OscParser {
-  mut state : OscParserState
-  mut capturing : Bool
-  mut buffer : Array[Byte]
-  mut command : Command
-} derive(@debug.Debug)
-pub fn OscParser::deinit(Self) -> Unit
-pub fn OscParser::end(Self, Byte?) -> Command?
-pub fn OscParser::new() -> Self
-pub fn OscParser::next(Self, Byte) -> Unit
-pub fn OscParser::reset(Self) -> Unit
-
 type OscParserState derive(Eq, @debug.Debug)
-
-pub struct Parser {
-  mut state : ParserState
-  mut intermediates : Array[Byte]
-  mut params : Array[UInt16]
-  mut params_sep : SepList
-  mut param_acc : UInt16
-  mut param_acc_idx : Int
-  osc_parser : OscParser
-} derive(@debug.Debug)
-pub fn Parser::clear(Self) -> Unit
-pub fn Parser::deinit(Self) -> Unit
-pub fn Parser::new() -> Self
-pub fn Parser::next(Self, Byte) -> FixedArray[Action?]
-
-pub enum ParserState {
-  Ground
-  Escape
-  EscapeIntermediate
-  CsiEntry
-  CsiIntermediate
-  CsiParam
-  CsiIgnore
-  DcsEntry
-  DcsParam
-  DcsIntermediate
-  DcsPassthrough
-  DcsIgnore
-  OscString
-  SosPmApcString
-} derive(Eq, @debug.Debug)
-pub fn ParserState::ordinal(Self) -> Int
 
 pub enum Point {
   Active(Coordinate)
@@ -557,14 +463,6 @@ pub struct SecondaryDeviceAttributes {
 pub fn SecondaryDeviceAttributes::default() -> Self
 pub fn SecondaryDeviceAttributes::encode(Self) -> Bytes
 
-pub struct SepList {
-  mut bits : UInt64
-} derive(Eq, @debug.Debug)
-pub fn SepList::count(Self) -> Int
-pub fn SepList::init_empty() -> Self
-pub fn SepList::is_set(Self, Int) -> Bool
-pub fn SepList::set(Self, Int) -> Unit
-
 pub struct Size {
   rows : UInt16
   columns : UInt16
@@ -626,26 +524,6 @@ pub struct TertiaryDeviceAttributes {
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
 
-pub struct Transition {
-  state : ParserState
-  action : TransitionAction
-} derive(Eq, @debug.Debug)
-
-pub enum TransitionAction {
-  None
-  Ignore
-  Print
-  Execute
-  Collect
-  Param
-  EscDispatch
-  CsiDispatch
-  Put
-  OscPut
-  ApcPut
-} derive(Eq, @debug.Debug)
-pub fn TransitionAction::ordinal(Self) -> Int
-
 pub struct Utf8Decoder {
   mut accumulator : UInt
   mut state : Byte
@@ -654,8 +532,6 @@ pub fn Utf8Decoder::new() -> Self
 pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)
 
 // Type aliases
-pub type ActionList = FixedArray[Action?]
-
 pub type CellCountInt = UInt16
 
 pub type CharsetTable = ReadOnlyArray[UInt16]

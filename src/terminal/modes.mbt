@@ -44,7 +44,7 @@ pub enum Mode {
 } derive(Eq, Debug)
 
 ///|
-pub struct ModeTag {
+struct ModeTag {
   raw : UInt16
 } derive(Eq, Debug)
 
@@ -181,7 +181,7 @@ pub fn mode_from_int(value : UInt16, ansi : Bool) -> Mode? {
 }
 
 ///|
-pub struct ModePacked {
+struct ModePacked {
   mut bits : UInt64
 } derive(Eq, Debug)
 
@@ -273,7 +273,7 @@ pub fn ModePacked::set(self : ModePacked, mode : Mode, value : Bool) -> Unit {
 }
 
 ///|
-pub struct ModeState {
+struct ModeState {
   mut values : ModePacked
   mut saved : ModePacked
   default : ModePacked
@@ -340,7 +340,7 @@ pub struct Report {
 } derive(Eq, Debug)
 
 ///|
-pub let report_max_size : Int = b"\x1B[?32767;4$y".length()
+let report_max_size : Int = b"\x1B[?32767;4$y".length()
 
 ///|
 pub fn Report::encode(self : Report) -> Bytes {
