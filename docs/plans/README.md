@@ -18,6 +18,7 @@ Required contents:
 8. Commit scope
 9. Review findings
 10. Audit/result notes
+11. Public API visibility findings when `.mbti` or `pub` surface changed
 
 Coverage findings should record:
 
@@ -25,6 +26,12 @@ Coverage findings should record:
 - which touched files still had uncovered lines, if any
 - whether those lines were covered in the task or intentionally deferred with
   reviewer signoff
+
+Public API visibility findings should record:
+
+- whether `.mbti` was reviewed
+- which public items were intentionally added or changed
+- whether any touched-area public internals were identified as temporary debt
 
 These files are meant to support both:
 

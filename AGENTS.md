@@ -107,3 +107,29 @@
 
 - Review any `.mbti` or formatting churn and confirm it is intentional before
   handoff or commit.
+
+## Public API audit
+
+- Treat public API shape as a quality gate, not a cleanup task for later.
+
+- During review of MoonBit source changes, inspect the `.mbti` diff and ask
+  whether each public item has an external consumer story.
+
+- Public mutable fields are banned unless caller mutation is an intentional and
+  documented part of the API contract.
+
+- Parser state machines, transition tables, accumulators, parse buffers,
+  embedded helper parsers, and other implementation-detail structs or enums are
+  internal by default. Do not expose them publicly just because tests or the
+  current translation scaffolding can see them.
+
+- White-box tests are not justification for public visibility. Prefer keeping
+  internals package-private and testing them from `_wbtest.mbt` files.
+
+- If a task must temporarily expose internals to unblock translation, record
+  that exposure as temporary debt in the task subplan and add a follow-up task
+  to remove it.
+
+- Reviewer prompts for delegated review should explicitly ask for public API
+  quality findings, including pre-existing unjustified public surface in the
+  touched area.

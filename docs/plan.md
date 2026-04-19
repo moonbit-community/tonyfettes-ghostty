@@ -55,9 +55,16 @@ end in a green state.
   - `moon fmt` is run
   - `moon info` is run
   - any formatter/interface churn is reviewed and intentional
+  - public API visibility is reviewed against `pkg.generated.mbti`
 - If touched executable lines remain uncovered, the task stays open until the
   gap is either covered by tests or explicitly recorded in the task audit with
   reviewer signoff.
+- Public API review is part of the gate:
+  - every `pub` item touched or newly exposed must have an external consumer
+    story
+  - public mutable fields require explicit justification
+  - pre-existing but unjustified public surface in the touched area must be
+    reported as a finding, even if the current patch did not introduce it
 - Docs-only tasks do not require MoonBit validation, but they still require a
   review pass for consistency with `docs/architecture.md`, this plan, and
   `AGENTS.md`.
@@ -119,8 +126,8 @@ Default flow for each non-trivial delegated task:
    mapped
 3. worker creates or updates its subplan under `docs/plans/`
 4. worker implements and runs validation
-5. reviewer checks the boundary, validation evidence, and coverage findings for
-   the touched files
+5. reviewer checks the boundary, validation evidence, coverage findings for the
+   touched files, and the public API visibility of the touched surface
 6. if issues are found, resume the worker and keep the task `active`
 7. only then update this plan and land the commit
 
