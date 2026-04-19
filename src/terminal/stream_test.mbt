@@ -171,11 +171,46 @@ test "stream/csi placeholder returns to ground" {
 }
 
 ///|
-test "stream/osc placeholder returns to ground" {
+test "stream/osc dispatch subset" {
   let (stream, actions, _) = new_stream()
-  stream.next_slice(b"\x1B]0;hi\x07z")
+  stream.next_slice(b"\x1B]0;hi\x07z\x1B]2;ok\x1B\\!")
+  guard actions ==
+    [
+      StreamWindowTitle("hi"),
+      StreamPrint(b'z'.to_uint()),
+      StreamWindowTitle("ok"),
+      StreamPrint(b'!'.to_uint()),
+    ] else {
+    fail("expected window-title dispatch and later printable text")
+  }
+}
+
+///|
+test "stream/osc report pwd mouse shape and color operation subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B]7;file:///tmp\x07\x1B]22;pointer\x07\x1B]4;1;?\x1B\\",
+  )
+  guard actions ==
+    [
+      StreamReportPwd("file:///tmp"),
+      StreamMouseShape(MouseShape::Pointer),
+      StreamColorOperation(
+        ColorCommand::new(Osc4, [Query(Palette(1))], Terminator::St),
+      ),
+    ] else {
+    fail("expected report-pwd, mouse-shape, and color-operation actions")
+  }
+}
+
+///|
+test "stream/osc ignored and invalid commands stay silent" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B]1;icon\x07\x1B]22;nosuchshape\x07\x1B]99;ignored\x07z",
+  )
   guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected text after OSC placeholder dispatch")
+    fail("expected ignored OSC forms to stay silent")
   }
 }
 

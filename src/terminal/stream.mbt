@@ -98,6 +98,10 @@ pub(all) enum StreamAction {
   StreamTitlePush(UInt16)
   StreamTitlePop(UInt16)
   StreamXtversion
+  StreamWindowTitle(String)
+  StreamReportPwd(String)
+  StreamMouseShape(MouseShape)
+  StreamColorOperation(ColorCommand)
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
@@ -725,8 +729,22 @@ fn[H : StreamHandler] Stream::esc_dispatch(
 }
 
 ///|
-fn[H] Stream::osc_dispatch(self : Stream[H], _command : Command) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::osc_dispatch(
+  self : Stream[H],
+  command : Command,
+) -> Unit {
+  match command {
+    ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
+    ChangeWindowIcon(_) | Invalid => ()
+    ReportPwd(url) => self.emit(StreamReportPwd(url))
+    MouseShape(value) =>
+      match MouseShape::from_string(value) {
+        Some(shape) => self.emit(StreamMouseShape(shape))
+        None => ()
+      }
+    ColorOperation(color_command) =>
+      self.emit(StreamColorOperation(color_command))
+  }
 }
 
 ///|
