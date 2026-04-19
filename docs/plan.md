@@ -173,7 +173,7 @@ Phase 0 gate:
 ### Phase 1: Foundations
 
 Gate: `[P]` after Phase 0  
-Status: `active`
+Status: `done`
 
 Every lane in this phase must end with compiling modules, passing tests, and
 format/interface checks. Tests land with the code they validate.
@@ -192,14 +192,14 @@ Phase 1 gate:
 ### Phase 2: Parser prerequisites
 
 Gate: `[P]` after Phase 1  
-Status: `active`
+Status: `done`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P2.0 | done | parser-core contracts | phase checklist in this doc and/or subplans | P1.A, P1.B, P1.C | none | `[E]` | exact invariants for UTF-8, parse table, and OSC core recorded before porting | doc review | `[R]` main | `docs` |
 | P2.A | done | `UTF8Decoder.zig` | UTF-8 decoder module + translated tests | P2.0 | P2.B, P2.C | `[W]` | retry-on-error semantics preserved and tests pass in the same commit batch | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
 | P2.B | done | `parse_table.zig` | table-driven parse table module + smoke tests | P2.0 | P2.A, P2.C | `[W]` | generated/table-driven structure preserved and usable by `Parser` | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
-| P2.C | todo | minimal `osc.zig` core needed by `Parser` | OSC parser core scaffold + direct tests | P2.0, P1.A, P1.B | P2.A, P2.B | `[W]` | `Parser` dependency on `osc.Parser` is unblocked without red commits | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
+| P2.C | done | minimal `osc.zig` core needed by `Parser` | OSC parser core scaffold + direct tests | P2.0, P1.A, P1.B | P2.A, P2.B | `[W]` | `Parser` dependency on `osc.Parser` is unblocked without red commits | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
 
 Phase 2 gate:
 

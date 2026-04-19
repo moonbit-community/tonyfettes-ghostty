@@ -46,6 +46,8 @@ pub fn status_line_type_from_int(UInt16) -> StatusLineType?
 
 pub fn table(Charset) -> ReadOnlyArray[UInt16]
 
+pub fn terminator_init(Byte?) -> Terminator
+
 pub fn transition_action_from_int(Int) -> TransitionAction?
 
 pub fn transition_for(Byte, ParserState) -> Transition
@@ -87,9 +89,68 @@ pub enum Charset {
   DecSpecial
 } derive(Eq, @debug.Debug)
 
+pub struct ColorCommand {
+  op : ColorOperation
+  requests : Array[ColorRequest]
+  terminator : Terminator
+} derive(Eq, @debug.Debug)
+
+pub enum ColorOperation {
+  Osc4
+  Osc5
+  Osc10
+  Osc11
+  Osc12
+  Osc13
+  Osc14
+  Osc15
+  Osc16
+  Osc17
+  Osc18
+  Osc19
+  Osc104
+  Osc110
+  Osc111
+  Osc112
+  Osc113
+  Osc114
+  Osc115
+  Osc116
+  Osc117
+  Osc118
+  Osc119
+} derive(Eq, @debug.Debug)
+
+pub enum ColorRequest {
+  Set(ColoredTarget)
+  Query(ColorTarget)
+  Reset(ColorTarget)
+  ResetPalette
+} derive(Eq, @debug.Debug)
+
 pub enum ColorScheme {
   Light
   Dark
+} derive(Eq, @debug.Debug)
+
+pub enum ColorTarget {
+  Palette(Byte)
+  Special(Special)
+  Dynamic(Dynamic)
+} derive(Eq, @debug.Debug)
+
+pub struct ColoredTarget {
+  target : ColorTarget
+  color : RGB
+} derive(Eq, @debug.Debug)
+
+pub enum Command {
+  Invalid
+  ChangeWindowTitle(String)
+  ChangeWindowIcon(String)
+  ReportPwd(String)
+  MouseShape(String)
+  ColorOperation(ColorCommand)
 } derive(Eq, @debug.Debug)
 
 pub enum ConformanceLevel {
@@ -339,6 +400,20 @@ pub enum Name {
 pub fn Name::code(Self) -> Byte
 pub fn Name::default_rgb(Self) -> RGB
 
+pub struct OscParser {
+  mut state : OscParserState
+  mut capturing : Bool
+  mut buffer : Array[Byte]
+  mut command : Command
+} derive(@debug.Debug)
+pub fn OscParser::deinit(Self) -> Unit
+pub fn OscParser::end(Self, Byte?) -> Command?
+pub fn OscParser::new() -> Self
+pub fn OscParser::next(Self, Byte) -> Unit
+pub fn OscParser::reset(Self) -> Unit
+
+type OscParserState derive(Eq, @debug.Debug)
+
 pub enum ParserState {
   Ground
   Escape
@@ -484,6 +559,11 @@ pub enum Tag {
   Viewport
   Screen
   History
+} derive(Eq, @debug.Debug)
+
+pub enum Terminator {
+  St
+  Bel
 } derive(Eq, @debug.Debug)
 
 pub struct TertiaryDeviceAttributes {
