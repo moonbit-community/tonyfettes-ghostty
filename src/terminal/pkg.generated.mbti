@@ -143,6 +143,11 @@ pub(all) enum Command {
   ColorOperation(ColorCommand)
 } derive(Eq, @debug.Debug)
 
+pub(all) struct ConfigureCharsetAction {
+  slot : Slots
+  charset : Charset
+} derive(Eq, @debug.Debug)
+
 pub(all) enum ConformanceLevel {
   Vt100
   Vt132
@@ -164,6 +169,10 @@ type Coordinate derive(Eq, @debug.Debug)
 pub fn Coordinate::new(UInt16, UInt) -> Self
 pub fn Coordinate::x(Self) -> UInt16
 pub fn Coordinate::y(Self) -> UInt
+
+pub(all) struct CursorMovement(UInt16) derive(Eq, @debug.Debug)
+#deprecated
+pub fn CursorMovement::inner(Self) -> UInt16
 
 pub(all) enum CursorStyle {
   Default
@@ -517,6 +526,22 @@ pub(all) enum StreamAction {
   StreamCarriageReturn
   StreamEnquiry
   StreamInvokeCharset(InvokeCharsetAction)
+  StreamConfigureCharset(ConfigureCharsetAction)
+  StreamSaveCursor
+  StreamRestoreCursor
+  StreamSetMode(Mode)
+  StreamResetMode(Mode)
+  StreamCursorRight(CursorMovement)
+  StreamEraseDisplayBelow(Bool)
+  StreamEraseDisplayAbove(Bool)
+  StreamEraseDisplayComplete(Bool)
+  StreamEraseDisplayScrollback(Bool)
+  StreamEraseDisplayScrollComplete(Bool)
+  StreamEraseLineRight(Bool)
+  StreamEraseLineLeft(Bool)
+  StreamEraseLineComplete(Bool)
+  StreamEraseLineRightUnlessPendingWrap(Bool)
+  StreamCursorStyle(CursorStyle)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Style {

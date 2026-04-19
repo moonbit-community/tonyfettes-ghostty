@@ -6,6 +6,15 @@ pub(all) struct InvokeCharsetAction {
 } derive(Eq, Debug)
 
 ///|
+pub(all) struct ConfigureCharsetAction {
+  slot : Slots
+  charset : Charset
+} derive(Eq, Debug)
+
+///|
+pub(all) struct CursorMovement(UInt16) derive(Eq, Debug)
+
+///|
 pub(all) enum StreamAction {
   StreamPrint(UInt)
   StreamBell
@@ -15,6 +24,22 @@ pub(all) enum StreamAction {
   StreamCarriageReturn
   StreamEnquiry
   StreamInvokeCharset(InvokeCharsetAction)
+  StreamConfigureCharset(ConfigureCharsetAction)
+  StreamSaveCursor
+  StreamRestoreCursor
+  StreamSetMode(Mode)
+  StreamResetMode(Mode)
+  StreamCursorRight(CursorMovement)
+  StreamEraseDisplayBelow(Bool)
+  StreamEraseDisplayAbove(Bool)
+  StreamEraseDisplayComplete(Bool)
+  StreamEraseDisplayScrollback(Bool)
+  StreamEraseDisplayScrollComplete(Bool)
+  StreamEraseLineRight(Bool)
+  StreamEraseLineLeft(Bool)
+  StreamEraseLineComplete(Bool)
+  StreamEraseLineRightUnlessPendingWrap(Bool)
+  StreamCursorStyle(CursorStyle)
 } derive(Eq, Debug)
 
 ///|
@@ -132,6 +157,11 @@ pub fn[H : StreamHandler] Stream::next(self : Stream[H], byte : Byte) -> Unit {
 
 ///|
 fn[H : StreamHandler] Stream::next_utf8(self : Stream[H], byte : Byte) -> Unit {
+  if self.utf8decoder.state == AcceptState && byte >= 0x80 && byte <= 0x9F {
+    self.execute(byte)
+    return
+  }
+
   let (value, consumed) = self.utf8decoder.next(byte)
   if value is Some(codepoint) {
     self.handle_codepoint(codepoint)
@@ -202,6 +232,11 @@ fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit 
 
 ///|
 fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
+  if byte > 0x7F {
+    self.esc_dispatch({ intermediates: [], final_byte: byte - 0x40 })
+    return
+  }
+
   match c0_from_byte(byte) {
     Some(Nul) | Some(Soh) | Some(Stx) => ()
     Some(Enq) => self.emit(StreamEnquiry)
@@ -231,13 +266,123 @@ fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
 }
 
 ///|
-fn[H] Stream::csi_dispatch(self : Stream[H], _csi : Csi) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::csi_dispatch(
+  self : Stream[H],
+  _csi : Csi,
+) -> Unit {
+  match _csi.final_byte {
+    b'C' =>
+      if _csi.intermediates == [] {
+        let value = default_single_param(_csi.params)
+        if value is Some(value) {
+          self.emit(StreamCursorRight(CursorMovement(value)))
+        }
+      }
+    b'J' =>
+      if erase_protected(_csi.intermediates) is Some(is_protected) {
+        match erase_display_mode(_csi.params) {
+          Some(0) => self.emit(StreamEraseDisplayBelow(is_protected))
+          Some(1) => self.emit(StreamEraseDisplayAbove(is_protected))
+          Some(2) => self.emit(StreamEraseDisplayComplete(is_protected))
+          Some(3) => self.emit(StreamEraseDisplayScrollback(is_protected))
+          Some(22) => self.emit(StreamEraseDisplayScrollComplete(is_protected))
+          None => ()
+          _ => ()
+        }
+      }
+    b'K' =>
+      if erase_protected(_csi.intermediates) is Some(is_protected) {
+        match erase_line_mode(_csi.params) {
+          Some(0) => self.emit(StreamEraseLineRight(is_protected))
+          Some(1) => self.emit(StreamEraseLineLeft(is_protected))
+          Some(2) => self.emit(StreamEraseLineComplete(is_protected))
+          Some(4) =>
+            self.emit(StreamEraseLineRightUnlessPendingWrap(is_protected))
+          None => ()
+          _ => ()
+        }
+      }
+    b'h' =>
+      if mode_ansi(_csi.intermediates) is Some(ansi_mode) {
+        for value in _csi.params {
+          if mode_from_int(value, ansi_mode) is Some(mode) {
+            self.emit(StreamSetMode(mode))
+          }
+        }
+      }
+    b'l' =>
+      if mode_ansi(_csi.intermediates) is Some(ansi_mode) {
+        for value in _csi.params {
+          if mode_from_int(value, ansi_mode) is Some(mode) {
+            self.emit(StreamResetMode(mode))
+          }
+        }
+      }
+    b'q' =>
+      if _csi.intermediates == [b' '] {
+        match _csi.params {
+          [] => self.emit(StreamCursorStyle(CursorStyle::Default))
+          [value] =>
+            if cursor_style_from_int(value.to_int()) is Some(style) {
+              self.emit(StreamCursorStyle(style))
+            }
+          _ => ()
+        }
+      }
+    _ => ()
+  }
 }
 
 ///|
-fn[H] Stream::esc_dispatch(self : Stream[H], _esc : Esc) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::esc_dispatch(
+  self : Stream[H],
+  _esc : Esc,
+) -> Unit {
+  match _esc.final_byte {
+    b'B' => self.configure_charset(_esc.intermediates, Charset::Ascii)
+    b'A' => self.configure_charset(_esc.intermediates, Charset::British)
+    b'0' => self.configure_charset(_esc.intermediates, Charset::DecSpecial)
+    b'7' => if _esc.intermediates == [] { self.emit(StreamSaveCursor) }
+    b'8' => if _esc.intermediates == [] { self.emit(StreamRestoreCursor) }
+    b'N' =>
+      if _esc.intermediates == [] {
+        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G2, true)
+      }
+    b'O' =>
+      if _esc.intermediates == [] {
+        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G3, true)
+      }
+    b'n' =>
+      if _esc.intermediates == [] {
+        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G2, false)
+      }
+    b'o' =>
+      if _esc.intermediates == [] {
+        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G3, false)
+      }
+    b'~' =>
+      if _esc.intermediates == [] {
+        self.emit_invoke_charset(ActiveSlot::Gr, Slots::G1, false)
+      }
+    b'}' =>
+      if _esc.intermediates == [] {
+        self.emit_invoke_charset(ActiveSlot::Gr, Slots::G2, false)
+      }
+    b'|' =>
+      if _esc.intermediates == [] {
+        self.emit_invoke_charset(ActiveSlot::Gr, Slots::G3, false)
+      }
+    b'=' =>
+      if _esc.intermediates == [] {
+        self.emit(StreamSetMode(Mode::KeypadKeys))
+      }
+    b'>' =>
+      if _esc.intermediates == [] {
+        self.emit(StreamResetMode(Mode::KeypadKeys))
+      }
+    b'\\' => ()
+    _ => ()
+  }
 }
 
 ///|
@@ -273,4 +418,74 @@ fn[H] Stream::apc_put(self : Stream[H], _value : Byte) -> Unit {
 ///|
 fn[H] Stream::apc_end(self : Stream[H]) -> Unit {
   ignore(self)
+}
+
+///|
+fn[H : StreamHandler] Stream::emit_invoke_charset(
+  self : Stream[H],
+  bank : ActiveSlot,
+  charset : Slots,
+  locking : Bool,
+) -> Unit {
+  self.emit(StreamInvokeCharset({ bank, charset, locking }))
+}
+
+///|
+fn[H : StreamHandler] Stream::configure_charset(
+  self : Stream[H],
+  intermediates : Array[Byte],
+  charset : Charset,
+) -> Unit {
+  match intermediates {
+    [b'('] => self.emit(StreamConfigureCharset({ slot: Slots::G0, charset }))
+    [b')'] => self.emit(StreamConfigureCharset({ slot: Slots::G1, charset }))
+    [b'*'] => self.emit(StreamConfigureCharset({ slot: Slots::G2, charset }))
+    [b'+'] => self.emit(StreamConfigureCharset({ slot: Slots::G3, charset }))
+    _ => ()
+  }
+}
+
+///|
+fn default_single_param(params : Array[UInt16]) -> UInt16? {
+  match params {
+    [] => Some(1)
+    [value] => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn erase_protected(intermediates : Array[Byte]) -> Bool? {
+  match intermediates {
+    [] => Some(false)
+    [b'?'] => Some(true)
+    _ => None
+  }
+}
+
+///|
+fn erase_display_mode(params : Array[UInt16]) -> UInt16? {
+  match params {
+    [] => Some(0)
+    [value] => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn erase_line_mode(params : Array[UInt16]) -> UInt16? {
+  match params {
+    [] => Some(0)
+    [value] => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn mode_ansi(intermediates : Array[Byte]) -> Bool? {
+  match intermediates {
+    [] => Some(true)
+    [b'?'] => Some(false)
+    _ => None
+  }
 }

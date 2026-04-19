@@ -94,8 +94,12 @@ test "stream/c0 controls map to base actions" {
 test "stream/ignored escape sequence does not block later text" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B(Bz")
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected later text after ignored escape")
+  guard actions ==
+    [
+      StreamConfigureCharset({ slot: Slots::G0, charset: Charset::Ascii }),
+      StreamPrint(b'z'.to_uint()),
+    ] else {
+    fail("expected configured charset before later text")
   }
 }
 
@@ -188,6 +192,182 @@ test "stream/apc placeholder returns to ground" {
   stream.next_slice(b"\x1B_a\x1B\\z")
   guard actions == [StreamPrint(b'z'.to_uint())] else {
     fail("expected text after APC placeholder dispatch")
+  }
+}
+
+///|
+test "stream/esc configure charset subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B(B\x1B)A\x1B*0\x1B+B\x1B-B")
+  guard actions ==
+    [
+      StreamConfigureCharset({ slot: Slots::G0, charset: Charset::Ascii }),
+      StreamConfigureCharset({ slot: Slots::G1, charset: Charset::British }),
+      StreamConfigureCharset({ slot: Slots::G2, charset: Charset::DecSpecial }),
+      StreamConfigureCharset({ slot: Slots::G3, charset: Charset::Ascii }),
+    ] else {
+    fail("expected charset configuration subset")
+  }
+}
+
+///|
+test "stream/esc save restore and keypad mode" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B7\x1B8\x1B=\x1B>\x1B(7")
+  guard actions ==
+    [
+      StreamSaveCursor,
+      StreamRestoreCursor,
+      StreamSetMode(Mode::KeypadKeys),
+      StreamResetMode(Mode::KeypadKeys),
+    ] else {
+    fail("expected save/restore cursor and keypad mode actions")
+  }
+}
+
+///|
+test "stream/esc invoke charset subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1BN\x1BO\x1Bn\x1Bo\x1B~\x1B}\x1B|")
+  guard actions ==
+    [
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gl,
+        charset: Slots::G2,
+        locking: true,
+      }),
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gl,
+        charset: Slots::G3,
+        locking: true,
+      }),
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gl,
+        charset: Slots::G2,
+        locking: false,
+      }),
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gl,
+        charset: Slots::G3,
+        locking: false,
+      }),
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gr,
+        charset: Slots::G1,
+        locking: false,
+      }),
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gr,
+        charset: Slots::G2,
+        locking: false,
+      }),
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gr,
+        charset: Slots::G3,
+        locking: false,
+      }),
+    ] else {
+    fail("expected ESC invoke-charset subset")
+  }
+}
+
+///|
+test "stream/c1 execute delegates through esc dispatch" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice([0x8E])
+  guard actions ==
+    [
+      StreamInvokeCharset({
+        bank: ActiveSlot::Gl,
+        charset: Slots::G2,
+        locking: true,
+      }),
+    ] else {
+    fail("expected C1 byte to route through ESC dispatch")
+  }
+}
+
+///|
+test "stream/unknown escape still returns to ground" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B%Gz")
+  guard actions == [StreamPrint(b'z'.to_uint())] else {
+    fail("expected printable text after unknown escape")
+  }
+}
+
+///|
+test "stream/csi cursor right subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[C\x1B[5C\x1B[5;4C\x1B[?3C")
+  guard actions ==
+    [StreamCursorRight(CursorMovement(1)), StreamCursorRight(CursorMovement(5))] else {
+    fail("expected cursor-right subset")
+  }
+}
+
+///|
+test "stream/csi set and reset mode subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[?6h\x1B[?6l\x1B[4h\x1B[4l\x1B[>5h")
+  guard actions ==
+    [
+      StreamSetMode(Mode::Origin),
+      StreamResetMode(Mode::Origin),
+      StreamSetMode(Mode::Insert),
+      StreamResetMode(Mode::Insert),
+    ] else {
+    fail("expected SM/RM subset")
+  }
+}
+
+///|
+test "stream/csi erase display subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[?J\x1B[?1J\x1B[?2J\x1B[?3J\x1B[J\x1B[22J\x1B[99J\x1B[>0J\x1B[1;2J",
+  )
+  guard actions ==
+    [
+      StreamEraseDisplayBelow(true),
+      StreamEraseDisplayAbove(true),
+      StreamEraseDisplayComplete(true),
+      StreamEraseDisplayScrollback(true),
+      StreamEraseDisplayBelow(false),
+      StreamEraseDisplayScrollComplete(false),
+    ] else {
+    fail("expected erase-display subset")
+  }
+}
+
+///|
+test "stream/csi erase line subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[?K\x1B[?1K\x1B[K\x1B[2K\x1B[4K\x1B[99K\x1B[<1K\x1B[1;2K",
+  )
+  guard actions ==
+    [
+      StreamEraseLineRight(true),
+      StreamEraseLineLeft(true),
+      StreamEraseLineRight(false),
+      StreamEraseLineComplete(false),
+      StreamEraseLineRightUnlessPendingWrap(false),
+    ] else {
+    fail("expected erase-line subset")
+  }
+}
+
+///|
+test "stream/csi cursor style subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[ q\x1B[1 q\x1B[?0 q\x1B[q\x1B[1;2 q")
+  guard actions ==
+    [
+      StreamCursorStyle(CursorStyle::Default),
+      StreamCursorStyle(CursorStyle::BlinkingBlock),
+    ] else {
+    fail("expected cursor-style subset")
   }
 }
 
