@@ -252,6 +252,11 @@ pub(all) struct InvokeCharsetAction {
   locking : Bool
 } derive(Eq, @debug.Debug)
 
+pub(all) struct Margin {
+  top_left : UInt16
+  bottom_right : UInt16
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Mode {
   DisableKeyboard
   Insert
@@ -575,6 +580,10 @@ pub(all) enum StreamAction {
   StreamDeleteLines(UInt16)
   StreamScrollUp(UInt16)
   StreamScrollDown(UInt16)
+  StreamSaveMode(Mode)
+  StreamRestoreMode(Mode)
+  StreamTopAndBottomMargin(Margin)
+  StreamLeftAndRightMargin(Margin)
   StreamLeftAndRightMarginAmbiguous
   StreamMouseShiftCapture(Bool)
   StreamSizeReport(SizeReportStyle)

@@ -21,6 +21,12 @@ pub(all) struct CursorPosition {
 } derive(Eq, Debug)
 
 ///|
+pub(all) struct Margin {
+  top_left : UInt16
+  bottom_right : UInt16
+} derive(Eq, Debug)
+
+///|
 pub(all) enum StreamAction {
   StreamPrint(UInt)
   StreamPrintRepeat(UInt16)
@@ -67,6 +73,10 @@ pub(all) enum StreamAction {
   StreamDeleteLines(UInt16)
   StreamScrollUp(UInt16)
   StreamScrollDown(UInt16)
+  StreamSaveMode(Mode)
+  StreamRestoreMode(Mode)
+  StreamTopAndBottomMargin(Margin)
+  StreamLeftAndRightMargin(Margin)
   StreamLeftAndRightMarginAmbiguous
   StreamMouseShiftCapture(Bool)
   StreamSizeReport(SizeReportStyle)
@@ -441,6 +451,20 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           _ => ()
         }
       }
+    b'r' =>
+      match _csi.intermediates {
+        [] =>
+          if top_and_bottom_margin(_csi.params) is Some(margin) {
+            self.emit(StreamTopAndBottomMargin(margin))
+          }
+        [b'?'] =>
+          for value in _csi.params {
+            if mode_from_int(value, false) is Some(mode) {
+              self.emit(StreamRestoreMode(mode))
+            }
+          }
+        _ => ()
+      }
     b'W' =>
       match (_csi.intermediates, _csi.params) {
         ([], []) | ([], [0]) => self.emit(StreamTabSet)
@@ -497,6 +521,20 @@ fn[H : StreamHandler] Stream::csi_dispatch(
     b's' =>
       match (_csi.intermediates, _csi.params) {
         ([], []) => self.emit(StreamLeftAndRightMarginAmbiguous)
+        ([], [left]) =>
+          self.emit(
+            StreamLeftAndRightMargin({ top_left: left, bottom_right: 0 }),
+          )
+        ([], [left, right]) =>
+          self.emit(
+            StreamLeftAndRightMargin({ top_left: left, bottom_right: right }),
+          )
+        ([b'?'], _) =>
+          for value in _csi.params {
+            if mode_from_int(value, false) is Some(mode) {
+              self.emit(StreamSaveMode(mode))
+            }
+          }
         ([b'>'], []) | ([b'>'], [0]) =>
           self.emit(StreamMouseShiftCapture(false))
         ([b'>'], [1]) => self.emit(StreamMouseShiftCapture(true))
@@ -650,6 +688,16 @@ fn cursor_position(params : Array[UInt16]) -> CursorPosition? {
     [] => Some({ row: 1, col: 1 })
     [row] => Some({ row, col: 1 })
     [row, col] => Some({ row, col })
+    _ => None
+  }
+}
+
+///|
+fn top_and_bottom_margin(params : Array[UInt16]) -> Margin? {
+  match params {
+    [] => Some({ top_left: 0, bottom_right: 0 })
+    [top] => Some({ top_left: top, bottom_right: 0 })
+    [top, bottom] => Some({ top_left: top, bottom_right: bottom })
     _ => None
   }
 }

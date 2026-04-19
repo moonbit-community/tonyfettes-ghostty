@@ -442,7 +442,12 @@ test "stream/csi shift escape subset" {
 test "stream/csi save and restore cursor controls" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[s\x1B[u\x1B[1s")
-  guard actions == [StreamLeftAndRightMarginAmbiguous, StreamRestoreCursor] else {
+  guard actions ==
+    [
+      StreamLeftAndRightMarginAmbiguous,
+      StreamRestoreCursor,
+      StreamLeftAndRightMargin({ top_left: 1, bottom_right: 0 }),
+    ] else {
     fail("expected save/restore cursor control subset")
   }
 }
@@ -515,6 +520,54 @@ test "stream/csi editing count subset" {
       StreamPrintRepeat(6),
     ] else {
     fail("expected editing count subset")
+  }
+}
+
+///|
+test "stream/csi margins subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[r\x1B[3r\x1B[4;5r\x1B[s\x1B[6s\x1B[7;8s\x1B[1;2;3r\x1B[1;2;3s",
+  )
+  guard actions ==
+    [
+      StreamTopAndBottomMargin({ top_left: 0, bottom_right: 0 }),
+      StreamTopAndBottomMargin({ top_left: 3, bottom_right: 0 }),
+      StreamTopAndBottomMargin({ top_left: 4, bottom_right: 5 }),
+      StreamLeftAndRightMarginAmbiguous,
+      StreamLeftAndRightMargin({ top_left: 6, bottom_right: 0 }),
+      StreamLeftAndRightMargin({ top_left: 7, bottom_right: 8 }),
+    ] else {
+    fail("expected margin subset")
+  }
+}
+
+///|
+test "stream/csi save and restore mode subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[?6s\x1B[?69;7s\x1B[?6r\x1B[?69;7r\x1B[?9999s\x1B[?9999r",
+  )
+  guard actions ==
+    [
+      StreamSaveMode(Mode::Origin),
+      StreamSaveMode(Mode::EnableLeftAndRightMargin),
+      StreamSaveMode(Mode::Wraparound),
+      StreamRestoreMode(Mode::Origin),
+      StreamRestoreMode(Mode::EnableLeftAndRightMargin),
+      StreamRestoreMode(Mode::Wraparound),
+    ] else {
+    fail("expected save/restore mode subset")
+  }
+}
+
+///|
+test "stream/csi margin and mode invalid forms stay silent" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[>1r\x1B[>2s\x1B[1;2;3r\x1B[1;2;3s")
+  let expected_empty : Array[StreamAction] = []
+  guard actions == expected_empty else {
+    fail("expected invalid margin and mode forms to stay silent")
   }
 }
 
