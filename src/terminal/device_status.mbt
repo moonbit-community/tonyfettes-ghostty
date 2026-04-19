@@ -12,7 +12,7 @@ pub enum DeviceStatusRequest {
 } derive(Eq, Debug)
 
 ///|
-pub struct DeviceStatusTag {
+struct DeviceStatusTag {
   raw : UInt16
 } derive(Eq, Debug)
 

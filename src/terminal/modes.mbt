@@ -334,13 +334,23 @@ pub fn ReportState::code(self : ReportState) -> Int {
 }
 
 ///|
-pub struct Report {
+struct Report {
   tag : ModeTag
   state : ReportState
 } derive(Eq, Debug)
 
 ///|
 let report_max_size : Int = b"\x1B[?32767;4$y".length()
+
+///|
+pub fn Report::tag(self : Report) -> ModeTag {
+  self.tag
+}
+
+///|
+pub fn Report::state(self : Report) -> ReportState {
+  self.state
+}
 
 ///|
 pub fn Report::encode(self : Report) -> Bytes {

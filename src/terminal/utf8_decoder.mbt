@@ -29,7 +29,7 @@ const AcceptState : Byte = 0
 const RejectState : Byte = 12
 
 ///|
-pub struct Utf8Decoder {
+struct Utf8Decoder {
   mut accumulator : UInt
   mut state : Byte
 } derive(Eq, Debug)

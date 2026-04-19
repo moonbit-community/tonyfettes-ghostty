@@ -197,9 +197,7 @@ pub enum DeviceStatusRequest {
 } derive(Eq, @debug.Debug)
 pub fn DeviceStatusRequest::tag(Self) -> DeviceStatusTag
 
-pub struct DeviceStatusTag {
-  raw : UInt16
-} derive(Eq, @debug.Debug)
+type DeviceStatusTag derive(Eq, @debug.Debug)
 pub fn DeviceStatusTag::question(Self) -> Bool
 pub fn DeviceStatusTag::raw(Self) -> UInt16
 pub fn DeviceStatusTag::value(Self) -> UInt16
@@ -440,11 +438,10 @@ pub enum RenditionAspect {
 } derive(Eq, @debug.Debug)
 pub fn RenditionAspect::code(Self) -> UInt16
 
-pub struct Report {
-  tag : ModeTag
-  state : ReportState
-} derive(Eq, @debug.Debug)
+type Report derive(Eq, @debug.Debug)
 pub fn Report::encode(Self) -> Bytes
+pub fn Report::state(Self) -> ReportState
+pub fn Report::tag(Self) -> ModeTag
 
 pub enum ReportState {
   NotRecognized
@@ -524,10 +521,7 @@ pub struct TertiaryDeviceAttributes {
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
 
-pub struct Utf8Decoder {
-  mut accumulator : UInt
-  mut state : Byte
-} derive(Eq, @debug.Debug)
+type Utf8Decoder derive(Eq, @debug.Debug)
 pub fn Utf8Decoder::new() -> Self
 pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)
 

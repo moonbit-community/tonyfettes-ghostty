@@ -117,11 +117,11 @@ test "modes/state set get save restore" {
 test "modes/get report for known dec mode" {
   let state = ModeState::new()
   let report = state.get_report(mode_tag(1, false))
-  guard report.state == ReportState::Reset else {
+  guard report.state() == ReportState::Reset else {
     fail("expected reset report")
   }
-  assert_eq(report.tag.ansi(), false)
-  assert_eq(report.tag.value(), 1)
+  assert_eq(report.tag().ansi(), false)
+  assert_eq(report.tag().value(), 1)
 }
 
 ///|
@@ -129,13 +129,13 @@ test "modes/get report for known ansi mode and unknown mode" {
   let state = ModeState::new()
   state.set(Mode::Insert, true)
   let ansi_report = state.get_report(mode_tag(4, true))
-  guard ansi_report.state == ReportState::Set else {
+  guard ansi_report.state() == ReportState::Set else {
     fail("expected set report")
   }
-  assert_eq(ansi_report.tag.ansi(), true)
+  assert_eq(ansi_report.tag().ansi(), true)
 
   let unknown = state.get_report(mode_tag(9999, false))
-  guard unknown.state == ReportState::NotRecognized else {
+  guard unknown.state() == ReportState::NotRecognized else {
     fail("expected not recognized report")
   }
 }
