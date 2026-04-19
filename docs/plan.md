@@ -346,11 +346,12 @@ Phase 5 gate:
   [2026-04-19-p5-a-cursor-motion-and-editing.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-cursor-motion-and-editing.md),
   [2026-04-19-p5-a-margins-and-mode-save-restore.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-margins-and-mode-save-restore.md),
   [2026-04-19-p5-a-device-report-and-esc-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-device-report-and-esc-controls.md),
-  [2026-04-19-p5-a-sgr-and-modify-key-format.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-sgr-and-modify-key-format.md)
+  [2026-04-19-p5-a-sgr-and-modify-key-format.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-sgr-and-modify-key-format.md),
+  [2026-04-19-p5-a-kitty-keyboard.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-kitty-keyboard.md)
 
 Current remaining `P5.A` implementation slice:
 
-- `P5.A8` kitty keyboard protocol (`CSI u`)
+- none
 - then one docs-only `P5.A9` closeout parity audit
 
 ### Phase 6: Terminal application surface

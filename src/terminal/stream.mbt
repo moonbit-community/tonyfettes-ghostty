@@ -27,6 +27,9 @@ pub(all) struct Margin {
 } derive(Eq, Debug)
 
 ///|
+pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, Debug)
+
+///|
 pub(all) enum StreamAction {
   StreamPrint(UInt)
   StreamPrintRepeat(UInt16)
@@ -98,6 +101,12 @@ pub(all) enum StreamAction {
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
+  StreamKittyKeyboardQuery
+  StreamKittyKeyboardPush(KittyKeyboardFlags)
+  StreamKittyKeyboardPop(UInt16)
+  StreamKittyKeyboardSet(KittyKeyboardFlags)
+  StreamKittyKeyboardSetOr(KittyKeyboardFlags)
+  StreamKittyKeyboardSetNot(KittyKeyboardFlags)
 } derive(Eq, Debug)
 
 ///|
@@ -612,7 +621,24 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           _ => ()
         }
       }
-    b'u' => if _csi.intermediates == [] { self.emit(StreamRestoreCursor) }
+    b'u' =>
+      match _csi.intermediates {
+        [] => self.emit(StreamRestoreCursor)
+        [b'?'] => self.emit(StreamKittyKeyboardQuery)
+        [b'>'] =>
+          if kitty_keyboard_push_flags(_csi.params) is Some(flags) {
+            self.emit(StreamKittyKeyboardPush(flags))
+          }
+        [b'<'] =>
+          self.emit(
+            StreamKittyKeyboardPop(kitty_keyboard_pop_count(_csi.params)),
+          )
+        [b'='] =>
+          if kitty_keyboard_set_action(_csi.params) is Some(action) {
+            self.emit(action)
+          }
+        _ => ()
+      }
     b'@' =>
       if _csi.intermediates == [] {
         match insert_blanks_count(_csi.params) {
@@ -852,6 +878,48 @@ fn modify_key_format_action(params : Array[UInt16]) -> ModifyKeyFormat? {
     [0, _] => Some(ModifyKeyFormat::Legacy)
     [1, _] => Some(ModifyKeyFormat::CursorKeys)
     [2, _] => Some(ModifyKeyFormat::FunctionKeys)
+    _ => None
+  }
+}
+
+///|
+fn kitty_keyboard_flags(value : UInt16) -> KittyKeyboardFlags? {
+  if value <= 31 {
+    Some(KittyKeyboardFlags(value.to_byte()))
+  } else {
+    None
+  }
+}
+
+///|
+fn kitty_keyboard_push_flags(params : Array[UInt16]) -> KittyKeyboardFlags? {
+  match params {
+    [value] => kitty_keyboard_flags(value)
+    [] => Some(KittyKeyboardFlags(0))
+    _ => Some(KittyKeyboardFlags(0))
+  }
+}
+
+///|
+fn kitty_keyboard_pop_count(params : Array[UInt16]) -> UInt16 {
+  match params {
+    [value] => value
+    _ => 1
+  }
+}
+
+///|
+fn kitty_keyboard_set_action(params : Array[UInt16]) -> StreamAction? {
+  let flags = if params.length() >= 1 {
+    kitty_keyboard_flags(params[0])
+  } else {
+    Some(KittyKeyboardFlags(0))
+  }
+  let number : UInt16 = if params.length() >= 2 { params[1] } else { 1 }
+  match (flags, number) {
+    (Some(flags), 1) => Some(StreamKittyKeyboardSet(flags))
+    (Some(flags), 2) => Some(StreamKittyKeyboardSetOr(flags))
+    (Some(flags), 3) => Some(StreamKittyKeyboardSetNot(flags))
     _ => None
   }
 }

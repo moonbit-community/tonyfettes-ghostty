@@ -689,6 +689,53 @@ test "stream/csi modify key format invalid forms stay silent" {
 }
 
 ///|
+test "stream/csi kitty keyboard subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[?u\x1B[?1u\x1B[>u\x1B[>3u\x1B[<u\x1B[<5u\x1B[=u\x1B[=4u\x1B[=5;2u\x1B[=6;3u",
+  )
+  guard actions ==
+    [
+      StreamKittyKeyboardQuery,
+      StreamKittyKeyboardQuery,
+      StreamKittyKeyboardPush(KittyKeyboardFlags(0)),
+      StreamKittyKeyboardPush(KittyKeyboardFlags(3)),
+      StreamKittyKeyboardPop(1),
+      StreamKittyKeyboardPop(5),
+      StreamKittyKeyboardSet(KittyKeyboardFlags(0)),
+      StreamKittyKeyboardSet(KittyKeyboardFlags(4)),
+      StreamKittyKeyboardSetOr(KittyKeyboardFlags(5)),
+      StreamKittyKeyboardSetNot(KittyKeyboardFlags(6)),
+    ] else {
+    fail("expected CSI u kitty keyboard subset")
+  }
+}
+
+///|
+test "stream/csi kitty keyboard upstream tolerance subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[>1;9u\x1B[<1;9u\x1B[=7;2;99u")
+  guard actions ==
+    [
+      StreamKittyKeyboardPush(KittyKeyboardFlags(0)),
+      StreamKittyKeyboardPop(1),
+      StreamKittyKeyboardSetOr(KittyKeyboardFlags(7)),
+    ] else {
+    fail("expected CSI u tolerance subset")
+  }
+}
+
+///|
+test "stream/csi kitty keyboard invalid forms stay silent" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[>32u\x1B[=32u\x1B[=1;4u\x1B[!u")
+  let expected_empty : Array[StreamAction] = []
+  guard actions == expected_empty else {
+    fail("expected invalid CSI u forms to stay silent")
+  }
+}
+
+///|
 test "stream/csi size report subset" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[14t\x1B[16t\x1B[18t\x1B[21t")

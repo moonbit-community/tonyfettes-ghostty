@@ -252,6 +252,10 @@ pub(all) struct InvokeCharsetAction {
   locking : Bool
 } derive(Eq, @debug.Debug)
 
+pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
+#deprecated
+pub fn KittyKeyboardFlags::inner(Self) -> Byte
+
 pub(all) struct Margin {
   top_left : UInt16
   bottom_right : UInt16
@@ -653,6 +657,12 @@ pub(all) enum StreamAction {
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
+  StreamKittyKeyboardQuery
+  StreamKittyKeyboardPush(KittyKeyboardFlags)
+  StreamKittyKeyboardPop(UInt16)
+  StreamKittyKeyboardSet(KittyKeyboardFlags)
+  StreamKittyKeyboardSetOr(KittyKeyboardFlags)
+  StreamKittyKeyboardSetNot(KittyKeyboardFlags)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Style {
