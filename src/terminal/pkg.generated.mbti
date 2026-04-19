@@ -542,6 +542,13 @@ pub(all) enum StreamAction {
   StreamEraseLineComplete(Bool)
   StreamEraseLineRightUnlessPendingWrap(Bool)
   StreamCursorStyle(CursorStyle)
+  StreamTabSet
+  StreamTabClearCurrent
+  StreamTabClearAll
+  StreamTabReset
+  StreamInsertBlanks(UInt16)
+  StreamLeftAndRightMarginAmbiguous
+  StreamMouseShiftCapture(Bool)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Style {

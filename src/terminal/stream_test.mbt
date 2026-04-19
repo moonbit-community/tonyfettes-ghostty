@@ -372,6 +372,81 @@ test "stream/csi cursor style subset" {
 }
 
 ///|
+test "stream/csi tab control subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[W\x1B[0W\x1B[2W\x1B[5W\x1B[?2W\x1B[?5W\x1B[?1;2;3W")
+  guard actions ==
+    [
+      StreamTabSet,
+      StreamTabSet,
+      StreamTabClearCurrent,
+      StreamTabClearAll,
+      StreamTabReset,
+    ] else {
+    fail("expected tab-control subset")
+  }
+}
+
+///|
+test "stream/csi tab clear subset and overflow regression" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[0g\x1B[3g\x1B[388888888888888888888888888888888888g")
+  guard actions == [StreamTabClearCurrent, StreamTabClearAll] else {
+    fail("expected tab-clear subset")
+  }
+}
+
+///|
+test "stream/csi tab clear ignores empty and multi-param forms" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[g\x1B[1;2g\x1B[0g")
+  guard actions == [StreamTabClearCurrent] else {
+    fail("expected unsupported tab-clear forms to stay silent")
+  }
+}
+
+///|
+test "stream/csi insert blanks subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[42@\x1B[0@\x1B[?42@")
+  guard actions == [StreamInsertBlanks(42), StreamInsertBlanks(1)] else {
+    fail("expected insert-blanks subset")
+  }
+}
+
+///|
+test "stream/csi insert blanks defaults and ignores multi-param forms" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[@\x1B[1;2@\x1B[3@")
+  guard actions == [StreamInsertBlanks(1), StreamInsertBlanks(3)] else {
+    fail("expected default insert-blanks and ignored multi-param form")
+  }
+}
+
+///|
+test "stream/csi shift escape subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[>s\x1B[>0s\x1B[>1s\x1B[>2s\x1B[1 s")
+  guard actions ==
+    [
+      StreamMouseShiftCapture(false),
+      StreamMouseShiftCapture(false),
+      StreamMouseShiftCapture(true),
+    ] else {
+    fail("expected shift-escape subset")
+  }
+}
+
+///|
+test "stream/csi save and restore cursor controls" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[s\x1B[u\x1B[1s")
+  guard actions == [StreamLeftAndRightMarginAmbiguous, StreamRestoreCursor] else {
+    fail("expected save/restore cursor control subset")
+  }
+}
+
+///|
 test "stream/deinit delegates to handler" {
   let (stream, _, deinitialized) = new_stream()
   stream.deinit()

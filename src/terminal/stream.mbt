@@ -40,6 +40,13 @@ pub(all) enum StreamAction {
   StreamEraseLineComplete(Bool)
   StreamEraseLineRightUnlessPendingWrap(Bool)
   StreamCursorStyle(CursorStyle)
+  StreamTabSet
+  StreamTabClearCurrent
+  StreamTabClearAll
+  StreamTabReset
+  StreamInsertBlanks(UInt16)
+  StreamLeftAndRightMarginAmbiguous
+  StreamMouseShiftCapture(Bool)
 } derive(Eq, Debug)
 
 ///|
@@ -329,6 +336,39 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           _ => ()
         }
       }
+    b'W' =>
+      match (_csi.intermediates, _csi.params) {
+        ([], []) | ([], [0]) => self.emit(StreamTabSet)
+        ([], [2]) => self.emit(StreamTabClearCurrent)
+        ([], [5]) => self.emit(StreamTabClearAll)
+        ([b'?'], [5]) => self.emit(StreamTabReset)
+        _ => ()
+      }
+    b'g' =>
+      if _csi.intermediates == [] {
+        match tab_clear_mode(_csi.params) {
+          Some(0) => self.emit(StreamTabClearCurrent)
+          Some(3) => self.emit(StreamTabClearAll)
+          None => ()
+          _ => ()
+        }
+      }
+    b's' =>
+      match (_csi.intermediates, _csi.params) {
+        ([], []) => self.emit(StreamLeftAndRightMarginAmbiguous)
+        ([b'>'], []) | ([b'>'], [0]) =>
+          self.emit(StreamMouseShiftCapture(false))
+        ([b'>'], [1]) => self.emit(StreamMouseShiftCapture(true))
+        _ => ()
+      }
+    b'u' => if _csi.intermediates == [] { self.emit(StreamRestoreCursor) }
+    b'@' =>
+      if _csi.intermediates == [] {
+        match insert_blanks_count(_csi.params) {
+          Some(value) => self.emit(StreamInsertBlanks(value))
+          None => ()
+        }
+      }
     _ => ()
   }
 }
@@ -477,6 +517,23 @@ fn erase_line_mode(params : Array[UInt16]) -> UInt16? {
   match params {
     [] => Some(0)
     [value] => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn tab_clear_mode(params : Array[UInt16]) -> UInt16? {
+  match params {
+    [value] => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn insert_blanks_count(params : Array[UInt16]) -> UInt16? {
+  match params {
+    [] => Some(1)
+    [value] => if value == 0 { Some(1) } else { Some(value) }
     _ => None
   }
 }

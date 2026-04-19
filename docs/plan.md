@@ -325,7 +325,9 @@ each lane must include its own test batch and finish green.
 
 Phase 5 gate:
 
-- P5.1, P5.A, P5.B, and P5.C are `done`
+- P5.0 and P5.1 are `done`
+- P5.A is `active`
+- P5.B and P5.C are pending
 
 #### Phase 5 outputs
 
@@ -333,8 +335,9 @@ Phase 5 gate:
   [2026-04-19-p5-stream-contracts.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-stream-contracts.md)
 - Phase 5 driver-core implementation audit lives in:
   [2026-04-19-p5-1-stream-driver-core.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-1-stream-driver-core.md)
-- Active Phase 5A slice audit lives in:
-  [2026-04-19-p5-a-foundational-esc-csi.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-foundational-esc-csi.md)
+- Active Phase 5A slice audits live in:
+  [2026-04-19-p5-a-foundational-esc-csi.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-foundational-esc-csi.md),
+  [2026-04-19-p5-a-tab-and-cursor-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-tab-and-cursor-controls.md)
 
 ### Phase 6: Terminal application surface
 
