@@ -1,5 +1,5 @@
 ///|
-pub enum Slots {
+pub(all) enum Slots {
   G0
   G1
   G2
@@ -7,13 +7,13 @@ pub enum Slots {
 } derive(Eq, Debug)
 
 ///|
-pub enum ActiveSlot {
+pub(all) enum ActiveSlot {
   Gl
   Gr
 } derive(Eq, Debug)
 
 ///|
-pub enum Charset {
+pub(all) enum Charset {
   Utf8
   Ascii
   British

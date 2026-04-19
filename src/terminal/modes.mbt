@@ -1,5 +1,5 @@
 ///|
-pub enum Mode {
+pub(all) enum Mode {
   DisableKeyboard
   Insert
   SendReceiveMode
@@ -314,7 +314,7 @@ pub fn ModeState::restore(self : ModeState, mode : Mode) -> Bool {
 }
 
 ///|
-pub enum ReportState {
+pub(all) enum ReportState {
   NotRecognized
   Set
   Reset

@@ -1,5 +1,5 @@
 ///|
-pub enum C0 {
+pub(all) enum C0 {
   Nul
   Soh
   Stx
@@ -55,7 +55,7 @@ pub fn c0_from_byte(value : Byte) -> C0? {
 }
 
 ///|
-pub enum RenditionAspect {
+pub(all) enum RenditionAspect {
   Default
   Bold
   DefaultFg
@@ -84,7 +84,7 @@ pub fn rendition_aspect_from_int(value : UInt16) -> RenditionAspect? {
 }
 
 ///|
-pub enum CursorStyle {
+pub(all) enum CursorStyle {
   Default
   BlinkingBlock
   SteadyBlock
@@ -122,7 +122,7 @@ pub fn cursor_style_from_int(value : Int) -> CursorStyle? {
 }
 
 ///|
-pub enum StatusLineType {
+pub(all) enum StatusLineType {
   None
   Indicator
   HostWritable
@@ -148,7 +148,7 @@ pub fn status_line_type_from_int(value : UInt16) -> StatusLineType? {
 }
 
 ///|
-pub enum StatusDisplay {
+pub(all) enum StatusDisplay {
   Main
   StatusLine
 } derive(Eq, Debug)
@@ -171,7 +171,7 @@ pub fn status_display_from_int(value : Int) -> StatusDisplay? {
 }
 
 ///|
-pub enum ModifyKeyFormat {
+pub(all) enum ModifyKeyFormat {
   Legacy
   CursorKeys
   FunctionKeys
@@ -206,7 +206,7 @@ pub fn modify_key_format_from_int(value : Int) -> ModifyKeyFormat? {
 }
 
 ///|
-pub enum ProtectedMode {
+pub(all) enum ProtectedMode {
   Off
   Iso
   Dec

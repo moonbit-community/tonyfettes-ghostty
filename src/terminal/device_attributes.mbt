@@ -1,12 +1,12 @@
 ///|
-pub enum DeviceAttributeRequest {
+pub(all) enum DeviceAttributeRequest {
   Primary
   Secondary
   Tertiary
 } derive(Eq, Debug)
 
 ///|
-pub enum ConformanceLevel {
+pub(all) enum ConformanceLevel {
   Vt100
   Vt132
   Vt102
@@ -42,7 +42,7 @@ pub fn ConformanceLevel::code(self : ConformanceLevel) -> UInt16 {
 }
 
 ///|
-pub enum PrimaryDeviceAttributeFeature {
+pub(all) enum PrimaryDeviceAttributeFeature {
   Columns132
   Printer
   Regis
@@ -86,7 +86,7 @@ pub fn PrimaryDeviceAttributeFeature::code(
 }
 
 ///|
-pub enum DeviceType {
+pub(all) enum DeviceType {
   Vt100
   Vt220
   Vt240

@@ -1,11 +1,4 @@
 ///|
-fn encode_hex8(value : UInt) -> Bytes {
-  let buffer = @buffer.new(size_hint=8)
-  write_hex8(buffer, value)
-  buffer.contents()
-}
-
-///|
 test "device attributes/primary encodes defaults and features" {
   assert_eq(PrimaryDeviceAttributes::default().encode(), b"\x1B[?62;22c")
   assert_eq(
@@ -149,15 +142,4 @@ test "device attributes/code helpers cover shared aliases" {
   for entry in device_types {
     assert_eq(entry.0.code(), entry.1)
   }
-}
-
-///|
-test "device attributes/private hex helpers produce fixed width uppercase text" {
-  assert_eq(encode_hex8(0), b"00000000")
-  assert_eq(encode_hex8(0x1234), b"00001234")
-  assert_eq(encode_hex8(0x89ABCDEF), b"89ABCDEF")
-  assert_eq(hex_digit_upper(0), b'0')
-  assert_eq(hex_digit_upper(9), b'9')
-  assert_eq(hex_digit_upper(10), b'A')
-  assert_eq(hex_digit_upper(15), b'F')
 }

@@ -1,5 +1,5 @@
 ///|
-pub enum MouseEvent {
+pub(all) enum MouseEvent {
   None
   X10
   Normal
@@ -13,7 +13,7 @@ pub fn mouse_event_sends_motion(event : MouseEvent) -> Bool {
 }
 
 ///|
-pub enum MouseFormat {
+pub(all) enum MouseFormat {
   X10
   Utf8
   Sgr
@@ -22,7 +22,7 @@ pub enum MouseFormat {
 } derive(Eq, Debug)
 
 ///|
-pub enum MouseShape {
+pub(all) enum MouseShape {
   Default
   ContextMenu
   Help

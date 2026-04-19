@@ -50,12 +50,12 @@ pub(all) suberror ColorParseError {
 } derive(Eq, @debug.Debug)
 
 // Types and methods
-pub enum ActiveSlot {
+pub(all) enum ActiveSlot {
   Gl
   Gr
 } derive(Eq, @debug.Debug)
 
-pub enum C0 {
+pub(all) enum C0 {
   Nul
   Soh
   Stx
@@ -72,7 +72,7 @@ pub enum C0 {
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
 
-pub enum Charset {
+pub(all) enum Charset {
   Utf8
   Ascii
   British
@@ -85,7 +85,7 @@ pub fn ColorCommand::op(Self) -> ColorOperation
 pub fn ColorCommand::requests(Self) -> Array[ColorRequest]
 pub fn ColorCommand::terminator(Self) -> Terminator
 
-pub enum ColorOperation {
+pub(all) enum ColorOperation {
   Osc4
   Osc5
   Osc10
@@ -111,19 +111,19 @@ pub enum ColorOperation {
   Osc119
 } derive(Eq, @debug.Debug)
 
-pub enum ColorRequest {
+pub(all) enum ColorRequest {
   Set(ColoredTarget)
   Query(ColorTarget)
   Reset(ColorTarget)
   ResetPalette
 } derive(Eq, @debug.Debug)
 
-pub enum ColorScheme {
+pub(all) enum ColorScheme {
   Light
   Dark
 } derive(Eq, @debug.Debug)
 
-pub enum ColorTarget {
+pub(all) enum ColorTarget {
   Palette(Byte)
   Special(Special)
   Dynamic(Dynamic)
@@ -134,7 +134,7 @@ pub fn ColoredTarget::color(Self) -> RGB
 pub fn ColoredTarget::new(ColorTarget, RGB) -> Self
 pub fn ColoredTarget::target(Self) -> ColorTarget
 
-pub enum Command {
+pub(all) enum Command {
   Invalid
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
@@ -143,7 +143,7 @@ pub enum Command {
   ColorOperation(ColorCommand)
 } derive(Eq, @debug.Debug)
 
-pub enum ConformanceLevel {
+pub(all) enum ConformanceLevel {
   Vt100
   Vt132
   Vt102
@@ -165,7 +165,7 @@ pub fn Coordinate::new(UInt16, UInt) -> Self
 pub fn Coordinate::x(Self) -> UInt16
 pub fn Coordinate::y(Self) -> UInt
 
-pub enum CursorStyle {
+pub(all) enum CursorStyle {
   Default
   BlinkingBlock
   SteadyBlock
@@ -176,7 +176,7 @@ pub enum CursorStyle {
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::ordinal(Self) -> Int
 
-pub enum DeviceAttributeRequest {
+pub(all) enum DeviceAttributeRequest {
   Primary
   Secondary
   Tertiary
@@ -190,7 +190,7 @@ pub fn DeviceAttributes::primary(Self) -> PrimaryDeviceAttributes
 pub fn DeviceAttributes::secondary(Self) -> SecondaryDeviceAttributes
 pub fn DeviceAttributes::tertiary(Self) -> TertiaryDeviceAttributes
 
-pub enum DeviceStatusRequest {
+pub(all) enum DeviceStatusRequest {
   OperatingStatus
   CursorPosition
   ColorScheme
@@ -202,7 +202,7 @@ pub fn DeviceStatusTag::question(Self) -> Bool
 pub fn DeviceStatusTag::raw(Self) -> UInt16
 pub fn DeviceStatusTag::value(Self) -> UInt16
 
-pub enum DeviceType {
+pub(all) enum DeviceType {
   Vt100
   Vt220
   Vt240
@@ -217,7 +217,7 @@ pub enum DeviceType {
 } derive(Eq, @debug.Debug)
 pub fn DeviceType::code(Self) -> UInt16
 
-pub enum Dynamic {
+pub(all) enum Dynamic {
   Foreground
   Background
   Cursor
@@ -232,7 +232,7 @@ pub enum Dynamic {
 pub fn Dynamic::code(Self) -> UInt16
 pub fn Dynamic::next(Self) -> Self?
 
-pub enum Mode {
+pub(all) enum Mode {
   DisableKeyboard
   Insert
   SendReceiveMode
@@ -295,7 +295,7 @@ pub fn ModeTag::ansi(Self) -> Bool
 pub fn ModeTag::raw(Self) -> UInt16
 pub fn ModeTag::value(Self) -> UInt16
 
-pub enum ModifyKeyFormat {
+pub(all) enum ModifyKeyFormat {
   Legacy
   CursorKeys
   FunctionKeys
@@ -305,7 +305,7 @@ pub enum ModifyKeyFormat {
 } derive(Eq, @debug.Debug)
 pub fn ModifyKeyFormat::ordinal(Self) -> Int
 
-pub enum MouseEvent {
+pub(all) enum MouseEvent {
   None
   X10
   Normal
@@ -313,7 +313,7 @@ pub enum MouseEvent {
   Any
 } derive(Eq, @debug.Debug)
 
-pub enum MouseFormat {
+pub(all) enum MouseFormat {
   X10
   Utf8
   Sgr
@@ -321,7 +321,7 @@ pub enum MouseFormat {
   SgrPixels
 } derive(Eq, @debug.Debug)
 
-pub enum MouseShape {
+pub(all) enum MouseShape {
   Default
   ContextMenu
   Help
@@ -359,7 +359,7 @@ pub enum MouseShape {
 } derive(Eq, @debug.Debug)
 pub fn MouseShape::from_string(String) -> Self?
 
-pub enum Name {
+pub(all) enum Name {
   Black
   Red
   Green
@@ -382,7 +382,7 @@ pub fn Name::default_rgb(Self) -> RGB
 
 type OscParserState derive(Eq, @debug.Debug)
 
-pub enum Point {
+pub(all) enum Point {
   Active(Coordinate)
   Viewport(Coordinate)
   Screen(Coordinate)
@@ -390,7 +390,7 @@ pub enum Point {
 } derive(Eq, @debug.Debug)
 pub fn Point::coord(Self) -> Coordinate
 
-pub enum PrimaryDeviceAttributeFeature {
+pub(all) enum PrimaryDeviceAttributeFeature {
   Columns132
   Printer
   Regis
@@ -417,7 +417,7 @@ pub fn PrimaryDeviceAttributes::encode(Self) -> Bytes
 pub fn PrimaryDeviceAttributes::features(Self) -> ReadOnlyArray[PrimaryDeviceAttributeFeature]
 pub fn PrimaryDeviceAttributes::new(ConformanceLevel, ReadOnlyArray[PrimaryDeviceAttributeFeature]) -> Self
 
-pub enum ProtectedMode {
+pub(all) enum ProtectedMode {
   Off
   Iso
   Dec
@@ -430,7 +430,7 @@ pub fn RGB::new(Byte, Byte, Byte) -> Self
 pub fn RGB::parse(String) -> Self raise ColorParseError
 pub fn RGB::r(Self) -> Byte
 
-pub enum RenditionAspect {
+pub(all) enum RenditionAspect {
   Default
   Bold
   DefaultFg
@@ -443,7 +443,7 @@ pub fn Report::encode(Self) -> Bytes
 pub fn Report::state(Self) -> ReportState
 pub fn Report::tag(Self) -> ModeTag
 
-pub enum ReportState {
+pub(all) enum ReportState {
   NotRecognized
   Set
   Reset
@@ -467,14 +467,14 @@ pub fn Size::columns(Self) -> UInt16
 pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
 pub fn Size::rows(Self) -> UInt16
 
-pub enum Slots {
+pub(all) enum Slots {
   G0
   G1
   G2
   G3
 } derive(Eq, @debug.Debug)
 
-pub enum Special {
+pub(all) enum Special {
   Bold
   Underline
   Blink
@@ -483,34 +483,34 @@ pub enum Special {
 } derive(Eq, @debug.Debug)
 pub fn Special::osc4(Self) -> UInt16
 
-pub enum StatusDisplay {
+pub(all) enum StatusDisplay {
   Main
   StatusLine
 } derive(Eq, @debug.Debug)
 pub fn StatusDisplay::ordinal(Self) -> Int
 
-pub enum StatusLineType {
+pub(all) enum StatusLineType {
   None
   Indicator
   HostWritable
 } derive(Eq, @debug.Debug)
 pub fn StatusLineType::code(Self) -> UInt16
 
-pub enum Style {
+pub(all) enum Style {
   Mode2048
   Csi14t
   Csi16t
   Csi18t
 } derive(Eq, @debug.Debug)
 
-pub enum Tag {
+pub(all) enum Tag {
   Active
   Viewport
   Screen
   History
 } derive(Eq, @debug.Debug)
 
-pub enum Terminator {
+pub(all) enum Terminator {
   St
   Bel
 } derive(Eq, @debug.Debug)

@@ -1,5 +1,5 @@
 ///|
-pub enum Tag {
+pub(all) enum Tag {
   Active
   Viewport
   Screen
@@ -28,7 +28,7 @@ pub fn Coordinate::y(self : Coordinate) -> UInt {
 }
 
 ///|
-pub enum Point {
+pub(all) enum Point {
   Active(Coordinate)
   Viewport(Coordinate)
   Screen(Coordinate)

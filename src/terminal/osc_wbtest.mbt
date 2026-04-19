@@ -152,6 +152,34 @@ test "osc/incomplete and invalid prefixes are rejected" {
 }
 
 ///|
+test "osc/invalid states stay invalid and reject bad numeric branches" {
+  let invalid = OscParser::new()
+  invalid.next(b'6')
+  invalid.next(b'0')
+  match invalid.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid parser to remain rejected after extra input")
+  }
+
+  let prefix1 = OscParser::new()
+  prefix1.next(b'1')
+  prefix1.next(b'x')
+  match prefix1.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 1x prefix to be rejected")
+  }
+
+  let prefix11 = OscParser::new()
+  prefix11.next(b'1')
+  prefix11.next(b'1')
+  prefix11.next(b'x')
+  match prefix11.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 11x prefix to be rejected")
+  }
+}
+
+///|
 test "osc/icon report-pwd and mouse-shape basics" {
   let icon = OscParser::new()
   icon.next(b'1')
@@ -423,6 +451,28 @@ test "osc/dynamic color get set query and truncation behave per prefix" {
     ],
     Bel,
   )
+}
+
+///|
+test "osc/private color helpers cover unsupported prefixes and edge targets" {
+  guard parse_color_command(Prefix0, [], Some(0x07)) == Invalid else {
+    fail("expected non-color parse helper to yield invalid command")
+  }
+  guard color_operation_from_state(Prefix0) == None else {
+    fail("expected non-color prefix to map to no operation")
+  }
+  guard ansi_target_from_index(Osc4, -1) == None else {
+    fail("expected negative palette index to be rejected")
+  }
+  guard special_from_int(0) == Some(Bold) else {
+    fail("expected special index 0 to map to bold")
+  }
+  guard special_from_int(2) == Some(Blink) else {
+    fail("expected special index 2 to map to blink")
+  }
+  guard special_from_int(3) == Some(Reverse) else {
+    fail("expected special index 3 to map to reverse")
+  }
 }
 
 ///|

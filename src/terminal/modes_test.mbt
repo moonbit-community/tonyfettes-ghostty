@@ -1,18 +1,8 @@
 ///|
-test "modes/mode_from_int" {
-  guard mode_from_int(4, true) == Some(Mode::Insert) else {
-    fail("expected ansi insert mode")
-  }
-  guard mode_from_int(9, true) == None else { fail("unexpected ansi mode") }
-  guard mode_from_int(9, false) == Some(Mode::MouseEventX10) else {
-    fail("expected dec mouse x10 mode")
-  }
-  guard mode_from_int(14, true) == None else { fail("unexpected ansi mode") }
-}
 
 ///|
-test "modes/all tags roundtrip through lookup and raw layout" {
-  let modes : Array[Mode] = [
+fn all_modes() -> Array[Mode] {
+  [
     Mode::DisableKeyboard,
     Mode::Insert,
     Mode::SendReceiveMode,
@@ -55,8 +45,23 @@ test "modes/all tags roundtrip through lookup and raw layout" {
     Mode::ReportColorScheme,
     Mode::InBandSizeReports,
   ]
+}
 
-  for mode in modes {
+///|
+test "modes/mode_from_int" {
+  guard mode_from_int(4, true) == Some(Mode::Insert) else {
+    fail("expected ansi insert mode")
+  }
+  guard mode_from_int(9, true) == None else { fail("unexpected ansi mode") }
+  guard mode_from_int(9, false) == Some(Mode::MouseEventX10) else {
+    fail("expected dec mouse x10 mode")
+  }
+  guard mode_from_int(14, true) == None else { fail("unexpected ansi mode") }
+}
+
+///|
+test "modes/all tags roundtrip through lookup and raw layout" {
+  for mode in all_modes() {
     let tag = mode.tag()
     guard mode_from_int(tag.value(), tag.ansi()) is Some(found) else {
       fail("expected roundtrip mode for raw tag \{tag.raw()}")
@@ -75,6 +80,7 @@ test "modes/all tags roundtrip through lookup and raw layout" {
 ///|
 test "modes/defaults preserve upstream true flags" {
   let state = ModeState::new()
+  let defaults = default_mode_packed()
   guard state.get(Mode::SendReceiveMode) else {
     fail("expected send_receive_mode default")
   }
@@ -91,7 +97,9 @@ test "modes/defaults preserve upstream true flags" {
   guard state.get(Mode::AltEscPrefix) else {
     fail("expected alt_esc_prefix default")
   }
-  assert_eq(default_mode_packed().bits, state.values.bits)
+  for mode in all_modes() {
+    assert_eq(defaults.get(mode), state.get(mode))
+  }
 }
 
 ///|
@@ -142,27 +150,14 @@ test "modes/get report for known ansi mode and unknown mode" {
 
 ///|
 test "modes/report encode" {
+  let state = ModeState::new()
+  state.set(Mode::CursorKeys, true)
+  assert_eq(state.get_report(mode_tag(1, false)).encode(), b"\x1B[?1;1$y")
+  assert_eq(state.get_report(mode_tag(4, true)).encode(), b"\x1B[4;2$y")
+  assert_eq(state.get_report(mode_tag(9999, false)).encode(), b"\x1B[?9999;0$y")
   assert_eq(
-    { tag: mode_tag(1, false), state: ReportState::Set }.encode(),
-    b"\x1B[?1;1$y",
-  )
-  assert_eq(
-    { tag: mode_tag(1, false), state: ReportState::Reset }.encode(),
-    b"\x1B[?1;2$y",
-  )
-  assert_eq(
-    { tag: mode_tag(4, true), state: ReportState::Set }.encode(),
-    b"\x1B[4;1$y",
-  )
-  assert_eq(
-    { tag: mode_tag(9999, false), state: ReportState::NotRecognized }.encode(),
-    b"\x1B[?9999;0$y",
-  )
-  assert_eq(
-    report_max_size,
-    { tag: mode_tag(0x7FFF, false), state: ReportState::PermanentlyReset }
-    .encode()
-    .length(),
+    state.get_report(mode_tag(0x7FFF, false)).encode(),
+    b"\x1B[?32767;0$y",
   )
 }
 
@@ -206,38 +201,19 @@ test "modes/report state codes and bit helpers cover edge modes" {
   assert_eq(ReportState::PermanentlySet.code(), 3)
   assert_eq(ReportState::PermanentlyReset.code(), 4)
 
-  assert_eq(mode_bit_index(Mode::DisableKeyboard), 0)
-  assert_eq(mode_bit_index(Mode::Linefeed), 3)
-  assert_eq(mode_bit_index(Mode::Mode132Column), 5)
-  assert_eq(mode_bit_index(Mode::SlowScroll), 6)
-  assert_eq(mode_bit_index(Mode::ReverseColors), 7)
-  assert_eq(mode_bit_index(Mode::Origin), 8)
-  assert_eq(mode_bit_index(Mode::MouseEventX10), 11)
-  assert_eq(mode_bit_index(Mode::CursorBlinking), 12)
-  assert_eq(mode_bit_index(Mode::Autorepeat), 10)
-  assert_eq(mode_bit_index(Mode::EnableMode3), 14)
-  assert_eq(mode_bit_index(Mode::AltScreenLegacy), 16)
-  assert_eq(mode_bit_index(Mode::KeypadKeys), 17)
-  assert_eq(mode_bit_index(Mode::BackarrowKeyMode), 18)
-  assert_eq(mode_bit_index(Mode::EnableLeftAndRightMargin), 19)
-  assert_eq(mode_bit_index(Mode::MouseEventNormal), 20)
-  assert_eq(mode_bit_index(Mode::MouseEventButton), 21)
-  assert_eq(mode_bit_index(Mode::MouseEventAny), 22)
-  assert_eq(mode_bit_index(Mode::FocusEvent), 23)
-  assert_eq(mode_bit_index(Mode::MouseFormatUtf8), 24)
-  assert_eq(mode_bit_index(Mode::MouseFormatSgr), 25)
-  assert_eq(mode_bit_index(Mode::MouseFormatUrxvt), 27)
-  assert_eq(mode_bit_index(Mode::MouseFormatSgrPixels), 28)
-  assert_eq(mode_bit_index(Mode::AltSendsEscape), 31)
-  assert_eq(mode_bit_index(Mode::ReverseWrapExtended), 32)
-  assert_eq(mode_bit_index(Mode::AltScreen), 33)
-  assert_eq(mode_bit_index(Mode::SaveCursor), 34)
-  assert_eq(mode_bit_index(Mode::AltScreenSaveCursorClearEnter), 35)
-  assert_eq(mode_bit_index(Mode::BracketedPaste), 36)
-  assert_eq(mode_bit_index(Mode::SynchronizedOutput), 37)
-  assert_eq(mode_bit_index(Mode::GraphemeCluster), 38)
-  assert_eq(mode_bit_index(Mode::ReportColorScheme), 39)
-  assert_eq(mode_bit_index(Mode::InBandSizeReports), 40)
-  assert_eq(mode_mask(Mode::DisableKeyboard), 1UL)
-  assert_eq(mode_mask(Mode::InBandSizeReports), 1UL << 40)
+  let packed = empty_mode_packed()
+  guard !packed.get(Mode::DisableKeyboard) else {
+    fail("expected disable keyboard to start unset")
+  }
+  guard !packed.get(Mode::InBandSizeReports) else {
+    fail("expected in-band size reports to start unset")
+  }
+  packed.set(Mode::DisableKeyboard, true)
+  packed.set(Mode::InBandSizeReports, true)
+  guard packed.get(Mode::DisableKeyboard) else {
+    fail("expected disable keyboard to become set")
+  }
+  guard packed.get(Mode::InBandSizeReports) else {
+    fail("expected in-band size reports to become set")
+  }
 }

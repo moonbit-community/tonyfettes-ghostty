@@ -1,11 +1,11 @@
 ///|
-pub enum ColorScheme {
+pub(all) enum ColorScheme {
   Light
   Dark
 } derive(Eq, Debug)
 
 ///|
-pub enum DeviceStatusRequest {
+pub(all) enum DeviceStatusRequest {
   OperatingStatus
   CursorPosition
   ColorScheme

@@ -31,7 +31,7 @@ pub fn RGB::b(self : RGB) -> Byte {
 }
 
 ///|
-pub enum Name {
+pub(all) enum Name {
   Black
   Red
   Green
@@ -95,7 +95,7 @@ pub fn Name::default_rgb(self : Name) -> RGB {
 }
 
 ///|
-pub enum Special {
+pub(all) enum Special {
   Bold
   Underline
   Blink
@@ -118,7 +118,7 @@ pub fn Special::osc4(self : Special) -> UInt16 {
 }
 
 ///|
-pub enum Dynamic {
+pub(all) enum Dynamic {
   Foreground
   Background
   Cursor
@@ -279,12 +279,14 @@ fn parse_hex_component(
     i += 1
   }
 
-  let divisor = match width {
-    1 => 0xF
-    2 => 0xFF
-    3 => 0xFFF
-    4 => 0xFFFF
-    _ => 1
+  let divisor = if width == 1 {
+    0xF
+  } else if width == 2 {
+    0xFF
+  } else if width == 3 {
+    0xFFF
+  } else {
+    0xFFFF
   }
 
   (result * 0xFF / divisor).to_byte()

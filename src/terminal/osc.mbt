@@ -2,7 +2,7 @@
 const OscMaxBuf : Int = 2048
 
 ///|
-pub enum Terminator {
+pub(all) enum Terminator {
   St
   Bel
 } derive(Eq, Debug)
@@ -16,7 +16,7 @@ pub fn terminator_init(ch : Byte?) -> Terminator {
 }
 
 ///|
-pub enum ColorOperation {
+pub(all) enum ColorOperation {
   Osc4
   Osc5
   Osc10
@@ -43,7 +43,7 @@ pub enum ColorOperation {
 } derive(Eq, Debug)
 
 ///|
-pub enum ColorTarget {
+pub(all) enum ColorTarget {
   Palette(Byte)
   Special(Special)
   Dynamic(Dynamic)
@@ -71,7 +71,7 @@ pub fn ColoredTarget::color(self : ColoredTarget) -> RGB {
 }
 
 ///|
-pub enum ColorRequest {
+pub(all) enum ColorRequest {
   Set(ColoredTarget)
   Query(ColorTarget)
   Reset(ColorTarget)
@@ -110,7 +110,7 @@ pub fn ColorCommand::terminator(self : ColorCommand) -> Terminator {
 }
 
 ///|
-pub enum Command {
+pub(all) enum Command {
   Invalid
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
@@ -198,16 +198,13 @@ fn OscParser::push_capture(self : OscParser, byte : Byte) -> Unit {
 
 ///|
 fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
-  if self.state == Invalid {
-    return
-  }
-
   if self.capturing {
     self.push_capture(byte)
     return
   }
 
   match self.state {
+    Invalid => ()
     Start =>
       match byte {
         b'0' => self.state = Prefix0
@@ -218,7 +215,6 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         b'7' => self.state = Prefix7
         _ => self.state = Invalid
       }
-    Invalid => ()
     Prefix0 =>
       if byte == b';' {
         self.start_capture()

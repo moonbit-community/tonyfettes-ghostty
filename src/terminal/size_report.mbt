@@ -1,5 +1,5 @@
 ///|
-pub enum Style {
+pub(all) enum Style {
   Mode2048
   Csi14t
   Csi16t

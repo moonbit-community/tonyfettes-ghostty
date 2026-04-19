@@ -132,66 +132,33 @@ test "color/rgb parse rejects invalid formats" {
 }
 
 ///|
-test "color/private helper parsing covers widths intensities and search" {
-  assert_eq(parse_hex_component("A", 0, 1), 0xAA)
-  assert_eq(parse_hex_component("80", 0, 2), 0x80)
-  assert_eq(parse_hex_component("800", 0, 3), 0x7F)
-  assert_eq(parse_hex_component("8000", 0, 4), 0x7F)
-
-  assert_eq(parse_intensity_component("1", 0, 1), 0xFF)
-  assert_eq(parse_intensity_component("0.5", 0, 3), 0x7F)
-  assert_eq(parse_intensity_component(".5", 0, 2), 0x7F)
-  assert_eq(parse_intensity_component("1.", 0, 2), 0xFF)
-
-  guard find_char("rgb:1/2/3", 0, '/') == Some(5) else {
-    fail("expected first slash position")
+test "color/rgb parse handles public width and intensity edge cases" {
+  let valid : Array[(String, RGB)] = [
+    ("#ABC", RGB::new(0xAA, 0xBB, 0xCC)),
+    ("#800800800", RGB::new(0x7F, 0x7F, 0x7F)),
+    ("#800080008000", RGB::new(0x7F, 0x7F, 0x7F)),
+    ("rgbi:1/0/0", RGB::new(0xFF, 0, 0)),
+    ("rgbi:0.5/0/0", RGB::new(0x7F, 0, 0)),
+    ("rgbi:.5/0/0", RGB::new(0x7F, 0, 0)),
+    ("rgbi:1./0/0", RGB::new(0xFF, 0, 0)),
+  ]
+  for entry in valid {
+    guard RGB::parse(entry.0) == entry.1 else {
+      fail("unexpected public parse result for \{entry.0}")
+    }
   }
-  guard find_char("rgb:1/2/3", 6, '/') == Some(7) else {
-    fail("expected second slash position")
-  }
-  guard find_char("rgb:1/2/3", 8, '/') == None else {
-    fail("expected no later slash")
-  }
-
-  guard hex_digit('0') == Some(0) else { fail("expected decimal zero") }
-  guard hex_digit('f') == Some(15) else { fail("expected lowercase hex") }
-  guard hex_digit('A') == Some(10) else { fail("expected uppercase hex") }
-  guard hex_digit('x') == None else { fail("expected invalid hex digit") }
 }
 
 ///|
-test "color/private helper parsing rejects invalid helper inputs" {
-  let invalid_hex : Array[(String, Int, Int)] = [
-    ("", 0, 0),
-    ("12345", 0, 5),
-    ("zz", 0, 2),
+test "color/rgb parse rejects malformed public edge cases" {
+  let invalid : Array[String] = [
+    "#12345", "#zzzzzz", "rgb:12345/0/0", "rgbi:./0/0", "rgbi:1.1/0/0", "rgbi:1..0/0/0",
+    "rgb:1/2/3/",
   ]
-  for entry in invalid_hex {
-    let result : Result[Byte, ColorParseError] = try? parse_hex_component(
-      entry.0,
-      entry.1,
-      entry.2,
-    )
+  for value in invalid {
+    let result : Result[RGB, ColorParseError] = try? RGB::parse(value)
     guard result is Err(ColorParseError::InvalidFormat) else {
-      fail("expected invalid hex helper input for \{entry.0}")
-    }
-  }
-
-  let invalid_intensity : Array[(String, Int, Int)] = [
-    ("", 0, 0),
-    (".", 0, 1),
-    ("1.1", 0, 3),
-    ("1..0", 0, 4),
-    ("a", 0, 1),
-  ]
-  for entry in invalid_intensity {
-    let result : Result[Byte, ColorParseError] = try? parse_intensity_component(
-      entry.0,
-      entry.1,
-      entry.2,
-    )
-    guard result is Err(ColorParseError::InvalidFormat) else {
-      fail("expected invalid intensity helper input for \{entry.0}")
+      fail("expected invalid public parse input for \{value}")
     }
   }
 }
