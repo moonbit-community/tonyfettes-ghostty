@@ -340,7 +340,8 @@ Phase 5 gate:
   [2026-04-19-p5-a-tab-and-cursor-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-tab-and-cursor-controls.md),
   [2026-04-19-p5-a-xtwinops-and-title-stack.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-xtwinops-and-title-stack.md),
   [2026-04-19-p5-a-cursor-motion-and-editing.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-cursor-motion-and-editing.md),
-  [2026-04-19-p5-a-margins-and-mode-save-restore.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-margins-and-mode-save-restore.md)
+  [2026-04-19-p5-a-margins-and-mode-save-restore.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-margins-and-mode-save-restore.md),
+  [2026-04-19-p5-a-device-report-and-esc-controls.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-device-report-and-esc-controls.md)
 
 ### Phase 6: Terminal application surface
 

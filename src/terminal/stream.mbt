@@ -36,13 +36,20 @@ pub(all) enum StreamAction {
   StreamHorizontalTabBack(UInt16)
   StreamLinefeed
   StreamCarriageReturn
+  StreamIndex
+  StreamNextLine
+  StreamReverseIndex
   StreamEnquiry
   StreamInvokeCharset(InvokeCharsetAction)
   StreamConfigureCharset(ConfigureCharsetAction)
   StreamSaveCursor
   StreamRestoreCursor
+  StreamDecaln
+  StreamFullReset
   StreamSetMode(Mode)
   StreamResetMode(Mode)
+  StreamRequestMode(Mode)
+  StreamRequestModeUnknown(ModeTag)
   StreamCursorUp(CursorMovement)
   StreamCursorDown(CursorMovement)
   StreamCursorLeft(CursorMovement)
@@ -78,10 +85,18 @@ pub(all) enum StreamAction {
   StreamTopAndBottomMargin(Margin)
   StreamLeftAndRightMargin(Margin)
   StreamLeftAndRightMarginAmbiguous
+  StreamModifyKeyFormat(ModifyKeyFormat)
   StreamMouseShiftCapture(Bool)
+  StreamProtectedModeOff
+  StreamProtectedModeIso
+  StreamProtectedModeDec
   StreamSizeReport(SizeReportStyle)
   StreamTitlePush(UInt16)
   StreamTitlePop(UInt16)
+  StreamXtversion
+  StreamDeviceAttributes(DeviceAttributeRequest)
+  StreamDeviceStatus(DeviceStatusRequest)
+  StreamActiveStatusDisplay(StatusDisplay)
 } derive(Eq, Debug)
 
 ///|
@@ -440,16 +455,38 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           }
         }
       }
-    b'q' =>
-      if _csi.intermediates == [b' '] {
-        match _csi.params {
-          [] => self.emit(StreamCursorStyle(CursorStyle::Default))
-          [value] =>
-            if cursor_style_from_int(value.to_int()) is Some(style) {
-              self.emit(StreamCursorStyle(style))
-            }
-          _ => ()
+    b'n' =>
+      if device_status_request(_csi.intermediates, _csi.params) is Some(request) {
+        self.emit(StreamDeviceStatus(request))
+      } else if _csi.intermediates == [b'>'] {
+        self.emit(
+          StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNumericExcept),
+        )
+      }
+    b'p' =>
+      if request_mode_tag(_csi.intermediates, _csi.params) is Some(tag) {
+        match mode_from_int(tag.value(), tag.ansi()) {
+          Some(mode) => self.emit(StreamRequestMode(mode))
+          None => self.emit(StreamRequestModeUnknown(tag))
         }
+      }
+    b'q' =>
+      match _csi.intermediates {
+        [b' '] =>
+          match _csi.params {
+            [] => self.emit(StreamCursorStyle(CursorStyle::Default))
+            [value] =>
+              if cursor_style_from_int(value.to_int()) is Some(style) {
+                self.emit(StreamCursorStyle(style))
+              }
+            _ => ()
+          }
+        [b'"'] =>
+          if protected_mode_action(_csi.params) is Some(action) {
+            self.emit(action)
+          }
+        [b'>'] => self.emit(StreamXtversion)
+        _ => ()
       }
     b'r' =>
       match _csi.intermediates {
@@ -496,6 +533,10 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         if default_single_param(_csi.params) is Some(value) {
           self.emit(StreamPrintRepeat(value))
         }
+      }
+    b'c' =>
+      if device_attributes_request(_csi.intermediates) is Some(request) {
+        self.emit(StreamDeviceAttributes(request))
       }
     b'd' =>
       if _csi.intermediates == [] {
@@ -557,6 +598,12 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           None => ()
         }
       }
+    b'}' =>
+      if _csi.intermediates == [b'$'] {
+        if active_status_display(_csi.params) is Some(display) {
+          self.emit(StreamActiveStatusDisplay(display))
+        }
+      }
     _ => ()
   }
 }
@@ -571,7 +618,16 @@ fn[H : StreamHandler] Stream::esc_dispatch(
     b'A' => self.configure_charset(_esc.intermediates, Charset::British)
     b'0' => self.configure_charset(_esc.intermediates, Charset::DecSpecial)
     b'7' => if _esc.intermediates == [] { self.emit(StreamSaveCursor) }
-    b'8' => if _esc.intermediates == [] { self.emit(StreamRestoreCursor) }
+    b'8' =>
+      match _esc.intermediates {
+        [] => self.emit(StreamRestoreCursor)
+        [b'#'] => self.emit(StreamDecaln)
+        _ => ()
+      }
+    b'D' => if _esc.intermediates == [] { self.emit(StreamIndex) }
+    b'E' => if _esc.intermediates == [] { self.emit(StreamNextLine) }
+    b'H' => if _esc.intermediates == [] { self.emit(StreamTabSet) }
+    b'M' => if _esc.intermediates == [] { self.emit(StreamReverseIndex) }
     b'N' =>
       if _esc.intermediates == [] {
         self.emit_invoke_charset(ActiveSlot::Gl, Slots::G2, true)
@@ -608,6 +664,13 @@ fn[H : StreamHandler] Stream::esc_dispatch(
       if _esc.intermediates == [] {
         self.emit(StreamResetMode(Mode::KeypadKeys))
       }
+    b'V' => if _esc.intermediates == [] { self.emit(StreamProtectedModeIso) }
+    b'W' => if _esc.intermediates == [] { self.emit(StreamProtectedModeOff) }
+    b'Z' =>
+      if _esc.intermediates == [] {
+        self.emit(StreamDeviceAttributes(DeviceAttributeRequest::Primary))
+      }
+    b'c' => if _esc.intermediates == [] { self.emit(StreamFullReset) }
     b'\\' => ()
     _ => ()
   }
@@ -721,6 +784,52 @@ fn erase_display_mode(params : Array[UInt16]) -> UInt16? {
 }
 
 ///|
+fn device_attributes_request(
+  intermediates : Array[Byte],
+) -> DeviceAttributeRequest? {
+  match intermediates {
+    [] => Some(DeviceAttributeRequest::Primary)
+    [b'>'] => Some(DeviceAttributeRequest::Secondary)
+    [b'='] => Some(DeviceAttributeRequest::Tertiary)
+    _ => None
+  }
+}
+
+///|
+fn device_status_request(
+  intermediates : Array[Byte],
+  params : Array[UInt16],
+) -> DeviceStatusRequest? {
+  match (intermediates, params) {
+    ([], [value]) => device_status_request_from_int(value, false)
+    ([b'?'], [value]) => device_status_request_from_int(value, true)
+    _ => None
+  }
+}
+
+///|
+fn request_mode_tag(
+  intermediates : Array[Byte],
+  params : Array[UInt16],
+) -> ModeTag? {
+  match (intermediates, params) {
+    ([b'$'], [value]) => Some(mode_tag(value, true))
+    ([b'?', b'$'], [value]) => Some(mode_tag(value, false))
+    _ => None
+  }
+}
+
+///|
+fn protected_mode_action(params : Array[UInt16]) -> StreamAction? {
+  match params {
+    [] => Some(StreamProtectedModeOff)
+    [0] | [2] => Some(StreamProtectedModeOff)
+    [1] => Some(StreamProtectedModeDec)
+    _ => None
+  }
+}
+
+///|
 fn erase_line_mode(params : Array[UInt16]) -> UInt16? {
   match params {
     [] => Some(0)
@@ -742,6 +851,14 @@ fn insert_blanks_count(params : Array[UInt16]) -> UInt16? {
   match params {
     [] => Some(1)
     [value] => if value == 0 { Some(1) } else { Some(value) }
+    _ => None
+  }
+}
+
+///|
+fn active_status_display(params : Array[UInt16]) -> StatusDisplay? {
+  match params {
+    [value] => status_display_from_int(value.to_int())
     _ => None
   }
 }

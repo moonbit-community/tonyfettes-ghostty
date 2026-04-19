@@ -572,6 +572,67 @@ test "stream/csi margin and mode invalid forms stay silent" {
 }
 
 ///|
+test "stream/esc control and reset subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1BD\x1BE\x1BH\x1BM\x1BV\x1BW\x1BZ\x1Bc\x1B#8\x1B(8\x1B[8",
+  )
+  guard actions ==
+    [
+      StreamIndex,
+      StreamNextLine,
+      StreamTabSet,
+      StreamReverseIndex,
+      StreamProtectedModeIso,
+      StreamProtectedModeOff,
+      StreamDeviceAttributes(DeviceAttributeRequest::Primary),
+      StreamFullReset,
+      StreamDecaln,
+    ] else {
+    fail("expected ESC control and reset subset")
+  }
+}
+
+///|
+test "stream/csi device and protected subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[c\x1B[>c\x1B[=c\x1B[5n\x1B[?996n\x1B[>n\x1B[4$p\x1B[?9999$p\x1B[\"q\x1B[1\"q\x1B[2\"q\x1B[>q\x1B[0$}\x1B[1$}",
+  )
+  guard actions ==
+    [
+      StreamDeviceAttributes(DeviceAttributeRequest::Primary),
+      StreamDeviceAttributes(DeviceAttributeRequest::Secondary),
+      StreamDeviceAttributes(DeviceAttributeRequest::Tertiary),
+      StreamDeviceStatus(DeviceStatusRequest::OperatingStatus),
+      StreamDeviceStatus(DeviceStatusRequest::ColorScheme),
+      StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNumericExcept),
+      StreamRequestMode(Mode::Insert),
+      StreamRequestModeUnknown(mode_tag(9999, false)),
+      StreamProtectedModeOff,
+      StreamProtectedModeDec,
+      StreamProtectedModeOff,
+      StreamXtversion,
+      StreamActiveStatusDisplay(StatusDisplay::Main),
+      StreamActiveStatusDisplay(StatusDisplay::StatusLine),
+    ] else {
+    fail("expected CSI device and protected subset")
+  }
+}
+
+///|
+test "stream/csi device and protected invalid forms stay silent" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[1;2n\x1B[?5;6n\x1B[$p\x1B[1;2$p\x1B[3\"q\x1B[2$}\x1B[$}\x1B[?0$}\x1B[!c",
+  )
+  let expected_empty : Array[StreamAction] = []
+  guard actions == expected_empty else {
+    fail("expected invalid CSI device and protected forms to stay silent")
+  }
+}
+
+///|
 test "stream/csi size report subset" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[14t\x1B[16t\x1B[18t\x1B[21t")

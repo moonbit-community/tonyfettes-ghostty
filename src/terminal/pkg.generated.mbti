@@ -543,13 +543,20 @@ pub(all) enum StreamAction {
   StreamHorizontalTabBack(UInt16)
   StreamLinefeed
   StreamCarriageReturn
+  StreamIndex
+  StreamNextLine
+  StreamReverseIndex
   StreamEnquiry
   StreamInvokeCharset(InvokeCharsetAction)
   StreamConfigureCharset(ConfigureCharsetAction)
   StreamSaveCursor
   StreamRestoreCursor
+  StreamDecaln
+  StreamFullReset
   StreamSetMode(Mode)
   StreamResetMode(Mode)
+  StreamRequestMode(Mode)
+  StreamRequestModeUnknown(ModeTag)
   StreamCursorUp(CursorMovement)
   StreamCursorDown(CursorMovement)
   StreamCursorLeft(CursorMovement)
@@ -585,10 +592,18 @@ pub(all) enum StreamAction {
   StreamTopAndBottomMargin(Margin)
   StreamLeftAndRightMargin(Margin)
   StreamLeftAndRightMarginAmbiguous
+  StreamModifyKeyFormat(ModifyKeyFormat)
   StreamMouseShiftCapture(Bool)
+  StreamProtectedModeOff
+  StreamProtectedModeIso
+  StreamProtectedModeDec
   StreamSizeReport(SizeReportStyle)
   StreamTitlePush(UInt16)
   StreamTitlePop(UInt16)
+  StreamXtversion
+  StreamDeviceAttributes(DeviceAttributeRequest)
+  StreamDeviceStatus(DeviceStatusRequest)
+  StreamActiveStatusDisplay(StatusDisplay)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Style {
