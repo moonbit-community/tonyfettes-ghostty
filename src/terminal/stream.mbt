@@ -15,11 +15,19 @@ pub(all) struct ConfigureCharsetAction {
 pub(all) struct CursorMovement(UInt16) derive(Eq, Debug)
 
 ///|
+pub(all) struct CursorPosition {
+  row : UInt16
+  col : UInt16
+} derive(Eq, Debug)
+
+///|
 pub(all) enum StreamAction {
   StreamPrint(UInt)
+  StreamPrintRepeat(UInt16)
   StreamBell
   StreamBackspace
   StreamHorizontalTab(UInt16)
+  StreamHorizontalTabBack(UInt16)
   StreamLinefeed
   StreamCarriageReturn
   StreamEnquiry
@@ -29,7 +37,15 @@ pub(all) enum StreamAction {
   StreamRestoreCursor
   StreamSetMode(Mode)
   StreamResetMode(Mode)
+  StreamCursorUp(CursorMovement)
+  StreamCursorDown(CursorMovement)
+  StreamCursorLeft(CursorMovement)
   StreamCursorRight(CursorMovement)
+  StreamCursorCol(CursorMovement)
+  StreamCursorRow(CursorMovement)
+  StreamCursorColRelative(CursorMovement)
+  StreamCursorRowRelative(CursorMovement)
+  StreamCursorPos(CursorPosition)
   StreamEraseDisplayBelow(Bool)
   StreamEraseDisplayAbove(Bool)
   StreamEraseDisplayComplete(Bool)
@@ -39,12 +55,18 @@ pub(all) enum StreamAction {
   StreamEraseLineLeft(Bool)
   StreamEraseLineComplete(Bool)
   StreamEraseLineRightUnlessPendingWrap(Bool)
+  StreamDeleteChars(UInt16)
+  StreamEraseChars(UInt16)
+  StreamInsertLines(UInt16)
   StreamCursorStyle(CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
   StreamTabClearAll
   StreamTabReset
   StreamInsertBlanks(UInt16)
+  StreamDeleteLines(UInt16)
+  StreamScrollUp(UInt16)
+  StreamScrollDown(UInt16)
   StreamLeftAndRightMarginAmbiguous
   StreamMouseShiftCapture(Bool)
   StreamSizeReport(SizeReportStyle)
@@ -281,11 +303,61 @@ fn[H : StreamHandler] Stream::csi_dispatch(
   _csi : Csi,
 ) -> Unit {
   match _csi.final_byte {
+    b'A' | b'k' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorUp(CursorMovement(value)))
+        }
+      }
+    b'B' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorDown(CursorMovement(value)))
+        }
+      }
     b'C' =>
       if _csi.intermediates == [] {
         let value = default_single_param(_csi.params)
         if value is Some(value) {
           self.emit(StreamCursorRight(CursorMovement(value)))
+        }
+      }
+    b'D' | b'j' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorLeft(CursorMovement(value)))
+        }
+      }
+    b'E' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorDown(CursorMovement(value)))
+          self.emit(StreamCarriageReturn)
+        }
+      }
+    b'F' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorUp(CursorMovement(value)))
+          self.emit(StreamCarriageReturn)
+        }
+      }
+    b'G' | b'`' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorCol(CursorMovement(value)))
+        }
+      }
+    b'H' | b'f' =>
+      if _csi.intermediates == [] {
+        if cursor_position(_csi.params) is Some(position) {
+          self.emit(StreamCursorPos(position))
+        }
+      }
+    b'I' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamHorizontalTab(value))
         }
       }
     b'J' =>
@@ -310,6 +382,36 @@ fn[H : StreamHandler] Stream::csi_dispatch(
             self.emit(StreamEraseLineRightUnlessPendingWrap(is_protected))
           None => ()
           _ => ()
+        }
+      }
+    b'L' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamInsertLines(value))
+        }
+      }
+    b'M' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamDeleteLines(value))
+        }
+      }
+    b'P' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamDeleteChars(value))
+        }
+      }
+    b'S' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamScrollUp(value))
+        }
+      }
+    b'T' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamScrollDown(value))
         }
       }
     b'h' =>
@@ -346,6 +448,42 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         ([], [5]) => self.emit(StreamTabClearAll)
         ([b'?'], [5]) => self.emit(StreamTabReset)
         _ => ()
+      }
+    b'X' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamEraseChars(value))
+        }
+      }
+    b'Z' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamHorizontalTabBack(value))
+        }
+      }
+    b'a' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorColRelative(CursorMovement(value)))
+        }
+      }
+    b'b' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamPrintRepeat(value))
+        }
+      }
+    b'd' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorRow(CursorMovement(value)))
+        }
+      }
+    b'e' =>
+      if _csi.intermediates == [] {
+        if default_single_param(_csi.params) is Some(value) {
+          self.emit(StreamCursorRowRelative(CursorMovement(value)))
+        }
       }
     b'g' =>
       if _csi.intermediates == [] {
@@ -502,6 +640,16 @@ fn default_single_param(params : Array[UInt16]) -> UInt16? {
   match params {
     [] => Some(1)
     [value] => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn cursor_position(params : Array[UInt16]) -> CursorPosition? {
+  match params {
+    [] => Some({ row: 1, col: 1 })
+    [row] => Some({ row, col: 1 })
+    [row, col] => Some({ row, col })
     _ => None
   }
 }

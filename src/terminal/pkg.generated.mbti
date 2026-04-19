@@ -174,6 +174,11 @@ pub(all) struct CursorMovement(UInt16) derive(Eq, @debug.Debug)
 #deprecated
 pub fn CursorMovement::inner(Self) -> UInt16
 
+pub(all) struct CursorPosition {
+  row : UInt16
+  col : UInt16
+} derive(Eq, @debug.Debug)
+
 pub(all) enum CursorStyle {
   Default
   BlinkingBlock
@@ -526,9 +531,11 @@ pub fn[H : StreamHandler] Stream::next_slice(Self[H], Bytes) -> Unit
 
 pub(all) enum StreamAction {
   StreamPrint(UInt)
+  StreamPrintRepeat(UInt16)
   StreamBell
   StreamBackspace
   StreamHorizontalTab(UInt16)
+  StreamHorizontalTabBack(UInt16)
   StreamLinefeed
   StreamCarriageReturn
   StreamEnquiry
@@ -538,7 +545,15 @@ pub(all) enum StreamAction {
   StreamRestoreCursor
   StreamSetMode(Mode)
   StreamResetMode(Mode)
+  StreamCursorUp(CursorMovement)
+  StreamCursorDown(CursorMovement)
+  StreamCursorLeft(CursorMovement)
   StreamCursorRight(CursorMovement)
+  StreamCursorCol(CursorMovement)
+  StreamCursorRow(CursorMovement)
+  StreamCursorColRelative(CursorMovement)
+  StreamCursorRowRelative(CursorMovement)
+  StreamCursorPos(CursorPosition)
   StreamEraseDisplayBelow(Bool)
   StreamEraseDisplayAbove(Bool)
   StreamEraseDisplayComplete(Bool)
@@ -548,12 +563,18 @@ pub(all) enum StreamAction {
   StreamEraseLineLeft(Bool)
   StreamEraseLineComplete(Bool)
   StreamEraseLineRightUnlessPendingWrap(Bool)
+  StreamDeleteChars(UInt16)
+  StreamEraseChars(UInt16)
+  StreamInsertLines(UInt16)
   StreamCursorStyle(CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
   StreamTabClearAll
   StreamTabReset
   StreamInsertBlanks(UInt16)
+  StreamDeleteLines(UInt16)
+  StreamScrollUp(UInt16)
+  StreamScrollDown(UInt16)
   StreamLeftAndRightMarginAmbiguous
   StreamMouseShiftCapture(Bool)
   StreamSizeReport(SizeReportStyle)

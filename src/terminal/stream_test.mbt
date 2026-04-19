@@ -163,8 +163,9 @@ test "stream/ignored c0 and parser execute fallback stay silent" {
 test "stream/csi placeholder returns to ground" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[1Hz")
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected text after CSI placeholder dispatch")
+  guard actions ==
+    [StreamCursorPos({ row: 1, col: 1 }), StreamPrint(b'z'.to_uint())] else {
+    fail("expected text after implemented CUP dispatch")
   }
 }
 
@@ -443,6 +444,77 @@ test "stream/csi save and restore cursor controls" {
   stream.next_slice(b"\x1B[s\x1B[u\x1B[1s")
   guard actions == [StreamLeftAndRightMarginAmbiguous, StreamRestoreCursor] else {
     fail("expected save/restore cursor control subset")
+  }
+}
+
+///|
+test "stream/csi cursor motion subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[A\x1B[5k\x1B[B\x1B[2D\x1B[3j\x1B[G\x1B[\x60\x1B[7\x60\x1B[a\x1B[8a\x1B[d\x1B[9d\x1B[e\x1B[10e\x1B[1;2A\x1B[?3B",
+  )
+  guard actions ==
+    [
+      StreamCursorUp(CursorMovement(1)),
+      StreamCursorUp(CursorMovement(5)),
+      StreamCursorDown(CursorMovement(1)),
+      StreamCursorLeft(CursorMovement(2)),
+      StreamCursorLeft(CursorMovement(3)),
+      StreamCursorCol(CursorMovement(1)),
+      StreamCursorCol(CursorMovement(1)),
+      StreamCursorCol(CursorMovement(7)),
+      StreamCursorColRelative(CursorMovement(1)),
+      StreamCursorColRelative(CursorMovement(8)),
+      StreamCursorRow(CursorMovement(1)),
+      StreamCursorRow(CursorMovement(9)),
+      StreamCursorRowRelative(CursorMovement(1)),
+      StreamCursorRowRelative(CursorMovement(10)),
+    ] else {
+    fail("expected cursor motion subset")
+  }
+}
+
+///|
+test "stream/csi cursor position and tab movement subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[E\x1B[2F\x1B[H\x1B[3H\x1B[4;5f\x1B[I\x1B[6Z\x1B[1;2H\x1B[1;2;3H\x1B[?3I",
+  )
+  guard actions ==
+    [
+      StreamCursorDown(CursorMovement(1)),
+      StreamCarriageReturn,
+      StreamCursorUp(CursorMovement(2)),
+      StreamCarriageReturn,
+      StreamCursorPos({ row: 1, col: 1 }),
+      StreamCursorPos({ row: 3, col: 1 }),
+      StreamCursorPos({ row: 4, col: 5 }),
+      StreamHorizontalTab(1),
+      StreamHorizontalTabBack(6),
+      StreamCursorPos({ row: 1, col: 2 }),
+    ] else {
+    fail("expected cursor position and tab movement subset")
+  }
+}
+
+///|
+test "stream/csi editing count subset" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B[L\x1B[2M\x1B[3P\x1B[S\x1B[4T\x1B[5X\x1B[b\x1B[6b\x1B[1;2L\x1B[?3P",
+  )
+  guard actions ==
+    [
+      StreamInsertLines(1),
+      StreamDeleteLines(2),
+      StreamDeleteChars(3),
+      StreamScrollUp(1),
+      StreamScrollDown(4),
+      StreamEraseChars(5),
+      StreamPrintRepeat(1),
+      StreamPrintRepeat(6),
+    ] else {
+    fail("expected editing count subset")
   }
 }
 
