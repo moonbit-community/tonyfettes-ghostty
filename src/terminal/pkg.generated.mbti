@@ -662,6 +662,8 @@ pub(all) enum StreamAction {
   StreamXtversion
   StreamWindowTitle(String)
   StreamReportPwd(String)
+  StreamStartHyperlink(HyperlinkStart)
+  StreamEndHyperlink
   StreamMouseShape(MouseShape)
   StreamColorOperation(ColorCommand)
   StreamDeviceAttributes(DeviceAttributeRequest)

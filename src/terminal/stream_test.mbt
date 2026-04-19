@@ -215,11 +215,25 @@ test "stream/osc ignored and invalid commands stay silent" {
 }
 
 ///|
-test "stream/osc hyperlink commands stay silent and return to ground" {
+test "stream/osc hyperlink dispatch and return to ground" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B]8;id=foo;http://example.com\x07x\x1B]8;;\x07y")
-  guard actions == [StreamPrint(b'x'.to_uint()), StreamPrint(b'y'.to_uint())] else {
-    fail("expected hyperlink OSC commands to stay silent for now")
+  guard actions.length() == 4 else {
+    fail("expected hyperlink actions and later printable text")
+  }
+  guard actions.get(0) is Some(StreamStartHyperlink(link)) &&
+    link.uri() == "http://example.com" &&
+    link.id() == Some("foo") else {
+    fail("expected hyperlink start action")
+  }
+  guard actions.get(1) == Some(StreamPrint(b'x'.to_uint())) else {
+    fail("expected printable text after hyperlink start")
+  }
+  guard actions.get(2) == Some(StreamEndHyperlink) else {
+    fail("expected hyperlink end action")
+  }
+  guard actions.get(3) == Some(StreamPrint(b'y'.to_uint())) else {
+    fail("expected printable text after hyperlink end")
   }
 }
 

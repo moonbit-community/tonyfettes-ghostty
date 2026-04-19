@@ -100,6 +100,8 @@ pub(all) enum StreamAction {
   StreamXtversion
   StreamWindowTitle(String)
   StreamReportPwd(String)
+  StreamStartHyperlink(HyperlinkStart)
+  StreamEndHyperlink
   StreamMouseShape(MouseShape)
   StreamColorOperation(ColorCommand)
   StreamDeviceAttributes(DeviceAttributeRequest)
@@ -735,7 +737,8 @@ fn[H : StreamHandler] Stream::osc_dispatch(
 ) -> Unit {
   match command {
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
-    HyperlinkStart(_) | HyperlinkEnd => ()
+    HyperlinkStart(link) => self.emit(StreamStartHyperlink(link))
+    HyperlinkEnd => self.emit(StreamEndHyperlink)
     ChangeWindowIcon(_) | Invalid => ()
     ReportPwd(url) => self.emit(StreamReportPwd(url))
     MouseShape(value) =>
