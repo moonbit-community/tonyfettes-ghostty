@@ -466,6 +466,13 @@ pub struct TertiaryDeviceAttributes {
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> String
 
+pub struct Utf8Decoder {
+  mut accumulator : UInt
+  mut state : Byte
+} derive(Eq, @debug.Debug)
+pub fn Utf8Decoder::new() -> Self
+pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)
+
 // Type aliases
 pub type CellCountInt = UInt16
 
