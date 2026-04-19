@@ -9,28 +9,22 @@ fn encode_hex8(value : UInt) -> Bytes {
 test "device attributes/primary encodes defaults and features" {
   assert_eq(PrimaryDeviceAttributes::default().encode(), b"\x1B[?62;22c")
   assert_eq(
-    {
-      conformance_level: ConformanceLevel::Vt220,
-      features: [
-        PrimaryDeviceAttributeFeature::AnsiColor,
-        PrimaryDeviceAttributeFeature::Clipboard,
-      ],
-    }.encode(),
+    PrimaryDeviceAttributes::new(ConformanceLevel::Vt220, [
+      PrimaryDeviceAttributeFeature::AnsiColor,
+      PrimaryDeviceAttributeFeature::Clipboard,
+    ]).encode(),
     b"\x1B[?62;22;52c",
   )
   assert_eq(
-    {
-      conformance_level: ConformanceLevel::Vt420,
-      features: [
-        PrimaryDeviceAttributeFeature::Columns132,
-        PrimaryDeviceAttributeFeature::SelectiveErase,
-        PrimaryDeviceAttributeFeature::AnsiColor,
-      ],
-    }.encode(),
+    PrimaryDeviceAttributes::new(ConformanceLevel::Vt420, [
+      PrimaryDeviceAttributeFeature::Columns132,
+      PrimaryDeviceAttributeFeature::SelectiveErase,
+      PrimaryDeviceAttributeFeature::AnsiColor,
+    ]).encode(),
     b"\x1B[?64;1;6;22c",
   )
   assert_eq(
-    { conformance_level: ConformanceLevel::Vt100, features: [] }.encode(),
+    PrimaryDeviceAttributes::new(ConformanceLevel::Vt100, []).encode(),
     b"\x1B[?1c",
   )
 }
@@ -42,7 +36,10 @@ test "device attributes/secondary and tertiary encodings" {
     TertiaryDeviceAttributes::default().encode(),
     b"\x1BP!|00000000\x1B\\",
   )
-  assert_eq({ unit_id: 0xAABBCCDD }.encode(), b"\x1BP!|AABBCCDD\x1B\\")
+  assert_eq(
+    TertiaryDeviceAttributes::new(0xAABBCCDD).encode(),
+    b"\x1BP!|AABBCCDD\x1B\\",
+  )
 }
 
 ///|
@@ -57,6 +54,40 @@ test "device attributes/container encode dispatches by request" {
     attributes.encode(DeviceAttributeRequest::Tertiary),
     b"\x1BP!|00000000\x1B\\",
   )
+}
+
+///|
+test "device attributes/constructors and accessors" {
+  let primary = PrimaryDeviceAttributes::new(ConformanceLevel::Vt220, [
+    PrimaryDeviceAttributeFeature::AnsiColor,
+  ])
+  guard primary.conformance_level() == ConformanceLevel::Vt220 else {
+    fail("expected primary conformance level")
+  }
+  guard primary.features() == [PrimaryDeviceAttributeFeature::AnsiColor] else {
+    fail("expected primary features")
+  }
+
+  let secondary = SecondaryDeviceAttributes::new(DeviceType::Vt220, 7, 8)
+  guard secondary.device_type() == DeviceType::Vt220 else {
+    fail("expected secondary device type")
+  }
+  assert_eq(secondary.firmware_version(), 7)
+  assert_eq(secondary.rom_cartridge(), 8)
+
+  let tertiary = TertiaryDeviceAttributes::new(9U)
+  assert_eq(tertiary.unit_id(), 9U)
+
+  let device_attributes = DeviceAttributes::new(primary, secondary, tertiary)
+  guard device_attributes.primary() == primary else {
+    fail("expected primary passthrough")
+  }
+  guard device_attributes.secondary() == secondary else {
+    fail("expected secondary passthrough")
+  }
+  guard device_attributes.tertiary() == tertiary else {
+    fail("expected tertiary passthrough")
+  }
 }
 
 ///|

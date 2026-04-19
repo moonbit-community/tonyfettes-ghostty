@@ -118,10 +118,32 @@ pub fn DeviceType::code(self : DeviceType) -> UInt16 {
 }
 
 ///|
-pub struct PrimaryDeviceAttributes {
+struct PrimaryDeviceAttributes {
   conformance_level : ConformanceLevel
   features : ReadOnlyArray[PrimaryDeviceAttributeFeature]
 } derive(Eq, Debug)
+
+///|
+pub fn PrimaryDeviceAttributes::new(
+  conformance_level : ConformanceLevel,
+  features : ReadOnlyArray[PrimaryDeviceAttributeFeature],
+) -> PrimaryDeviceAttributes {
+  { conformance_level, features }
+}
+
+///|
+pub fn PrimaryDeviceAttributes::conformance_level(
+  self : PrimaryDeviceAttributes,
+) -> ConformanceLevel {
+  self.conformance_level
+}
+
+///|
+pub fn PrimaryDeviceAttributes::features(
+  self : PrimaryDeviceAttributes,
+) -> ReadOnlyArray[PrimaryDeviceAttributeFeature] {
+  self.features
+}
 
 ///|
 pub fn PrimaryDeviceAttributes::default() -> PrimaryDeviceAttributes {
@@ -145,11 +167,41 @@ pub fn PrimaryDeviceAttributes::encode(self : PrimaryDeviceAttributes) -> Bytes 
 }
 
 ///|
-pub struct SecondaryDeviceAttributes {
+struct SecondaryDeviceAttributes {
   device_type : DeviceType
   firmware_version : UInt16
   rom_cartridge : UInt16
 } derive(Eq, Debug)
+
+///|
+pub fn SecondaryDeviceAttributes::new(
+  device_type : DeviceType,
+  firmware_version : UInt16,
+  rom_cartridge : UInt16,
+) -> SecondaryDeviceAttributes {
+  { device_type, firmware_version, rom_cartridge }
+}
+
+///|
+pub fn SecondaryDeviceAttributes::device_type(
+  self : SecondaryDeviceAttributes,
+) -> DeviceType {
+  self.device_type
+}
+
+///|
+pub fn SecondaryDeviceAttributes::firmware_version(
+  self : SecondaryDeviceAttributes,
+) -> UInt16 {
+  self.firmware_version
+}
+
+///|
+pub fn SecondaryDeviceAttributes::rom_cartridge(
+  self : SecondaryDeviceAttributes,
+) -> UInt16 {
+  self.rom_cartridge
+}
 
 ///|
 pub fn SecondaryDeviceAttributes::default() -> SecondaryDeviceAttributes {
@@ -172,9 +224,23 @@ pub fn SecondaryDeviceAttributes::encode(
 }
 
 ///|
-pub struct TertiaryDeviceAttributes {
+struct TertiaryDeviceAttributes {
   unit_id : UInt
 } derive(Eq, Debug)
+
+///|
+pub fn TertiaryDeviceAttributes::new(
+  unit_id : UInt,
+) -> TertiaryDeviceAttributes {
+  { unit_id, }
+}
+
+///|
+pub fn TertiaryDeviceAttributes::unit_id(
+  self : TertiaryDeviceAttributes,
+) -> UInt {
+  self.unit_id
+}
 
 ///|
 pub fn TertiaryDeviceAttributes::default() -> TertiaryDeviceAttributes {
@@ -193,11 +259,41 @@ pub fn TertiaryDeviceAttributes::encode(
 }
 
 ///|
-pub struct DeviceAttributes {
+struct DeviceAttributes {
   primary : PrimaryDeviceAttributes
   secondary : SecondaryDeviceAttributes
   tertiary : TertiaryDeviceAttributes
 } derive(Eq, Debug)
+
+///|
+pub fn DeviceAttributes::new(
+  primary : PrimaryDeviceAttributes,
+  secondary : SecondaryDeviceAttributes,
+  tertiary : TertiaryDeviceAttributes,
+) -> DeviceAttributes {
+  { primary, secondary, tertiary }
+}
+
+///|
+pub fn DeviceAttributes::primary(
+  self : DeviceAttributes,
+) -> PrimaryDeviceAttributes {
+  self.primary
+}
+
+///|
+pub fn DeviceAttributes::secondary(
+  self : DeviceAttributes,
+) -> SecondaryDeviceAttributes {
+  self.secondary
+}
+
+///|
+pub fn DeviceAttributes::tertiary(
+  self : DeviceAttributes,
+) -> TertiaryDeviceAttributes {
+  self.tertiary
+}
 
 ///|
 pub fn DeviceAttributes::default() -> DeviceAttributes {

@@ -7,10 +7,25 @@ pub enum Tag {
 } derive(Eq, Debug)
 
 ///|
-pub struct Coordinate {
+struct Coordinate {
   x : CellCountInt
   y : UInt
 } derive(Eq, Debug)
+
+///|
+pub fn Coordinate::new(x : CellCountInt, y : UInt) -> Coordinate {
+  { x, y }
+}
+
+///|
+pub fn Coordinate::x(self : Coordinate) -> CellCountInt {
+  self.x
+}
+
+///|
+pub fn Coordinate::y(self : Coordinate) -> UInt {
+  self.y
+}
 
 ///|
 pub enum Point {

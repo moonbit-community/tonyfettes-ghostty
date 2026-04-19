@@ -18,12 +18,32 @@ fn expect_color_command(
   guard parser.end(terminator) is Some(ColorOperation(command)) else {
     fail("expected OSC color command")
   }
-  guard command.op == op else { fail("unexpected OSC color operation") }
-  guard command.requests == requests else {
+  guard command.op() == op else { fail("unexpected OSC color operation") }
+  guard command.requests() == requests else {
     fail("unexpected OSC color requests")
   }
-  guard command.terminator == expected_terminator else {
+  guard command.terminator() == expected_terminator else {
     fail("unexpected OSC terminator")
+  }
+}
+
+///|
+test "osc/color payload constructors and accessors" {
+  let target = ColoredTarget::new(Palette(3), RGB::new(1, 2, 3))
+  guard target.target() == Palette(3) else {
+    fail("expected colored target palette")
+  }
+  guard target.color() == RGB::new(1, 2, 3) else {
+    fail("expected colored target rgb")
+  }
+
+  let command = ColorCommand::new(Osc4, [Set(target)], Bel)
+  guard command.op() == Osc4 else { fail("expected color command op") }
+  guard command.requests() == [Set(target)] else {
+    fail("expected color command requests")
+  }
+  guard command.terminator() == Bel else {
+    fail("expected color command terminator")
   }
 }
 
@@ -171,9 +191,11 @@ test "osc/color reset cursor with incomplete sequence" {
   guard command is Some(ColorOperation(color_command)) else {
     fail("expected OSC 112 color command")
   }
-  guard color_command.op == Osc112 else { fail("expected OSC 112 operation") }
-  guard color_command.terminator == Bel else { fail("expected BEL terminator") }
-  guard color_command.requests == [Reset(Dynamic(Cursor))] else {
+  guard color_command.op() == Osc112 else { fail("expected OSC 112 operation") }
+  guard color_command.terminator() == Bel else {
+    fail("expected BEL terminator")
+  }
+  guard color_command.requests() == [Reset(Dynamic(Cursor))] else {
     fail("expected cursor reset request")
   }
 }
@@ -189,7 +211,7 @@ test "osc/color reset cursor accepts trailing semicolon" {
   guard command is Some(ColorOperation(color_command)) else {
     fail("expected OSC 112 color command")
   }
-  guard color_command.requests == [Reset(Dynamic(Cursor))] else {
+  guard color_command.requests() == [Reset(Dynamic(Cursor))] else {
     fail("expected cursor reset request with trailing semicolon")
   }
 }
@@ -205,8 +227,8 @@ test "osc/color reset palette with empty body" {
   guard command is Some(ColorOperation(color_command)) else {
     fail("expected OSC 104 color command")
   }
-  guard color_command.op == Osc104 else { fail("expected OSC 104 operation") }
-  guard color_command.requests == [ResetPalette] else {
+  guard color_command.op() == Osc104 else { fail("expected OSC 104 operation") }
+  guard color_command.requests() == [ResetPalette] else {
     fail("expected reset-palette request")
   }
 }
@@ -222,10 +244,10 @@ test "osc/color palette set parses rgb payload" {
   guard command is Some(ColorOperation(color_command)) else {
     fail("expected OSC 4 color command")
   }
-  guard color_command.op == Osc4 else { fail("expected OSC 4 operation") }
-  guard color_command.terminator == St else { fail("expected ST terminator") }
-  guard color_command.requests ==
-    [Set({ target: Palette(1), color: { r: 255, g: 0, b: 0 } })] else {
+  guard color_command.op() == Osc4 else { fail("expected OSC 4 operation") }
+  guard color_command.terminator() == St else { fail("expected ST terminator") }
+  guard color_command.requests() ==
+    [Set(ColoredTarget::new(Palette(1), RGB::new(255, 0, 0)))] else {
     fail("expected palette set request")
   }
 }

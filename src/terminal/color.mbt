@@ -4,11 +4,31 @@ pub(all) suberror ColorParseError {
 } derive(Eq, Debug)
 
 ///|
-pub struct RGB {
+struct RGB {
   r : Byte
   g : Byte
   b : Byte
 } derive(Eq, Debug)
+
+///|
+pub fn RGB::new(r : Byte, g : Byte, b : Byte) -> RGB {
+  { r, g, b }
+}
+
+///|
+pub fn RGB::r(self : RGB) -> Byte {
+  self.r
+}
+
+///|
+pub fn RGB::g(self : RGB) -> Byte {
+  self.g
+}
+
+///|
+pub fn RGB::b(self : RGB) -> Byte {
+  self.b
+}
 
 ///|
 pub enum Name {

@@ -227,8 +227,8 @@ test "parser/osc embedded minimal color operation" {
   guard actions[0] is Some(OscDispatch(ColorOperation(command))) else {
     fail("expected OSC color dispatch")
   }
-  guard command.op == Osc112 else { fail("unexpected OSC color operation") }
-  guard command.requests == [Reset(Dynamic(Cursor))] else {
+  guard command.op() == Osc112 else { fail("unexpected OSC color operation") }
+  guard command.requests() == [Reset(Dynamic(Cursor))] else {
     fail("unexpected OSC color requests")
   }
 }

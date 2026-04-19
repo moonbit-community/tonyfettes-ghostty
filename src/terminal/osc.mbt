@@ -50,10 +50,25 @@ pub enum ColorTarget {
 } derive(Eq, Debug)
 
 ///|
-pub struct ColoredTarget {
+struct ColoredTarget {
   target : ColorTarget
   color : RGB
 } derive(Eq, Debug)
+
+///|
+pub fn ColoredTarget::new(target : ColorTarget, color : RGB) -> ColoredTarget {
+  { target, color }
+}
+
+///|
+pub fn ColoredTarget::target(self : ColoredTarget) -> ColorTarget {
+  self.target
+}
+
+///|
+pub fn ColoredTarget::color(self : ColoredTarget) -> RGB {
+  self.color
+}
 
 ///|
 pub enum ColorRequest {
@@ -64,11 +79,35 @@ pub enum ColorRequest {
 } derive(Eq, Debug)
 
 ///|
-pub struct ColorCommand {
+struct ColorCommand {
   op : ColorOperation
   requests : Array[ColorRequest]
   terminator : Terminator
 } derive(Eq, Debug)
+
+///|
+pub fn ColorCommand::new(
+  op : ColorOperation,
+  requests : Array[ColorRequest],
+  terminator : Terminator,
+) -> ColorCommand {
+  { op, requests, terminator }
+}
+
+///|
+pub fn ColorCommand::op(self : ColorCommand) -> ColorOperation {
+  self.op
+}
+
+///|
+pub fn ColorCommand::requests(self : ColorCommand) -> Array[ColorRequest] {
+  self.requests
+}
+
+///|
+pub fn ColorCommand::terminator(self : ColorCommand) -> Terminator {
+  self.terminator
+}
 
 ///|
 pub enum Command {

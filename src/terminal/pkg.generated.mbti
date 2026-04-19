@@ -79,11 +79,11 @@ pub enum Charset {
   DecSpecial
 } derive(Eq, @debug.Debug)
 
-pub struct ColorCommand {
-  op : ColorOperation
-  requests : Array[ColorRequest]
-  terminator : Terminator
-} derive(Eq, @debug.Debug)
+type ColorCommand derive(Eq, @debug.Debug)
+pub fn ColorCommand::new(ColorOperation, Array[ColorRequest], Terminator) -> Self
+pub fn ColorCommand::op(Self) -> ColorOperation
+pub fn ColorCommand::requests(Self) -> Array[ColorRequest]
+pub fn ColorCommand::terminator(Self) -> Terminator
 
 pub enum ColorOperation {
   Osc4
@@ -129,10 +129,10 @@ pub enum ColorTarget {
   Dynamic(Dynamic)
 } derive(Eq, @debug.Debug)
 
-pub struct ColoredTarget {
-  target : ColorTarget
-  color : RGB
-} derive(Eq, @debug.Debug)
+type ColoredTarget derive(Eq, @debug.Debug)
+pub fn ColoredTarget::color(Self) -> RGB
+pub fn ColoredTarget::new(ColorTarget, RGB) -> Self
+pub fn ColoredTarget::target(Self) -> ColorTarget
 
 pub enum Command {
   Invalid
@@ -160,10 +160,10 @@ pub enum ConformanceLevel {
 } derive(Eq, @debug.Debug)
 pub fn ConformanceLevel::code(Self) -> UInt16
 
-pub struct Coordinate {
-  x : UInt16
-  y : UInt
-} derive(Eq, @debug.Debug)
+type Coordinate derive(Eq, @debug.Debug)
+pub fn Coordinate::new(UInt16, UInt) -> Self
+pub fn Coordinate::x(Self) -> UInt16
+pub fn Coordinate::y(Self) -> UInt
 
 pub enum CursorStyle {
   Default
@@ -182,13 +182,13 @@ pub enum DeviceAttributeRequest {
   Tertiary
 } derive(Eq, @debug.Debug)
 
-pub struct DeviceAttributes {
-  primary : PrimaryDeviceAttributes
-  secondary : SecondaryDeviceAttributes
-  tertiary : TertiaryDeviceAttributes
-} derive(Eq, @debug.Debug)
+type DeviceAttributes derive(Eq, @debug.Debug)
 pub fn DeviceAttributes::default() -> Self
 pub fn DeviceAttributes::encode(Self, DeviceAttributeRequest) -> Bytes
+pub fn DeviceAttributes::new(PrimaryDeviceAttributes, SecondaryDeviceAttributes, TertiaryDeviceAttributes) -> Self
+pub fn DeviceAttributes::primary(Self) -> PrimaryDeviceAttributes
+pub fn DeviceAttributes::secondary(Self) -> SecondaryDeviceAttributes
+pub fn DeviceAttributes::tertiary(Self) -> TertiaryDeviceAttributes
 
 pub enum DeviceStatusRequest {
   OperatingStatus
@@ -410,12 +410,12 @@ pub enum PrimaryDeviceAttributeFeature {
 } derive(Eq, @debug.Debug)
 pub fn PrimaryDeviceAttributeFeature::code(Self) -> UInt16
 
-pub struct PrimaryDeviceAttributes {
-  conformance_level : ConformanceLevel
-  features : ReadOnlyArray[PrimaryDeviceAttributeFeature]
-} derive(Eq, @debug.Debug)
+type PrimaryDeviceAttributes derive(Eq, @debug.Debug)
+pub fn PrimaryDeviceAttributes::conformance_level(Self) -> ConformanceLevel
 pub fn PrimaryDeviceAttributes::default() -> Self
 pub fn PrimaryDeviceAttributes::encode(Self) -> Bytes
+pub fn PrimaryDeviceAttributes::features(Self) -> ReadOnlyArray[PrimaryDeviceAttributeFeature]
+pub fn PrimaryDeviceAttributes::new(ConformanceLevel, ReadOnlyArray[PrimaryDeviceAttributeFeature]) -> Self
 
 pub enum ProtectedMode {
   Off
@@ -423,12 +423,12 @@ pub enum ProtectedMode {
   Dec
 } derive(Eq, @debug.Debug)
 
-pub struct RGB {
-  r : Byte
-  g : Byte
-  b : Byte
-} derive(Eq, @debug.Debug)
+type RGB derive(Eq, @debug.Debug)
+pub fn RGB::b(Self) -> Byte
+pub fn RGB::g(Self) -> Byte
+pub fn RGB::new(Byte, Byte, Byte) -> Self
 pub fn RGB::parse(String) -> Self raise ColorParseError
+pub fn RGB::r(Self) -> Byte
 
 pub enum RenditionAspect {
   Default
@@ -452,20 +452,20 @@ pub enum ReportState {
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
 
-pub struct SecondaryDeviceAttributes {
-  device_type : DeviceType
-  firmware_version : UInt16
-  rom_cartridge : UInt16
-} derive(Eq, @debug.Debug)
+type SecondaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn SecondaryDeviceAttributes::default() -> Self
+pub fn SecondaryDeviceAttributes::device_type(Self) -> DeviceType
 pub fn SecondaryDeviceAttributes::encode(Self) -> Bytes
+pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
+pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
+pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
 
-pub struct Size {
-  rows : UInt16
-  columns : UInt16
-  cell_width : UInt
-  cell_height : UInt
-} derive(Eq, @debug.Debug)
+type Size derive(Eq, @debug.Debug)
+pub fn Size::cell_height(Self) -> UInt
+pub fn Size::cell_width(Self) -> UInt
+pub fn Size::columns(Self) -> UInt16
+pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
+pub fn Size::rows(Self) -> UInt16
 
 pub enum Slots {
   G0
@@ -515,11 +515,11 @@ pub enum Terminator {
   Bel
 } derive(Eq, @debug.Debug)
 
-pub struct TertiaryDeviceAttributes {
-  unit_id : UInt
-} derive(Eq, @debug.Debug)
+type TertiaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
+pub fn TertiaryDeviceAttributes::new(UInt) -> Self
+pub fn TertiaryDeviceAttributes::unit_id(Self) -> UInt
 
 type Utf8Decoder derive(Eq, @debug.Debug)
 pub fn Utf8Decoder::new() -> Self

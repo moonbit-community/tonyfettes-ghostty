@@ -7,12 +7,42 @@ pub enum Style {
 } derive(Eq, Debug)
 
 ///|
-pub struct Size {
+struct Size {
   rows : CellCountInt
   columns : CellCountInt
   cell_width : UInt
   cell_height : UInt
 } derive(Eq, Debug)
+
+///|
+pub fn Size::new(
+  rows : CellCountInt,
+  columns : CellCountInt,
+  cell_width : UInt,
+  cell_height : UInt,
+) -> Size {
+  { rows, columns, cell_width, cell_height }
+}
+
+///|
+pub fn Size::rows(self : Size) -> CellCountInt {
+  self.rows
+}
+
+///|
+pub fn Size::columns(self : Size) -> CellCountInt {
+  self.columns
+}
+
+///|
+pub fn Size::cell_width(self : Size) -> UInt {
+  self.cell_width
+}
+
+///|
+pub fn Size::cell_height(self : Size) -> UInt {
+  self.cell_height
+}
 
 ///|
 fn width_pixels(size : Size) -> UInt64 {

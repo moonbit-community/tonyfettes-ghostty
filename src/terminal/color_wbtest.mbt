@@ -2,10 +2,10 @@
 test "color/name defaults and codes" {
   assert_eq(Name::Black.code(), 0)
   assert_eq(Name::BrightWhite.code(), 15)
-  guard Name::Red.default_rgb() == { r: 0xCC, g: 0x66, b: 0x66 } else {
+  guard Name::Red.default_rgb() == RGB::new(0xCC, 0x66, 0x66) else {
     fail("unexpected red default")
   }
-  guard Name::BrightBlue.default_rgb() == { r: 0x7A, g: 0xA6, b: 0xDA } else {
+  guard Name::BrightBlue.default_rgb() == RGB::new(0x7A, 0xA6, 0xDA) else {
     fail("unexpected bright blue default")
   }
 }
@@ -13,22 +13,22 @@ test "color/name defaults and codes" {
 ///|
 test "color/all named colors roundtrip through default palette data" {
   let names : Array[(Name, Byte, RGB)] = [
-    (Name::Black, 0, { r: 0x1D, g: 0x1F, b: 0x21 }),
-    (Name::Red, 1, { r: 0xCC, g: 0x66, b: 0x66 }),
-    (Name::Green, 2, { r: 0xB5, g: 0xBD, b: 0x68 }),
-    (Name::Yellow, 3, { r: 0xF0, g: 0xC6, b: 0x74 }),
-    (Name::Blue, 4, { r: 0x81, g: 0xA2, b: 0xBE }),
-    (Name::Magenta, 5, { r: 0xB2, g: 0x94, b: 0xBB }),
-    (Name::Cyan, 6, { r: 0x8A, g: 0xBE, b: 0xB7 }),
-    (Name::White, 7, { r: 0xC5, g: 0xC8, b: 0xC6 }),
-    (Name::BrightBlack, 8, { r: 0x66, g: 0x66, b: 0x66 }),
-    (Name::BrightRed, 9, { r: 0xD5, g: 0x4E, b: 0x53 }),
-    (Name::BrightGreen, 10, { r: 0xB9, g: 0xCA, b: 0x4A }),
-    (Name::BrightYellow, 11, { r: 0xE7, g: 0xC5, b: 0x47 }),
-    (Name::BrightBlue, 12, { r: 0x7A, g: 0xA6, b: 0xDA }),
-    (Name::BrightMagenta, 13, { r: 0xC3, g: 0x97, b: 0xD8 }),
-    (Name::BrightCyan, 14, { r: 0x70, g: 0xC0, b: 0xB1 }),
-    (Name::BrightWhite, 15, { r: 0xEA, g: 0xEA, b: 0xEA }),
+    (Name::Black, 0, RGB::new(0x1D, 0x1F, 0x21)),
+    (Name::Red, 1, RGB::new(0xCC, 0x66, 0x66)),
+    (Name::Green, 2, RGB::new(0xB5, 0xBD, 0x68)),
+    (Name::Yellow, 3, RGB::new(0xF0, 0xC6, 0x74)),
+    (Name::Blue, 4, RGB::new(0x81, 0xA2, 0xBE)),
+    (Name::Magenta, 5, RGB::new(0xB2, 0x94, 0xBB)),
+    (Name::Cyan, 6, RGB::new(0x8A, 0xBE, 0xB7)),
+    (Name::White, 7, RGB::new(0xC5, 0xC8, 0xC6)),
+    (Name::BrightBlack, 8, RGB::new(0x66, 0x66, 0x66)),
+    (Name::BrightRed, 9, RGB::new(0xD5, 0x4E, 0x53)),
+    (Name::BrightGreen, 10, RGB::new(0xB9, 0xCA, 0x4A)),
+    (Name::BrightYellow, 11, RGB::new(0xE7, 0xC5, 0x47)),
+    (Name::BrightBlue, 12, RGB::new(0x7A, 0xA6, 0xDA)),
+    (Name::BrightMagenta, 13, RGB::new(0xC3, 0x97, 0xD8)),
+    (Name::BrightCyan, 14, RGB::new(0x70, 0xC0, 0xB1)),
+    (Name::BrightWhite, 15, RGB::new(0xEA, 0xEA, 0xEA)),
   ]
 
   for entry in names {
@@ -87,17 +87,17 @@ test "color/dynamic codes cover every osc dynamic slot" {
 ///|
 test "color/rgb parse accepts hash rgb rgbi and x11 names" {
   let cases : Array[(String, RGB)] = [
-    ("rgbi:1.0/0/0", { r: 255, g: 0, b: 0 }),
-    ("rgb:7f/a0a0/0", { r: 127, g: 160, b: 0 }),
-    ("rgb:f/ff/fff", { r: 255, g: 255, b: 255 }),
-    ("#ffffff", { r: 255, g: 255, b: 255 }),
-    ("#fff", { r: 255, g: 255, b: 255 }),
-    ("#fffffffff", { r: 255, g: 255, b: 255 }),
-    ("#ffffffffffff", { r: 255, g: 255, b: 255 }),
-    ("#ff0010", { r: 255, g: 0, b: 16 }),
-    ("LawnGreen", { r: 124, g: 252, b: 0 }),
-    ("medium spring green", { r: 0, g: 250, b: 154 }),
-    (" Forest Green ", { r: 34, g: 139, b: 34 }),
+    ("rgbi:1.0/0/0", RGB::new(255, 0, 0)),
+    ("rgb:7f/a0a0/0", RGB::new(127, 160, 0)),
+    ("rgb:f/ff/fff", RGB::new(255, 255, 255)),
+    ("#ffffff", RGB::new(255, 255, 255)),
+    ("#fff", RGB::new(255, 255, 255)),
+    ("#fffffffff", RGB::new(255, 255, 255)),
+    ("#ffffffffffff", RGB::new(255, 255, 255)),
+    ("#ff0010", RGB::new(255, 0, 16)),
+    ("LawnGreen", RGB::new(124, 252, 0)),
+    ("medium spring green", RGB::new(0, 250, 154)),
+    (" Forest Green ", RGB::new(34, 139, 34)),
   ]
 
   for entry in cases {
@@ -105,6 +105,14 @@ test "color/rgb parse accepts hash rgb rgbi and x11 names" {
       fail("unexpected parse result for \{entry.0}")
     }
   }
+}
+
+///|
+test "color/rgb constructor and accessors" {
+  let rgb = RGB::new(1, 2, 3)
+  assert_eq(rgb.r(), 1)
+  assert_eq(rgb.g(), 2)
+  assert_eq(rgb.b(), 3)
 }
 
 ///|
