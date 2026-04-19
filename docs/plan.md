@@ -229,8 +229,8 @@ ordering contract is gated on quality, not just on code landing.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P3.0 | todo | `Parser.zig` contract | parser invariants checklist and subplan | P2.A, P2.B, P2.C | none | `[E]` | action ordering, param handling, colon rules, and overflow behavior are recorded before implementation | doc review | `[R]` main | `docs` |
-| P3.1 | todo | `Parser.zig` and `Parser.zig` tests | parser module + translated tests | P3.0 | none | `[W]` | state, actions, params, OSC embedding, and `next` semantics are ported and parser tests pass in the same green change | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
+| P3.0 | done | `Parser.zig` contract | parser invariants checklist and subplan | P2.A, P2.B, P2.C | none | `[E]` | action ordering, param handling, colon rules, and overflow behavior are recorded before implementation | doc review | `[R]` main | `docs` |
+| P3.1 | active | `Parser.zig` and `Parser.zig` tests | parser module + translated tests | P3.0 | none | `[W]` | state, actions, params, OSC embedding, and `next` semantics are ported and parser tests pass in the same green change | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
 
 Phase 3 gate:
 
