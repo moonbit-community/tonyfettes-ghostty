@@ -309,7 +309,7 @@ Phase 4 gate:
 ### Phase 5: Stream integration
 
 Gate: `[S/P]` after Phase 4  
-Status: `todo`
+Status: `active`
 
 `stream.zig` is the semantic join point, so the driver surface is integrated
 serially first. After that, dispatch groups can be delegated in parallel, but
@@ -317,7 +317,7 @@ each lane must include its own test batch and finish green.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P5.0 | todo | `stream.zig` contracts | stream dependency checklist and subplan boundaries | P4.A, P4.B, P4.C, P4.D, P4.E | none | `[E]` | handler contract and dispatch split recorded | doc review | `[R]` main | `docs` |
+| P5.0 | done | `stream.zig` contracts | stream dependency checklist and subplan boundaries | P4.A, P4.B, P4.C, P4.D, P4.E | none | `[E]` | handler contract and dispatch split recorded | doc review | `[R]` main | `docs` |
 | P5.1 | todo | `stream.zig` driver core | `Stream.Action`, handler contract, fast-path scaffolding + base tests | P5.0 | none | main | core compiles, replay ordering is preserved, and base tests pass | `moon check && moon test && moon fmt && moon info` | `[R]` main | `feat(stream)` |
 | P5.A | todo | `execute`, ESC, CSI subsets | dispatch modules + matching tests | P5.1 | P5.B, P5.C | `[W]` | covered finals behave like upstream and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 | P5.B | todo | OSC dispatch wiring | dispatch modules + matching tests | P5.1 | P5.A, P5.C | `[W]` | typed OSC commands route correctly and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
@@ -326,6 +326,11 @@ each lane must include its own test batch and finish green.
 Phase 5 gate:
 
 - P5.1, P5.A, P5.B, and P5.C are `done`
+
+#### Phase 5 outputs
+
+- Phase 5 stream boundary notes live in:
+  [2026-04-19-p5-stream-contracts.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-stream-contracts.md)
 
 ### Phase 6: Terminal application surface
 
