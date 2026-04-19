@@ -60,6 +60,20 @@ pub(all) suberror ColorParseError {
 } derive(Eq, @debug.Debug)
 
 // Types and methods
+pub enum Action {
+  Print(UInt)
+  Execute(Byte)
+  CsiDispatch(Csi)
+  EscDispatch(Esc)
+  OscDispatch(Command)
+  DcsHook(Dcs)
+  DcsPut(Byte)
+  DcsUnhook
+  ApcStart
+  ApcPut(Byte)
+  ApcEnd
+} derive(Eq, @debug.Debug)
+
 pub enum ActiveSlot {
   Gl
   Gr
@@ -175,6 +189,13 @@ pub struct Coordinate {
   y : UInt
 } derive(Eq, @debug.Debug)
 
+pub struct Csi {
+  intermediates : Array[Byte]
+  params : Array[UInt16]
+  params_sep : SepList
+  final_byte : Byte
+} derive(Eq, @debug.Debug)
+
 pub enum CursorStyle {
   Default
   BlinkingBlock
@@ -185,6 +206,12 @@ pub enum CursorStyle {
   SteadyBar
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::ordinal(Self) -> Int
+
+pub struct Dcs {
+  intermediates : Array[Byte]
+  params : Array[UInt16]
+  final_byte : Byte
+} derive(Eq, @debug.Debug)
 
 pub enum DeviceAttributeRequest {
   Primary
@@ -243,6 +270,11 @@ pub enum Dynamic {
 } derive(Eq, @debug.Debug)
 pub fn Dynamic::code(Self) -> UInt16
 pub fn Dynamic::next(Self) -> Self?
+
+pub struct Esc {
+  intermediates : Array[Byte]
+  final_byte : Byte
+} derive(Eq, @debug.Debug)
 
 pub enum Mode {
   DisableKeyboard
@@ -414,6 +446,20 @@ pub fn OscParser::reset(Self) -> Unit
 
 type OscParserState derive(Eq, @debug.Debug)
 
+pub struct Parser {
+  mut state : ParserState
+  mut intermediates : Array[Byte]
+  mut params : Array[UInt16]
+  mut params_sep : SepList
+  mut param_acc : UInt16
+  mut param_acc_idx : Int
+  osc_parser : OscParser
+} derive(@debug.Debug)
+pub fn Parser::clear(Self) -> Unit
+pub fn Parser::deinit(Self) -> Unit
+pub fn Parser::new() -> Self
+pub fn Parser::next(Self, Byte) -> FixedArray[Action?]
+
 pub enum ParserState {
   Ground
   Escape
@@ -511,6 +557,14 @@ pub struct SecondaryDeviceAttributes {
 pub fn SecondaryDeviceAttributes::default() -> Self
 pub fn SecondaryDeviceAttributes::encode(Self) -> String
 
+pub struct SepList {
+  mut bits : UInt64
+} derive(Eq, @debug.Debug)
+pub fn SepList::count(Self) -> Int
+pub fn SepList::init_empty() -> Self
+pub fn SepList::is_set(Self, Int) -> Bool
+pub fn SepList::set(Self, Int) -> Unit
+
 pub struct Size {
   rows : UInt16
   columns : UInt16
@@ -600,6 +654,8 @@ pub fn Utf8Decoder::new() -> Self
 pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)
 
 // Type aliases
+pub type ActionList = FixedArray[Action?]
+
 pub type CellCountInt = UInt16
 
 pub type CharsetTable = ReadOnlyArray[UInt16]

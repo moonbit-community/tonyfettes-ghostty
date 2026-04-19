@@ -222,7 +222,7 @@ Phase 2 gate:
 ### Phase 3: Parser state machine
 
 Gate: `[S]` after Phase 2  
-Status: `todo`
+Status: `done`
 
 This phase keeps `Parser` implementation and parser tests together so the core
 ordering contract is gated on quality, not just on code landing.
@@ -230,11 +230,17 @@ ordering contract is gated on quality, not just on code landing.
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P3.0 | done | `Parser.zig` contract | parser invariants checklist and subplan | P2.A, P2.B, P2.C | none | `[E]` | action ordering, param handling, colon rules, and overflow behavior are recorded before implementation | doc review | `[R]` main | `docs` |
-| P3.1 | active | `Parser.zig` and `Parser.zig` tests | parser module + translated tests | P3.0 | none | `[W]` | state, actions, params, OSC embedding, and `next` semantics are ported and parser tests pass in the same green change | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
+| P3.1 | done | `Parser.zig` and `Parser.zig` tests | parser module + translated tests | P3.0 | none | `[W]` | state, actions, params, OSC embedding, and `next` semantics are ported and parser tests pass in the same green change | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
 
 Phase 3 gate:
 
 - P3.1 is `done`
+
+#### Phase 3 outputs
+
+- Phase 3 implementation notes, coverage findings, and review/audit results live
+  in:
+  [2026-04-19-p3-parser-state-machine.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p3-parser-state-machine.md)
 
 ### Phase 4: Semantic decoders
 
