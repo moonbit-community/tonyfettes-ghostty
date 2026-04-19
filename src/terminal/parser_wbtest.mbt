@@ -234,6 +234,35 @@ test "parser/osc embedded minimal color operation" {
 }
 
 ///|
+test "parser/osc hyperlink dispatch" {
+  let start_parser = Parser::new()
+  for byte in b"\x1b]8;id=foo;http://example.com" {
+    expect_no_actions(start_parser.next(byte))
+  }
+  let start_actions = start_parser.next(0x07)
+  guard start_actions[0] is Some(OscDispatch(HyperlinkStart(link))) &&
+    link.id() == Some("foo") &&
+    link.uri() == "http://example.com" else {
+    fail("expected OSC hyperlink start dispatch in exit slot")
+  }
+  guard start_actions[1] == None && start_actions[2] == None else {
+    fail("unexpected hyperlink start trailing actions")
+  }
+
+  let end_parser = Parser::new()
+  for byte in b"\x1b]8;;" {
+    expect_no_actions(end_parser.next(byte))
+  }
+  let end_actions = end_parser.next(0x07)
+  guard end_actions[0] == Some(OscDispatch(HyperlinkEnd)) else {
+    fail("expected OSC hyperlink end dispatch in exit slot")
+  }
+  guard end_actions[1] == None && end_actions[2] == None else {
+    fail("unexpected hyperlink end trailing actions")
+  }
+}
+
+///|
 test "parser/csi too many params drops dispatch" {
   let parser = Parser::new()
   expect_no_actions(parser.next(0x1B))

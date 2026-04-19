@@ -138,6 +138,8 @@ pub(all) enum Command {
   Invalid
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
+  HyperlinkStart(HyperlinkStart)
+  HyperlinkEnd
   ReportPwd(String)
   MouseShape(String)
   ColorOperation(ColorCommand)
@@ -245,6 +247,10 @@ pub(all) enum Dynamic {
 } derive(Eq, @debug.Debug)
 pub fn Dynamic::code(Self) -> UInt16
 pub fn Dynamic::next(Self) -> Self?
+
+type HyperlinkStart derive(Eq, @debug.Debug)
+pub fn HyperlinkStart::id(Self) -> String?
+pub fn HyperlinkStart::uri(Self) -> String
 
 pub(all) struct InvokeCharsetAction {
   bank : ActiveSlot

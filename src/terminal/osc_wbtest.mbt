@@ -139,7 +139,7 @@ test "osc/title exact fixed-buffer limit succeeds" {
 
 ///|
 test "osc/incomplete and invalid prefixes are rejected" {
-  for bytes in [b"0", b"1", b"2", b"7", b"22", b"6"] {
+  for bytes in [b"0", b"1", b"2", b"7", b"8", b"22", b"6"] {
     let parser = OscParser::new()
     for byte in bytes {
       parser.next(byte)
@@ -205,6 +205,77 @@ test "osc/icon report-pwd and mouse-shape basics" {
   }
   guard mouse.end(Some(0x07)) is Some(MouseShape(value)) && value == "pointer" else {
     fail("expected OSC 22 mouse shape command")
+  }
+}
+
+///|
+test "osc/hyperlink basics and id handling" {
+  let basic = OscParser::new()
+  feed_bytes(basic, b"8;;http://example.com")
+  guard basic.end(Some(0x1B)) is Some(HyperlinkStart(link)) else {
+    fail("expected OSC 8 hyperlink start command")
+  }
+  guard link.uri() == "http://example.com" else {
+    fail("expected OSC 8 hyperlink uri")
+  }
+  guard link.id() == None else {
+    fail("expected OSC 8 hyperlink id to be absent")
+  }
+
+  let with_id = OscParser::new()
+  feed_bytes(with_id, b"8;id=foo;http://example.com")
+  guard with_id.end(Some(0x1B)) is Some(HyperlinkStart(link)) else {
+    fail("expected OSC 8 hyperlink with id")
+  }
+  guard link.uri() == "http://example.com" else {
+    fail("expected hyperlink uri with id")
+  }
+  guard link.id() == Some("foo") else { fail("expected hyperlink id") }
+
+  let empty_id = OscParser::new()
+  feed_bytes(empty_id, b"8;id=;http://example.com")
+  guard empty_id.end(Some(0x1B)) is Some(HyperlinkStart(link)) else {
+    fail("expected OSC 8 hyperlink with empty id to parse")
+  }
+  guard link.id() == None else {
+    fail("expected empty hyperlink id to be ignored")
+  }
+}
+
+///|
+test "osc/hyperlink malformed options and end handling" {
+  let incomplete_key = OscParser::new()
+  feed_bytes(incomplete_key, b"8;id;http://example.com")
+  guard incomplete_key.end(Some(0x1B)) is Some(HyperlinkStart(link)) &&
+    link.id() == None &&
+    link.uri() == "http://example.com" else {
+    fail("expected incomplete hyperlink key to be ignored")
+  }
+
+  let empty_key = OscParser::new()
+  feed_bytes(empty_key, b"8;=value:id=foo;http://example.com")
+  guard empty_key.end(Some(0x1B)) is Some(HyperlinkStart(link)) &&
+    link.id() == Some("foo") &&
+    link.uri() == "http://example.com" else {
+    fail("expected empty hyperlink key to be ignored")
+  }
+
+  let end_link = OscParser::new()
+  feed_bytes(end_link, b"8;;")
+  guard end_link.end(Some(0x1B)) == Some(HyperlinkEnd) else {
+    fail("expected OSC 8 hyperlink end command")
+  }
+
+  let invalid = OscParser::new()
+  feed_bytes(invalid, b"8;id=foo;")
+  guard invalid.end(Some(0x1B)) == None else {
+    fail("expected empty hyperlink uri with id to be rejected")
+  }
+
+  let no_separator = OscParser::new()
+  feed_bytes(no_separator, b"8;id=foo")
+  guard no_separator.end(Some(0x1B)) == None else {
+    fail("expected hyperlink payload without second semicolon to be rejected")
   }
 }
 
@@ -305,11 +376,11 @@ test "osc/invalid prefix transitions short circuit parser state" {
   for
     bytes in [
       b"0x;ignored", b"2x;ignored", b"4x;ignored", b"5x;ignored", b"7x;ignored",
-      b"10x;ignored", b"12x;ignored", b"13x;ignored", b"14x;ignored", b"15x;ignored",
-      b"16x;ignored", b"17x;ignored", b"18x;ignored", b"19x;ignored", b"22x;ignored",
-      b"104x;ignored", b"110x;ignored", b"111x;ignored", b"112x;ignored", b"113x;ignored",
-      b"114x;ignored", b"115x;ignored", b"116x;ignored", b"117x;ignored", b"118x;ignored",
-      b"119x;ignored",
+      b"8x;ignored", b"10x;ignored", b"12x;ignored", b"13x;ignored", b"14x;ignored",
+      b"15x;ignored", b"16x;ignored", b"17x;ignored", b"18x;ignored", b"19x;ignored",
+      b"22x;ignored", b"104x;ignored", b"110x;ignored", b"111x;ignored", b"112x;ignored",
+      b"113x;ignored", b"114x;ignored", b"115x;ignored", b"116x;ignored", b"117x;ignored",
+      b"118x;ignored", b"119x;ignored",
     ] {
     let parser = OscParser::new()
     feed_bytes(parser, bytes)

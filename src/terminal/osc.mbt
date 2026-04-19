@@ -110,10 +110,28 @@ pub fn ColorCommand::terminator(self : ColorCommand) -> Terminator {
 }
 
 ///|
+struct HyperlinkStart {
+  uri : String
+  id : String?
+} derive(Eq, Debug)
+
+///|
+pub fn HyperlinkStart::uri(self : HyperlinkStart) -> String {
+  self.uri
+}
+
+///|
+pub fn HyperlinkStart::id(self : HyperlinkStart) -> String? {
+  self.id
+}
+
+///|
 pub(all) enum Command {
   Invalid
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
+  HyperlinkStart(HyperlinkStart)
+  HyperlinkEnd
   ReportPwd(String)
   MouseShape(String)
   ColorOperation(ColorCommand)
@@ -129,6 +147,7 @@ enum OscParserState {
   Prefix4
   Prefix5
   Prefix7
+  Prefix8
   Prefix10
   Prefix11
   Prefix12
@@ -213,6 +232,7 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         b'4' => self.state = Prefix4
         b'5' => self.state = Prefix5
         b'7' => self.state = Prefix7
+        b'8' => self.state = Prefix8
         _ => self.state = Invalid
       }
     Prefix0 =>
@@ -255,6 +275,12 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         self.state = Invalid
       }
     Prefix7 =>
+      if byte == b';' {
+        self.start_capture()
+      } else {
+        self.state = Invalid
+      }
+    Prefix8 =>
       if byte == b';' {
         self.start_capture()
       } else {
@@ -428,6 +454,12 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
     Prefix5 => Some(parse_color_command(Prefix5, self.buffer, terminator_ch))
     Prefix7 =>
       captured_command(self.capturing, ReportPwd(captured_string(self.buffer)))
+    Prefix8 =>
+      if self.capturing {
+        parse_hyperlink_command(self.buffer)
+      } else {
+        None
+      }
     Prefix10 => Some(parse_color_command(Prefix10, self.buffer, terminator_ch))
     Prefix11 => Some(parse_color_command(Prefix11, self.buffer, terminator_ch))
     Prefix12 => Some(parse_color_command(Prefix12, self.buffer, terminator_ch))
@@ -474,6 +506,71 @@ fn captured_command(capturing : Bool, command : Command) -> Command? {
   } else {
     None
   }
+}
+
+///|
+fn parse_hyperlink_command(buffer : Array[Byte]) -> Command? {
+  let params_end = match find_byte(buffer, 0, buffer.length(), b';') {
+    Some(index) => index
+    None => return None
+  }
+
+  let id = parse_hyperlink_id(buffer, params_end)
+  let uri = captured_string(
+    copy_bytes_range(buffer, params_end + 1, buffer.length()),
+  )
+  if uri == "" {
+    match id {
+      Some(_) => None
+      None => Some(HyperlinkEnd)
+    }
+  } else {
+    Some(HyperlinkStart({ uri, id }))
+  }
+}
+
+///|
+fn parse_hyperlink_id(buffer : Array[Byte], end_ : Int) -> String? {
+  let mut result : String? = None
+  let mut start = 0
+  while start <= end_ {
+    let segment_end = match find_byte(buffer, start, end_, b':') {
+      Some(index) => index
+      None => end_
+    }
+
+    match find_byte(buffer, start, segment_end, b'=') {
+      Some(eq_index) =>
+        if slice_equals_ascii(buffer, start, eq_index, "id") &&
+          eq_index + 1 < segment_end {
+          result = Some(
+            captured_string(copy_bytes_range(buffer, eq_index + 1, segment_end)),
+          )
+        }
+      None => ()
+    }
+
+    if segment_end == end_ {
+      return result
+    }
+    start = segment_end + 1
+  }
+  result
+}
+
+///|
+fn copy_bytes_range(
+  buffer : Array[Byte],
+  start : Int,
+  end_ : Int,
+) -> Array[Byte] {
+  let result : Array[Byte] = []
+  let mut index = start
+  while index < end_ {
+    result.push(buffer[index])
+    index += 1
+  }
+  result
 }
 
 ///|

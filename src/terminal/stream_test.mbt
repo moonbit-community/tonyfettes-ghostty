@@ -215,6 +215,15 @@ test "stream/osc ignored and invalid commands stay silent" {
 }
 
 ///|
+test "stream/osc hyperlink commands stay silent and return to ground" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]8;id=foo;http://example.com\x07x\x1B]8;;\x07y")
+  guard actions == [StreamPrint(b'x'.to_uint()), StreamPrint(b'y'.to_uint())] else {
+    fail("expected hyperlink OSC commands to stay silent for now")
+  }
+}
+
+///|
 test "stream/dcs placeholder returns to ground" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1BP+qa\x1B\\z")

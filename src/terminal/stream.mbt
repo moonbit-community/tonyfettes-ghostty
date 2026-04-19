@@ -735,6 +735,7 @@ fn[H : StreamHandler] Stream::osc_dispatch(
 ) -> Unit {
   match command {
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
+    HyperlinkStart(_) | HyperlinkEnd => ()
     ChangeWindowIcon(_) | Invalid => ()
     ReportPwd(url) => self.emit(StreamReportPwd(url))
     MouseShape(value) =>
