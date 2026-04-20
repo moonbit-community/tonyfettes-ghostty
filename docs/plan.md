@@ -288,7 +288,7 @@ Status: `active`
 | P4.A | done | `sgr.zig` | SGR module + tests | P4.0 | P4.B, P4.C, P4.D, P4.E | `[W]` | colon/semicolon parsing and attribute outputs match upstream with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.B | done | `dcs.zig` | DCS handler + tests | P4.0 | P4.A, P4.C, P4.D, P4.E | `[W]` | `hook/put/unhook` semantics and tests pass in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.C | done | `osc.zig` core + high-frequency subparsers | bounded OSC high-frequency parser sub-slices + tests | P4.0 | P4.A, P4.B, P4.D, P4.E | `[W]` | each `P4.C*` sub-slice lands green, and the lane closes only after the translated high-frequency OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
-| P4.D | todo | remaining OSC subparsers | clipboard, kitty color/clipboard, iTerm2, rxvt, context signal, text sizing + tests | P4.0 | P4.A, P4.B, P4.C, P4.E | `[W]` | long-tail fidelity surface lands in a green state | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.D | active | remaining OSC subparsers | bounded long-tail OSC parser sub-slices + tests | P4.0, P4.C | P4.A, P4.B, P4.E | `[W]` | each `P4.D*` sub-slice lands green, and the lane closes only after the translated long-tail OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.E | done | APC-facing helpers | APC support modules + tests | P4.0 | P4.A, P4.B, P4.C, P4.D | `[W]` | helpers compile and match parser-facing expectations with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 
 Phase 4 gate:
@@ -296,7 +296,7 @@ Phase 4 gate:
 - P4.0 is `done`
 - P4.A, P4.B, and P4.E are `done`
 - P4.C is `done`
-- P4.D is pending
+- P4.D is `active`
 
 #### Phase 4 outputs
 
@@ -308,6 +308,8 @@ Phase 4 gate:
   [2026-04-19-p4-e-apc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-e-apc.md)
 - Phase 4C workstream roadmap lives in:
   [2026-04-19-p4-c-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-c-roadmap.md)
+- Phase 4D workstream roadmap lives in:
+  [2026-04-20-p4-d-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d-roadmap.md)
 - Completed Phase 4C slice audits live in:
   [2026-04-19-p4-c-hyperlink.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-c-hyperlink.md),
   [2026-04-20-p4-c-semantic-prompt.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-c-semantic-prompt.md),
