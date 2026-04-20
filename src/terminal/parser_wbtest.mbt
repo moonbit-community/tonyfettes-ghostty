@@ -279,6 +279,44 @@ test "parser/osc kitty color dispatch" {
 }
 
 ///|
+test "parser/osc9 desktop notification report-pwd and semantic prompt dispatch" {
+  let notification_parser = Parser::new()
+  for byte in b"\x1b]9;hello world" {
+    expect_no_actions(notification_parser.next(byte))
+  }
+  let notification_actions = notification_parser.next(0x07)
+  guard notification_actions[0]
+    is Some(OscDispatch(ShowDesktopNotification(notification))) &&
+    notification.title() == "" &&
+    notification.body() == "hello world" else {
+    fail("expected OSC 9 desktop notification dispatch in exit slot")
+  }
+  guard notification_actions[1] == None && notification_actions[2] == None else {
+    fail("unexpected OSC 9 desktop notification trailing actions")
+  }
+
+  let pwd_parser = Parser::new()
+  for byte in b"\x1b]9;9;file:///tmp" {
+    expect_no_actions(pwd_parser.next(byte))
+  }
+  let pwd_actions = pwd_parser.next(0x07)
+  guard pwd_actions[0] is Some(OscDispatch(ReportPwd(value))) &&
+    value == "file:///tmp" else {
+    fail("expected OSC 9 cwd compatibility report-pwd dispatch")
+  }
+
+  let prompt_parser = Parser::new()
+  for byte in b"\x1b]9;12;abc" {
+    expect_no_actions(prompt_parser.next(byte))
+  }
+  let prompt_actions = prompt_parser.next(0x07)
+  guard prompt_actions[0] is Some(OscDispatch(SemanticPrompt(prompt))) &&
+    prompt.action() == FreshLineNewPrompt else {
+    fail("expected OSC 9 semantic prompt compatibility dispatch")
+  }
+}
+
+///|
 test "parser/osc hyperlink dispatch" {
   let start_parser = Parser::new()
   for byte in b"\x1b]8;id=foo;http://example.com" {

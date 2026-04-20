@@ -233,6 +233,38 @@ test "stream/osc kitty color stays silent until p5.b4" {
 }
 
 ///|
+test "stream/osc9 notification and conemu progress stay silent until p5.b5" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B]9;hello world\x07\x1B]9;1;250\x07\x1B]9;2;ok\x07\x1B]9;3;tab\x07\x1B]9;4;1;50\x07\x1B]9;5;foo\x07\x1B]9;6;macro\x07\x1B]9;7;proc\x07\x1B]9;8;PATH\x07\x1B]9;10;3\x07\x1B]9;11;note\x07z",
+  )
+  guard actions == [StreamPrint(b'z'.to_uint())] else {
+    fail(
+      "expected OSC 9 notification and progress paths to stay silent until P5.B5",
+    )
+  }
+}
+
+///|
+test "stream/osc9 report pwd and semantic prompt reuse existing dispatch" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]9;9;file:///tmp\x07\x1B]9;12;abc\x07z")
+  guard actions.length() == 3 else {
+    fail("expected OSC 9 compatibility dispatch plus printable text")
+  }
+  guard actions.get(0) == Some(StreamReportPwd("file:///tmp")) else {
+    fail("expected OSC 9 cwd compatibility report-pwd action")
+  }
+  guard actions.get(1) is Some(StreamSemanticPrompt(prompt)) &&
+    prompt.action() == FreshLineNewPrompt else {
+    fail("expected OSC 9 semantic prompt compatibility action")
+  }
+  guard actions.get(2) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after OSC 9 compatibility dispatch")
+  }
+}
+
+///|
 test "stream/slice walker handles in-flight escape after printable prefix" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"a\x1B(B")

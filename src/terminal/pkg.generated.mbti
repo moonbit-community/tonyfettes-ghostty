@@ -148,13 +148,48 @@ pub(all) enum Command {
   ChangeWindowIcon(String)
   ClipboardContents(ClipboardContents)
   KittyColorProtocol(KittyColorOsc)
+  ShowDesktopNotification(DesktopNotification)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
+  ConEmuSleep(ConEmuSleep)
+  ConEmuShowMessageBox(String)
+  ConEmuChangeTabTitle(ConEmuTabTitleChange)
+  ConEmuProgressReport(ConEmuProgressReport)
+  ConEmuWaitInput
+  ConEmuGuiMacro(String)
+  ConEmuRunProcess(String)
+  ConEmuOutputEnvironmentVariable(String)
+  ConEmuXtermEmulation(ConEmuXtermEmulation)
+  ConEmuComment(String)
   SemanticPrompt(SemanticPrompt)
   ReportPwd(String)
   MouseShape(String)
   ColorOperation(ColorCommand)
 } derive(Eq, @debug.Debug)
+
+type ConEmuProgressReport derive(Eq, @debug.Debug)
+pub fn ConEmuProgressReport::progress(Self) -> Byte?
+pub fn ConEmuProgressReport::state(Self) -> ConEmuProgressState
+
+pub(all) enum ConEmuProgressState {
+  ConEmuProgressRemove
+  ConEmuProgressSet
+  ConEmuProgressError
+  ConEmuProgressIndeterminate
+  ConEmuProgressPause
+} derive(Eq, @debug.Debug)
+
+type ConEmuSleep derive(Eq, @debug.Debug)
+pub fn ConEmuSleep::duration_ms(Self) -> UInt16
+
+pub(all) enum ConEmuTabTitleChange {
+  ConEmuTabTitleReset
+  ConEmuTabTitleValue(String)
+} derive(Eq, @debug.Debug)
+
+type ConEmuXtermEmulation derive(Eq, @debug.Debug)
+pub fn ConEmuXtermEmulation::keyboard(Self) -> Bool?
+pub fn ConEmuXtermEmulation::output(Self) -> Bool?
 
 pub(all) struct ConfigureCharsetAction {
   slot : Slots
@@ -202,6 +237,10 @@ pub(all) enum CursorStyle {
   SteadyBar
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::ordinal(Self) -> Int
+
+type DesktopNotification derive(Eq, @debug.Debug)
+pub fn DesktopNotification::body(Self) -> String
+pub fn DesktopNotification::title(Self) -> String
 
 pub(all) enum DeviceAttributeRequest {
   Primary

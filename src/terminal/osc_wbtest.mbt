@@ -67,6 +67,16 @@ fn expect_kitty_color_protocol(
 }
 
 ///|
+fn expect_osc_command(bytes : Bytes, terminator : Byte?) -> Command raise {
+  let parser = OscParser::new()
+  feed_bytes(parser, bytes)
+  guard parser.end(terminator) is Some(command) else {
+    fail("expected OSC command")
+  }
+  command
+}
+
+///|
 test "osc/color payload constructors and accessors" {
   let target = ColoredTarget::new(Palette(3), RGB::new(1, 2, 3))
   guard target.target() == Palette(3) else {
@@ -95,6 +105,36 @@ test "osc/kitty color constructors and accessors" {
   guard set.color() == RGB::new(1, 2, 3) else {
     fail("expected kitty color value")
   }
+}
+
+///|
+test "osc/osc9 payload constructors and accessors" {
+  let notification = DesktopNotification::new("title", "body")
+  guard notification.title() == "title" else {
+    fail("expected desktop notification title")
+  }
+  guard notification.body() == "body" else {
+    fail("expected desktop notification body")
+  }
+
+  let sleep = ConEmuSleep::new(250)
+  guard sleep.duration_ms() == 250 else {
+    fail("expected conemu sleep duration")
+  }
+
+  let progress = ConEmuProgressReport::new(ConEmuProgressPause, Some(40))
+  guard progress.state() == ConEmuProgressPause else {
+    fail("expected conemu progress state")
+  }
+  guard progress.progress() == Some(40) else {
+    fail("expected conemu progress value")
+  }
+
+  let xterm = ConEmuXtermEmulation::new(None, Some(false))
+  guard xterm.keyboard() == None else {
+    fail("expected optional keyboard mode")
+  }
+  guard xterm.output() == Some(false) else { fail("expected output mode") }
 }
 
 ///|
@@ -189,7 +229,7 @@ test "osc/title exact fixed-buffer limit succeeds" {
 
 ///|
 test "osc/incomplete and invalid prefixes are rejected" {
-  for bytes in [b"0", b"1", b"2", b"7", b"8", b"21", b"22", b"6"] {
+  for bytes in [b"0", b"1", b"2", b"7", b"8", b"9", b"21", b"22", b"6"] {
     let parser = OscParser::new()
     for byte in bytes {
       parser.next(byte)
@@ -462,6 +502,254 @@ test "osc/kitty color protocol request limit is enforced" {
   }
   guard parse_kitty_color_command(buffer, Some(0x07)) == None else {
     fail("expected oversized OSC 21 request list to be rejected")
+  }
+}
+
+///|
+test "osc/osc9 desktop notification and sleep parsing" {
+  guard expect_osc_command(b"9;Hello world", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.title() == "" &&
+    notification.body() == "Hello world" else {
+    fail("expected OSC 9 desktop notification")
+  }
+
+  guard expect_osc_command(b"9;", Some(0x07))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "" else {
+    fail("expected empty OSC 9 desktop notification")
+  }
+
+  guard expect_osc_command(b"9;1;420", Some(0x1B)) is ConEmuSleep(sleep) &&
+    sleep.duration_ms() == 420 else {
+    fail("expected conemu sleep duration")
+  }
+
+  guard expect_osc_command(b"9;1;", Some(0x1B)) is ConEmuSleep(sleep) &&
+    sleep.duration_ms() == 100 else {
+    fail("expected default conemu sleep duration")
+  }
+
+  guard expect_osc_command(b"9;1;12345", Some(0x1B)) is ConEmuSleep(sleep) &&
+    sleep.duration_ms() == 10000 else {
+    fail("expected capped conemu sleep duration")
+  }
+
+  guard expect_osc_command(b"9;1;foo", Some(0x1B)) is ConEmuSleep(sleep) &&
+    sleep.duration_ms() == 100 else {
+    fail("expected invalid conemu sleep to fall back to default duration")
+  }
+
+  guard expect_osc_command(b"9;1", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "1" else {
+    fail("expected short conemu sleep branch to fall back")
+  }
+
+  guard expect_osc_command(b"9;1a", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "1a" else {
+    fail("expected malformed conemu sleep to fall back to desktop notification")
+  }
+}
+
+///|
+test "osc/osc9 message box and tab title parsing" {
+  guard expect_osc_command(b"9;2;hello world", Some(0x1B))
+    is ConEmuShowMessageBox(message) &&
+    message == "hello world" else {
+    fail("expected conemu message box")
+  }
+
+  guard expect_osc_command(b"9;2;", Some(0x1B)) is ConEmuShowMessageBox(message) &&
+    message == "" else {
+    fail("expected empty conemu message box")
+  }
+
+  guard expect_osc_command(b"9;2", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "2" else {
+    fail("expected malformed conemu message box to fall back")
+  }
+
+  guard expect_osc_command(b"9;2a", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "2a" else {
+    fail("expected malformed conemu message box separator to fall back")
+  }
+
+  let tab_title_value = expect_osc_command(b"9;3;foo bar", Some(0x1B))
+  guard tab_title_value == ConEmuChangeTabTitle(ConEmuTabTitleValue("foo bar")) else {
+    fail("expected conemu tab title value")
+  }
+
+  let tab_title_reset = expect_osc_command(b"9;3;", Some(0x1B))
+  guard tab_title_reset == ConEmuChangeTabTitle(ConEmuTabTitleReset) else {
+    fail("expected conemu tab title reset")
+  }
+
+  guard expect_osc_command(b"9;3a", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "3a" else {
+    fail("expected malformed conemu tab title to fall back")
+  }
+}
+
+///|
+test "osc/osc9 progress report parsing" {
+  guard expect_osc_command(b"9;4;1;100", Some(0x1B))
+    is ConEmuProgressReport(report) &&
+    report.state() == ConEmuProgressSet &&
+    report.progress() == Some(100) else {
+    fail("expected conemu progress set")
+  }
+
+  guard expect_osc_command(b"9;4;1;900", Some(0x1B))
+    is ConEmuProgressReport(report) &&
+    report.progress() == Some(100) else {
+    fail("expected conemu progress clamp")
+  }
+
+  guard expect_osc_command(b"9;4;0;100", Some(0x1B))
+    is ConEmuProgressReport(report) &&
+    report.state() == ConEmuProgressRemove &&
+    report.progress() == None else {
+    fail("expected conemu progress remove")
+  }
+
+  guard expect_osc_command(b"9;4;2;100", Some(0x1B))
+    is ConEmuProgressReport(report) &&
+    report.state() == ConEmuProgressError &&
+    report.progress() == Some(100) else {
+    fail("expected conemu progress error")
+  }
+
+  guard expect_osc_command(b"9;4;3;100", Some(0x1B))
+    is ConEmuProgressReport(report) &&
+    report.state() == ConEmuProgressIndeterminate &&
+    report.progress() == None else {
+    fail("expected conemu progress indeterminate")
+  }
+
+  guard expect_osc_command(b"9;4;4;100", Some(0x1B))
+    is ConEmuProgressReport(report) &&
+    report.state() == ConEmuProgressPause &&
+    report.progress() == Some(100) else {
+    fail("expected conemu progress pause")
+  }
+
+  guard expect_osc_command(b"9;4;1", Some(0x1B)) is ConEmuProgressReport(report) &&
+    report.state() == ConEmuProgressSet &&
+    report.progress() == Some(0) else {
+    fail("expected conemu progress set without explicit value")
+  }
+
+  guard expect_osc_command(b"9;4;1;abc", Some(0x1B))
+    is ConEmuProgressReport(report) &&
+    report.state() == ConEmuProgressSet &&
+    report.progress() == Some(0) else {
+    fail("expected invalid conemu progress value to keep default progress")
+  }
+
+  guard expect_osc_command(b"9;4a", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "4a" else {
+    fail("expected malformed conemu progress separator to fall back")
+  }
+
+  guard expect_osc_command(b"9;4;5", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "4;5" else {
+    fail("expected malformed conemu progress to fall back")
+  }
+}
+
+///|
+test "osc/osc9 conemu strings and compatibility commands" {
+  guard expect_osc_command(b"9;5;foo", Some(0x1B)) == ConEmuWaitInput else {
+    fail("expected conemu wait input")
+  }
+
+  guard expect_osc_command(b"9;6;ab", Some(0x1B)) is ConEmuGuiMacro(value) &&
+    value == "ab" else {
+    fail("expected conemu guimacro")
+  }
+
+  guard expect_osc_command(b"9;7;", Some(0x1B)) is ConEmuRunProcess(value) &&
+    value == "" else {
+    fail("expected empty conemu run process")
+  }
+
+  guard expect_osc_command(b"9;8;PATH", Some(0x1B))
+    is ConEmuOutputEnvironmentVariable(value) &&
+    value == "PATH" else {
+    fail("expected conemu environment variable output")
+  }
+
+  guard expect_osc_command(b"9;9;file:///tmp", Some(0x1B)) is ReportPwd(value) &&
+    value == "file:///tmp" else {
+    fail("expected conemu cwd compatibility report pwd")
+  }
+
+  guard expect_osc_command(b"9;11;note", Some(0x1B)) is ConEmuComment(value) &&
+    value == "note" else {
+    fail("expected conemu comment")
+  }
+
+  guard expect_osc_command(b"9;12;abc", Some(0x1B)) is SemanticPrompt(prompt) &&
+    prompt.action() == FreshLineNewPrompt else {
+    fail("expected conemu semantic prompt compatibility")
+  }
+
+  guard expect_osc_command(b"9;11", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "11" else {
+    fail("expected malformed conemu comment to fall back")
+  }
+}
+
+///|
+test "osc/osc9 xterm emulation parsing" {
+  guard expect_osc_command(b"9;10", Some(0x1B)) is ConEmuXtermEmulation(mode) &&
+    mode.keyboard() == Some(true) &&
+    mode.output() == Some(true) else {
+    fail("expected default conemu xterm emulation")
+  }
+
+  guard expect_osc_command(b"9;10;0", Some(0x1B)) is ConEmuXtermEmulation(mode) &&
+    mode.keyboard() == Some(false) &&
+    mode.output() == Some(false) else {
+    fail("expected disabled conemu xterm emulation")
+  }
+
+  guard expect_osc_command(b"9;10;1", Some(0x1B)) is ConEmuXtermEmulation(mode) &&
+    mode.keyboard() == Some(true) &&
+    mode.output() == Some(true) else {
+    fail("expected enabled conemu xterm emulation")
+  }
+
+  guard expect_osc_command(b"9;10;2", Some(0x1B)) is ConEmuXtermEmulation(mode) &&
+    mode.keyboard() == None &&
+    mode.output() == Some(false) else {
+    fail("expected output-only off conemu xterm emulation")
+  }
+
+  guard expect_osc_command(b"9;10;3", Some(0x1B)) is ConEmuXtermEmulation(mode) &&
+    mode.keyboard() == None &&
+    mode.output() == Some(true) else {
+    fail("expected output-only on conemu xterm emulation")
+  }
+
+  guard expect_osc_command(b"9;10;4", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "10;4" else {
+    fail("expected invalid conemu xterm emulation to fall back")
+  }
+
+  guard expect_osc_command(b"9;10;", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.body() == "10;" else {
+    fail("expected short conemu xterm emulation mode to fall back")
   }
 }
 

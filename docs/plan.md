@@ -316,7 +316,8 @@ Phase 4 gate:
   [2026-04-20-p4-c-closeout.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-c-closeout.md)
 - Active Phase 4D slice audits live in:
   [2026-04-20-p4-d1-clipboard.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d1-clipboard.md),
-  [2026-04-20-p4-d2-kitty-color.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d2-kitty-color.md)
+  [2026-04-20-p4-d2-kitty-color.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d2-kitty-color.md),
+  [2026-04-20-p4-d3-osc9.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d3-osc9.md)
 
 ### Phase 5: Stream integration
 

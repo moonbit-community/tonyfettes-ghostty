@@ -148,8 +148,19 @@ pub(all) enum Command {
   ChangeWindowIcon(String)
   ClipboardContents(ClipboardContents)
   KittyColorProtocol(KittyColorOsc)
+  ShowDesktopNotification(DesktopNotification)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
+  ConEmuSleep(ConEmuSleep)
+  ConEmuShowMessageBox(String)
+  ConEmuChangeTabTitle(ConEmuTabTitleChange)
+  ConEmuProgressReport(ConEmuProgressReport)
+  ConEmuWaitInput
+  ConEmuGuiMacro(String)
+  ConEmuRunProcess(String)
+  ConEmuOutputEnvironmentVariable(String)
+  ConEmuXtermEmulation(ConEmuXtermEmulation)
+  ConEmuComment(String)
   SemanticPrompt(SemanticPrompt)
   ReportPwd(String)
   MouseShape(String)
@@ -169,6 +180,7 @@ enum OscParserState {
   Prefix52
   Prefix7
   Prefix8
+  Prefix9
   Prefix10
   Prefix11
   Prefix12
@@ -255,6 +267,7 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         b'5' => self.state = Prefix5
         b'7' => self.state = Prefix7
         b'8' => self.state = Prefix8
+        b'9' => self.state = Prefix9
         _ => self.state = Invalid
       }
     Prefix0 =>
@@ -316,6 +329,12 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         self.state = Invalid
       }
     Prefix8 =>
+      if byte == b';' {
+        self.start_capture()
+      } else {
+        self.state = Invalid
+      }
+    Prefix9 =>
       if byte == b';' {
         self.start_capture()
       } else {
@@ -512,6 +531,12 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
     Prefix8 =>
       if self.capturing {
         parse_hyperlink_command(self.buffer)
+      } else {
+        None
+      }
+    Prefix9 =>
+      if self.capturing {
+        Some(parse_osc9_command(self.buffer))
       } else {
         None
       }
