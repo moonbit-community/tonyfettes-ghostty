@@ -716,6 +716,7 @@ pub(all) enum StreamAction {
   StreamEndHyperlink
   StreamMouseShape(MouseShape)
   StreamColorOperation(ColorCommand)
+  StreamSemanticPrompt(SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)

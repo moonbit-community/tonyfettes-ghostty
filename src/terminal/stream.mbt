@@ -104,6 +104,7 @@ pub(all) enum StreamAction {
   StreamEndHyperlink
   StreamMouseShape(MouseShape)
   StreamColorOperation(ColorCommand)
+  StreamSemanticPrompt(SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
@@ -739,7 +740,7 @@ fn[H : StreamHandler] Stream::osc_dispatch(
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
     HyperlinkStart(link) => self.emit(StreamStartHyperlink(link))
     HyperlinkEnd => self.emit(StreamEndHyperlink)
-    SemanticPrompt(_) => ()
+    SemanticPrompt(prompt) => self.emit(StreamSemanticPrompt(prompt))
     ChangeWindowIcon(_) | Invalid => ()
     ReportPwd(url) => self.emit(StreamReportPwd(url))
     MouseShape(value) =>

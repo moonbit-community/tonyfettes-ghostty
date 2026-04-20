@@ -215,11 +215,26 @@ test "stream/osc ignored and invalid commands stay silent" {
 }
 
 ///|
-test "stream/osc semantic prompt stays silent for now" {
+test "stream/osc semantic prompt dispatch and return to ground" {
   let (stream, actions, _) = new_stream()
-  stream.next_slice(b"\x1B]133;A;aid=foo\x07z")
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected semantic prompt OSC to stay silent until P5.B3")
+  stream.next_slice(b"\x1B]133;A;aid=foo;cl=line\x07z")
+  guard actions.length() == 2 else {
+    fail("expected semantic prompt action and later printable text")
+  }
+  guard actions.get(0) is Some(StreamSemanticPrompt(prompt)) else {
+    fail("expected semantic prompt stream action")
+  }
+  guard prompt.action() == FreshLineNewPrompt else {
+    fail("expected semantic prompt action payload")
+  }
+  guard prompt.aid() == Some("foo") else {
+    fail("expected semantic prompt aid payload")
+  }
+  guard prompt.cl() == Some(Line) else {
+    fail("expected semantic prompt click payload")
+  }
+  guard actions.get(1) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after semantic prompt")
   }
 }
 

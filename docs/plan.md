@@ -361,7 +361,8 @@ Phase 5 gate:
   [2026-04-19-p5-a-closeout-audit.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-a-closeout-audit.md)
 - Active Phase 5B slice audits live in:
   [2026-04-19-p5-b-current-osc-core.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-b-current-osc-core.md),
-  [2026-04-19-p5-b-hyperlink-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-b-hyperlink-dispatch.md)
+  [2026-04-19-p5-b-hyperlink-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-b-hyperlink-dispatch.md),
+  [2026-04-20-p5-b-semantic-prompt-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-semantic-prompt-dispatch.md)
 
 ### Phase 6: Terminal application surface
 
