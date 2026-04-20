@@ -147,6 +147,7 @@ pub(all) enum Command {
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
   ClipboardContents(ClipboardContents)
+  KittyColorProtocol(KittyColorOsc)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
   SemanticPrompt(SemanticPrompt)
@@ -266,6 +267,36 @@ pub(all) struct InvokeCharsetAction {
   bank : ActiveSlot
   charset : Slots
   locking : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KittyColorKind {
+  KittyPalette(Byte)
+  KittySpecial(KittyColorSpecial)
+} derive(Eq, @debug.Debug)
+
+type KittyColorOsc derive(Eq, @debug.Debug)
+pub fn KittyColorOsc::requests(Self) -> Array[KittyColorRequest]
+pub fn KittyColorOsc::terminator(Self) -> Terminator
+
+pub(all) enum KittyColorRequest {
+  KittyQuery(KittyColorKind)
+  KittySet(KittyColorSet)
+  KittyReset(KittyColorKind)
+} derive(Eq, @debug.Debug)
+
+type KittyColorSet derive(Eq, @debug.Debug)
+pub fn KittyColorSet::color(Self) -> RGB
+pub fn KittyColorSet::key(Self) -> KittyColorKind
+
+pub(all) enum KittyColorSpecial {
+  KittyForeground
+  KittyBackground
+  KittySelectionForeground
+  KittySelectionBackground
+  KittyCursor
+  KittyCursorText
+  KittyVisualBell
+  KittySecondTransparentBackground
 } derive(Eq, @debug.Debug)
 
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)

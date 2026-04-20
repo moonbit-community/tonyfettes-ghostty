@@ -147,6 +147,7 @@ pub(all) enum Command {
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
   ClipboardContents(ClipboardContents)
+  KittyColorProtocol(KittyColorOsc)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
   SemanticPrompt(SemanticPrompt)
@@ -162,6 +163,7 @@ enum OscParserState {
   Prefix0
   Prefix1
   Prefix2
+  Prefix21
   Prefix4
   Prefix5
   Prefix52
@@ -279,8 +281,15 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
     Prefix2 =>
       match byte {
         b';' => self.start_capture()
+        b'1' => self.state = Prefix21
         b'2' => self.state = Prefix22
         _ => self.state = Invalid
+      }
+    Prefix21 =>
+      if byte == b';' {
+        self.start_capture()
+      } else {
+        self.state = Invalid
       }
     Prefix4 =>
       if byte == b';' {
@@ -484,6 +493,12 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
         self.capturing,
         ChangeWindowTitle(captured_string(self.buffer)),
       )
+    Prefix21 =>
+      if self.capturing {
+        parse_kitty_color_command(self.buffer, terminator_ch)
+      } else {
+        None
+      }
     Prefix4 => Some(parse_color_command(Prefix4, self.buffer, terminator_ch))
     Prefix5 => Some(parse_color_command(Prefix5, self.buffer, terminator_ch))
     Prefix52 =>

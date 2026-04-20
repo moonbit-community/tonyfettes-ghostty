@@ -224,6 +224,28 @@ test "stream/osc clipboard stays silent until p5.b4" {
 }
 
 ///|
+test "stream/osc kitty color stays silent until p5.b4" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]21;foreground=?\x07z")
+  guard actions == [StreamPrint(b'z'.to_uint())] else {
+    fail("expected kitty color OSC to stay silent until P5.B4")
+  }
+}
+
+///|
+test "stream/slice walker handles in-flight escape after printable prefix" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"a\x1B(B")
+  guard actions ==
+    [
+      StreamPrint(b'a'.to_uint()),
+      StreamConfigureCharset({ slot: Slots::G0, charset: Charset::Ascii }),
+    ] else {
+    fail("expected slice walker to finish escape after printable prefix")
+  }
+}
+
+///|
 test "stream/osc semantic prompt dispatch and return to ground" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B]133;A;aid=foo;cl=line\x07z")

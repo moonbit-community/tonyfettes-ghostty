@@ -54,6 +54,19 @@ fn expect_clipboard_contents(
 }
 
 ///|
+fn expect_kitty_color_protocol(
+  bytes : Bytes,
+  terminator : Byte?,
+) -> KittyColorOsc raise {
+  let parser = OscParser::new()
+  feed_bytes(parser, bytes)
+  guard parser.end(terminator) is Some(KittyColorProtocol(command)) else {
+    fail("expected OSC kitty color command")
+  }
+  command
+}
+
+///|
 test "osc/color payload constructors and accessors" {
   let target = ColoredTarget::new(Palette(3), RGB::new(1, 2, 3))
   guard target.target() == Palette(3) else {
@@ -70,6 +83,17 @@ test "osc/color payload constructors and accessors" {
   }
   guard command.terminator() == Bel else {
     fail("expected color command terminator")
+  }
+}
+
+///|
+test "osc/kitty color constructors and accessors" {
+  let set = KittyColorSet::new(KittySpecial(KittyForeground), RGB::new(1, 2, 3))
+  guard set.key() == KittySpecial(KittyForeground) else {
+    fail("expected kitty color key")
+  }
+  guard set.color() == RGB::new(1, 2, 3) else {
+    fail("expected kitty color value")
   }
 }
 
@@ -165,7 +189,7 @@ test "osc/title exact fixed-buffer limit succeeds" {
 
 ///|
 test "osc/incomplete and invalid prefixes are rejected" {
-  for bytes in [b"0", b"1", b"2", b"7", b"8", b"22", b"6"] {
+  for bytes in [b"0", b"1", b"2", b"7", b"8", b"21", b"22", b"6"] {
     let parser = OscParser::new()
     for byte in bytes {
       parser.next(byte)
@@ -344,6 +368,100 @@ test "osc/clipboard invalid forms are rejected" {
     guard parser.end(Some(0x07)) == None else {
       fail("expected invalid OSC 52 form to be rejected")
     }
+  }
+}
+
+///|
+test "osc/kitty color protocol parses query set reset and trim rules" {
+  let command = expect_kitty_color_protocol(
+    b"21;foreground=?;background=rgb:f0/f8/ff;cursor=aliceblue;cursor_text;visual_bell=;selection_foreground=#xxxyyzz;selection_background=?;selection_background=#aabbcc;2=?;3=rgbi:1.0/1.0/1.0",
+    Some(0x1B),
+  )
+  guard command.requests() ==
+    [
+      KittyQuery(KittySpecial(KittyForeground)),
+      KittySet(
+        KittyColorSet::new(
+          KittySpecial(KittyBackground),
+          RGB::new(0xF0, 0xF8, 0xFF),
+        ),
+      ),
+      KittySet(
+        KittyColorSet::new(
+          KittySpecial(KittyCursor),
+          RGB::new(0xF0, 0xF8, 0xFF),
+        ),
+      ),
+      KittyReset(KittySpecial(KittyCursorText)),
+      KittyReset(KittySpecial(KittyVisualBell)),
+      KittyQuery(KittySpecial(KittySelectionBackground)),
+      KittySet(
+        KittyColorSet::new(
+          KittySpecial(KittySelectionBackground),
+          RGB::new(0xAA, 0xBB, 0xCC),
+        ),
+      ),
+      KittyQuery(KittyPalette(2)),
+      KittySet(KittyColorSet::new(KittyPalette(3), RGB::new(0xFF, 0xFF, 0xFF))),
+    ] else {
+    fail("unexpected kitty color requests")
+  }
+  guard command.terminator() == St else {
+    fail("expected kitty color terminator")
+  }
+}
+
+///|
+test "osc/kitty color protocol accepts empty body and spaced values" {
+  let empty = expect_kitty_color_protocol(b"21;", Some(0x07))
+  guard empty.requests() == [] else {
+    fail("expected empty kitty color request list")
+  }
+  guard empty.terminator() == Bel else { fail("expected BEL terminator") }
+
+  let spaced = expect_kitty_color_protocol(
+    b"21;second_transparent_background= ? ;255= #010203 ;badkey=?;999=?",
+    Some(0x07),
+  )
+  guard spaced.requests() ==
+    [
+      KittyQuery(KittySpecial(KittySecondTransparentBackground)),
+      KittySet(KittyColorSet::new(KittyPalette(255), RGB::new(1, 2, 3))),
+    ] else {
+    fail("expected trimmed kitty color requests")
+  }
+}
+
+///|
+test "osc/kitty color protocol rejects malformed prefixes" {
+  let missing_separator = OscParser::new()
+  for byte in b"21" {
+    missing_separator.next(byte)
+  }
+  guard missing_separator.end(Some(0x07)) == None else {
+    fail("expected incomplete OSC 21 prefix to be rejected")
+  }
+
+  let invalid_prefix = OscParser::new()
+  for byte in b"21x;foreground=?" {
+    invalid_prefix.next(byte)
+  }
+  guard invalid_prefix.end(Some(0x07)) == None else {
+    fail("expected invalid OSC 21 prefix to be rejected")
+  }
+}
+
+///|
+test "osc/kitty color protocol request limit is enforced" {
+  let buffer : Array[Byte] = []
+  for _ in 0..<KittyColorRequestLimit {
+    buffer.push(b'0')
+    buffer.push(b'=')
+    buffer.push(b'?')
+    buffer.push(b';')
+  }
+  guard parse_kitty_color_command(buffer, Some(0x07)) == None else {
+    fail("expected oversized OSC 21 request list to be rejected")
   }
 }
 
