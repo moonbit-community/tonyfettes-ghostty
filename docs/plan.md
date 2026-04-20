@@ -410,6 +410,8 @@ Phase 6 gate:
   [2026-04-20-p6-a1-style-core.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-a1-style-core.md)
   [2026-04-20-p6-a2-dynamic-colors.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-a2-dynamic-colors.md)
   [2026-04-20-p6-a3-protected-display-state.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-a3-protected-display-state.md)
+- Phase 6.1 bridge slicing notes live in:
+  [2026-04-20-p6-1-bridge-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-bridge-roadmap.md)
 
 ### Phase 7: Host bridge and equivalence
 
