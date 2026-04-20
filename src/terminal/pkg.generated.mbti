@@ -76,6 +76,24 @@ pub(all) enum C0 {
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
 
+type CellStyle derive(Eq, @debug.Debug)
+pub fn CellStyle::apply_attribute(Self, SgrAttribute) -> Unit
+pub fn CellStyle::bg_color(Self) -> StyleColor
+pub fn CellStyle::blink(Self) -> Bool
+pub fn CellStyle::bold(Self) -> Bool
+pub fn CellStyle::faint(Self) -> Bool
+pub fn CellStyle::fg_color(Self) -> StyleColor
+pub fn CellStyle::inverse(Self) -> Bool
+pub fn CellStyle::invisible(Self) -> Bool
+pub fn CellStyle::is_default(Self) -> Bool
+pub fn CellStyle::italic(Self) -> Bool
+pub fn CellStyle::new() -> Self
+pub fn CellStyle::overline(Self) -> Bool
+pub fn CellStyle::reset(Self) -> Unit
+pub fn CellStyle::strikethrough(Self) -> Bool
+pub fn CellStyle::underline(Self) -> SgrUnderline
+pub fn CellStyle::underline_color(Self) -> StyleColor
+
 pub(all) enum Charset {
   Utf8
   Ascii
@@ -934,6 +952,11 @@ pub(all) enum Style {
   Csi16t
   Csi18t
 } derive(Eq, @debug.Debug)
+
+type StyleColor derive(Eq, @debug.Debug)
+pub fn StyleColor::is_default(Self) -> Bool
+pub fn StyleColor::palette_index(Self) -> Byte?
+pub fn StyleColor::rgb_value(Self) -> RGB?
 
 pub(all) enum Tag {
   Active
