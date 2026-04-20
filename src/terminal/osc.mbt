@@ -132,6 +132,7 @@ pub(all) enum Command {
   ChangeWindowIcon(String)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
+  SemanticPrompt(SemanticPrompt)
   ReportPwd(String)
   MouseShape(String)
   ColorOperation(ColorCommand)
@@ -152,6 +153,7 @@ enum OscParserState {
   Prefix11
   Prefix12
   Prefix13
+  Prefix133
   Prefix14
   Prefix15
   Prefix16
@@ -316,6 +318,14 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
     Prefix13 =>
       if byte == b';' {
         self.start_capture()
+      } else if byte == b'3' {
+        self.state = Prefix133
+      } else {
+        self.state = Invalid
+      }
+    Prefix133 =>
+      if byte == b';' {
+        self.start_capture()
       } else {
         self.state = Invalid
       }
@@ -464,6 +474,12 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
     Prefix11 => Some(parse_color_command(Prefix11, self.buffer, terminator_ch))
     Prefix12 => Some(parse_color_command(Prefix12, self.buffer, terminator_ch))
     Prefix13 => Some(parse_color_command(Prefix13, self.buffer, terminator_ch))
+    Prefix133 =>
+      if self.capturing {
+        parse_semantic_prompt_command(self.buffer)
+      } else {
+        None
+      }
     Prefix14 => Some(parse_color_command(Prefix14, self.buffer, terminator_ch))
     Prefix15 => Some(parse_color_command(Prefix15, self.buffer, terminator_ch))
     Prefix16 => Some(parse_color_command(Prefix16, self.buffer, terminator_ch))

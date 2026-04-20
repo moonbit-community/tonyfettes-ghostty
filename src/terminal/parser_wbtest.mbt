@@ -263,6 +263,34 @@ test "parser/osc hyperlink dispatch" {
 }
 
 ///|
+test "parser/osc semantic prompt dispatch" {
+  let parser = Parser::new()
+  for byte in b"\x1b]133;A;aid=foo;cl=m;redraw=1" {
+    expect_no_actions(parser.next(byte))
+  }
+
+  let actions = parser.next(0x07)
+  guard actions[0] is Some(OscDispatch(SemanticPrompt(prompt))) else {
+    fail("expected OSC semantic prompt dispatch in exit slot")
+  }
+  guard prompt.action() == FreshLineNewPrompt else {
+    fail("expected semantic prompt action")
+  }
+  guard prompt.aid() == Some("foo") else {
+    fail("expected semantic prompt aid")
+  }
+  guard prompt.cl() == Some(Multiple) else {
+    fail("expected semantic prompt cl option")
+  }
+  guard prompt.redraw() == Some(Enabled) else {
+    fail("expected semantic prompt redraw option")
+  }
+  guard actions[1] == None && actions[2] == None else {
+    fail("unexpected semantic prompt trailing actions")
+  }
+}
+
+///|
 test "parser/csi too many params drops dispatch" {
   let parser = Parser::new()
   expect_no_actions(parser.next(0x1B))

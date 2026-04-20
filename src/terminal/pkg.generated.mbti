@@ -49,6 +49,10 @@ pub(all) suberror ColorParseError {
   InvalidFormat
 } derive(Eq, @debug.Debug)
 
+pub(all) suberror SemanticPromptDecodeError {
+  DecodeError
+} derive(Eq, @debug.Debug)
+
 // Types and methods
 pub(all) enum ActiveSlot {
   Gl
@@ -140,6 +144,7 @@ pub(all) enum Command {
   ChangeWindowIcon(String)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
+  SemanticPrompt(SemanticPrompt)
   ReportPwd(String)
   MouseShape(String)
   ColorOperation(ColorCommand)
@@ -494,6 +499,51 @@ pub fn SecondaryDeviceAttributes::encode(Self) -> Bytes
 pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
 pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
 pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
+
+type SemanticPrompt derive(Eq, @debug.Debug)
+pub fn SemanticPrompt::action(Self) -> SemanticPromptAction
+pub fn SemanticPrompt::aid(Self) -> String?
+pub fn SemanticPrompt::cl(Self) -> SemanticPromptClick?
+pub fn SemanticPrompt::click_events(Self) -> Bool?
+pub fn SemanticPrompt::cmdline(Self) -> String?
+pub fn SemanticPrompt::cmdline_url(Self) -> String?
+pub fn SemanticPrompt::decoded_command_line(Self) -> String? raise SemanticPromptDecodeError
+pub fn SemanticPrompt::err(Self) -> String?
+pub fn SemanticPrompt::exit_code(Self) -> Int?
+pub fn SemanticPrompt::prompt_kind(Self) -> SemanticPromptKind?
+pub fn SemanticPrompt::redraw(Self) -> SemanticPromptRedraw?
+pub fn SemanticPrompt::special_key(Self) -> Bool?
+
+pub(all) enum SemanticPromptAction {
+  FreshLine
+  FreshLineNewPrompt
+  NewCommand
+  PromptStart
+  EndPromptStartInput
+  EndPromptStartInputTerminateEol
+  EndInputStartOutput
+  EndCommand
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticPromptClick {
+  Line
+  Multiple
+  ConservativeVertical
+  SmartVertical
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticPromptKind {
+  Initial
+  Right
+  Continuation
+  Secondary
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticPromptRedraw {
+  Enabled
+  Disabled
+  Last
+} derive(Eq, @debug.Debug)
 
 pub(all) enum SgrAttribute {
   Unset

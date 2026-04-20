@@ -308,8 +308,9 @@ Phase 4 gate:
   [2026-04-19-p4-e-apc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-e-apc.md)
 - Phase 4C workstream roadmap lives in:
   [2026-04-19-p4-c-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-c-roadmap.md)
-- Active Phase 4C slice audits live in:
-  [2026-04-19-p4-c-hyperlink.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-c-hyperlink.md)
+- Completed Phase 4C slice audits live in:
+  [2026-04-19-p4-c-hyperlink.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-c-hyperlink.md),
+  [2026-04-20-p4-c-semantic-prompt.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-c-semantic-prompt.md)
 
 ### Phase 5: Stream integration
 

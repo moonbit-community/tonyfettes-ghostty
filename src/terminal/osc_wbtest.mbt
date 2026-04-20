@@ -28,6 +28,19 @@ fn expect_color_command(
 }
 
 ///|
+fn expect_semantic_prompt(
+  bytes : Bytes,
+  terminator : Byte?,
+) -> SemanticPrompt raise {
+  let parser = OscParser::new()
+  feed_bytes(parser, bytes)
+  guard parser.end(terminator) is Some(SemanticPrompt(prompt)) else {
+    fail("expected OSC semantic prompt command")
+  }
+  prompt
+}
+
+///|
 test "osc/color payload constructors and accessors" {
   let target = ColoredTarget::new(Palette(3), RGB::new(1, 2, 3))
   guard target.target() == Palette(3) else {
@@ -276,6 +289,341 @@ test "osc/hyperlink malformed options and end handling" {
   feed_bytes(no_separator, b"8;id=foo")
   guard no_separator.end(Some(0x1B)) == None else {
     fail("expected hyperlink payload without second semicolon to be rejected")
+  }
+}
+
+///|
+test "osc/semantic prompt actions and option accessors" {
+  let fresh_line = expect_semantic_prompt(b"133;L", Some(0x07))
+  guard fresh_line.action() == FreshLine else {
+    fail("expected fresh-line action")
+  }
+
+  let end_input = expect_semantic_prompt(b"133;C", Some(0x07))
+  guard end_input.action() == EndInputStartOutput else {
+    fail("expected end-input-start-output action")
+  }
+  guard end_input.aid() == None && end_input.cl() == None else {
+    fail("expected no end-input options")
+  }
+  guard end_input.prompt_kind() == None &&
+    end_input.redraw() == None &&
+    end_input.special_key() == None &&
+    end_input.click_events() == None else {
+    fail("expected absent semantic prompt options")
+  }
+
+  let fresh_prompt = expect_semantic_prompt(
+    b"133;A;aid=a=b;cl=m;redraw=1;special_key=0;click_events=1",
+    Some(0x07),
+  )
+  guard fresh_prompt.action() == FreshLineNewPrompt else {
+    fail("expected fresh-line-new-prompt action")
+  }
+  guard fresh_prompt.aid() == Some("a=b") else {
+    fail("expected semantic prompt aid")
+  }
+  guard fresh_prompt.cl() == Some(Multiple) else {
+    fail("expected semantic prompt cl option")
+  }
+  guard fresh_prompt.redraw() == Some(Enabled) else {
+    fail("expected semantic prompt redraw option")
+  }
+  guard fresh_prompt.special_key() == Some(false) else {
+    fail("expected semantic prompt special_key option")
+  }
+  guard fresh_prompt.click_events() == Some(true) else {
+    fail("expected semantic prompt click_events option")
+  }
+
+  let click_vertical = expect_semantic_prompt(b"133;A;cl=v", Some(0x07))
+  guard click_vertical.cl() == Some(ConservativeVertical) else {
+    fail("expected conservative-vertical cl option")
+  }
+
+  let click_smart = expect_semantic_prompt(b"133;A;cl=w", Some(0x07))
+  guard click_smart.cl() == Some(SmartVertical) else {
+    fail("expected smart-vertical cl option")
+  }
+
+  let click_invalid_single = expect_semantic_prompt(b"133;A;cl=x", Some(0x07))
+  guard click_invalid_single.cl() == None else {
+    fail("expected invalid single-char cl option to be ignored")
+  }
+
+  let prompt_start = expect_semantic_prompt(b"133;P;k=s", Some(0x07))
+  guard prompt_start.action() == PromptStart else {
+    fail("expected prompt-start action")
+  }
+  guard prompt_start.prompt_kind() == Some(Secondary) else {
+    fail("expected prompt kind option")
+  }
+
+  let prompt_initial = expect_semantic_prompt(b"133;P;k=i", Some(0x07))
+  guard prompt_initial.prompt_kind() == Some(Initial) else {
+    fail("expected initial prompt kind option")
+  }
+
+  let prompt_right = expect_semantic_prompt(b"133;P;k=r", Some(0x07))
+  guard prompt_right.prompt_kind() == Some(Right) else {
+    fail("expected right prompt kind option")
+  }
+
+  let prompt_continuation = expect_semantic_prompt(b"133;P;k=c", Some(0x07))
+  guard prompt_continuation.prompt_kind() == Some(Continuation) else {
+    fail("expected continuation prompt kind option")
+  }
+
+  let prompt_invalid = expect_semantic_prompt(b"133;P;k=x", Some(0x07))
+  guard prompt_invalid.prompt_kind() == None else {
+    fail("expected invalid prompt kind to be ignored")
+  }
+
+  let prompt_long = expect_semantic_prompt(b"133;P;k=ii", Some(0x07))
+  guard prompt_long.prompt_kind() == None else {
+    fail("expected multi-char prompt kind to be ignored")
+  }
+
+  let new_command = expect_semantic_prompt(b"133;N;aid=foo;cl=line", Some(0x07))
+  guard new_command.action() == NewCommand else {
+    fail("expected new-command action")
+  }
+  guard new_command.aid() == Some("foo") && new_command.cl() == Some(Line) else {
+    fail("expected new-command options")
+  }
+
+  let end_prompt = expect_semantic_prompt(b"133;B;aid=bar", Some(0x07))
+  guard end_prompt.action() == EndPromptStartInput &&
+    end_prompt.aid() == Some("bar") else {
+    fail("expected end-prompt options")
+  }
+
+  let terminate_eol = expect_semantic_prompt(b"133;I;aid=baz", Some(0x07))
+  guard terminate_eol.action() == EndPromptStartInputTerminateEol &&
+    terminate_eol.aid() == Some("baz") else {
+    fail("expected terminate-eol options")
+  }
+
+  let end_command = expect_semantic_prompt(
+    b"133;D;12;aid=foo;err=oops",
+    Some(0x07),
+  )
+  guard end_command.action() == EndCommand else {
+    fail("expected end-command action")
+  }
+  guard end_command.exit_code() == Some(12) else {
+    fail("expected semantic prompt exit code")
+  }
+  guard end_command.aid() == Some("foo") && end_command.err() == Some("oops") else {
+    fail("expected end-command options")
+  }
+
+  let end_command_none = expect_semantic_prompt(b"133;D", Some(0x07))
+  guard end_command_none.exit_code() == None else {
+    fail("expected absent exit code")
+  }
+
+  let end_command_plain = expect_semantic_prompt(b"133;D;42", Some(0x07))
+  guard end_command_plain.exit_code() == Some(42) else {
+    fail("expected plain exit code")
+  }
+}
+
+///|
+test "osc/semantic prompt decoding and malformed options" {
+  let printf_q = expect_semantic_prompt(
+    b"133;C;cmdline=echo\\ bobr\\nkurwa",
+    Some(0x07),
+  )
+  guard printf_q.cmdline() == Some("echo\\ bobr\\nkurwa") else {
+    fail("expected raw cmdline option")
+  }
+  let printf_q_result : Result[String?, SemanticPromptDecodeError] = try? printf_q.decoded_command_line()
+  guard printf_q_result is Ok(Some(decoded)) && decoded == "echo bobr\nkurwa" else {
+    fail("expected decoded printf-q command line")
+  }
+
+  let quoted = expect_semantic_prompt(
+    b"133;C;cmdline=$'echo bobr kurwa'",
+    Some(0x07),
+  )
+  let quoted_result : Result[String?, SemanticPromptDecodeError] = try? quoted.decoded_command_line()
+  guard quoted_result is Ok(Some(decoded)) && decoded == "echo bobr kurwa" else {
+    fail("expected decoded quoted command line")
+  }
+
+  let single_quoted = expect_semantic_prompt(
+    b"133;C;cmdline='echo bobr kurwa'",
+    Some(0x07),
+  )
+  let single_quoted_result : Result[String?, SemanticPromptDecodeError] = try? single_quoted.decoded_command_line()
+  guard single_quoted_result is Ok(Some(decoded)) &&
+    decoded == "echo bobr kurwa" else {
+    fail("expected decoded single-quoted command line")
+  }
+
+  let escape_variants = expect_semantic_prompt(
+    b"133;C;cmdline=one\\etwo\\rthree\\tfour\\vfive",
+    Some(0x07),
+  )
+  let escape_variants_result : Result[String?, SemanticPromptDecodeError] = try? escape_variants.decoded_command_line()
+  let expected_escape_variants = @utf8.decode_lossy(
+    b"one\x1Btwo\rthree\tfour\x0Bfive",
+  )
+  guard escape_variants_result is Ok(Some(decoded)) &&
+    decoded == expected_escape_variants else {
+    fail("expected decoded escape variants")
+  }
+
+  let url = expect_semantic_prompt(
+    b"133;C;cmdline_url=echo%20bobr%3Bkurwa",
+    Some(0x07),
+  )
+  guard url.cmdline_url() == Some("echo%20bobr%3Bkurwa") else {
+    fail("expected raw cmdline_url option")
+  }
+  let url_result : Result[String?, SemanticPromptDecodeError] = try? url.decoded_command_line()
+  guard url_result is Ok(Some(decoded)) && decoded == "echo bobr;kurwa" else {
+    fail("expected decoded url command line")
+  }
+
+  let lowercase_hex = expect_semantic_prompt(
+    b"133;C;cmdline_url=echo%3bkurwa",
+    Some(0x07),
+  )
+  let lowercase_hex_result : Result[String?, SemanticPromptDecodeError] = try? lowercase_hex.decoded_command_line()
+  guard lowercase_hex_result is Ok(Some(decoded)) && decoded == "echo;kurwa" else {
+    fail("expected decoded lowercase-hex command line")
+  }
+
+  let redraw_last = expect_semantic_prompt(b"133;A;redraw=last", Some(0x07))
+  guard redraw_last.redraw() == Some(Last) else {
+    fail("expected redraw=last option")
+  }
+
+  let redraw_disabled = expect_semantic_prompt(b"133;A;redraw=0", Some(0x07))
+  guard redraw_disabled.redraw() == Some(Disabled) else {
+    fail("expected redraw=0 option")
+  }
+
+  let redraw_invalid_long = expect_semantic_prompt(
+    b"133;A;redraw=lasts",
+    Some(0x07),
+  )
+  guard redraw_invalid_long.redraw() == None else {
+    fail("expected invalid redraw option to be ignored")
+  }
+
+  let special_key_invalid = expect_semantic_prompt(
+    b"133;A;special_key=x",
+    Some(0x07),
+  )
+  guard special_key_invalid.special_key() == None else {
+    fail("expected invalid special_key option to be ignored")
+  }
+
+  let invalid_printf_q = expect_semantic_prompt(
+    b"133;C;cmdline='echo bobr kurwa",
+    Some(0x07),
+  )
+  let invalid_printf_q_result : Result[String?, SemanticPromptDecodeError] = try? invalid_printf_q.decoded_command_line()
+  guard invalid_printf_q_result is Err(DecodeError) else {
+    fail("expected malformed printf-q command line to fail")
+  }
+
+  let invalid_printf_q_escape = expect_semantic_prompt(
+    b"133;C;cmdline=echo\\",
+    Some(0x07),
+  )
+  let invalid_printf_q_escape_result : Result[
+    String?,
+    SemanticPromptDecodeError,
+  ] = try? invalid_printf_q_escape.decoded_command_line()
+  guard invalid_printf_q_escape_result is Err(DecodeError) else {
+    fail("expected trailing backslash decode failure")
+  }
+
+  let invalid_printf_q_escape_kind = expect_semantic_prompt(
+    b"133;C;cmdline=echo\\d",
+    Some(0x07),
+  )
+  let invalid_printf_q_escape_kind_result : Result[
+    String?,
+    SemanticPromptDecodeError,
+  ] = try? invalid_printf_q_escape_kind.decoded_command_line()
+  guard invalid_printf_q_escape_kind_result is Err(DecodeError) else {
+    fail("expected unsupported printf-q escape decode failure")
+  }
+
+  let invalid_printf_q_dollar = expect_semantic_prompt(
+    b"133;C;cmdline=$'echo bobr kurwa",
+    Some(0x07),
+  )
+  let invalid_printf_q_dollar_result : Result[
+    String?,
+    SemanticPromptDecodeError,
+  ] = try? invalid_printf_q_dollar.decoded_command_line()
+  guard invalid_printf_q_dollar_result is Err(DecodeError) else {
+    fail("expected malformed dollar-quoted decode failure")
+  }
+
+  let invalid_url = expect_semantic_prompt(
+    b"133;C;cmdline_url=echo%2",
+    Some(0x07),
+  )
+  let invalid_url_result : Result[String?, SemanticPromptDecodeError] = try? invalid_url.decoded_command_line()
+  guard invalid_url_result is Err(DecodeError) else {
+    fail("expected malformed url command line to fail")
+  }
+
+  let invalid_url_hex = expect_semantic_prompt(
+    b"133;C;cmdline_url=echo%G0",
+    Some(0x07),
+  )
+  let invalid_url_hex_result : Result[String?, SemanticPromptDecodeError] = try? invalid_url_hex.decoded_command_line()
+  guard invalid_url_hex_result is Err(DecodeError) else {
+    fail("expected invalid hex url command line to fail")
+  }
+
+  let invalid_url_low_hex = expect_semantic_prompt(
+    b"133;C;cmdline_url=echo%2G",
+    Some(0x07),
+  )
+  let invalid_url_low_hex_result : Result[String?, SemanticPromptDecodeError] = try? invalid_url_low_hex.decoded_command_line()
+  guard invalid_url_low_hex_result is Err(DecodeError) else {
+    fail("expected invalid low-nibble hex url command line to fail")
+  }
+
+  let invalid_options = expect_semantic_prompt(
+    b"133;A;cl=invalid;redraw=x;click_events=yes;barekey;aid=",
+    Some(0x07),
+  )
+  guard invalid_options.cl() == None else {
+    fail("expected invalid cl option to be ignored")
+  }
+  guard invalid_options.redraw() == None else {
+    fail("expected invalid redraw option to be ignored")
+  }
+  guard invalid_options.click_events() == None else {
+    fail("expected invalid click_events option to be ignored")
+  }
+  guard invalid_options.aid() == Some("") else {
+    fail("expected empty aid to be preserved")
+  }
+}
+
+///|
+test "osc/semantic prompt invalid forms are rejected" {
+  let invalid : Array[Bytes] = [
+    b"133", b"133;", b"133x", b"133;Lx", b"133;L;aid=foo", b"133;Aextra", b"133;Bextra",
+    b"133;Cextra", b"133;Dextra", b"133;Iextra", b"133;Nextra", b"133;Pextra", b"133;Z",
+  ]
+  for bytes in invalid {
+    let parser = OscParser::new()
+    feed_bytes(parser, bytes)
+    guard parser.end(Some(0x07)) == None else {
+      fail("expected invalid OSC 133 form to be rejected")
+    }
   }
 }
 

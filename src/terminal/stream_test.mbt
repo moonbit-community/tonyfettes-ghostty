@@ -215,6 +215,15 @@ test "stream/osc ignored and invalid commands stay silent" {
 }
 
 ///|
+test "stream/osc semantic prompt stays silent for now" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]133;A;aid=foo\x07z")
+  guard actions == [StreamPrint(b'z'.to_uint())] else {
+    fail("expected semantic prompt OSC to stay silent until P5.B3")
+  }
+}
+
+///|
 test "stream/osc hyperlink dispatch and return to ground" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B]8;id=foo;http://example.com\x07x\x1B]8;;\x07y")
