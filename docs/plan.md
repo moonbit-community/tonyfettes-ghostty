@@ -326,7 +326,7 @@ Phase 4 gate:
 ### Phase 5: Stream integration
 
 Gate: `[S/P]` after Phase 4  
-Status: `active`
+Status: `done`
 
 `stream.zig` is the semantic join point, so the driver surface is integrated
 serially first. After that, dispatch groups can be delegated in parallel, but
@@ -338,16 +338,15 @@ each lane must include its own test batch and finish green.
 | P5.1 | done | `stream.zig` driver core | `StreamAction`, handler contract, fast-path scaffolding + base tests | P5.0 | none | main | core compiles, replay ordering is preserved, and base tests pass | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(stream)` |
 | P5.A | done | `execute`, `escDispatch`, `csiDispatch` workstream | bounded dispatch sub-slices + matching tests | P5.1 | P5.B, P5.C | `[W]` | each `P5.A*` sub-slice lands green, and the workstream closes only after a final execute / ESC / CSI parity audit | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 | P5.B | done | OSC dispatch wiring | bounded OSC dispatch sub-slices + matching tests | P5.1 | P5.A, P5.C | `[W]` | each `P5.B*` sub-slice lands green, and the workstream closes only after translated OSC command surface is wired and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
-| P5.C | active | DCS/APC passthrough | dispatch modules + matching tests | P5.1 | P5.A, P5.B | `[W]` | passthrough lifecycle matches upstream and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
+| P5.C | done | DCS/APC passthrough | dispatch modules + matching tests | P5.1 | P5.A, P5.B | `[W]` | passthrough lifecycle matches upstream and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 
 Phase 5 gate:
 
 - P5.0 and P5.1 are `done`
 - P5.A is `done`
 - P5.B is `done`
-- P5.C is `active`
-- `P5.A` and `P5.B` are complete; remaining Phase 5 implementation lane is
-  `P5.C`
+- P5.C is `done`
+- Phase 5 implementation is complete; `P6.0` is the next planned task
 
 #### Phase 5 outputs
 
@@ -378,9 +377,10 @@ Phase 5 gate:
   [2026-04-20-p5-b-clipboard-kitty-color-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-clipboard-kitty-color-dispatch.md),
   [2026-04-20-p5-b-notification-progress-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-notification-progress-dispatch.md),
   [2026-04-20-p5-b-long-tail-no-op-audit.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-long-tail-no-op-audit.md)
-- Active Phase 5C slice audits live in:
+- Completed Phase 5C slice audits live in:
   [2026-04-20-p5-c1-apc-passthrough.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-c1-apc-passthrough.md),
-  [2026-04-20-p5-c2-dcs-facade-and-passthrough.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-c2-dcs-facade-and-passthrough.md)
+  [2026-04-20-p5-c2-dcs-facade-and-passthrough.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-c2-dcs-facade-and-passthrough.md),
+  [2026-04-20-p5-c4-closeout-audit.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-c4-closeout-audit.md)
 
 ### Phase 6: Terminal application surface
 
