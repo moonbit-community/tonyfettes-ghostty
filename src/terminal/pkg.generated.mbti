@@ -147,6 +147,7 @@ pub(all) enum Command {
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
   ClipboardContents(ClipboardContents)
+  KittyClipboardProtocol(KittyClipboardOsc)
   KittyColorProtocol(KittyColorOsc)
   ShowDesktopNotification(DesktopNotification)
   HyperlinkStart(HyperlinkStart)
@@ -306,6 +307,41 @@ pub(all) struct InvokeCharsetAction {
   bank : ActiveSlot
   charset : Slots
   locking : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KittyClipboardLocation {
+  KittyClipboardPrimary
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KittyClipboardOperation {
+  KittyClipboardRead
+  KittyClipboardWalias
+  KittyClipboardWdata
+  KittyClipboardWrite
+} derive(Eq, @debug.Debug)
+
+type KittyClipboardOsc derive(Eq, @debug.Debug)
+pub fn KittyClipboardOsc::id(Self) -> String?
+pub fn KittyClipboardOsc::location(Self) -> KittyClipboardLocation?
+pub fn KittyClipboardOsc::metadata(Self) -> String
+pub fn KittyClipboardOsc::mime(Self) -> String?
+pub fn KittyClipboardOsc::name(Self) -> String?
+pub fn KittyClipboardOsc::operation(Self) -> KittyClipboardOperation?
+pub fn KittyClipboardOsc::password(Self) -> String?
+pub fn KittyClipboardOsc::payload(Self) -> String?
+pub fn KittyClipboardOsc::pw(Self) -> String?
+pub fn KittyClipboardOsc::status(Self) -> KittyClipboardStatus?
+pub fn KittyClipboardOsc::terminator(Self) -> Terminator
+
+pub(all) enum KittyClipboardStatus {
+  KittyClipboardData
+  KittyClipboardDone
+  KittyClipboardEbusy
+  KittyClipboardEinval
+  KittyClipboardEio
+  KittyClipboardEnosys
+  KittyClipboardEperm
+  KittyClipboardOk
 } derive(Eq, @debug.Debug)
 
 pub(all) enum KittyColorKind {

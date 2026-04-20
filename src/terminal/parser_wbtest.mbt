@@ -353,6 +353,31 @@ test "parser/osc777 and osc1337 dispatch" {
 }
 
 ///|
+test "parser/osc5522 kitty clipboard dispatch" {
+  let parser = Parser::new()
+  for byte in b"\x1b]5522;type=read:status=OK;Qk9CUg==" {
+    expect_no_actions(parser.next(byte))
+  }
+  let actions = parser.next(0x07)
+  guard actions[0] is Some(OscDispatch(KittyClipboardProtocol(command))) else {
+    fail("expected OSC 5522 dispatch in exit slot")
+  }
+  guard command.metadata() == "type=read:status=OK" else {
+    fail("expected OSC 5522 metadata")
+  }
+  guard command.payload() == Some("Qk9CUg==") else {
+    fail("expected OSC 5522 payload")
+  }
+  guard command.status() == Some(KittyClipboardOk) &&
+    command.operation() == Some(KittyClipboardRead) else {
+    fail("expected OSC 5522 typed options")
+  }
+  guard actions[1] == None && actions[2] == None else {
+    fail("unexpected OSC 5522 trailing actions")
+  }
+}
+
+///|
 test "parser/osc hyperlink dispatch" {
   let start_parser = Parser::new()
   for byte in b"\x1b]8;id=foo;http://example.com" {

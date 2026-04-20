@@ -739,6 +739,7 @@ fn[H : StreamHandler] Stream::osc_dispatch(
   match command {
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
     ClipboardContents(_) => ()
+    KittyClipboardProtocol(_) => ()
     KittyColorProtocol(_) => ()
     ShowDesktopNotification(_) => ()
     HyperlinkStart(link) => self.emit(StreamStartHyperlink(link))

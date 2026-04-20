@@ -126,6 +126,131 @@ test "osc/rxvt iterm2 helper matching rejects mismatched bytes" {
   ) else {
     fail("expected ignore-case byte helper mismatch")
   }
+
+  guard !slice_starts_with_bytes([b'i'], 0, b"id") else {
+    fail("expected kitty clipboard prefix helper short-buffer mismatch")
+  }
+}
+
+///|
+test "osc/kitty clipboard constructors and option readers" {
+  let command = KittyClipboardOsc::new(
+    [
+      b't', b'y', b'p', b'e', b'=', b'r', b'e', b'a', b'd', b':', b's', b't', b'a',
+      b't', b'u', b's', b'=', b'O', b'K',
+    ],
+    Some([b'Y', b'W', b'J', b'j']),
+    Bel,
+  )
+  guard command.metadata() == "type=read:status=OK" else {
+    fail("expected kitty clipboard metadata accessor")
+  }
+  guard command.payload() == Some("YWJj") else {
+    fail("expected kitty clipboard payload accessor")
+  }
+  guard command.terminator() == Bel else {
+    fail("expected kitty clipboard terminator accessor")
+  }
+  guard command.operation() == Some(KittyClipboardRead) else {
+    fail("expected kitty clipboard operation reader")
+  }
+  guard command.status() == Some(KittyClipboardOk) else {
+    fail("expected kitty clipboard status reader")
+  }
+}
+
+///|
+test "osc/kitty clipboard option helpers cover remaining enum and empty cases" {
+  let whitespace_only = KittyClipboardOsc::new([b' ', b'\t'], None, St)
+  guard whitespace_only.id() == None else {
+    fail("expected whitespace-only metadata to have no id")
+  }
+
+  let short_key = KittyClipboardOsc::new([b'i', b'=', b'1'], None, St)
+  guard short_key.id() == None else {
+    fail("expected short metadata key to miss id lookup")
+  }
+
+  let empty_id = KittyClipboardOsc::new([b'i', b'd', b'='], None, St)
+  guard empty_id.id() == None else {
+    fail("expected empty kitty clipboard id to be rejected")
+  }
+
+  let walias = KittyClipboardOsc::new(
+    [b't', b'y', b'p', b'e', b'=', b'w', b'a', b'l', b'i', b'a', b's'],
+    None,
+    St,
+  )
+  guard walias.operation() == Some(KittyClipboardWalias) else {
+    fail("expected kitty clipboard walias operation")
+  }
+
+  let wdata = KittyClipboardOsc::new(
+    [b't', b'y', b'p', b'e', b'=', b'w', b'd', b'a', b't', b'a'],
+    None,
+    St,
+  )
+  guard wdata.operation() == Some(KittyClipboardWdata) else {
+    fail("expected kitty clipboard wdata operation")
+  }
+
+  let done_status = KittyClipboardOsc::new(
+    [b's', b't', b'a', b't', b'u', b's', b'=', b'D', b'O', b'N', b'E'],
+    None,
+    St,
+  )
+  guard done_status.status() == Some(KittyClipboardDone) else {
+    fail("expected kitty clipboard DONE status")
+  }
+
+  let ebusy_status = KittyClipboardOsc::new(
+    [b's', b't', b'a', b't', b'u', b's', b'=', b'E', b'B', b'U', b'S', b'Y'],
+    None,
+    St,
+  )
+  guard ebusy_status.status() == Some(KittyClipboardEbusy) else {
+    fail("expected kitty clipboard EBUSY status")
+  }
+
+  let einval_status = KittyClipboardOsc::new(
+    [
+      b's', b't', b'a', b't', b'u', b's', b'=', b'E', b'I', b'N', b'V', b'A', b'L',
+    ],
+    None,
+    St,
+  )
+  guard einval_status.status() == Some(KittyClipboardEinval) else {
+    fail("expected kitty clipboard EINVAL status")
+  }
+
+  let eio_status = KittyClipboardOsc::new(
+    [b's', b't', b'a', b't', b'u', b's', b'=', b'E', b'I', b'O'],
+    None,
+    St,
+  )
+  guard eio_status.status() == Some(KittyClipboardEio) else {
+    fail("expected kitty clipboard EIO status")
+  }
+
+  let enosys_status = KittyClipboardOsc::new(
+    [
+      b's', b't', b'a', b't', b'u', b's', b'=', b'E', b'N', b'O', b'S', b'Y', b'S',
+    ],
+    None,
+    St,
+  )
+  guard enosys_status.status() == Some(KittyClipboardEnosys) else {
+    fail("expected kitty clipboard ENOSYS status")
+  }
+
+  let eperm_status = KittyClipboardOsc::new(
+    [b's', b't', b'a', b't', b'u', b's', b'=', b'E', b'P', b'E', b'R', b'M'],
+    None,
+    St,
+  )
+  guard eperm_status.status() == Some(KittyClipboardEperm) else {
+    fail("expected kitty clipboard EPERM status")
+  }
 }
 
 ///|
@@ -252,8 +377,8 @@ test "osc/title exact fixed-buffer limit succeeds" {
 test "osc/incomplete and invalid prefixes are rejected" {
   for
     bytes in [
-      b"0", b"1", b"2", b"7", b"8", b"9", b"21", b"22", b"77", b"777", b"133", b"1337",
-      b"6",
+      b"0", b"1", b"2", b"7", b"8", b"9", b"21", b"22", b"55", b"552", b"5522", b"77",
+      b"777", b"133", b"1337", b"6",
     ] {
     let parser = OscParser::new()
     for byte in bytes {
@@ -321,6 +446,36 @@ test "osc/invalid states stay invalid and reject bad numeric branches" {
   match prefix1337.end(Some(0x07)) {
     None => ()
     _ => fail("expected invalid OSC 1337x prefix to be rejected")
+  }
+
+  let prefix55 = OscParser::new()
+  prefix55.next(b'5')
+  prefix55.next(b'5')
+  prefix55.next(b'x')
+  match prefix55.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 55x prefix to be rejected")
+  }
+
+  let prefix552 = OscParser::new()
+  prefix552.next(b'5')
+  prefix552.next(b'5')
+  prefix552.next(b'2')
+  prefix552.next(b'x')
+  match prefix552.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 552x prefix to be rejected")
+  }
+
+  let prefix5522 = OscParser::new()
+  prefix5522.next(b'5')
+  prefix5522.next(b'5')
+  prefix5522.next(b'2')
+  prefix5522.next(b'2')
+  prefix5522.next(b'x')
+  match prefix5522.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 5522x prefix to be rejected")
   }
 }
 
@@ -898,6 +1053,99 @@ test "osc/osc1337 iterm2 bridge parsing" {
   feed_bytes(unimplemented_key, b"1337;SetBadgeFormat=abc123")
   guard unimplemented_key.end(Some(0x1B)) == None else {
     fail("expected unimplemented iterm2 key to stay rejected")
+  }
+}
+
+///|
+test "osc/osc5522 kitty clipboard parsing" {
+  guard expect_osc_command(b"5522;", Some(0x1B))
+    is KittyClipboardProtocol(command) &&
+    command.metadata() == "" &&
+    command.payload() == None &&
+    command.id() == None &&
+    command.location() == None &&
+    command.mime() == None &&
+    command.name() == None &&
+    command.password() == None &&
+    command.pw() == None &&
+    command.status() == None &&
+    command.operation() == None &&
+    command.terminator() == St else {
+    fail("expected empty kitty clipboard metadata without payload")
+  }
+
+  guard expect_osc_command(b"5522;;", Some(0x07))
+    is KittyClipboardProtocol(command) &&
+    command.metadata() == "" &&
+    command.payload() == Some("") &&
+    command.terminator() == Bel else {
+    fail("expected empty kitty clipboard metadata with empty payload")
+  }
+
+  guard expect_osc_command(
+      b"5522;type=read:status=DATA:mime=dGV4dC9wbGFpbg==;Qk9CUg==",
+      Some(0x1B),
+    )
+    is KittyClipboardProtocol(command) &&
+    command.payload() == Some("Qk9CUg==") &&
+    command.mime() == Some("dGV4dC9wbGFpbg==") &&
+    command.status() == Some(KittyClipboardData) &&
+    command.operation() == Some(KittyClipboardRead) else {
+    fail("expected kitty clipboard payload plus typed option readers")
+  }
+
+  guard expect_osc_command(
+      b"5522;id=5c076ad9-d36f-4705-847b-d4dbf356cc0d:loc=primary",
+      Some(0x1B),
+    )
+    is KittyClipboardProtocol(command) &&
+    command.id() == Some("5c076ad9-d36f-4705-847b-d4dbf356cc0d") &&
+    command.location() == Some(KittyClipboardPrimary) else {
+    fail("expected kitty clipboard id and location readers")
+  }
+
+  guard expect_osc_command(
+      b"5522;pw=R2hvc3R0eQ==:name=Qk9CUiBLVVJXQQ==",
+      Some(0x1B),
+    )
+    is KittyClipboardProtocol(command) &&
+    command.pw() == Some("R2hvc3R0eQ==") &&
+    command.name() == Some("Qk9CUiBLVVJXQQ==") else {
+    fail("expected kitty clipboard pw and name readers")
+  }
+
+  guard expect_osc_command(
+      b"5522; password = secret : type = write ",
+      Some(0x1B),
+    )
+    is KittyClipboardProtocol(command) &&
+    command.password() == Some("secret") &&
+    command.operation() == Some(KittyClipboardWrite) else {
+    fail("expected kitty clipboard whitespace-trimmed option readers")
+  }
+
+  guard expect_osc_command(b"5522;id=*42*", Some(0x1B))
+    is KittyClipboardProtocol(command) &&
+    command.id() == None else {
+    fail("expected invalid kitty clipboard id to be rejected")
+  }
+
+  guard expect_osc_command(b"5522;status=BOBR", Some(0x1B))
+    is KittyClipboardProtocol(command) &&
+    command.status() == None else {
+    fail("expected invalid kitty clipboard status to be rejected")
+  }
+
+  guard expect_osc_command(b"5522;loc=bobr", Some(0x1B))
+    is KittyClipboardProtocol(command) &&
+    command.location() == None else {
+    fail("expected invalid kitty clipboard location to be rejected")
+  }
+
+  guard expect_osc_command(b"5522;identifier=foo:id=bar", Some(0x1B))
+    is KittyClipboardProtocol(command) &&
+    command.id() == None else {
+    fail("expected malformed prefix match to reject kitty clipboard id")
   }
 }
 

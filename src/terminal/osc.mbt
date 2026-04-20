@@ -147,6 +147,7 @@ pub(all) enum Command {
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
   ClipboardContents(ClipboardContents)
+  KittyClipboardProtocol(KittyClipboardOsc)
   KittyColorProtocol(KittyColorOsc)
   ShowDesktopNotification(DesktopNotification)
   HyperlinkStart(HyperlinkStart)
@@ -177,7 +178,10 @@ enum OscParserState {
   Prefix21
   Prefix4
   Prefix5
+  Prefix55
   Prefix52
+  Prefix552
+  Prefix5522
   Prefix7
   Prefix77
   Prefix777
@@ -316,10 +320,29 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
     Prefix5 =>
       match byte {
         b';' => self.start_capture()
+        b'5' => self.state = Prefix55
         b'2' => self.state = Prefix52
         _ => self.state = Invalid
       }
+    Prefix55 =>
+      if byte == b'2' {
+        self.state = Prefix552
+      } else {
+        self.state = Invalid
+      }
     Prefix52 =>
+      if byte == b';' {
+        self.start_capture()
+      } else {
+        self.state = Invalid
+      }
+    Prefix552 =>
+      if byte == b'2' {
+        self.state = Prefix5522
+      } else {
+        self.state = Invalid
+      }
+    Prefix5522 =>
       if byte == b';' {
         self.start_capture()
       } else {
@@ -544,6 +567,14 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
     Prefix52 =>
       if self.capturing {
         parse_clipboard_command(self.buffer)
+      } else {
+        None
+      }
+    Prefix55 => None
+    Prefix552 => None
+    Prefix5522 =>
+      if self.capturing {
+        Some(parse_kitty_clipboard_command(self.buffer, terminator_ch))
       } else {
         None
       }

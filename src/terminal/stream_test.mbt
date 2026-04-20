@@ -285,6 +285,15 @@ test "stream/osc1337 current-dir reuses report-pwd dispatch" {
 }
 
 ///|
+test "stream/osc5522 kitty clipboard stays silent until p5.b6" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]5522;type=read:status=OK;Qk9CUg==\x07z")
+  guard actions == [StreamPrint(b'z'.to_uint())] else {
+    fail("expected OSC 5522 kitty clipboard path to stay silent until P5.B6")
+  }
+}
+
+///|
 test "stream/slice walker handles in-flight escape after printable prefix" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"a\x1B(B")
