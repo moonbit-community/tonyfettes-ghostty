@@ -14,6 +14,12 @@ Break `stream_terminal.zig` into green bridge slices that can land against the
 
 ### P6.1.A Phase-6A-only state bridge
 
+Status:
+
+- done
+- implementation audit:
+  [2026-04-20-p6-1-a-phase6a-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-a-phase6a-bridge.md)
+
 Depends on:
 
 - `P6.A1`

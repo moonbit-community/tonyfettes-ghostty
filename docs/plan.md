@@ -393,7 +393,7 @@ Status: `active`
 | P6.A | active | style + attributes | terminal style modules + tests | P6.0 | P6.B, P6.C | `[W]` | parser-facing style mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 | P6.B | todo | cursor/tabstops/modes | terminal state modules + tests | P6.0 | P6.A, P6.C | `[W]` | cursor and mode actions have minimal backing state and tests | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 | P6.C | todo | screen/page/hyperlink state | terminal state modules + tests | P6.0 | P6.A, P6.B | `[W]` | parser-facing screen mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
-| P6.1 | todo | `stream_terminal.zig` | terminal application bridge + tests | P6.A, P6.B, P6.C | none | main + `[W]` | stream actions apply correctly with separated effects and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
+| P6.1 | active | `stream_terminal.zig` | terminal application bridge + tests | P6.A, P6.B, P6.C | none | main + `[W]` | stream actions apply correctly with separated effects and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 
 Phase 6 gate:
 

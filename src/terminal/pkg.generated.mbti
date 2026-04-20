@@ -968,6 +968,15 @@ pub(all) enum StreamAction {
   StreamApcEnd
 } derive(Eq, @debug.Debug)
 
+type StreamTerminalBridgeState derive(Eq, @debug.Debug)
+pub fn StreamTerminalBridgeState::apply(Self, StreamAction) -> Bool
+pub fn StreamTerminalBridgeState::clear_palette_dirty(Self) -> Unit
+pub fn StreamTerminalBridgeState::colors(Self) -> TerminalColors
+pub fn StreamTerminalBridgeState::display_state(Self) -> TerminalDisplayState
+pub fn StreamTerminalBridgeState::new() -> Self
+pub fn StreamTerminalBridgeState::palette_dirty(Self) -> Bool
+pub fn StreamTerminalBridgeState::protected_state(Self) -> ScreenProtectedState
+
 pub(all) enum Style {
   Mode2048
   Csi14t

@@ -636,6 +636,11 @@ pub fn TerminalColors::change_default_palette(
 }
 
 ///|
+fn TerminalColors::has_palette_changes(self : TerminalColors) -> Bool {
+  self.palette.has_changes()
+}
+
+///|
 fn dynamic_palette_init(defaults : Array[RGB]) -> DynamicPalette {
   {
     current: clone_palette(defaults),
@@ -651,6 +656,11 @@ fn empty_palette_mask() -> Array[Bool] {
     result.push(false)
   }
   result
+}
+
+///|
+fn DynamicPalette::has_changes(self : DynamicPalette) -> Bool {
+  !palette_mask_is_empty(self.mask)
 }
 
 ///|
