@@ -377,8 +377,8 @@ test "osc/title exact fixed-buffer limit succeeds" {
 test "osc/incomplete and invalid prefixes are rejected" {
   for
     bytes in [
-      b"0", b"1", b"2", b"7", b"8", b"9", b"21", b"22", b"55", b"552", b"5522", b"77",
-      b"777", b"133", b"1337", b"6",
+      b"0", b"1", b"2", b"3", b"30", b"300", b"3008", b"6", b"7", b"8", b"9", b"21",
+      b"22", b"55", b"66", b"552", b"5522", b"77", b"777", b"133", b"1337",
     ] {
     let parser = OscParser::new()
     for byte in bytes {
@@ -393,6 +393,13 @@ test "osc/incomplete and invalid prefixes are rejected" {
 
 ///|
 test "osc/invalid states stay invalid and reject bad numeric branches" {
+  let invalid_start = OscParser::new()
+  invalid_start.next(b'x')
+  match invalid_start.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC start byte to be rejected")
+  }
+
   let invalid = OscParser::new()
   invalid.next(b'6')
   invalid.next(b'0')
@@ -476,6 +483,61 @@ test "osc/invalid states stay invalid and reject bad numeric branches" {
   match prefix5522.end(Some(0x07)) {
     None => ()
     _ => fail("expected invalid OSC 5522x prefix to be rejected")
+  }
+
+  let prefix3 = OscParser::new()
+  prefix3.next(b'3')
+  prefix3.next(b'x')
+  match prefix3.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 3x prefix to be rejected")
+  }
+
+  let prefix30 = OscParser::new()
+  prefix30.next(b'3')
+  prefix30.next(b'0')
+  prefix30.next(b'x')
+  match prefix30.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 30x prefix to be rejected")
+  }
+
+  let prefix300 = OscParser::new()
+  prefix300.next(b'3')
+  prefix300.next(b'0')
+  prefix300.next(b'0')
+  prefix300.next(b'x')
+  match prefix300.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 300x prefix to be rejected")
+  }
+
+  let prefix3008 = OscParser::new()
+  prefix3008.next(b'3')
+  prefix3008.next(b'0')
+  prefix3008.next(b'0')
+  prefix3008.next(b'8')
+  prefix3008.next(b'x')
+  match prefix3008.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 3008x prefix to be rejected")
+  }
+
+  let prefix6 = OscParser::new()
+  prefix6.next(b'6')
+  prefix6.next(b'x')
+  match prefix6.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 6x prefix to be rejected")
+  }
+
+  let prefix66 = OscParser::new()
+  prefix66.next(b'6')
+  prefix66.next(b'6')
+  prefix66.next(b'x')
+  match prefix66.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 66x prefix to be rejected")
   }
 }
 
@@ -1146,6 +1208,337 @@ test "osc/osc5522 kitty clipboard parsing" {
     is KittyClipboardProtocol(command) &&
     command.id() == None else {
     fail("expected malformed prefix match to reject kitty clipboard id")
+  }
+}
+
+///|
+test "osc/context signal constructors and option readers" {
+  let command = ContextSignalOsc::new(
+    ContextSignalStart,
+    [b'm', b'y', b'c', b't', b'x'],
+    b"type=command;user=root;hostname=myhost;machineid=mid;bootid=bid;pid=1062862;pidfdid=1063162;comm=bash;cwd=/home/user;cmdline=ls -la;vm=guest;container=ctr;targetuser=alice;targethost=example.com;sessionid=s1;exit=interrupt;status=9;signal=SIGKILL"[:]
+    .iter()
+    .map(char => char.to_int().to_byte())
+    .collect(),
+  )
+  guard command.action() == ContextSignalStart else {
+    fail("expected context signal action accessor")
+  }
+  guard command.id() == "myctx" else {
+    fail("expected context signal id accessor")
+  }
+  guard command.metadata().contains("type=command") else {
+    fail("expected context signal metadata accessor")
+  }
+  guard command.context_type() == Some(ContextSignalCommand) else {
+    fail("expected context signal type reader")
+  }
+  guard command.user() == Some("root") &&
+    command.hostname() == Some("myhost") &&
+    command.machineid() == Some("mid") &&
+    command.bootid() == Some("bid") else {
+    fail("expected context signal string readers")
+  }
+  guard command.pid() == Some(1062862UL) && command.pidfdid() == Some(1063162UL) else {
+    fail("expected context signal numeric readers")
+  }
+  guard command.comm() == Some("bash") &&
+    command.cwd() == Some("/home/user") &&
+    command.cmdline() == Some("ls -la") else {
+    fail("expected context signal command readers")
+  }
+  guard command.vm() == Some("guest") &&
+    command.container() == Some("ctr") &&
+    command.targetuser() == Some("alice") &&
+    command.targethost() == Some("example.com") &&
+    command.sessionid() == Some("s1") else {
+    fail("expected context signal target readers")
+  }
+  guard command.exit_status() == Some(ContextSignalExitInterrupt) &&
+    command.status() == Some(9UL) &&
+    command.signal() == Some("SIGKILL") else {
+    fail("expected context signal exit readers")
+  }
+}
+
+///|
+test "osc/osc3008 context signal parsing" {
+  let empty_context = OscParser::new()
+  feed_bytes(empty_context, b"3008;")
+  guard empty_context.end(Some(0x1B)) == None else {
+    fail("expected empty OSC 3008 payload rejection")
+  }
+
+  guard expect_osc_command(b"3008;start=abc123", Some(0x1B))
+    is ContextSignal(command) &&
+    command.action() == ContextSignalStart &&
+    command.id() == "abc123" &&
+    command.metadata() == "" else {
+    fail("expected basic OSC 3008 start command")
+  }
+
+  guard expect_osc_command(
+      b"3008;end=myctx;exit=failure;status=1;signal=SIGKILL",
+      Some(0x1B),
+    )
+    is ContextSignal(command) &&
+    command.action() == ContextSignalEnd &&
+    command.id() == "myctx" &&
+    command.exit_status() == Some(ContextSignalExitFailure) &&
+    command.status() == Some(1UL) &&
+    command.signal() == Some("SIGKILL") else {
+    fail("expected OSC 3008 end command with exit metadata")
+  }
+
+  guard expect_osc_command(
+      b"3008;start=myctx;type=shell;unknownfield=value;user=root;pid=12x;hostname=host",
+      Some(0x1B),
+    )
+    is ContextSignal(command) &&
+    command.context_type() == Some(ContextSignalShell) &&
+    command.user() == Some("root") &&
+    command.hostname() == Some("host") &&
+    command.pid() == None else {
+    fail("expected OSC 3008 unknown and malformed fields to be ignored")
+  }
+
+  let empty_user = expect_osc_command(b"3008;start=myctx;user=", Some(0x1B))
+  guard empty_user is ContextSignal(command) && command.user() == None else {
+    fail("expected empty OSC 3008 string field to decode as absent")
+  }
+
+  let no_fields = ContextSignalOsc::new(ContextSignalEnd, [b'i', b'd'], [
+    b'b', b'a', b'r', b'e', b'k', b'e', b'y',
+  ])
+  guard no_fields.context_type() == None &&
+    no_fields.user() == None &&
+    no_fields.pid() == None &&
+    no_fields.exit_status() == None &&
+    no_fields.status() == None &&
+    no_fields.signal() == None else {
+    fail("expected missing OSC 3008 fields to stay absent")
+  }
+
+  let empty_number = ContextSignalOsc::new(ContextSignalStart, [b'i', b'd'], [
+    b'p', b'i', b'd', b'=',
+  ])
+  guard empty_number.pid() == None else {
+    fail("expected empty OSC 3008 numeric field rejection")
+  }
+
+  let overflow_status = ContextSignalOsc::new(
+    ContextSignalEnd,
+    [b'i', b'd'],
+    b"status=18446744073709551616"[:]
+    .iter()
+    .map(char => char.to_int().to_byte())
+    .collect(),
+  )
+  guard overflow_status.status() == None else {
+    fail("expected overflowing OSC 3008 numeric field rejection")
+  }
+
+  for
+    entry in [
+      ("boot", ContextSignalBoot),
+      ("container", ContextSignalContainer),
+      ("vm", ContextSignalVm),
+      ("elevate", ContextSignalElevate),
+      ("chpriv", ContextSignalChpriv),
+      ("subcontext", ContextSignalSubcontext),
+      ("remote", ContextSignalRemote),
+      ("shell", ContextSignalShell),
+      ("command", ContextSignalCommand),
+      ("app", ContextSignalApp),
+      ("service", ContextSignalService),
+      ("session", ContextSignalSession),
+    ] {
+    let (name, expected) = entry
+    let bytes = @buffer.new()
+    bytes.write_string_utf8("3008;start=id;type=")
+    bytes.write_string_utf8(name)
+    guard expect_osc_command(bytes.contents(), Some(0x1B))
+      is ContextSignal(command) &&
+      command.context_type() == Some(expected) else {
+      fail("expected OSC 3008 context type coverage")
+    }
+  }
+
+  for
+    entry in [
+      ("success", ContextSignalExitSuccess),
+      ("failure", ContextSignalExitFailure),
+      ("crash", ContextSignalExitCrash),
+      ("interrupt", ContextSignalExitInterrupt),
+    ] {
+    let (name, expected) = entry
+    let bytes = @buffer.new()
+    bytes.write_string_utf8("3008;end=id;exit=")
+    bytes.write_string_utf8(name)
+    guard expect_osc_command(bytes.contents(), Some(0x1B))
+      is ContextSignal(command) &&
+      command.exit_status() == Some(expected) else {
+      fail("expected OSC 3008 exit status coverage")
+    }
+  }
+
+  let invalid_prefix = OscParser::new()
+  feed_bytes(invalid_prefix, b"3008;bogus=abc123")
+  guard invalid_prefix.end(Some(0x1B)) == None else {
+    fail("expected invalid OSC 3008 prefix")
+  }
+
+  let missing_id = OscParser::new()
+  feed_bytes(missing_id, b"3008;start=")
+  guard missing_id.end(Some(0x1B)) == None else {
+    fail("expected OSC 3008 missing id rejection")
+  }
+
+  let max_id = @buffer.new()
+  max_id.write_string_utf8("3008;start=")
+  for _ in 0..<64 {
+    max_id.write_byte(b'a')
+  }
+  guard expect_osc_command(max_id.contents(), Some(0x1B))
+    is ContextSignal(command) &&
+    command.id() == "a".repeat(64) else {
+    fail("expected max-length OSC 3008 id")
+  }
+
+  let overlong_id = OscParser::new()
+  feed_bytes(overlong_id, b"3008;start=")
+  for _ in 0..<65 {
+    overlong_id.next(b'a')
+  }
+  guard overlong_id.end(Some(0x1B)) == None else {
+    fail("expected overlong OSC 3008 id rejection")
+  }
+
+  let invalid_char = OscParser::new()
+  feed_bytes(invalid_char, b"3008;start=abc")
+  invalid_char.next(0x1F)
+  guard invalid_char.end(Some(0x1B)) == None else {
+    fail("expected OSC 3008 control byte in id to be rejected")
+  }
+}
+
+///|
+test "osc/kitty text sizing constructors and parsing" {
+  guard parse_kitty_text_sizing_command([], Some(0x1B)) == None else {
+    fail("expected kitty text sizing helper to reject missing separator")
+  }
+
+  let command = KittyTextSizingOsc::new(
+    2,
+    7,
+    13,
+    15,
+    KittyTextSizingVBottom,
+    KittyTextSizingHCenter,
+    "long",
+    Bel,
+  )
+  guard command.scale() == 2 &&
+    command.width() == 7 &&
+    command.numerator() == 13 &&
+    command.denominator() == 15 else {
+    fail("expected kitty text sizing numeric accessors")
+  }
+  guard command.valign() == KittyTextSizingVBottom &&
+    command.halign() == KittyTextSizingHCenter else {
+    fail("expected kitty text sizing alignment accessors")
+  }
+  guard command.text() == "long" && command.terminator() == Bel else {
+    fail("expected kitty text sizing text and terminator accessors")
+  }
+
+  guard expect_osc_command(b"66;;bobr", Some(0x1B)) is KittyTextSizing(parsed) &&
+    parsed.scale() == 1 &&
+    parsed.width() == 0 &&
+    parsed.text() == "bobr" &&
+    parsed.terminator() == St else {
+    fail("expected OSC 66 empty parameters")
+  }
+
+  guard expect_osc_command(b"66;s=2:w=7:n=13:d=15:v=1:h=2;long", Some(0x1B))
+    is KittyTextSizing(parsed) &&
+    parsed.scale() == 2 &&
+    parsed.width() == 7 &&
+    parsed.numerator() == 13 &&
+    parsed.denominator() == 15 &&
+    parsed.valign() == KittyTextSizingVBottom &&
+    parsed.halign() == KittyTextSizingHCenter &&
+    parsed.text() == "long" else {
+    fail("expected OSC 66 typed parameters")
+  }
+
+  guard expect_osc_command(b"66;s=0;nope", Some(0x1B))
+    is KittyTextSizing(parsed) &&
+    parsed.scale() == 1 else {
+    fail("expected OSC 66 scale zero to be ignored")
+  }
+
+  guard expect_osc_command(b"66;w=8:v=3:n=16:foo:s=2:h=1;ok", Some(0x1B))
+    is KittyTextSizing(parsed) &&
+    parsed.scale() == 2 &&
+    parsed.width() == 0 &&
+    parsed.numerator() == 0 &&
+    parsed.valign() == KittyTextSizingVTop &&
+    parsed.halign() == KittyTextSizingHRight else {
+    fail("expected OSC 66 invalid parameters to be ignored")
+  }
+
+  guard expect_osc_command(b"66;v=0:h=0:q=1:d=16;origin", Some(0x1B))
+    is KittyTextSizing(parsed) &&
+    parsed.valign() == KittyTextSizingVTop &&
+    parsed.halign() == KittyTextSizingHLeft &&
+    parsed.denominator() == 0 else {
+    fail("expected OSC 66 top-left defaults and invalid denominator")
+  }
+
+  guard expect_osc_command(b"66;v=2:h=9;centered", Some(0x1B))
+    is KittyTextSizing(parsed) &&
+    parsed.valign() == KittyTextSizingVCenter &&
+    parsed.halign() == KittyTextSizingHLeft else {
+    fail("expected OSC 66 center valign and invalid halign handling")
+  }
+
+  guard expect_osc_command(
+      b"66;;👻魑魅魍魉ゴースッティ",
+      Some(0x1B),
+    )
+    is KittyTextSizing(parsed) &&
+    parsed.text() == "👻魑魅魍魉ゴースッティ" else {
+    fail("expected OSC 66 safe UTF-8 text")
+  }
+
+  let unsafe_text = OscParser::new()
+  feed_bytes(unsafe_text, b"66;;\n")
+  guard unsafe_text.end(Some(0x1B)) == None else {
+    fail("expected OSC 66 unsafe control text rejection")
+  }
+
+  guard parse_kitty_text_sizing_command([b';', 0xFF], Some(0x1B)) == None else {
+    fail("expected OSC 66 malformed UTF-8 rejection")
+  }
+
+  let long_payload = OscParser::new()
+  feed_bytes(long_payload, b"66;;")
+  for _ in 0..<3000 {
+    long_payload.next(b'a')
+  }
+  guard long_payload.end(Some(0x1B)) is Some(KittyTextSizing(parsed)) &&
+    parsed.text().length() == 3000 else {
+    fail("expected OSC 66 allocating capture past fixed buffer size")
+  }
+
+  let overlong_payload = OscParser::new()
+  feed_bytes(overlong_payload, b"66;;")
+  for _ in 0..<(KittyTextSizingPayloadLimit + 1) {
+    overlong_payload.next(b'a')
+  }
+  guard overlong_payload.end(Some(0x1B)) == None else {
+    fail("expected OSC 66 overlong payload rejection")
   }
 }
 

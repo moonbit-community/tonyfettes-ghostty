@@ -294,6 +294,15 @@ test "stream/osc5522 kitty clipboard stays silent until p5.b6" {
 }
 
 ///|
+test "stream/osc3008 and osc66 stay silent in phase 4" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]3008;start=myctx;type=shell\x07\x1B]66;s=2;ok\x07z")
+  guard actions == [StreamPrint(b'z'.to_uint())] else {
+    fail("expected OSC 3008 and OSC 66 to stay silent in Phase 4")
+  }
+}
+
+///|
 test "stream/slice walker handles in-flight escape after printable prefix" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"a\x1B(B")

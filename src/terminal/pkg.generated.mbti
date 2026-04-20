@@ -149,6 +149,7 @@ pub(all) enum Command {
   ClipboardContents(ClipboardContents)
   KittyClipboardProtocol(KittyClipboardOsc)
   KittyColorProtocol(KittyColorOsc)
+  KittyTextSizing(KittyTextSizingOsc)
   ShowDesktopNotification(DesktopNotification)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
@@ -162,6 +163,7 @@ pub(all) enum Command {
   ConEmuOutputEnvironmentVariable(String)
   ConEmuXtermEmulation(ConEmuXtermEmulation)
   ConEmuComment(String)
+  ContextSignal(ContextSignalOsc)
   SemanticPrompt(SemanticPrompt)
   ReportPwd(String)
   MouseShape(String)
@@ -213,6 +215,56 @@ pub(all) enum ConformanceLevel {
   Vt525
 } derive(Eq, @debug.Debug)
 pub fn ConformanceLevel::code(Self) -> UInt16
+
+pub(all) enum ContextSignalAction {
+  ContextSignalStart
+  ContextSignalEnd
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ContextSignalExitStatus {
+  ContextSignalExitSuccess
+  ContextSignalExitFailure
+  ContextSignalExitCrash
+  ContextSignalExitInterrupt
+} derive(Eq, @debug.Debug)
+
+type ContextSignalOsc derive(Eq, @debug.Debug)
+pub fn ContextSignalOsc::action(Self) -> ContextSignalAction
+pub fn ContextSignalOsc::bootid(Self) -> String?
+pub fn ContextSignalOsc::cmdline(Self) -> String?
+pub fn ContextSignalOsc::comm(Self) -> String?
+pub fn ContextSignalOsc::container(Self) -> String?
+pub fn ContextSignalOsc::context_type(Self) -> ContextSignalType?
+pub fn ContextSignalOsc::cwd(Self) -> String?
+pub fn ContextSignalOsc::exit_status(Self) -> ContextSignalExitStatus?
+pub fn ContextSignalOsc::hostname(Self) -> String?
+pub fn ContextSignalOsc::id(Self) -> String
+pub fn ContextSignalOsc::machineid(Self) -> String?
+pub fn ContextSignalOsc::metadata(Self) -> String
+pub fn ContextSignalOsc::pid(Self) -> UInt64?
+pub fn ContextSignalOsc::pidfdid(Self) -> UInt64?
+pub fn ContextSignalOsc::sessionid(Self) -> String?
+pub fn ContextSignalOsc::signal(Self) -> String?
+pub fn ContextSignalOsc::status(Self) -> UInt64?
+pub fn ContextSignalOsc::targethost(Self) -> String?
+pub fn ContextSignalOsc::targetuser(Self) -> String?
+pub fn ContextSignalOsc::user(Self) -> String?
+pub fn ContextSignalOsc::vm(Self) -> String?
+
+pub(all) enum ContextSignalType {
+  ContextSignalBoot
+  ContextSignalContainer
+  ContextSignalVm
+  ContextSignalElevate
+  ContextSignalChpriv
+  ContextSignalSubcontext
+  ContextSignalRemote
+  ContextSignalShell
+  ContextSignalCommand
+  ContextSignalApp
+  ContextSignalService
+  ContextSignalSession
+} derive(Eq, @debug.Debug)
 
 type Coordinate derive(Eq, @debug.Debug)
 pub fn Coordinate::new(UInt16, UInt) -> Self
@@ -377,6 +429,28 @@ pub(all) enum KittyColorSpecial {
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
 #deprecated
 pub fn KittyKeyboardFlags::inner(Self) -> Byte
+
+pub(all) enum KittyTextSizingHorizontalAlign {
+  KittyTextSizingHLeft
+  KittyTextSizingHRight
+  KittyTextSizingHCenter
+} derive(Eq, @debug.Debug)
+
+type KittyTextSizingOsc derive(Eq, @debug.Debug)
+pub fn KittyTextSizingOsc::denominator(Self) -> Byte
+pub fn KittyTextSizingOsc::halign(Self) -> KittyTextSizingHorizontalAlign
+pub fn KittyTextSizingOsc::numerator(Self) -> Byte
+pub fn KittyTextSizingOsc::scale(Self) -> Byte
+pub fn KittyTextSizingOsc::terminator(Self) -> Terminator
+pub fn KittyTextSizingOsc::text(Self) -> String
+pub fn KittyTextSizingOsc::valign(Self) -> KittyTextSizingVerticalAlign
+pub fn KittyTextSizingOsc::width(Self) -> Byte
+
+pub(all) enum KittyTextSizingVerticalAlign {
+  KittyTextSizingVTop
+  KittyTextSizingVBottom
+  KittyTextSizingVCenter
+} derive(Eq, @debug.Debug)
 
 pub(all) struct Margin {
   top_left : UInt16

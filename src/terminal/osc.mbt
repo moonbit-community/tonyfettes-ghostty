@@ -149,6 +149,7 @@ pub(all) enum Command {
   ClipboardContents(ClipboardContents)
   KittyClipboardProtocol(KittyClipboardOsc)
   KittyColorProtocol(KittyColorOsc)
+  KittyTextSizing(KittyTextSizingOsc)
   ShowDesktopNotification(DesktopNotification)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
@@ -162,6 +163,7 @@ pub(all) enum Command {
   ConEmuOutputEnvironmentVariable(String)
   ConEmuXtermEmulation(ConEmuXtermEmulation)
   ConEmuComment(String)
+  ContextSignal(ContextSignalOsc)
   SemanticPrompt(SemanticPrompt)
   ReportPwd(String)
   MouseShape(String)
@@ -175,6 +177,10 @@ enum OscParserState {
   Prefix0
   Prefix1
   Prefix2
+  Prefix3
+  Prefix30
+  Prefix300
+  Prefix3008
   Prefix21
   Prefix4
   Prefix5
@@ -182,6 +188,8 @@ enum OscParserState {
   Prefix52
   Prefix552
   Prefix5522
+  Prefix6
+  Prefix66
   Prefix7
   Prefix77
   Prefix777
@@ -247,12 +255,20 @@ fn OscParser::start_capture(self : OscParser) -> Unit {
 
 ///|
 fn OscParser::push_capture(self : OscParser, byte : Byte) -> Unit {
-  if self.buffer.length() >= OscMaxBuf - 1 {
+  if !self.allocating_capture() && self.buffer.length() >= OscMaxBuf - 1 {
     self.state = Invalid
     self.capturing = false
     self.buffer = []
   } else {
     self.buffer.push(byte)
+  }
+}
+
+///|
+fn OscParser::allocating_capture(self : OscParser) -> Bool {
+  match self.state {
+    Prefix52 | Prefix5522 | Prefix66 => true
+    _ => false
   }
 }
 
@@ -270,8 +286,10 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         b'0' => self.state = Prefix0
         b'1' => self.state = Prefix1
         b'2' => self.state = Prefix2
+        b'3' => self.state = Prefix3
         b'4' => self.state = Prefix4
         b'5' => self.state = Prefix5
+        b'6' => self.state = Prefix6
         b'7' => self.state = Prefix7
         b'8' => self.state = Prefix8
         b'9' => self.state = Prefix9
@@ -304,6 +322,30 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         b'1' => self.state = Prefix21
         b'2' => self.state = Prefix22
         _ => self.state = Invalid
+      }
+    Prefix3 =>
+      if byte == b'0' {
+        self.state = Prefix30
+      } else {
+        self.state = Invalid
+      }
+    Prefix30 =>
+      if byte == b'0' {
+        self.state = Prefix300
+      } else {
+        self.state = Invalid
+      }
+    Prefix300 =>
+      if byte == b'8' {
+        self.state = Prefix3008
+      } else {
+        self.state = Invalid
+      }
+    Prefix3008 =>
+      if byte == b';' {
+        self.start_capture()
+      } else {
+        self.state = Invalid
       }
     Prefix21 =>
       if byte == b';' {
@@ -343,6 +385,18 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         self.state = Invalid
       }
     Prefix5522 =>
+      if byte == b';' {
+        self.start_capture()
+      } else {
+        self.state = Invalid
+      }
+    Prefix6 =>
+      if byte == b'6' {
+        self.state = Prefix66
+      } else {
+        self.state = Invalid
+      }
+    Prefix66 =>
       if byte == b';' {
         self.start_capture()
       } else {
@@ -556,6 +610,15 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
         self.capturing,
         ChangeWindowTitle(captured_string(self.buffer)),
       )
+    Prefix3 => None
+    Prefix30 => None
+    Prefix300 => None
+    Prefix3008 =>
+      if self.capturing {
+        parse_context_signal_command(self.buffer)
+      } else {
+        None
+      }
     Prefix21 =>
       if self.capturing {
         parse_kitty_color_command(self.buffer, terminator_ch)
@@ -575,6 +638,13 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
     Prefix5522 =>
       if self.capturing {
         Some(parse_kitty_clipboard_command(self.buffer, terminator_ch))
+      } else {
+        None
+      }
+    Prefix6 => None
+    Prefix66 =>
+      if self.capturing {
+        parse_kitty_text_sizing_command(self.buffer, terminator_ch)
       } else {
         None
       }

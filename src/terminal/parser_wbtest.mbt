@@ -378,6 +378,44 @@ test "parser/osc5522 kitty clipboard dispatch" {
 }
 
 ///|
+test "parser/osc3008 and osc66 dispatch" {
+  let context_parser = Parser::new()
+  for byte in b"\x1b]3008;start=myctx;type=shell;user=root" {
+    expect_no_actions(context_parser.next(byte))
+  }
+  let context_actions = context_parser.next(0x07)
+  guard context_actions[0] is Some(OscDispatch(ContextSignal(command))) &&
+    command.action() == ContextSignalStart &&
+    command.id() == "myctx" &&
+    command.context_type() == Some(ContextSignalShell) &&
+    command.user() == Some("root") else {
+    fail("expected OSC 3008 dispatch in exit slot")
+  }
+  guard context_actions[1] == None && context_actions[2] == None else {
+    fail("unexpected OSC 3008 trailing actions")
+  }
+
+  let text_parser = Parser::new()
+  for byte in b"\x1b]66;s=2:w=7:n=13:d=15:v=1:h=2;long" {
+    expect_no_actions(text_parser.next(byte))
+  }
+  let text_actions = text_parser.next(0x07)
+  guard text_actions[0] is Some(OscDispatch(KittyTextSizing(command))) &&
+    command.scale() == 2 &&
+    command.width() == 7 &&
+    command.numerator() == 13 &&
+    command.denominator() == 15 &&
+    command.valign() == KittyTextSizingVBottom &&
+    command.halign() == KittyTextSizingHCenter &&
+    command.text() == "long" else {
+    fail("expected OSC 66 dispatch in exit slot")
+  }
+  guard text_actions[1] == None && text_actions[2] == None else {
+    fail("unexpected OSC 66 trailing actions")
+  }
+}
+
+///|
 test "parser/osc hyperlink dispatch" {
   let start_parser = Parser::new()
   for byte in b"\x1b]8;id=foo;http://example.com" {
