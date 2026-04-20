@@ -126,10 +126,27 @@ pub fn HyperlinkStart::id(self : HyperlinkStart) -> String? {
 }
 
 ///|
+struct ClipboardContents {
+  kind : Byte
+  data : String
+} derive(Eq, Debug)
+
+///|
+pub fn ClipboardContents::kind(self : ClipboardContents) -> Byte {
+  self.kind
+}
+
+///|
+pub fn ClipboardContents::data(self : ClipboardContents) -> String {
+  self.data
+}
+
+///|
 pub(all) enum Command {
   Invalid
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
+  ClipboardContents(ClipboardContents)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
   SemanticPrompt(SemanticPrompt)
@@ -147,6 +164,7 @@ enum OscParserState {
   Prefix2
   Prefix4
   Prefix5
+  Prefix52
   Prefix7
   Prefix8
   Prefix10
@@ -271,6 +289,12 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         self.state = Invalid
       }
     Prefix5 =>
+      match byte {
+        b';' => self.start_capture()
+        b'2' => self.state = Prefix52
+        _ => self.state = Invalid
+      }
+    Prefix52 =>
       if byte == b';' {
         self.start_capture()
       } else {
@@ -462,6 +486,12 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
       )
     Prefix4 => Some(parse_color_command(Prefix4, self.buffer, terminator_ch))
     Prefix5 => Some(parse_color_command(Prefix5, self.buffer, terminator_ch))
+    Prefix52 =>
+      if self.capturing {
+        parse_clipboard_command(self.buffer)
+      } else {
+        None
+      }
     Prefix7 =>
       captured_command(self.capturing, ReportPwd(captured_string(self.buffer)))
     Prefix8 =>
@@ -572,6 +602,33 @@ fn parse_hyperlink_id(buffer : Array[Byte], end_ : Int) -> String? {
     start = segment_end + 1
   }
   result
+}
+
+///|
+fn parse_clipboard_command(buffer : Array[Byte]) -> Command? {
+  if buffer.length() == 0 {
+    return None
+  }
+
+  if buffer[0] == b';' {
+    return Some(
+      ClipboardContents({
+        kind: b'c',
+        data: captured_string(copy_bytes_range(buffer, 1, buffer.length())),
+      }),
+    )
+  }
+
+  if buffer.length() < 2 || buffer[1] != b';' {
+    return None
+  }
+
+  Some(
+    ClipboardContents({
+      kind: buffer[0],
+      data: captured_string(copy_bytes_range(buffer, 2, buffer.length())),
+    }),
+  )
 }
 
 ///|

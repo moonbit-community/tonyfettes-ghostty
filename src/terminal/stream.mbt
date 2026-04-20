@@ -738,6 +738,7 @@ fn[H : StreamHandler] Stream::osc_dispatch(
 ) -> Unit {
   match command {
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
+    ClipboardContents(_) => ()
     HyperlinkStart(link) => self.emit(StreamStartHyperlink(link))
     HyperlinkEnd => self.emit(StreamEndHyperlink)
     SemanticPrompt(prompt) => self.emit(StreamSemanticPrompt(prompt))

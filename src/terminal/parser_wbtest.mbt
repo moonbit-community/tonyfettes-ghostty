@@ -234,6 +234,25 @@ test "parser/osc embedded minimal color operation" {
 }
 
 ///|
+test "parser/osc clipboard dispatch" {
+  let parser = Parser::new()
+  for byte in b"\x1b]52;;?" {
+    expect_no_actions(parser.next(byte))
+  }
+
+  let actions = parser.next(0x07)
+  guard actions[0] is Some(OscDispatch(ClipboardContents(contents))) else {
+    fail("expected OSC clipboard dispatch in exit slot")
+  }
+  guard contents.kind() == b'c' && contents.data() == "?" else {
+    fail("expected clipboard payload")
+  }
+  guard actions[1] == None && actions[2] == None else {
+    fail("unexpected OSC clipboard trailing actions")
+  }
+}
+
+///|
 test "parser/osc hyperlink dispatch" {
   let start_parser = Parser::new()
   for byte in b"\x1b]8;id=foo;http://example.com" {

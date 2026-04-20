@@ -83,6 +83,10 @@ pub(all) enum Charset {
   DecSpecial
 } derive(Eq, @debug.Debug)
 
+type ClipboardContents derive(Eq, @debug.Debug)
+pub fn ClipboardContents::data(Self) -> String
+pub fn ClipboardContents::kind(Self) -> Byte
+
 type ColorCommand derive(Eq, @debug.Debug)
 pub fn ColorCommand::new(ColorOperation, Array[ColorRequest], Terminator) -> Self
 pub fn ColorCommand::op(Self) -> ColorOperation
@@ -142,6 +146,7 @@ pub(all) enum Command {
   Invalid
   ChangeWindowTitle(String)
   ChangeWindowIcon(String)
+  ClipboardContents(ClipboardContents)
   HyperlinkStart(HyperlinkStart)
   HyperlinkEnd
   SemanticPrompt(SemanticPrompt)

@@ -41,6 +41,19 @@ fn expect_semantic_prompt(
 }
 
 ///|
+fn expect_clipboard_contents(
+  bytes : Bytes,
+  terminator : Byte?,
+) -> ClipboardContents raise {
+  let parser = OscParser::new()
+  feed_bytes(parser, bytes)
+  guard parser.end(terminator) is Some(ClipboardContents(contents)) else {
+    fail("expected OSC clipboard command")
+  }
+  contents
+}
+
+///|
 test "osc/color payload constructors and accessors" {
   let target = ColoredTarget::new(Palette(3), RGB::new(1, 2, 3))
   guard target.target() == Palette(3) else {
@@ -289,6 +302,48 @@ test "osc/hyperlink malformed options and end handling" {
   feed_bytes(no_separator, b"8;id=foo")
   guard no_separator.end(Some(0x1B)) == None else {
     fail("expected hyperlink payload without second semicolon to be rejected")
+  }
+}
+
+///|
+test "osc/clipboard contents basics" {
+  let set_contents = expect_clipboard_contents(b"52;s;?", Some(0x07))
+  guard set_contents.kind() == b's' else { fail("expected clipboard kind") }
+  guard set_contents.data() == "?" else { fail("expected clipboard data") }
+
+  let default_kind = expect_clipboard_contents(b"52;;?", Some(0x07))
+  guard default_kind.kind() == b'c' else {
+    fail("expected default clipboard kind")
+  }
+  guard default_kind.data() == "?" else {
+    fail("expected default-kind clipboard data")
+  }
+
+  let clear_contents = expect_clipboard_contents(b"52;;", Some(0x07))
+  guard clear_contents.kind() == b'c' else {
+    fail("expected clear clipboard kind")
+  }
+  guard clear_contents.data() == "" else {
+    fail("expected clear clipboard payload")
+  }
+
+  let primary = expect_clipboard_contents(b"52;p;abc", Some(0x1B))
+  guard primary.kind() == b'p' && primary.data() == "abc" else {
+    fail("expected clipboard payload with ST terminator")
+  }
+}
+
+///|
+test "osc/clipboard invalid forms are rejected" {
+  let invalid : Array[Bytes] = [
+    b"52", b"52;", b"52;s", b"52sa", b"52;ab", b"52x;?",
+  ]
+  for bytes in invalid {
+    let parser = OscParser::new()
+    feed_bytes(parser, bytes)
+    guard parser.end(Some(0x07)) == None else {
+      fail("expected invalid OSC 52 form to be rejected")
+    }
   }
 }
 
