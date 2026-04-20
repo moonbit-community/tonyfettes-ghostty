@@ -463,11 +463,17 @@ test "stream/dcs placeholder returns to ground" {
 }
 
 ///|
-test "stream/apc placeholder returns to ground" {
+test "stream/apc passthrough emits lifecycle" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B_a\x1B\\z")
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected text after APC placeholder dispatch")
+  guard actions ==
+    [
+      StreamApcStart,
+      StreamApcPut(b'a'),
+      StreamApcEnd,
+      StreamPrint(b'z'.to_uint()),
+    ] else {
+    fail("expected APC lifecycle passthrough plus later printable text")
   }
 }
 

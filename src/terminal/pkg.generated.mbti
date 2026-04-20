@@ -915,6 +915,9 @@ pub(all) enum StreamAction {
   StreamKittyKeyboardSet(KittyKeyboardFlags)
   StreamKittyKeyboardSetOr(KittyKeyboardFlags)
   StreamKittyKeyboardSetNot(KittyKeyboardFlags)
+  StreamApcStart
+  StreamApcPut(Byte)
+  StreamApcEnd
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Style {

@@ -118,6 +118,9 @@ pub(all) enum StreamAction {
   StreamKittyKeyboardSet(KittyKeyboardFlags)
   StreamKittyKeyboardSetOr(KittyKeyboardFlags)
   StreamKittyKeyboardSetNot(KittyKeyboardFlags)
+  StreamApcStart
+  StreamApcPut(Byte)
+  StreamApcEnd
 } derive(Eq, Debug)
 
 ///|
@@ -790,18 +793,18 @@ fn[H] Stream::dcs_unhook(self : Stream[H]) -> Unit {
 }
 
 ///|
-fn[H] Stream::apc_start(self : Stream[H]) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::apc_start(self : Stream[H]) -> Unit {
+  self.emit(StreamApcStart)
 }
 
 ///|
-fn[H] Stream::apc_put(self : Stream[H], _value : Byte) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::apc_put(self : Stream[H], value : Byte) -> Unit {
+  self.emit(StreamApcPut(value))
 }
 
 ///|
-fn[H] Stream::apc_end(self : Stream[H]) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::apc_end(self : Stream[H]) -> Unit {
+  self.emit(StreamApcEnd)
 }
 
 ///|
