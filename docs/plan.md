@@ -385,11 +385,11 @@ Phase 5 gate:
 ### Phase 6: Terminal application surface
 
 Gate: `[P]` after Phase 5  
-Status: `todo`
+Status: `active`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P6.0 | todo | `stream_terminal.zig` + minimum model deps | terminal dependency checklist and subplan boundaries | P5.C | none | `[E]` | exact minimal model boundary recorded before implementation | doc review | `[R]` main | `docs` |
+| P6.0 | done | `stream_terminal.zig` + minimum model deps | terminal dependency checklist and subplan boundaries | P5.C | none | `[E]` | exact minimal model boundary recorded before implementation | doc review | `[R]` main | `docs` |
 | P6.A | todo | style + attributes | terminal style modules + tests | P6.0 | P6.B, P6.C | `[W]` | parser-facing style mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 | P6.B | todo | cursor/tabstops/modes | terminal state modules + tests | P6.0 | P6.A, P6.C | `[W]` | cursor and mode actions have minimal backing state and tests | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 | P6.C | todo | screen/page/hyperlink state | terminal state modules + tests | P6.0 | P6.A, P6.B | `[W]` | parser-facing screen mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
@@ -397,7 +397,13 @@ Status: `todo`
 
 Phase 6 gate:
 
+- P6.0 is `done`
 - P6.A, P6.B, P6.C, and P6.1 are `done`
+
+#### Phase 6 outputs
+
+- Phase 6 boundary notes live in:
+  [2026-04-20-p6-0-terminal-dependency-checklist.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-0-terminal-dependency-checklist.md)
 
 ### Phase 7: Host bridge and equivalence
 
