@@ -164,6 +164,517 @@ pub fn Dynamic::next(self : Dynamic) -> Dynamic? {
 }
 
 ///|
+const PaletteLengthInt : Int = 256
+
+///|
+fn default_palette_value() -> Array[RGB] {
+  [
+    RGB::new(29, 31, 33),
+    RGB::new(204, 102, 102),
+    RGB::new(181, 189, 104),
+    RGB::new(240, 198, 116),
+    RGB::new(129, 162, 190),
+    RGB::new(178, 148, 187),
+    RGB::new(138, 190, 183),
+    RGB::new(197, 200, 198),
+    RGB::new(102, 102, 102),
+    RGB::new(213, 78, 83),
+    RGB::new(185, 202, 74),
+    RGB::new(231, 197, 71),
+    RGB::new(122, 166, 218),
+    RGB::new(195, 151, 216),
+    RGB::new(112, 192, 177),
+    RGB::new(234, 234, 234),
+    RGB::new(0, 0, 0),
+    RGB::new(0, 0, 95),
+    RGB::new(0, 0, 135),
+    RGB::new(0, 0, 175),
+    RGB::new(0, 0, 215),
+    RGB::new(0, 0, 255),
+    RGB::new(0, 95, 0),
+    RGB::new(0, 95, 95),
+    RGB::new(0, 95, 135),
+    RGB::new(0, 95, 175),
+    RGB::new(0, 95, 215),
+    RGB::new(0, 95, 255),
+    RGB::new(0, 135, 0),
+    RGB::new(0, 135, 95),
+    RGB::new(0, 135, 135),
+    RGB::new(0, 135, 175),
+    RGB::new(0, 135, 215),
+    RGB::new(0, 135, 255),
+    RGB::new(0, 175, 0),
+    RGB::new(0, 175, 95),
+    RGB::new(0, 175, 135),
+    RGB::new(0, 175, 175),
+    RGB::new(0, 175, 215),
+    RGB::new(0, 175, 255),
+    RGB::new(0, 215, 0),
+    RGB::new(0, 215, 95),
+    RGB::new(0, 215, 135),
+    RGB::new(0, 215, 175),
+    RGB::new(0, 215, 215),
+    RGB::new(0, 215, 255),
+    RGB::new(0, 255, 0),
+    RGB::new(0, 255, 95),
+    RGB::new(0, 255, 135),
+    RGB::new(0, 255, 175),
+    RGB::new(0, 255, 215),
+    RGB::new(0, 255, 255),
+    RGB::new(95, 0, 0),
+    RGB::new(95, 0, 95),
+    RGB::new(95, 0, 135),
+    RGB::new(95, 0, 175),
+    RGB::new(95, 0, 215),
+    RGB::new(95, 0, 255),
+    RGB::new(95, 95, 0),
+    RGB::new(95, 95, 95),
+    RGB::new(95, 95, 135),
+    RGB::new(95, 95, 175),
+    RGB::new(95, 95, 215),
+    RGB::new(95, 95, 255),
+    RGB::new(95, 135, 0),
+    RGB::new(95, 135, 95),
+    RGB::new(95, 135, 135),
+    RGB::new(95, 135, 175),
+    RGB::new(95, 135, 215),
+    RGB::new(95, 135, 255),
+    RGB::new(95, 175, 0),
+    RGB::new(95, 175, 95),
+    RGB::new(95, 175, 135),
+    RGB::new(95, 175, 175),
+    RGB::new(95, 175, 215),
+    RGB::new(95, 175, 255),
+    RGB::new(95, 215, 0),
+    RGB::new(95, 215, 95),
+    RGB::new(95, 215, 135),
+    RGB::new(95, 215, 175),
+    RGB::new(95, 215, 215),
+    RGB::new(95, 215, 255),
+    RGB::new(95, 255, 0),
+    RGB::new(95, 255, 95),
+    RGB::new(95, 255, 135),
+    RGB::new(95, 255, 175),
+    RGB::new(95, 255, 215),
+    RGB::new(95, 255, 255),
+    RGB::new(135, 0, 0),
+    RGB::new(135, 0, 95),
+    RGB::new(135, 0, 135),
+    RGB::new(135, 0, 175),
+    RGB::new(135, 0, 215),
+    RGB::new(135, 0, 255),
+    RGB::new(135, 95, 0),
+    RGB::new(135, 95, 95),
+    RGB::new(135, 95, 135),
+    RGB::new(135, 95, 175),
+    RGB::new(135, 95, 215),
+    RGB::new(135, 95, 255),
+    RGB::new(135, 135, 0),
+    RGB::new(135, 135, 95),
+    RGB::new(135, 135, 135),
+    RGB::new(135, 135, 175),
+    RGB::new(135, 135, 215),
+    RGB::new(135, 135, 255),
+    RGB::new(135, 175, 0),
+    RGB::new(135, 175, 95),
+    RGB::new(135, 175, 135),
+    RGB::new(135, 175, 175),
+    RGB::new(135, 175, 215),
+    RGB::new(135, 175, 255),
+    RGB::new(135, 215, 0),
+    RGB::new(135, 215, 95),
+    RGB::new(135, 215, 135),
+    RGB::new(135, 215, 175),
+    RGB::new(135, 215, 215),
+    RGB::new(135, 215, 255),
+    RGB::new(135, 255, 0),
+    RGB::new(135, 255, 95),
+    RGB::new(135, 255, 135),
+    RGB::new(135, 255, 175),
+    RGB::new(135, 255, 215),
+    RGB::new(135, 255, 255),
+    RGB::new(175, 0, 0),
+    RGB::new(175, 0, 95),
+    RGB::new(175, 0, 135),
+    RGB::new(175, 0, 175),
+    RGB::new(175, 0, 215),
+    RGB::new(175, 0, 255),
+    RGB::new(175, 95, 0),
+    RGB::new(175, 95, 95),
+    RGB::new(175, 95, 135),
+    RGB::new(175, 95, 175),
+    RGB::new(175, 95, 215),
+    RGB::new(175, 95, 255),
+    RGB::new(175, 135, 0),
+    RGB::new(175, 135, 95),
+    RGB::new(175, 135, 135),
+    RGB::new(175, 135, 175),
+    RGB::new(175, 135, 215),
+    RGB::new(175, 135, 255),
+    RGB::new(175, 175, 0),
+    RGB::new(175, 175, 95),
+    RGB::new(175, 175, 135),
+    RGB::new(175, 175, 175),
+    RGB::new(175, 175, 215),
+    RGB::new(175, 175, 255),
+    RGB::new(175, 215, 0),
+    RGB::new(175, 215, 95),
+    RGB::new(175, 215, 135),
+    RGB::new(175, 215, 175),
+    RGB::new(175, 215, 215),
+    RGB::new(175, 215, 255),
+    RGB::new(175, 255, 0),
+    RGB::new(175, 255, 95),
+    RGB::new(175, 255, 135),
+    RGB::new(175, 255, 175),
+    RGB::new(175, 255, 215),
+    RGB::new(175, 255, 255),
+    RGB::new(215, 0, 0),
+    RGB::new(215, 0, 95),
+    RGB::new(215, 0, 135),
+    RGB::new(215, 0, 175),
+    RGB::new(215, 0, 215),
+    RGB::new(215, 0, 255),
+    RGB::new(215, 95, 0),
+    RGB::new(215, 95, 95),
+    RGB::new(215, 95, 135),
+    RGB::new(215, 95, 175),
+    RGB::new(215, 95, 215),
+    RGB::new(215, 95, 255),
+    RGB::new(215, 135, 0),
+    RGB::new(215, 135, 95),
+    RGB::new(215, 135, 135),
+    RGB::new(215, 135, 175),
+    RGB::new(215, 135, 215),
+    RGB::new(215, 135, 255),
+    RGB::new(215, 175, 0),
+    RGB::new(215, 175, 95),
+    RGB::new(215, 175, 135),
+    RGB::new(215, 175, 175),
+    RGB::new(215, 175, 215),
+    RGB::new(215, 175, 255),
+    RGB::new(215, 215, 0),
+    RGB::new(215, 215, 95),
+    RGB::new(215, 215, 135),
+    RGB::new(215, 215, 175),
+    RGB::new(215, 215, 215),
+    RGB::new(215, 215, 255),
+    RGB::new(215, 255, 0),
+    RGB::new(215, 255, 95),
+    RGB::new(215, 255, 135),
+    RGB::new(215, 255, 175),
+    RGB::new(215, 255, 215),
+    RGB::new(215, 255, 255),
+    RGB::new(255, 0, 0),
+    RGB::new(255, 0, 95),
+    RGB::new(255, 0, 135),
+    RGB::new(255, 0, 175),
+    RGB::new(255, 0, 215),
+    RGB::new(255, 0, 255),
+    RGB::new(255, 95, 0),
+    RGB::new(255, 95, 95),
+    RGB::new(255, 95, 135),
+    RGB::new(255, 95, 175),
+    RGB::new(255, 95, 215),
+    RGB::new(255, 95, 255),
+    RGB::new(255, 135, 0),
+    RGB::new(255, 135, 95),
+    RGB::new(255, 135, 135),
+    RGB::new(255, 135, 175),
+    RGB::new(255, 135, 215),
+    RGB::new(255, 135, 255),
+    RGB::new(255, 175, 0),
+    RGB::new(255, 175, 95),
+    RGB::new(255, 175, 135),
+    RGB::new(255, 175, 175),
+    RGB::new(255, 175, 215),
+    RGB::new(255, 175, 255),
+    RGB::new(255, 215, 0),
+    RGB::new(255, 215, 95),
+    RGB::new(255, 215, 135),
+    RGB::new(255, 215, 175),
+    RGB::new(255, 215, 215),
+    RGB::new(255, 215, 255),
+    RGB::new(255, 255, 0),
+    RGB::new(255, 255, 95),
+    RGB::new(255, 255, 135),
+    RGB::new(255, 255, 175),
+    RGB::new(255, 255, 215),
+    RGB::new(255, 255, 255),
+    RGB::new(8, 8, 8),
+    RGB::new(18, 18, 18),
+    RGB::new(28, 28, 28),
+    RGB::new(38, 38, 38),
+    RGB::new(48, 48, 48),
+    RGB::new(58, 58, 58),
+    RGB::new(68, 68, 68),
+    RGB::new(78, 78, 78),
+    RGB::new(88, 88, 88),
+    RGB::new(98, 98, 98),
+    RGB::new(108, 108, 108),
+    RGB::new(118, 118, 118),
+    RGB::new(128, 128, 128),
+    RGB::new(138, 138, 138),
+    RGB::new(148, 148, 148),
+    RGB::new(158, 158, 158),
+    RGB::new(168, 168, 168),
+    RGB::new(178, 178, 178),
+    RGB::new(188, 188, 188),
+    RGB::new(198, 198, 198),
+    RGB::new(208, 208, 208),
+    RGB::new(218, 218, 218),
+    RGB::new(228, 228, 228),
+    RGB::new(238, 238, 238),
+  ]
+}
+
+///|
+pub fn default_palette() -> Array[RGB] {
+  default_palette_value()
+}
+
+///|
+struct DynamicRGB {
+  mut override_ : RGB?
+  default_ : RGB?
+} derive(Eq, Debug)
+
+///|
+pub fn DynamicRGB::unset() -> DynamicRGB {
+  { override_: None, default_: None }
+}
+
+///|
+pub fn DynamicRGB::init(default_color : RGB) -> DynamicRGB {
+  { override_: None, default_: Some(default_color) }
+}
+
+///|
+pub fn DynamicRGB::get(self : DynamicRGB) -> RGB? {
+  match self.override_ {
+    Some(color) => Some(color)
+    None => self.default_
+  }
+}
+
+///|
+pub fn DynamicRGB::set(self : DynamicRGB, color : RGB) -> Unit {
+  self.override_ = Some(color)
+}
+
+///|
+pub fn DynamicRGB::reset(self : DynamicRGB) -> Unit {
+  self.override_ = self.default_
+}
+
+///|
+struct DynamicPalette {
+  mut current : Array[RGB]
+  mut original : Array[RGB]
+  mut mask : Array[Bool]
+} derive(Eq, Debug)
+
+///|
+pub fn DynamicPalette::new() -> DynamicPalette {
+  dynamic_palette_init(default_palette_value())
+}
+
+///|
+pub fn DynamicPalette::color(self : DynamicPalette, idx : Byte) -> RGB {
+  self.current[idx.to_int()]
+}
+
+///|
+pub fn DynamicPalette::set(
+  self : DynamicPalette,
+  idx : Byte,
+  color : RGB,
+) -> Unit {
+  let index = idx.to_int()
+  self.current[index] = color
+  self.mask[index] = true
+}
+
+///|
+pub fn DynamicPalette::reset(self : DynamicPalette, idx : Byte) -> Unit {
+  let index = idx.to_int()
+  self.current[index] = self.original[index]
+  self.mask[index] = false
+}
+
+///|
+pub fn DynamicPalette::reset_all(self : DynamicPalette) -> Unit {
+  self.current = self.original
+  self.mask = empty_palette_mask()
+}
+
+///|
+pub fn DynamicPalette::change_default(
+  self : DynamicPalette,
+  defaults : Array[RGB],
+) -> Unit {
+  let defaults_copy = clone_palette(defaults)
+  self.original = defaults_copy
+  if palette_mask_is_empty(self.mask) {
+    self.current = clone_palette(defaults_copy)
+    return
+  }
+
+  let current = clone_palette(defaults_copy)
+  let mut i = 0
+  while i < PaletteLengthInt {
+    if self.mask[i] {
+      current[i] = self.current[i]
+    }
+    i += 1
+  }
+  self.current = current
+}
+
+///|
+struct TerminalColors {
+  background : DynamicRGB
+  foreground : DynamicRGB
+  cursor : DynamicRGB
+  palette : DynamicPalette
+} derive(Eq, Debug)
+
+///|
+pub fn TerminalColors::new() -> TerminalColors {
+  {
+    background: DynamicRGB::unset(),
+    foreground: DynamicRGB::unset(),
+    cursor: DynamicRGB::unset(),
+    palette: DynamicPalette::new(),
+  }
+}
+
+///|
+pub fn TerminalColors::background(self : TerminalColors) -> RGB? {
+  self.background.get()
+}
+
+///|
+pub fn TerminalColors::foreground(self : TerminalColors) -> RGB? {
+  self.foreground.get()
+}
+
+///|
+pub fn TerminalColors::cursor(self : TerminalColors) -> RGB? {
+  self.cursor.get()
+}
+
+///|
+pub fn TerminalColors::palette_color(self : TerminalColors, idx : Byte) -> RGB {
+  self.palette.color(idx)
+}
+
+///|
+pub fn TerminalColors::set_background(
+  self : TerminalColors,
+  color : RGB,
+) -> Unit {
+  self.background.set(color)
+}
+
+///|
+pub fn TerminalColors::set_foreground(
+  self : TerminalColors,
+  color : RGB,
+) -> Unit {
+  self.foreground.set(color)
+}
+
+///|
+pub fn TerminalColors::set_cursor(self : TerminalColors, color : RGB) -> Unit {
+  self.cursor.set(color)
+}
+
+///|
+pub fn TerminalColors::reset_background(self : TerminalColors) -> Unit {
+  self.background.reset()
+}
+
+///|
+pub fn TerminalColors::reset_foreground(self : TerminalColors) -> Unit {
+  self.foreground.reset()
+}
+
+///|
+pub fn TerminalColors::reset_cursor(self : TerminalColors) -> Unit {
+  self.cursor.reset()
+}
+
+///|
+pub fn TerminalColors::set_palette_color(
+  self : TerminalColors,
+  idx : Byte,
+  color : RGB,
+) -> Unit {
+  self.palette.set(idx, color)
+}
+
+///|
+pub fn TerminalColors::reset_palette_color(
+  self : TerminalColors,
+  idx : Byte,
+) -> Unit {
+  self.palette.reset(idx)
+}
+
+///|
+pub fn TerminalColors::reset_palette(self : TerminalColors) -> Unit {
+  self.palette.reset_all()
+}
+
+///|
+pub fn TerminalColors::change_default_palette(
+  self : TerminalColors,
+  defaults : Array[RGB],
+) -> Unit {
+  self.palette.change_default(defaults)
+}
+
+///|
+fn dynamic_palette_init(defaults : Array[RGB]) -> DynamicPalette {
+  {
+    current: clone_palette(defaults),
+    original: clone_palette(defaults),
+    mask: empty_palette_mask(),
+  }
+}
+
+///|
+fn empty_palette_mask() -> Array[Bool] {
+  let result : Array[Bool] = []
+  for _ in 0..<PaletteLengthInt {
+    result.push(false)
+  }
+  result
+}
+
+///|
+fn palette_mask_is_empty(mask : Array[Bool]) -> Bool {
+  let mut i = 0
+  while i < mask.length() {
+    if mask[i] {
+      return false
+    }
+    i += 1
+  }
+  true
+}
+
+///|
+fn clone_palette(source : Array[RGB]) -> Array[RGB] {
+  let result : Array[RGB] = []
+  for color in source {
+    result.push(color)
+  }
+  result
+}
+
+///|
 pub fn RGB::parse(value : String) -> RGB raise ColorParseError {
   if value.length() == 0 {
     raise ColorParseError::InvalidFormat

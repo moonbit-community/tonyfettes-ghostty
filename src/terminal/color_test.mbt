@@ -162,3 +162,149 @@ test "color/rgb parse rejects malformed public edge cases" {
     }
   }
 }
+
+///|
+test "color/default palette covers named cube and grayscale entries" {
+  let palette = default_palette()
+  guard palette[0] == Name::Black.default_rgb() else {
+    fail("expected named palette entry")
+  }
+  guard palette[15] == Name::BrightWhite.default_rgb() else {
+    fail("expected bright named palette entry")
+  }
+  guard palette[16] == RGB::new(0, 0, 0) else {
+    fail("expected color cube start")
+  }
+  guard palette[21] == RGB::new(0, 0, 255) else {
+    fail("expected color cube blue edge")
+  }
+  guard palette[231] == RGB::new(255, 255, 255) else {
+    fail("expected color cube end")
+  }
+  guard palette[232] == RGB::new(8, 8, 8) else {
+    fail("expected grayscale ramp start")
+  }
+  guard palette[255] == RGB::new(238, 238, 238) else {
+    fail("expected grayscale ramp end")
+  }
+}
+
+///|
+test "color/dynamic rgb unset set and reset" {
+  let unset = DynamicRGB::unset()
+  guard unset.get() == None else {
+    fail("expected unset dynamic rgb to have no value")
+  }
+
+  let value = DynamicRGB::init(RGB::new(1, 2, 3))
+  guard value.get() == Some(RGB::new(1, 2, 3)) else {
+    fail("expected default dynamic rgb value")
+  }
+
+  value.set(RGB::new(4, 5, 6))
+  guard value.get() == Some(RGB::new(4, 5, 6)) else {
+    fail("expected override dynamic rgb value")
+  }
+
+  value.reset()
+  guard value.get() == Some(RGB::new(1, 2, 3)) else {
+    fail("expected reset dynamic rgb value")
+  }
+}
+
+///|
+test "color/dynamic palette set reset and reset_all" {
+  let palette = DynamicPalette::new()
+  let default_zero = palette.color(0)
+
+  let color = RGB::new(255, 0, 0)
+  palette.set(0, color)
+  guard palette.color(0) == color else {
+    fail("expected palette override color")
+  }
+
+  palette.reset(0)
+  guard palette.color(0) == default_zero else {
+    fail("expected palette reset to restore original color")
+  }
+
+  palette.set(0, color)
+  palette.set(5, RGB::new(0, 255, 0))
+  palette.reset_all()
+  guard palette.color(0) == default_zero else {
+    fail("expected reset_all to restore index 0")
+  }
+  guard palette.color(5) == Name::Magenta.default_rgb() else {
+    fail("expected reset_all to restore index 5")
+  }
+}
+
+///|
+test "color/dynamic palette change_default preserves overrides" {
+  let palette = DynamicPalette::new()
+  let custom = RGB::new(255, 0, 0)
+  palette.set(5, custom)
+
+  let defaults = default_palette()
+  defaults[0] = RGB::new(100, 100, 100)
+  defaults[5] = RGB::new(50, 50, 50)
+  palette.change_default(defaults)
+
+  guard palette.color(0) == RGB::new(100, 100, 100) else {
+    fail("expected unchanged indexes to adopt new defaults")
+  }
+  guard palette.color(5) == custom else {
+    fail("expected overridden indexes to keep custom colors")
+  }
+}
+
+///|
+test "color/terminal colors wrap dynamic color state" {
+  let colors = TerminalColors::new()
+  guard colors.background() == None &&
+    colors.foreground() == None &&
+    colors.cursor() == None else {
+    fail("expected terminal colors to start unset")
+  }
+  guard colors.palette_color(1) == Name::Red.default_rgb() else {
+    fail("expected terminal colors to expose default palette")
+  }
+
+  colors.set_background(RGB::new(1, 2, 3))
+  colors.set_foreground(RGB::new(4, 5, 6))
+  colors.set_cursor(RGB::new(7, 8, 9))
+  colors.set_palette_color(1, RGB::new(9, 9, 9))
+  guard colors.background() == Some(RGB::new(1, 2, 3)) &&
+    colors.foreground() == Some(RGB::new(4, 5, 6)) &&
+    colors.cursor() == Some(RGB::new(7, 8, 9)) &&
+    colors.palette_color(1) == RGB::new(9, 9, 9) else {
+    fail("expected terminal colors mutations to stick")
+  }
+
+  colors.reset_background()
+  colors.reset_foreground()
+  colors.reset_cursor()
+  colors.reset_palette_color(1)
+  guard colors.background() == None &&
+    colors.foreground() == None &&
+    colors.cursor() == None &&
+    colors.palette_color(1) == Name::Red.default_rgb() else {
+    fail("expected terminal colors resets to restore defaults")
+  }
+
+  let defaults = default_palette()
+  defaults[2] = RGB::new(33, 44, 55)
+  colors.change_default_palette(defaults)
+  guard colors.palette_color(2) == RGB::new(33, 44, 55) else {
+    fail("expected terminal colors default palette update")
+  }
+
+  colors.set_palette_color(3, RGB::new(66, 77, 88))
+  colors.reset_palette()
+  guard colors.palette_color(2) == RGB::new(33, 44, 55) else {
+    fail("expected reset_palette to keep changed defaults")
+  }
+  guard colors.palette_color(3) == Name::Yellow.default_rgb() else {
+    fail("expected reset_palette to clear palette overrides")
+  }
+}

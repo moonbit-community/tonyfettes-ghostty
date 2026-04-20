@@ -12,6 +12,8 @@ pub fn cursor_style_from_int(Int) -> CursorStyle?
 
 pub fn default_mode_packed() -> ModePacked
 
+pub fn default_palette() -> Array[RGB]
+
 pub fn device_status_request_from_int(UInt16, Bool) -> DeviceStatusRequest?
 
 pub fn device_status_tag(UInt16, Bool) -> DeviceStatusTag
@@ -373,6 +375,21 @@ pub(all) enum Dynamic {
 } derive(Eq, @debug.Debug)
 pub fn Dynamic::code(Self) -> UInt16
 pub fn Dynamic::next(Self) -> Self?
+
+type DynamicPalette derive(Eq, @debug.Debug)
+pub fn DynamicPalette::change_default(Self, Array[RGB]) -> Unit
+pub fn DynamicPalette::color(Self, Byte) -> RGB
+pub fn DynamicPalette::new() -> Self
+pub fn DynamicPalette::reset(Self, Byte) -> Unit
+pub fn DynamicPalette::reset_all(Self) -> Unit
+pub fn DynamicPalette::set(Self, Byte, RGB) -> Unit
+
+type DynamicRGB derive(Eq, @debug.Debug)
+pub fn DynamicRGB::get(Self) -> RGB?
+pub fn DynamicRGB::init(RGB) -> Self
+pub fn DynamicRGB::reset(Self) -> Unit
+pub fn DynamicRGB::set(Self, RGB) -> Unit
+pub fn DynamicRGB::unset() -> Self
 
 type HyperlinkStart derive(Eq, @debug.Debug)
 pub fn HyperlinkStart::id(Self) -> String?
@@ -964,6 +981,23 @@ pub(all) enum Tag {
   Screen
   History
 } derive(Eq, @debug.Debug)
+
+type TerminalColors derive(Eq, @debug.Debug)
+pub fn TerminalColors::background(Self) -> RGB?
+pub fn TerminalColors::change_default_palette(Self, Array[RGB]) -> Unit
+pub fn TerminalColors::cursor(Self) -> RGB?
+pub fn TerminalColors::foreground(Self) -> RGB?
+pub fn TerminalColors::new() -> Self
+pub fn TerminalColors::palette_color(Self, Byte) -> RGB
+pub fn TerminalColors::reset_background(Self) -> Unit
+pub fn TerminalColors::reset_cursor(Self) -> Unit
+pub fn TerminalColors::reset_foreground(Self) -> Unit
+pub fn TerminalColors::reset_palette(Self) -> Unit
+pub fn TerminalColors::reset_palette_color(Self, Byte) -> Unit
+pub fn TerminalColors::set_background(Self, RGB) -> Unit
+pub fn TerminalColors::set_cursor(Self, RGB) -> Unit
+pub fn TerminalColors::set_foreground(Self, RGB) -> Unit
+pub fn TerminalColors::set_palette_color(Self, Byte, RGB) -> Unit
 
 pub(all) enum Terminator {
   St
