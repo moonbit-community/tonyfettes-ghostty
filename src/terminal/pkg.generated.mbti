@@ -10,8 +10,6 @@ pub fn c0_from_byte(Byte) -> C0?
 
 pub fn cursor_style_from_int(Int) -> CursorStyle?
 
-pub fn default_mode_packed() -> ModePacked
-
 pub fn default_palette() -> Array[RGB]
 
 pub fn device_status_request_from_int(UInt16, Bool) -> DeviceStatusRequest?
@@ -19,8 +17,6 @@ pub fn device_status_request_from_int(UInt16, Bool) -> DeviceStatusRequest?
 pub fn device_status_tag(UInt16, Bool) -> DeviceStatusTag
 
 pub fn device_status_tag_from_raw(UInt16) -> DeviceStatusTag
-
-pub fn empty_mode_packed() -> ModePacked
 
 pub fn encode(Style, Size) -> Bytes
 
@@ -543,6 +539,8 @@ pub(all) enum Mode {
 pub fn Mode::tag(Self) -> ModeTag
 
 type ModePacked derive(Eq, @debug.Debug)
+pub fn ModePacked::default() -> Self
+pub fn ModePacked::empty() -> Self
 pub fn ModePacked::get(Self, Mode) -> Bool
 pub fn ModePacked::set(Self, Mode, Bool) -> Unit
 

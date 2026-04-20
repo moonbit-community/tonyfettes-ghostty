@@ -80,7 +80,7 @@ test "modes/all tags roundtrip through lookup and raw layout" {
 ///|
 test "modes/defaults preserve upstream true flags" {
   let state = ModeState::new()
-  let defaults = default_mode_packed()
+  let defaults = ModePacked::default()
   guard state.get(Mode::SendReceiveMode) else {
     fail("expected send_receive_mode default")
   }
@@ -163,7 +163,7 @@ test "modes/report encode" {
 
 ///|
 test "modes/packed state exercises set clear no-op and reset paths" {
-  let packed = empty_mode_packed()
+  let packed = ModePacked::empty()
   guard !packed.get(Mode::CursorKeys) else {
     fail("expected cursor keys to start unset")
   }
@@ -201,7 +201,7 @@ test "modes/report state codes and bit helpers cover edge modes" {
   assert_eq(ReportState::PermanentlySet.code(), 3)
   assert_eq(ReportState::PermanentlyReset.code(), 4)
 
-  let packed = empty_mode_packed()
+  let packed = ModePacked::empty()
   guard !packed.get(Mode::DisableKeyboard) else {
     fail("expected disable keyboard to start unset")
   }

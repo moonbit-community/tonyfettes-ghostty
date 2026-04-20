@@ -246,12 +246,12 @@ let default_mode_mask : UInt64 = mode_mask(SendReceiveMode) |
   mode_mask(AltEscPrefix)
 
 ///|
-pub fn empty_mode_packed() -> ModePacked {
+pub fn ModePacked::empty() -> ModePacked {
   { bits: 0UL }
 }
 
 ///|
-pub fn default_mode_packed() -> ModePacked {
+pub fn ModePacked::default() -> ModePacked {
   { bits: default_mode_mask }
 }
 
@@ -281,14 +281,14 @@ struct ModeState {
 
 ///|
 pub fn ModeState::new() -> ModeState {
-  let defaults = default_mode_packed()
-  { values: defaults, saved: empty_mode_packed(), default: defaults }
+  let defaults = ModePacked::default()
+  { values: defaults, saved: ModePacked::empty(), default: defaults }
 }
 
 ///|
 pub fn ModeState::reset(self : ModeState) -> Unit {
   self.values = self.default
-  self.saved = empty_mode_packed()
+  self.saved = ModePacked::empty()
 }
 
 ///|
