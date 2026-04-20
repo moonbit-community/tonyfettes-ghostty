@@ -99,10 +99,12 @@ pub(all) enum StreamAction {
   StreamTitlePop(UInt16)
   StreamXtversion
   StreamWindowTitle(String)
+  StreamClipboardContents(ClipboardContents)
   StreamReportPwd(String)
   StreamStartHyperlink(HyperlinkStart)
   StreamEndHyperlink
   StreamMouseShape(MouseShape)
+  StreamKittyColorReport(KittyColorOsc)
   StreamColorOperation(ColorCommand)
   StreamSemanticPrompt(SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
@@ -738,9 +740,9 @@ fn[H : StreamHandler] Stream::osc_dispatch(
 ) -> Unit {
   match command {
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
-    ClipboardContents(_) => ()
+    ClipboardContents(contents) => self.emit(StreamClipboardContents(contents))
     KittyClipboardProtocol(_) => ()
-    KittyColorProtocol(_) => ()
+    KittyColorProtocol(command) => self.emit(StreamKittyColorReport(command))
     KittyTextSizing(_) => ()
     ShowDesktopNotification(_) => ()
     HyperlinkStart(link) => self.emit(StreamStartHyperlink(link))

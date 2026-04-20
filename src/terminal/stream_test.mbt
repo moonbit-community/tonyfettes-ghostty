@@ -215,20 +215,40 @@ test "stream/osc ignored and invalid commands stay silent" {
 }
 
 ///|
-test "stream/osc clipboard stays silent until p5.b4" {
+test "stream/osc clipboard dispatch" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B]52;;?\x07z")
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected clipboard OSC to stay silent until P5.B4")
+  guard actions.length() == 2 else {
+    fail("expected clipboard action and later printable text")
+  }
+  guard actions.get(0) is Some(StreamClipboardContents(contents)) else {
+    fail("expected clipboard OSC stream action")
+  }
+  guard contents.kind() == b'c' else { fail("expected clipboard kind payload") }
+  guard contents.data() == "?" else { fail("expected clipboard data payload") }
+  guard actions.get(1) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after clipboard OSC")
   }
 }
 
 ///|
-test "stream/osc kitty color stays silent until p5.b4" {
+test "stream/osc kitty color dispatch" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B]21;foreground=?\x07z")
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected kitty color OSC to stay silent until P5.B4")
+  guard actions.length() == 2 else {
+    fail("expected kitty color action and later printable text")
+  }
+  guard actions.get(0) is Some(StreamKittyColorReport(command)) else {
+    fail("expected kitty color OSC stream action")
+  }
+  guard command.requests() == [KittyQuery(KittySpecial(KittyForeground))] else {
+    fail("expected kitty color payload")
+  }
+  guard command.terminator() == Bel else {
+    fail("expected kitty color BEL terminator")
+  }
+  guard actions.get(1) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after kitty color OSC")
   }
 }
 
@@ -265,13 +285,21 @@ test "stream/osc9 report pwd and semantic prompt reuse existing dispatch" {
 }
 
 ///|
-test "stream/osc777 notification and osc1337 copy stay silent until downstream phases" {
+test "stream/osc777 stays silent and osc1337 copy reuses clipboard dispatch" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(
     b"\x1B]777;notify;Title;Body\x07\x1B]1337;Copy=:YWJjMTIz\x07z",
   )
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected OSC 777 and OSC 1337 copy paths to stay silent for now")
+  guard actions.length() == 2 else {
+    fail("expected clipboard bridge action and later printable text")
+  }
+  guard actions.get(0) is Some(StreamClipboardContents(contents)) &&
+    contents.kind() == b'c' &&
+    contents.data() == "YWJjMTIz" else {
+    fail("expected OSC 1337 copy to reuse clipboard dispatch")
+  }
+  guard actions.get(1) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after OSC 1337 copy dispatch")
   }
 }
 

@@ -896,10 +896,12 @@ pub(all) enum StreamAction {
   StreamTitlePop(UInt16)
   StreamXtversion
   StreamWindowTitle(String)
+  StreamClipboardContents(ClipboardContents)
   StreamReportPwd(String)
   StreamStartHyperlink(HyperlinkStart)
   StreamEndHyperlink
   StreamMouseShape(MouseShape)
+  StreamKittyColorReport(KittyColorOsc)
   StreamColorOperation(ColorCommand)
   StreamSemanticPrompt(SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
