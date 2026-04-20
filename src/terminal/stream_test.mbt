@@ -454,11 +454,28 @@ test "stream/osc hyperlink dispatch and return to ground" {
 }
 
 ///|
-test "stream/dcs placeholder returns to ground" {
+test "stream/dcs passthrough emits lifecycle" {
   let (stream, actions, _) = new_stream()
-  stream.next_slice(b"\x1BP+qa\x1B\\z")
-  guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected text after DCS placeholder dispatch")
+  stream.next_slice(b"\x1BP1;2+qa\x1B\\z")
+  guard actions.length() == 4 else {
+    fail("expected DCS lifecycle passthrough plus later printable text")
+  }
+  guard actions.get(0) is Some(StreamDcsHook(hook)) else {
+    fail("expected DCS hook action")
+  }
+  guard hook.intermediates() == [b'+'] else {
+    fail("expected DCS hook intermediates")
+  }
+  guard hook.params() == [1, 2] else { fail("expected DCS hook params") }
+  guard hook.final_byte() == b'q' else { fail("expected DCS hook final byte") }
+  guard actions.get(1) == Some(StreamDcsPut(b'a')) else {
+    fail("expected DCS put action")
+  }
+  guard actions.get(2) == Some(StreamDcsUnhook) else {
+    fail("expected DCS unhook action")
+  }
+  guard actions.get(3) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after DCS lifecycle")
   }
 }
 

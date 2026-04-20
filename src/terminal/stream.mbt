@@ -30,6 +30,37 @@ pub(all) struct Margin {
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, Debug)
 
 ///|
+struct DcsHookPayload {
+  intermediates : Array[Byte]
+  params : Array[UInt16]
+  final_byte : Byte
+} derive(Eq, Debug)
+
+///|
+fn DcsHookPayload::from_dcs(dcs : Dcs) -> DcsHookPayload {
+  {
+    intermediates: clone_bytes(dcs.intermediates),
+    params: clone_params(dcs.params),
+    final_byte: dcs.final_byte,
+  }
+}
+
+///|
+pub fn DcsHookPayload::intermediates(self : DcsHookPayload) -> Array[Byte] {
+  clone_bytes(self.intermediates)
+}
+
+///|
+pub fn DcsHookPayload::params(self : DcsHookPayload) -> Array[UInt16] {
+  clone_params(self.params)
+}
+
+///|
+pub fn DcsHookPayload::final_byte(self : DcsHookPayload) -> Byte {
+  self.final_byte
+}
+
+///|
 pub(all) enum StreamAction {
   StreamPrint(UInt)
   StreamPrintRepeat(UInt16)
@@ -118,6 +149,9 @@ pub(all) enum StreamAction {
   StreamKittyKeyboardSet(KittyKeyboardFlags)
   StreamKittyKeyboardSetOr(KittyKeyboardFlags)
   StreamKittyKeyboardSetNot(KittyKeyboardFlags)
+  StreamDcsHook(DcsHookPayload)
+  StreamDcsPut(Byte)
+  StreamDcsUnhook
   StreamApcStart
   StreamApcPut(Byte)
   StreamApcEnd
@@ -778,18 +812,18 @@ fn[H : StreamHandler] Stream::osc_dispatch(
 }
 
 ///|
-fn[H] Stream::dcs_hook(self : Stream[H], _dcs : Dcs) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::dcs_hook(self : Stream[H], dcs : Dcs) -> Unit {
+  self.emit(StreamDcsHook(DcsHookPayload::from_dcs(dcs)))
 }
 
 ///|
-fn[H] Stream::dcs_put(self : Stream[H], _value : Byte) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::dcs_put(self : Stream[H], value : Byte) -> Unit {
+  self.emit(StreamDcsPut(value))
 }
 
 ///|
-fn[H] Stream::dcs_unhook(self : Stream[H]) -> Unit {
-  ignore(self)
+fn[H : StreamHandler] Stream::dcs_unhook(self : Stream[H]) -> Unit {
+  self.emit(StreamDcsUnhook)
 }
 
 ///|

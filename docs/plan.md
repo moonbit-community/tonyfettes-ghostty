@@ -379,7 +379,8 @@ Phase 5 gate:
   [2026-04-20-p5-b-notification-progress-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-notification-progress-dispatch.md),
   [2026-04-20-p5-b-long-tail-no-op-audit.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-long-tail-no-op-audit.md)
 - Active Phase 5C slice audits live in:
-  [2026-04-20-p5-c1-apc-passthrough.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-c1-apc-passthrough.md)
+  [2026-04-20-p5-c1-apc-passthrough.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-c1-apc-passthrough.md),
+  [2026-04-20-p5-c2-dcs-facade-and-passthrough.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-c2-dcs-facade-and-passthrough.md)
 
 ### Phase 6: Terminal application surface
 

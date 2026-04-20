@@ -291,6 +291,11 @@ pub(all) enum CursorStyle {
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::ordinal(Self) -> Int
 
+type DcsHookPayload derive(Eq, @debug.Debug)
+pub fn DcsHookPayload::final_byte(Self) -> Byte
+pub fn DcsHookPayload::intermediates(Self) -> Array[Byte]
+pub fn DcsHookPayload::params(Self) -> Array[UInt16]
+
 type DesktopNotification derive(Eq, @debug.Debug)
 pub fn DesktopNotification::body(Self) -> String
 pub fn DesktopNotification::title(Self) -> String
@@ -915,6 +920,9 @@ pub(all) enum StreamAction {
   StreamKittyKeyboardSet(KittyKeyboardFlags)
   StreamKittyKeyboardSetOr(KittyKeyboardFlags)
   StreamKittyKeyboardSetNot(KittyKeyboardFlags)
+  StreamDcsHook(DcsHookPayload)
+  StreamDcsPut(Byte)
+  StreamDcsUnhook
   StreamApcStart
   StreamApcPut(Byte)
   StreamApcEnd
