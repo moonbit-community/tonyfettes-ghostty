@@ -295,14 +295,14 @@ test "stream/osc9 progress report dispatch" {
 }
 
 ///|
-test "stream/osc9 long-tail no-op commands stay silent until p5.b6" {
+test "stream/osc9 long-tail no-op commands stay silent by upstream design" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(
     b"\x1B]9;1;250\x07\x1B]9;2;ok\x07\x1B]9;3;tab\x07\x1B]9;5\x07\x1B]9;6;macro\x07\x1B]9;7;proc\x07\x1B]9;8;PATH\x07\x1B]9;10;3\x07\x1B]9;11;note\x07z",
   )
   guard actions == [StreamPrint(b'z'.to_uint())] else {
     fail(
-      "expected remaining OSC 9 long-tail commands to stay silent until P5.B6",
+      "expected remaining OSC 9 long-tail commands to stay silent by upstream design",
     )
   }
 }
@@ -374,20 +374,22 @@ test "stream/osc1337 current-dir reuses report-pwd dispatch" {
 }
 
 ///|
-test "stream/osc5522 kitty clipboard stays silent until p5.b6" {
+test "stream/osc5522 kitty clipboard stays silent by upstream design" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B]5522;type=read:status=OK;Qk9CUg==\x07z")
   guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected OSC 5522 kitty clipboard path to stay silent until P5.B6")
+    fail(
+      "expected OSC 5522 kitty clipboard path to stay silent by upstream design",
+    )
   }
 }
 
 ///|
-test "stream/osc3008 and osc66 stay silent in phase 4" {
+test "stream/osc3008 and osc66 stay silent by upstream design" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B]3008;start=myctx;type=shell\x07\x1B]66;s=2;ok\x07z")
   guard actions == [StreamPrint(b'z'.to_uint())] else {
-    fail("expected OSC 3008 and OSC 66 to stay silent in Phase 4")
+    fail("expected OSC 3008 and OSC 66 to stay silent by upstream design")
   }
 }
 
