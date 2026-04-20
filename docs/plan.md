@@ -373,7 +373,8 @@ Phase 5 gate:
   [2026-04-19-p5-b-current-osc-core.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-b-current-osc-core.md),
   [2026-04-19-p5-b-hyperlink-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p5-b-hyperlink-dispatch.md),
   [2026-04-20-p5-b-semantic-prompt-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-semantic-prompt-dispatch.md),
-  [2026-04-20-p5-b-clipboard-kitty-color-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-clipboard-kitty-color-dispatch.md)
+  [2026-04-20-p5-b-clipboard-kitty-color-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-clipboard-kitty-color-dispatch.md),
+  [2026-04-20-p5-b-notification-progress-dispatch.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p5-b-notification-progress-dispatch.md)
 
 ### Phase 6: Terminal application surface
 

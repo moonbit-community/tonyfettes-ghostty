@@ -898,6 +898,8 @@ pub(all) enum StreamAction {
   StreamWindowTitle(String)
   StreamClipboardContents(ClipboardContents)
   StreamReportPwd(String)
+  StreamShowDesktopNotification(DesktopNotification)
+  StreamProgressReport(ConEmuProgressReport)
   StreamStartHyperlink(HyperlinkStart)
   StreamEndHyperlink
   StreamMouseShape(MouseShape)

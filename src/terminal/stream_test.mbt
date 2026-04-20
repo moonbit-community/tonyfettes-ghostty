@@ -253,14 +253,56 @@ test "stream/osc kitty color dispatch" {
 }
 
 ///|
-test "stream/osc9 notification and conemu progress stay silent until p5.b5" {
+test "stream/osc9 desktop notification dispatch" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]9;hello world\x07z")
+  guard actions.length() == 2 else {
+    fail("expected OSC 9 notification action and later printable text")
+  }
+  guard actions.get(0) is Some(StreamShowDesktopNotification(notification)) else {
+    fail("expected OSC 9 desktop notification action")
+  }
+  guard notification.title() == "" else {
+    fail("expected OSC 9 notification empty title")
+  }
+  guard notification.body() == "hello world" else {
+    fail("expected OSC 9 notification body")
+  }
+  guard actions.get(1) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after OSC 9 notification")
+  }
+}
+
+///|
+test "stream/osc9 progress report dispatch" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]9;4;1;50\x07z")
+  guard actions.length() == 2 else {
+    fail("expected OSC 9 progress action and later printable text")
+  }
+  guard actions.get(0) is Some(StreamProgressReport(report)) else {
+    fail("expected OSC 9 progress report action")
+  }
+  guard report.state() == ConEmuProgressSet else {
+    fail("expected OSC 9 progress set state")
+  }
+  guard report.progress() == Some(50) else {
+    fail("expected OSC 9 progress payload")
+  }
+  guard actions.get(1) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after OSC 9 progress report")
+  }
+}
+
+///|
+test "stream/osc9 long-tail no-op commands stay silent until p5.b6" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(
-    b"\x1B]9;hello world\x07\x1B]9;1;250\x07\x1B]9;2;ok\x07\x1B]9;3;tab\x07\x1B]9;4;1;50\x07\x1B]9;5;foo\x07\x1B]9;6;macro\x07\x1B]9;7;proc\x07\x1B]9;8;PATH\x07\x1B]9;10;3\x07\x1B]9;11;note\x07z",
+    b"\x1B]9;1;250\x07\x1B]9;2;ok\x07\x1B]9;3;tab\x07\x1B]9;5\x07\x1B]9;6;macro\x07\x1B]9;7;proc\x07\x1B]9;8;PATH\x07\x1B]9;10;3\x07\x1B]9;11;note\x07z",
   )
   guard actions == [StreamPrint(b'z'.to_uint())] else {
     fail(
-      "expected OSC 9 notification and progress paths to stay silent until P5.B5",
+      "expected remaining OSC 9 long-tail commands to stay silent until P5.B6",
     )
   }
 }
@@ -285,11 +327,30 @@ test "stream/osc9 report pwd and semantic prompt reuse existing dispatch" {
 }
 
 ///|
-test "stream/osc777 stays silent and osc1337 copy reuses clipboard dispatch" {
+test "stream/osc777 desktop notification dispatch" {
   let (stream, actions, _) = new_stream()
-  stream.next_slice(
-    b"\x1B]777;notify;Title;Body\x07\x1B]1337;Copy=:YWJjMTIz\x07z",
-  )
+  stream.next_slice(b"\x1B]777;notify;Title;Body\x07z")
+  guard actions.length() == 2 else {
+    fail("expected OSC 777 notification action and later printable text")
+  }
+  guard actions.get(0) is Some(StreamShowDesktopNotification(notification)) else {
+    fail("expected OSC 777 desktop notification action")
+  }
+  guard notification.title() == "Title" else {
+    fail("expected OSC 777 notification title")
+  }
+  guard notification.body() == "Body" else {
+    fail("expected OSC 777 notification body")
+  }
+  guard actions.get(1) == Some(StreamPrint(b'z'.to_uint())) else {
+    fail("expected printable text after OSC 777 notification")
+  }
+}
+
+///|
+test "stream/osc1337 copy reuses clipboard dispatch" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]1337;Copy=:YWJjMTIz\x07z")
   guard actions.length() == 2 else {
     fail("expected clipboard bridge action and later printable text")
   }
