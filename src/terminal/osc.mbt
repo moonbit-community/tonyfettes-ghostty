@@ -179,6 +179,8 @@ enum OscParserState {
   Prefix5
   Prefix52
   Prefix7
+  Prefix77
+  Prefix777
   Prefix8
   Prefix9
   Prefix10
@@ -186,6 +188,7 @@ enum OscParserState {
   Prefix12
   Prefix13
   Prefix133
+  Prefix1337
   Prefix14
   Prefix15
   Prefix16
@@ -323,6 +326,18 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         self.state = Invalid
       }
     Prefix7 =>
+      match byte {
+        b';' => self.start_capture()
+        b'7' => self.state = Prefix77
+        _ => self.state = Invalid
+      }
+    Prefix77 =>
+      if byte == b'7' {
+        self.state = Prefix777
+      } else {
+        self.state = Invalid
+      }
+    Prefix777 =>
       if byte == b';' {
         self.start_capture()
       } else {
@@ -376,6 +391,12 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
         self.state = Invalid
       }
     Prefix133 =>
+      match byte {
+        b';' => self.start_capture()
+        b'7' => self.state = Prefix1337
+        _ => self.state = Invalid
+      }
+    Prefix1337 =>
       if byte == b';' {
         self.start_capture()
       } else {
@@ -528,6 +549,13 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
       }
     Prefix7 =>
       captured_command(self.capturing, ReportPwd(captured_string(self.buffer)))
+    Prefix77 => None
+    Prefix777 =>
+      if self.capturing {
+        parse_rxvt_extension_command(self.buffer)
+      } else {
+        None
+      }
     Prefix8 =>
       if self.capturing {
         parse_hyperlink_command(self.buffer)
@@ -547,6 +575,12 @@ fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
     Prefix133 =>
       if self.capturing {
         parse_semantic_prompt_command(self.buffer)
+      } else {
+        None
+      }
+    Prefix1337 =>
+      if self.capturing {
+        parse_iterm2_command(self.buffer)
       } else {
         None
       }

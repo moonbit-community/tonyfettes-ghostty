@@ -317,6 +317,42 @@ test "parser/osc9 desktop notification report-pwd and semantic prompt dispatch" 
 }
 
 ///|
+test "parser/osc777 and osc1337 dispatch" {
+  let rxvt_parser = Parser::new()
+  for byte in b"\x1b]777;notify;Title;Body" {
+    expect_no_actions(rxvt_parser.next(byte))
+  }
+  let rxvt_actions = rxvt_parser.next(0x07)
+  guard rxvt_actions[0]
+    is Some(OscDispatch(ShowDesktopNotification(notification))) &&
+    notification.title() == "Title" &&
+    notification.body() == "Body" else {
+    fail("expected OSC 777 desktop notification dispatch")
+  }
+
+  let copy_parser = Parser::new()
+  for byte in b"\x1b]1337;Copy=:YWJjMTIz" {
+    expect_no_actions(copy_parser.next(byte))
+  }
+  let copy_actions = copy_parser.next(0x07)
+  guard copy_actions[0] is Some(OscDispatch(ClipboardContents(contents))) &&
+    contents.kind() == b'c' &&
+    contents.data() == "YWJjMTIz" else {
+    fail("expected OSC 1337 clipboard bridge dispatch")
+  }
+
+  let current_dir_parser = Parser::new()
+  for byte in b"\x1b]1337;CurrentDir=file:///tmp" {
+    expect_no_actions(current_dir_parser.next(byte))
+  }
+  let current_dir_actions = current_dir_parser.next(0x07)
+  guard current_dir_actions[0] is Some(OscDispatch(ReportPwd(value))) &&
+    value == "file:///tmp" else {
+    fail("expected OSC 1337 current-dir dispatch")
+  }
+}
+
+///|
 test "parser/osc hyperlink dispatch" {
   let start_parser = Parser::new()
   for byte in b"\x1b]8;id=foo;http://example.com" {

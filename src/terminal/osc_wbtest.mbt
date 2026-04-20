@@ -108,6 +108,27 @@ test "osc/kitty color constructors and accessors" {
 }
 
 ///|
+test "osc/rxvt iterm2 helper matching rejects mismatched bytes" {
+  guard !slice_equals_bytes(
+    [b'n', b'o', b't', b'i', b'f', b'x'],
+    0,
+    6,
+    b"notify",
+  ) else {
+    fail("expected exact byte helper mismatch")
+  }
+
+  guard !slice_equals_ascii_ignore_case_bytes(
+    [b'c', b'o', b'p', b'x'],
+    0,
+    4,
+    b"copy",
+  ) else {
+    fail("expected ignore-case byte helper mismatch")
+  }
+}
+
+///|
 test "osc/osc9 payload constructors and accessors" {
   let notification = DesktopNotification::new("title", "body")
   guard notification.title() == "title" else {
@@ -229,7 +250,11 @@ test "osc/title exact fixed-buffer limit succeeds" {
 
 ///|
 test "osc/incomplete and invalid prefixes are rejected" {
-  for bytes in [b"0", b"1", b"2", b"7", b"8", b"9", b"21", b"22", b"6"] {
+  for
+    bytes in [
+      b"0", b"1", b"2", b"7", b"8", b"9", b"21", b"22", b"77", b"777", b"133", b"1337",
+      b"6",
+    ] {
     let parser = OscParser::new()
     for byte in bytes {
       parser.next(byte)
@@ -266,6 +291,36 @@ test "osc/invalid states stay invalid and reject bad numeric branches" {
   match prefix11.end(Some(0x07)) {
     None => ()
     _ => fail("expected invalid OSC 11x prefix to be rejected")
+  }
+
+  let prefix77 = OscParser::new()
+  prefix77.next(b'7')
+  prefix77.next(b'7')
+  prefix77.next(b'x')
+  match prefix77.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 77x prefix to be rejected")
+  }
+
+  let prefix777 = OscParser::new()
+  prefix777.next(b'7')
+  prefix777.next(b'7')
+  prefix777.next(b'7')
+  prefix777.next(b'x')
+  match prefix777.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 777x prefix to be rejected")
+  }
+
+  let prefix1337 = OscParser::new()
+  prefix1337.next(b'1')
+  prefix1337.next(b'3')
+  prefix1337.next(b'3')
+  prefix1337.next(b'7')
+  prefix1337.next(b'x')
+  match prefix1337.end(Some(0x07)) {
+    None => ()
+    _ => fail("expected invalid OSC 1337x prefix to be rejected")
   }
 }
 
@@ -750,6 +805,99 @@ test "osc/osc9 xterm emulation parsing" {
     is ShowDesktopNotification(notification) &&
     notification.body() == "10;" else {
     fail("expected short conemu xterm emulation mode to fall back")
+  }
+}
+
+///|
+test "osc/osc777 rxvt desktop notification parsing" {
+  guard expect_osc_command(b"777;notify;Title;Body", Some(0x1B))
+    is ShowDesktopNotification(notification) &&
+    notification.title() == "Title" &&
+    notification.body() == "Body" else {
+    fail("expected rxvt desktop notification")
+  }
+
+  guard expect_osc_command(b"777;notify;;Body", Some(0x07))
+    is ShowDesktopNotification(notification) &&
+    notification.title() == "" &&
+    notification.body() == "Body" else {
+    fail("expected rxvt desktop notification with empty title")
+  }
+
+  let unknown_extension = OscParser::new()
+  feed_bytes(unknown_extension, b"777;toast;Title;Body")
+  guard unknown_extension.end(Some(0x1B)) == None else {
+    fail("expected unknown rxvt extension to be rejected")
+  }
+
+  let missing_title = OscParser::new()
+  feed_bytes(missing_title, b"777;notify")
+  guard missing_title.end(Some(0x1B)) == None else {
+    fail("expected rxvt notification without separators to be rejected")
+  }
+
+  let missing_body_separator = OscParser::new()
+  feed_bytes(missing_body_separator, b"777;notify;TitleOnly")
+  guard missing_body_separator.end(Some(0x1B)) == None else {
+    fail("expected malformed rxvt notification body separator to be rejected")
+  }
+}
+
+///|
+test "osc/osc1337 iterm2 bridge parsing" {
+  guard expect_osc_command(b"1337;Copy=:YWJjMTIz", Some(0x1B))
+    is ClipboardContents(contents) &&
+    contents.kind() == b'c' &&
+    contents.data() == "YWJjMTIz" else {
+    fail("expected iterm2 clipboard bridge")
+  }
+
+  guard expect_osc_command(b"1337;currentdir=file:///tmp", Some(0x07))
+    is ReportPwd(value) &&
+    value == "file:///tmp" else {
+    fail("expected iterm2 current-dir bridge")
+  }
+
+  let missing_copy_value = OscParser::new()
+  feed_bytes(missing_copy_value, b"1337;Copy")
+  guard missing_copy_value.end(Some(0x1B)) == None else {
+    fail("expected iterm2 copy without value to be rejected")
+  }
+
+  let invalid_copy_prefix = OscParser::new()
+  feed_bytes(invalid_copy_prefix, b"1337;Copy=YWJjMTIz")
+  guard invalid_copy_prefix.end(Some(0x1B)) == None else {
+    fail("expected iterm2 copy without colon prefix to be rejected")
+  }
+
+  let invalid_copy_empty_payload = OscParser::new()
+  feed_bytes(invalid_copy_empty_payload, b"1337;Copy=:")
+  guard invalid_copy_empty_payload.end(Some(0x1B)) == None else {
+    fail("expected iterm2 copy with empty payload to be rejected")
+  }
+
+  let invalid_copy_question = OscParser::new()
+  feed_bytes(invalid_copy_question, b"1337;Copy=:?")
+  guard invalid_copy_question.end(Some(0x1B)) == None else {
+    fail("expected iterm2 copy query form to be rejected")
+  }
+
+  let missing_current_dir_separator = OscParser::new()
+  feed_bytes(missing_current_dir_separator, b"1337;CurrentDir")
+  guard missing_current_dir_separator.end(Some(0x1B)) == None else {
+    fail("expected iterm2 current-dir without separator to be rejected")
+  }
+
+  let missing_current_dir = OscParser::new()
+  feed_bytes(missing_current_dir, b"1337;CurrentDir=")
+  guard missing_current_dir.end(Some(0x1B)) == None else {
+    fail("expected empty iterm2 current-dir to be rejected")
+  }
+
+  let unimplemented_key = OscParser::new()
+  feed_bytes(unimplemented_key, b"1337;SetBadgeFormat=abc123")
+  guard unimplemented_key.end(Some(0x1B)) == None else {
+    fail("expected unimplemented iterm2 key to stay rejected")
   }
 }
 

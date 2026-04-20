@@ -265,6 +265,26 @@ test "stream/osc9 report pwd and semantic prompt reuse existing dispatch" {
 }
 
 ///|
+test "stream/osc777 notification and osc1337 copy stay silent until downstream phases" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(
+    b"\x1B]777;notify;Title;Body\x07\x1B]1337;Copy=:YWJjMTIz\x07z",
+  )
+  guard actions == [StreamPrint(b'z'.to_uint())] else {
+    fail("expected OSC 777 and OSC 1337 copy paths to stay silent for now")
+  }
+}
+
+///|
+test "stream/osc1337 current-dir reuses report-pwd dispatch" {
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B]1337;CurrentDir=file:///tmp\x07z")
+  guard actions == [StreamReportPwd("file:///tmp"), StreamPrint(b'z'.to_uint())] else {
+    fail("expected OSC 1337 current-dir to reuse report-pwd dispatch")
+  }
+}
+
+///|
 test "stream/slice walker handles in-flight escape after printable prefix" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"a\x1B(B")
