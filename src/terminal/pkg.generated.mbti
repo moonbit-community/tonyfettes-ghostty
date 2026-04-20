@@ -717,6 +717,13 @@ pub(all) enum ReportState {
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
 
+type ScreenProtectedState derive(Eq, @debug.Debug)
+pub fn ScreenProtectedState::cursor_protected(Self) -> Bool
+pub fn ScreenProtectedState::mode(Self) -> ProtectedMode
+pub fn ScreenProtectedState::new() -> Self
+pub fn ScreenProtectedState::reset(Self) -> Unit
+pub fn ScreenProtectedState::set(Self, ProtectedMode) -> Unit
+
 type SecondaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn SecondaryDeviceAttributes::default() -> Self
 pub fn SecondaryDeviceAttributes::device_type(Self) -> DeviceType
@@ -998,6 +1005,14 @@ pub fn TerminalColors::set_background(Self, RGB) -> Unit
 pub fn TerminalColors::set_cursor(Self, RGB) -> Unit
 pub fn TerminalColors::set_foreground(Self, RGB) -> Unit
 pub fn TerminalColors::set_palette_color(Self, Byte, RGB) -> Unit
+
+type TerminalDisplayState derive(Eq, @debug.Debug)
+pub fn TerminalDisplayState::full_reset(Self) -> Unit
+pub fn TerminalDisplayState::mouse_shape(Self) -> MouseShape
+pub fn TerminalDisplayState::new() -> Self
+pub fn TerminalDisplayState::set_mouse_shape(Self, MouseShape) -> Unit
+pub fn TerminalDisplayState::set_status_display(Self, StatusDisplay) -> Unit
+pub fn TerminalDisplayState::status_display(Self) -> StatusDisplay
 
 pub(all) enum Terminator {
   St
