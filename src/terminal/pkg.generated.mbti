@@ -466,6 +466,16 @@ pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
 #deprecated
 pub fn KittyKeyboardFlags::inner(Self) -> Byte
 
+type KittyKeyboardState derive(Eq, @debug.Debug)
+pub fn KittyKeyboardState::current(Self) -> KittyKeyboardFlags
+pub fn KittyKeyboardState::new() -> Self
+pub fn KittyKeyboardState::pop(Self, UInt16) -> Unit
+pub fn KittyKeyboardState::push(Self, KittyKeyboardFlags) -> Unit
+pub fn KittyKeyboardState::reset(Self) -> Unit
+pub fn KittyKeyboardState::set(Self, KittyKeyboardFlags) -> Unit
+pub fn KittyKeyboardState::set_not(Self, KittyKeyboardFlags) -> Unit
+pub fn KittyKeyboardState::set_or(Self, KittyKeyboardFlags) -> Unit
+
 pub(all) enum KittyTextSizingHorizontalAlign {
   KittyTextSizingHLeft
   KittyTextSizingHRight
@@ -1020,6 +1030,14 @@ pub fn TerminalDisplayState::new() -> Self
 pub fn TerminalDisplayState::set_mouse_shape(Self, MouseShape) -> Unit
 pub fn TerminalDisplayState::set_status_display(Self, StatusDisplay) -> Unit
 pub fn TerminalDisplayState::status_display(Self) -> StatusDisplay
+
+type TerminalInputFlags derive(Eq, @debug.Debug)
+pub fn TerminalInputFlags::apply_modify_key_format(Self, ModifyKeyFormat) -> Unit
+pub fn TerminalInputFlags::full_reset(Self) -> Unit
+pub fn TerminalInputFlags::modify_other_keys_2(Self) -> Bool
+pub fn TerminalInputFlags::mouse_shift_capture(Self) -> Bool?
+pub fn TerminalInputFlags::new() -> Self
+pub fn TerminalInputFlags::set_mouse_shift_capture(Self, Bool) -> Unit
 
 pub(all) enum Terminator {
   St
