@@ -320,7 +320,8 @@ Phase 4 gate:
   [2026-04-20-p4-d3-osc9.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d3-osc9.md),
   [2026-04-20-p4-d4-rxvt-iterm2.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d4-rxvt-iterm2.md),
   [2026-04-20-p4-d5-kitty-clipboard.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d5-kitty-clipboard.md),
-  [2026-04-20-p4-d6-context-text-sizing.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d6-context-text-sizing.md)
+  [2026-04-20-p4-d6-context-text-sizing.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d6-context-text-sizing.md),
+  [2026-04-20-p4-d7-closeout.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d7-closeout.md)
 
 ### Phase 5: Stream integration
 
