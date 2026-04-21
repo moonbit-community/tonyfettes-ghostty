@@ -1,0 +1,9 @@
+import {
+  "moonbitlang/core/buffer" @buffer,
+  "moonbitlang/core/env" @env,
+  "tonyfettes/ghostty/src/terminal" @terminal,
+}
+
+options(
+  "is-main": true,
+)
