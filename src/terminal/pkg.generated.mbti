@@ -74,6 +74,13 @@ pub(all) enum C0 {
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
 
+type CellHyperlink derive(Eq, @debug.Debug)
+pub fn CellHyperlink::explicit(String, String) -> Self
+pub fn CellHyperlink::explicit_id(Self) -> String?
+pub fn CellHyperlink::implicit(String, Int) -> Self
+pub fn CellHyperlink::implicit_id(Self) -> Int?
+pub fn CellHyperlink::uri(Self) -> String
+
 type CellStyle derive(Eq, @debug.Debug)
 pub fn CellStyle::apply_attribute(Self, SgrAttribute) -> Unit
 pub fn CellStyle::bg_color(Self) -> StyleColor
@@ -660,6 +667,69 @@ pub fn Name::code(Self) -> Byte
 pub fn Name::default_rgb(Self) -> RGB
 
 type OscParserState derive(Eq, @debug.Debug)
+
+pub(all) enum PageCellContentTag {
+  Codepoint
+  CodepointGrapheme
+  BackgroundPalette
+  BackgroundRgb
+} derive(Eq, @debug.Debug)
+
+type PageCellState derive(Eq, @debug.Debug)
+pub fn PageCellState::background_rgb(Self) -> RGB?
+pub fn PageCellState::codepoint(Self) -> UInt
+pub fn PageCellState::content_tag(Self) -> PageCellContentTag
+pub fn PageCellState::full_reset(Self) -> Unit
+pub fn PageCellState::grid_width(Self) -> Int
+pub fn PageCellState::has_grapheme(Self) -> Bool
+pub fn PageCellState::has_styling(Self) -> Bool
+pub fn PageCellState::has_text(Self) -> Bool
+pub fn PageCellState::hyperlink(Self) -> CellHyperlink?
+pub fn PageCellState::init(UInt) -> Self
+pub fn PageCellState::is_empty(Self) -> Bool
+pub fn PageCellState::is_protected(Self) -> Bool
+pub fn PageCellState::is_zero(Self) -> Bool
+pub fn PageCellState::new() -> Self
+pub fn PageCellState::palette_index(Self) -> Byte?
+pub fn PageCellState::semantic_content(Self) -> SemanticContent
+pub fn PageCellState::set_background_palette(Self, Byte) -> Unit
+pub fn PageCellState::set_background_rgb(Self, RGB) -> Unit
+pub fn PageCellState::set_codepoint(Self, UInt, Bool) -> Unit
+pub fn PageCellState::set_hyperlink(Self, CellHyperlink?) -> Unit
+pub fn PageCellState::set_protected(Self, Bool) -> Unit
+pub fn PageCellState::set_semantic_content(Self, SemanticContent) -> Unit
+pub fn PageCellState::set_style(Self, CellStyle) -> Unit
+pub fn PageCellState::set_wide(Self, PageCellWide) -> Unit
+pub fn PageCellState::style(Self) -> CellStyle
+pub fn PageCellState::wide(Self) -> PageCellWide
+
+pub(all) enum PageCellWide {
+  Narrow
+  Wide
+  SpacerTail
+  SpacerHead
+} derive(Eq, @debug.Debug)
+
+type PageRowState derive(Eq, @debug.Debug)
+pub fn PageRowState::dirty(Self) -> Bool
+pub fn PageRowState::full_reset(Self) -> Unit
+pub fn PageRowState::grapheme(Self) -> Bool
+pub fn PageRowState::hyperlink(Self) -> Bool
+pub fn PageRowState::kitty_virtual_placeholder(Self) -> Bool
+pub fn PageRowState::managed_memory(Self) -> Bool
+pub fn PageRowState::new() -> Self
+pub fn PageRowState::semantic_prompt(Self) -> RowSemanticPrompt
+pub fn PageRowState::set_dirty(Self, Bool) -> Unit
+pub fn PageRowState::set_grapheme(Self, Bool) -> Unit
+pub fn PageRowState::set_hyperlink(Self, Bool) -> Unit
+pub fn PageRowState::set_kitty_virtual_placeholder(Self, Bool) -> Unit
+pub fn PageRowState::set_semantic_prompt(Self, RowSemanticPrompt) -> Unit
+pub fn PageRowState::set_styled(Self, Bool) -> Unit
+pub fn PageRowState::set_wrap(Self, Bool) -> Unit
+pub fn PageRowState::set_wrap_continuation(Self, Bool) -> Unit
+pub fn PageRowState::styled(Self) -> Bool
+pub fn PageRowState::wrap(Self) -> Bool
+pub fn PageRowState::wrap_continuation(Self) -> Bool
 
 pub(all) enum Point {
   Active(Coordinate)

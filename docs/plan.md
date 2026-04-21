@@ -424,6 +424,7 @@ Phase 6 gate:
 - Active Phase 6C slice audits live in:
   [2026-04-21-p6-c1-hyperlink-and-semantic-metadata.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c1-hyperlink-and-semantic-metadata.md)
   [2026-04-21-p6-c2-title-and-aux-metadata.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c2-title-and-aux-metadata.md)
+  [2026-04-21-p6-c3-page-row-and-cell-values.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c3-page-row-and-cell-values.md)
 - Phase 6.1 bridge slicing notes live in:
   [2026-04-20-p6-1-bridge-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-bridge-roadmap.md)
 - Active Phase 6.1 slice audits live in:
