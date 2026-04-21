@@ -1089,6 +1089,13 @@ pub fn TerminalInputFlags::mouse_shift_capture(Self) -> Bool?
 pub fn TerminalInputFlags::new() -> Self
 pub fn TerminalInputFlags::set_mouse_shift_capture(Self, Bool) -> Unit
 
+type TerminalTabstopsState derive(Eq, @debug.Debug)
+pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool
+pub fn TerminalTabstopsState::new(UInt16) -> Self
+pub fn TerminalTabstopsState::reset(Self, UInt16) -> Unit
+pub fn TerminalTabstopsState::set(Self, UInt16) -> Unit
+pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
+
 pub(all) enum Terminator {
   St
   Bel

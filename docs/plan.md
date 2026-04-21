@@ -416,6 +416,7 @@ Phase 6 gate:
   [2026-04-20-p6-b1-input-flags-and-keyboard.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-b1-input-flags-and-keyboard.md)
   [2026-04-21-p6-b2-cursor-geometry-and-margins.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-b2-cursor-geometry-and-margins.md)
   [2026-04-21-p6-b3-saved-cursor-and-charset.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-b3-saved-cursor-and-charset.md)
+  [2026-04-21-p6-b4-tabstop-state.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-b4-tabstop-state.md)
 - Phase 6.1 bridge slicing notes live in:
   [2026-04-20-p6-1-bridge-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-bridge-roadmap.md)
 
