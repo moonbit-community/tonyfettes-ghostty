@@ -26,6 +26,13 @@ Non-goals for now:
 - full PTY/backend parity beyond the parser-facing bridge
 - packaging and distribution parity
 
+Scope completion note:
+
+- When every gate through Phase 7 is `done`, this plan's parser-stack scope is
+  complete.
+- A broader line-by-line migration beyond the parser-facing stack needs a new
+  follow-on plan rather than reopening completed phases here.
+
 ## Fidelity invariants
 
 These constraints apply to every phase:
@@ -195,10 +202,10 @@ format/interface checks. Tests land with the code they validate.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1.0 | done | package boundary decisions | single `src/terminal` package skeleton and file map | P0.4, P0.6, P0.7 | none | main | one `src/terminal` package exists and the planned file layout matches the mapping table | `moon check && moon test && moon fmt && moon info` | `[R]` main | `feat(parser)` |
-| P1.A | done | `ansi.zig`, `charsets.zig`, `modes.zig` | corresponding MoonBit modules + tests | P1.0 | P1.B, P1.C | `[W]` | modules compile, tests pass, no missing shared types for downstream parser work | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
-| P1.B | done | `color.zig`, `mouse.zig`, `device_attributes.zig`, `device_status.zig` | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.C | `[W]` | modules compile, tests pass, parser-facing contracts preserved | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
-| P1.C | done | `point.zig`, `size_report.zig`, small report/value types | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.B | `[W]` | modules compile, tests pass, shared constants/types stable | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
+| P1.0 | done | package boundary decisions | single `src/terminal` package skeleton and file map | P0.4, P0.6, P0.7 | none | main | one `src/terminal` package exists and the planned file layout matches the mapping table | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(parser)` |
+| P1.A | done | `ansi.zig`, `charsets.zig`, `modes.zig` | corresponding MoonBit modules + tests | P1.0 | P1.B, P1.C | `[W]` | modules compile, tests pass, no missing shared types for downstream parser work | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
+| P1.B | done | `color.zig`, `mouse.zig`, `device_attributes.zig`, `device_status.zig` | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.C | `[W]` | modules compile, tests pass, parser-facing contracts preserved | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
+| P1.C | done | `point.zig`, `size_report.zig`, small report/value types | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.B | `[W]` | modules compile, tests pass, shared constants/types stable | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
 
 Phase 1 gate:
 
@@ -212,9 +219,9 @@ Status: `done`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P2.0 | done | parser-core contracts | phase checklist in this doc and/or subplans | P1.A, P1.B, P1.C | none | `[E]` | exact invariants for UTF-8, parse table, and OSC core recorded before porting | doc review | `[R]` main | `docs` |
-| P2.A | done | `UTF8Decoder.zig` | UTF-8 decoder module + translated tests | P2.0 | P2.B, P2.C | `[W]` | retry-on-error semantics preserved and tests pass in the same commit batch | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
-| P2.B | done | `parse_table.zig` | table-driven parse table module + smoke tests | P2.0 | P2.A, P2.C | `[W]` | generated/table-driven structure preserved and usable by `Parser` | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
-| P2.C | done | minimal `osc.zig` core needed by `Parser` | OSC parser core scaffold + direct tests | P2.0, P1.A, P1.B | P2.A, P2.B | `[W]` | `Parser` dependency on `osc.Parser` is unblocked without red commits | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
+| P2.A | done | `UTF8Decoder.zig` | UTF-8 decoder module + translated tests | P2.0 | P2.B, P2.C | `[W]` | retry-on-error semantics preserved and tests pass in the same commit batch | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
+| P2.B | done | `parse_table.zig` | table-driven parse table module + smoke tests | P2.0 | P2.A, P2.C | `[W]` | generated/table-driven structure preserved and usable by `Parser` | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
+| P2.C | done | minimal `osc.zig` core needed by `Parser` | OSC parser core scaffold + direct tests | P2.0, P1.A, P1.B | P2.A, P2.B | `[W]` | `Parser` dependency on `osc.Parser` is unblocked without red commits | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-core)` |
 
 Phase 2 gate:
 
@@ -280,7 +287,7 @@ Status: `done`
 ### Phase 4: Semantic decoders
 
 Gate: `[P]` after Phase 3  
-Status: `active`
+Status: `done`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -288,7 +295,7 @@ Status: `active`
 | P4.A | done | `sgr.zig` | SGR module + tests | P4.0 | P4.B, P4.C, P4.D, P4.E | `[W]` | colon/semicolon parsing and attribute outputs match upstream with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.B | done | `dcs.zig` | DCS handler + tests | P4.0 | P4.A, P4.C, P4.D, P4.E | `[W]` | `hook/put/unhook` semantics and tests pass in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.C | done | `osc.zig` core + high-frequency subparsers | bounded OSC high-frequency parser sub-slices + tests | P4.0 | P4.A, P4.B, P4.D, P4.E | `[W]` | each `P4.C*` sub-slice lands green, and the lane closes only after the translated high-frequency OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
-| P4.D | active | remaining OSC subparsers | bounded long-tail OSC parser sub-slices + tests | P4.0, P4.C | P4.A, P4.B, P4.E | `[W]` | each `P4.D*` sub-slice lands green, and the lane closes only after the translated long-tail OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.D | done | remaining OSC subparsers | bounded long-tail OSC parser sub-slices + tests | P4.0, P4.C | P4.A, P4.B, P4.E | `[W]` | each `P4.D*` sub-slice lands green, and the lane closes only after the translated long-tail OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.E | done | APC-facing helpers | APC support modules + tests | P4.0 | P4.A, P4.B, P4.C, P4.D | `[W]` | helpers compile and match parser-facing expectations with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 
 Phase 4 gate:
@@ -296,7 +303,7 @@ Phase 4 gate:
 - P4.0 is `done`
 - P4.A, P4.B, and P4.E are `done`
 - P4.C is `done`
-- P4.D is `active`
+- P4.D is `done`
 
 #### Phase 4 outputs
 
@@ -314,7 +321,7 @@ Phase 4 gate:
   [2026-04-19-p4-c-hyperlink.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-c-hyperlink.md),
   [2026-04-20-p4-c-semantic-prompt.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-c-semantic-prompt.md),
   [2026-04-20-p4-c-closeout.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-c-closeout.md)
-- Active Phase 4D slice audits live in:
+- Completed Phase 4D slice audits live in:
   [2026-04-20-p4-d1-clipboard.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d1-clipboard.md),
   [2026-04-20-p4-d2-kitty-color.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d2-kitty-color.md),
   [2026-04-20-p4-d3-osc9.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p4-d3-osc9.md),
@@ -338,7 +345,7 @@ each lane must include its own test batch and finish green.
 | P5.1 | done | `stream.zig` driver core | `StreamAction`, handler contract, fast-path scaffolding + base tests | P5.0 | none | main | core compiles, replay ordering is preserved, and base tests pass | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(stream)` |
 | P5.A | done | `execute`, `escDispatch`, `csiDispatch` workstream | bounded dispatch sub-slices + matching tests | P5.1 | P5.B, P5.C | `[W]` | each `P5.A*` sub-slice lands green, and the workstream closes only after a final execute / ESC / CSI parity audit | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 | P5.B | done | OSC dispatch wiring | bounded OSC dispatch sub-slices + matching tests | P5.1 | P5.A, P5.C | `[W]` | each `P5.B*` sub-slice lands green, and the workstream closes only after translated OSC command surface is wired and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
-| P5.C | done | DCS/APC passthrough | dispatch modules + matching tests | P5.1 | P5.A, P5.B | `[W]` | passthrough lifecycle matches upstream and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
+| P5.C | done | DCS/APC passthrough | dispatch modules + matching tests | P5.1 | P5.A, P5.B | `[W]` | passthrough lifecycle matches upstream and tests pass in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(stream)` |
 
 Phase 5 gate:
 
@@ -346,7 +353,7 @@ Phase 5 gate:
 - P5.A is `done`
 - P5.B is `done`
 - P5.C is `done`
-- Phase 5 implementation is complete; `P6.0` is the next planned task
+- Phase 5 implementation is complete
 
 #### Phase 5 outputs
 
@@ -390,10 +397,10 @@ Status: `done`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P6.0 | done | `stream_terminal.zig` + minimum model deps | terminal dependency checklist and subplan boundaries | P5.C | none | `[E]` | exact minimal model boundary recorded before implementation | doc review | `[R]` main | `docs` |
-| P6.A | done | style + attributes | terminal style modules + tests | P6.0 | P6.B, P6.C | `[W]` | parser-facing style mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
-| P6.B | done | cursor/tabstops/modes | terminal state modules + tests | P6.0 | P6.A, P6.C | `[W]` | cursor and mode actions have minimal backing state and tests | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
-| P6.C | done | screen/page/hyperlink state | terminal state modules + tests | P6.0 | P6.A, P6.B | `[W]` | parser-facing screen mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
-| P6.1 | done | `stream_terminal.zig` | terminal application bridge + tests | P6.A, P6.B, P6.C | none | main + `[W]` | stream actions apply correctly with separated effects and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
+| P6.A | done | style + attributes | terminal style modules + tests | P6.0 | P6.B, P6.C | `[W]` | parser-facing style mutations compile and test in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
+| P6.B | done | cursor/tabstops/modes | terminal state modules + tests | P6.0 | P6.A, P6.C | `[W]` | cursor and mode actions have minimal backing state and tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
+| P6.C | done | screen/page/hyperlink state | terminal state modules + tests | P6.0 | P6.A, P6.B | `[W]` | parser-facing screen mutations compile and test in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
+| P6.1 | done | `stream_terminal.zig` | terminal application bridge + tests | P6.A, P6.B, P6.C | none | main + `[W]` | stream actions apply correctly with separated effects and tests pass in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 
 Phase 6 gate:
 
@@ -412,23 +419,23 @@ Phase 6 gate:
   [2026-04-20-p6-b-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-b-roadmap.md)
 - Phase 6C workstream roadmap lives in:
   [2026-04-21-p6-c-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c-roadmap.md)
-- Active Phase 6A slice audits live in:
+- Completed Phase 6A slice audits live in:
   [2026-04-20-p6-a1-style-core.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-a1-style-core.md)
   [2026-04-20-p6-a2-dynamic-colors.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-a2-dynamic-colors.md)
   [2026-04-20-p6-a3-protected-display-state.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-a3-protected-display-state.md)
-- Active Phase 6B slice audits live in:
+- Completed Phase 6B slice audits live in:
   [2026-04-20-p6-b1-input-flags-and-keyboard.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-b1-input-flags-and-keyboard.md)
   [2026-04-21-p6-b2-cursor-geometry-and-margins.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-b2-cursor-geometry-and-margins.md)
   [2026-04-21-p6-b3-saved-cursor-and-charset.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-b3-saved-cursor-and-charset.md)
   [2026-04-21-p6-b4-tabstop-state.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-b4-tabstop-state.md)
-- Active Phase 6C slice audits live in:
+- Completed Phase 6C slice audits live in:
   [2026-04-21-p6-c1-hyperlink-and-semantic-metadata.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c1-hyperlink-and-semantic-metadata.md)
   [2026-04-21-p6-c2-title-and-aux-metadata.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c2-title-and-aux-metadata.md)
   [2026-04-21-p6-c3-page-row-and-cell-values.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c3-page-row-and-cell-values.md)
   [2026-04-21-p6-c4-screen-grid-and-mutations.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-c4-screen-grid-and-mutations.md)
 - Phase 6.1 bridge slicing notes live in:
   [2026-04-20-p6-1-bridge-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-bridge-roadmap.md)
-- Active Phase 6.1 slice audits live in:
+- Completed Phase 6.1 slice audits live in:
   [2026-04-20-p6-1-a-phase6a-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-a-phase6a-bridge.md)
   [2026-04-21-p6-1-b-cursor-mode-tab-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-b-cursor-mode-tab-bridge.md)
   [2026-04-21-p6-1-c-screen-mutation-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-c-screen-mutation-bridge.md)
@@ -442,13 +449,12 @@ Status: `done`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P7.0 | done | integrated parser stack | host-bridge checklist and validation corpus notes | P6.1 | none | `[E]` | byte-slice API shape and validation corpus recorded before implementation | doc review | `[R]` main | `docs` |
-| P7.1 | done | VT-facing entry surface | MoonBit byte-slice API + tests | P7.0 | none | main | public parser-facing API exists, is documented, and stays green | `moon check && moon test && moon fmt && moon info` | `[R]` main | `feat(api)` |
-| P7.2 | done | upstream tests/fixtures | differential fixtures and parity suites | P7.1 | none | `[W]` | direct and end-to-end parity checks pass for the agreed corpus | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `test(parity)` |
-| P7.3 | done | hot path behavior | perf notes and focused checks | P7.2 | none | `[W]` | parser hot paths are measured and deviations documented without breaking green status | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `docs/perf` |
+| P7.1 | done | VT-facing entry surface | MoonBit byte-slice API + tests | P7.0 | none | main | public parser-facing API exists, is documented, and stays green | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(api)` |
+| P7.2 | done | upstream tests/fixtures | differential fixtures and parity suites | P7.1 | none | `[W]` | direct and end-to-end parity checks pass for the agreed corpus | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `test(parity)` |
+| P7.3 | done | hot path behavior | perf notes and focused checks | P7.2 | none | `[W]` | parser hot paths are measured and deviations documented without breaking green status | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `docs/perf` |
 
 Phase 7 gate:
 
-- P7.0, P7.1, and P7.2 are `done`
 - P7.0, P7.1, P7.2, and P7.3 are `done`
 
 #### Phase 7 outputs
@@ -472,3 +478,5 @@ The scoped translation is ready for review when:
 - the MoonBit API can accept byte slices and reproduce upstream parser behavior
 - delegated tasks have both subplans and audit records where required
 - the mainline history remains atomic and phase-by-phase
+- this closes the scoped parser-stack plan; broader libghostty work requires a
+  new follow-on plan
