@@ -1603,10 +1603,11 @@ test "stream terminal bridge/covers readonly query branches and truncation" {
     state.apply(StreamXtversion) else {
     fail("expected readonly query branches to be handled")
   }
-  guard recorder.writes.length() == 1 else {
-    fail("expected only default xtversion to write")
+  guard recorder.writes.length() == 2 else {
+    fail("expected default DA and default xtversion to write")
   }
-  expect_effect_write(recorder, 0, b"\x1BP>|libghostty\x1B\\")
+  expect_effect_write(recorder, 0, b"\x1B[?62;22c")
+  expect_effect_write(recorder, 1, b"\x1BP>|libghostty\x1B\\")
 
   let untitled_recorder = BridgeEffectsRecorder::new()
   let untitled_state = StreamTerminalBridgeState::with_effects(

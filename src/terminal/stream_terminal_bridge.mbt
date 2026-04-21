@@ -17,7 +17,7 @@ const MaxEnquiryBytes : Int = 256
 const MaxXtversionBytes : Int = 256
 
 ///|
-struct StreamTerminalBridgeEffects {
+priv struct StreamTerminalBridgeEffects {
   write_pty : (Bytes) -> Unit
   bell : () -> Unit
   color_scheme : () -> ColorScheme?
@@ -29,7 +29,7 @@ struct StreamTerminalBridgeEffects {
 }
 
 ///|
-pub fn StreamTerminalBridgeEffects::new(
+fn StreamTerminalBridgeEffects::new(
   write_pty? : (Bytes) -> Unit = fn(_data) { () },
   bell? : () -> Unit = fn() { () },
   color_scheme? : () -> ColorScheme? = fn() { None },
@@ -52,7 +52,7 @@ pub fn StreamTerminalBridgeEffects::new(
 }
 
 ///|
-struct StreamTerminalBridgeState {
+priv struct StreamTerminalBridgeState {
   effects : StreamTerminalBridgeEffects
   protected_state : ScreenProtectedState
   display_state : TerminalDisplayState
@@ -76,12 +76,12 @@ struct StreamTerminalBridgeState {
 }
 
 ///|
-pub fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
+fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
   StreamTerminalBridgeState::with_effects(StreamTerminalBridgeEffects::new())
 }
 
 ///|
-pub fn StreamTerminalBridgeState::with_effects(
+fn StreamTerminalBridgeState::with_effects(
   effects : StreamTerminalBridgeEffects,
 ) -> StreamTerminalBridgeState {
   {
@@ -109,42 +109,42 @@ pub fn StreamTerminalBridgeState::with_effects(
 }
 
 ///|
-pub fn StreamTerminalBridgeState::protected_state(
+fn StreamTerminalBridgeState::protected_state(
   self : StreamTerminalBridgeState,
 ) -> ScreenProtectedState {
   self.protected_state
 }
 
 ///|
-pub fn StreamTerminalBridgeState::display_state(
+fn StreamTerminalBridgeState::display_state(
   self : StreamTerminalBridgeState,
 ) -> TerminalDisplayState {
   self.display_state
 }
 
 ///|
-pub fn StreamTerminalBridgeState::colors(
+fn StreamTerminalBridgeState::colors(
   self : StreamTerminalBridgeState,
 ) -> TerminalColors {
   self.colors
 }
 
 ///|
-pub fn StreamTerminalBridgeState::palette_dirty(
+fn StreamTerminalBridgeState::palette_dirty(
   self : StreamTerminalBridgeState,
 ) -> Bool {
   self.palette_dirty
 }
 
 ///|
-pub fn StreamTerminalBridgeState::clear_palette_dirty(
+fn StreamTerminalBridgeState::clear_palette_dirty(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   self.palette_dirty = false
 }
 
 ///|
-pub fn StreamTerminalBridgeState::mode_enabled(
+fn StreamTerminalBridgeState::mode_enabled(
   self : StreamTerminalBridgeState,
   mode : Mode,
 ) -> Bool {
@@ -152,84 +152,84 @@ pub fn StreamTerminalBridgeState::mode_enabled(
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_x(
+fn StreamTerminalBridgeState::cursor_x(
   self : StreamTerminalBridgeState,
 ) -> CellCountInt {
   self.cursor.x()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_y(
+fn StreamTerminalBridgeState::cursor_y(
   self : StreamTerminalBridgeState,
 ) -> CellCountInt {
   self.cursor.y()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_visual_style(
+fn StreamTerminalBridgeState::cursor_visual_style(
   self : StreamTerminalBridgeState,
 ) -> CursorVisualStyle {
   self.cursor.visual_style()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_pending_wrap(
+fn StreamTerminalBridgeState::cursor_pending_wrap(
   self : StreamTerminalBridgeState,
 ) -> Bool {
   self.cursor.pending_wrap()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_top_margin(
+fn StreamTerminalBridgeState::cursor_top_margin(
   self : StreamTerminalBridgeState,
 ) -> CellCountInt {
   self.cursor.top_margin()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_bottom_margin(
+fn StreamTerminalBridgeState::cursor_bottom_margin(
   self : StreamTerminalBridgeState,
 ) -> CellCountInt {
   self.cursor.bottom_margin()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_left_margin(
+fn StreamTerminalBridgeState::cursor_left_margin(
   self : StreamTerminalBridgeState,
 ) -> CellCountInt {
   self.cursor.left_margin()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::cursor_right_margin(
+fn StreamTerminalBridgeState::cursor_right_margin(
   self : StreamTerminalBridgeState,
 ) -> CellCountInt {
   self.cursor.right_margin()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::mouse_shift_capture(
+fn StreamTerminalBridgeState::mouse_shift_capture(
   self : StreamTerminalBridgeState,
 ) -> Bool? {
   self.input_flags.mouse_shift_capture()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::modify_other_keys_2(
+fn StreamTerminalBridgeState::modify_other_keys_2(
   self : StreamTerminalBridgeState,
 ) -> Bool {
   self.input_flags.modify_other_keys_2()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::kitty_keyboard_flags(
+fn StreamTerminalBridgeState::kitty_keyboard_flags(
   self : StreamTerminalBridgeState,
 ) -> KittyKeyboardFlags {
   self.kitty_keyboard.current()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::tabstop(
+fn StreamTerminalBridgeState::tabstop(
   self : StreamTerminalBridgeState,
   col : CellCountInt,
 ) -> Bool {
@@ -237,21 +237,21 @@ pub fn StreamTerminalBridgeState::tabstop(
 }
 
 ///|
-pub fn StreamTerminalBridgeState::mouse_event(
+fn StreamTerminalBridgeState::mouse_event(
   self : StreamTerminalBridgeState,
 ) -> MouseEvent {
   self.mouse_event
 }
 
 ///|
-pub fn StreamTerminalBridgeState::mouse_format(
+fn StreamTerminalBridgeState::mouse_format(
   self : StreamTerminalBridgeState,
 ) -> MouseFormat {
   self.mouse_format
 }
 
 ///|
-pub fn StreamTerminalBridgeState::charset(
+fn StreamTerminalBridgeState::charset(
   self : StreamTerminalBridgeState,
   slot : Slots,
 ) -> Charset {
@@ -259,112 +259,112 @@ pub fn StreamTerminalBridgeState::charset(
 }
 
 ///|
-pub fn StreamTerminalBridgeState::charset_gl(
+fn StreamTerminalBridgeState::charset_gl(
   self : StreamTerminalBridgeState,
 ) -> Slots {
   self.charset.gl()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::charset_gr(
+fn StreamTerminalBridgeState::charset_gr(
   self : StreamTerminalBridgeState,
 ) -> Slots {
   self.charset.gr()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::charset_single_shift(
+fn StreamTerminalBridgeState::charset_single_shift(
   self : StreamTerminalBridgeState,
 ) -> Slots? {
   self.charset.single_shift()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::has_saved_cursor(
+fn StreamTerminalBridgeState::has_saved_cursor(
   self : StreamTerminalBridgeState,
 ) -> Bool {
   self.saved_cursor.has_saved()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::current_style_snapshot(
+fn StreamTerminalBridgeState::current_style_snapshot(
   self : StreamTerminalBridgeState,
 ) -> CellStyle {
   copy_cell_style(self.current_style)
 }
 
 ///|
-pub fn StreamTerminalBridgeState::semantic_click_mode(
+fn StreamTerminalBridgeState::semantic_click_mode(
   self : StreamTerminalBridgeState,
 ) -> SemanticClickMode {
   self.semantic.click()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::semantic_cursor_content(
+fn StreamTerminalBridgeState::semantic_cursor_content(
   self : StreamTerminalBridgeState,
 ) -> SemanticContent {
   self.semantic.cursor_content()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::semantic_cursor_content_clear_eol(
+fn StreamTerminalBridgeState::semantic_cursor_content_clear_eol(
   self : StreamTerminalBridgeState,
 ) -> Bool {
   self.semantic.cursor_content_clear_eol()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::semantic_row_prompt(
+fn StreamTerminalBridgeState::semantic_row_prompt(
   self : StreamTerminalBridgeState,
 ) -> RowSemanticPrompt {
   self.semantic.row_prompt()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::title(
+fn StreamTerminalBridgeState::title(
   self : StreamTerminalBridgeState,
 ) -> String? {
   self.metadata.title()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::shell_redraws_prompt(
+fn StreamTerminalBridgeState::shell_redraws_prompt(
   self : StreamTerminalBridgeState,
 ) -> SemanticPromptRedraw {
   self.metadata.shell_redraws_prompt()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::hyperlink_active(
+fn StreamTerminalBridgeState::hyperlink_active(
   self : StreamTerminalBridgeState,
 ) -> Bool {
   self.hyperlink.active()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::hyperlink_uri(
+fn StreamTerminalBridgeState::hyperlink_uri(
   self : StreamTerminalBridgeState,
 ) -> String? {
   self.hyperlink.uri()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::hyperlink_explicit_id(
+fn StreamTerminalBridgeState::hyperlink_explicit_id(
   self : StreamTerminalBridgeState,
 ) -> String? {
   self.hyperlink.explicit_id()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::hyperlink_implicit_id(
+fn StreamTerminalBridgeState::hyperlink_implicit_id(
   self : StreamTerminalBridgeState,
 ) -> Int? {
   self.hyperlink.implicit_id()
 }
 
 ///|
-pub fn StreamTerminalBridgeState::screen_row_snapshot(
+fn StreamTerminalBridgeState::screen_row_snapshot(
   self : StreamTerminalBridgeState,
   row : CellCountInt,
 ) -> PageRowState? {
@@ -375,7 +375,7 @@ pub fn StreamTerminalBridgeState::screen_row_snapshot(
 }
 
 ///|
-pub fn StreamTerminalBridgeState::screen_cell_snapshot(
+fn StreamTerminalBridgeState::screen_cell_snapshot(
   self : StreamTerminalBridgeState,
   row : CellCountInt,
   col : CellCountInt,
@@ -387,7 +387,7 @@ pub fn StreamTerminalBridgeState::screen_cell_snapshot(
 }
 
 ///|
-pub fn StreamTerminalBridgeState::apply(
+fn StreamTerminalBridgeState::apply(
   self : StreamTerminalBridgeState,
   action : StreamAction,
 ) -> Bool {
@@ -1157,7 +1157,7 @@ fn StreamTerminalBridgeState::report_device_attributes(
 ) -> Unit {
   match (self.effects.device_attributes)() {
     Some(attributes) => self.write_pty(attributes.encode(request))
-    None => ()
+    None => self.write_pty(DeviceAttributes::default().encode(request))
   }
 }
 

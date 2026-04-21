@@ -442,19 +442,21 @@ Status: `active`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P7.0 | done | integrated parser stack | host-bridge checklist and validation corpus notes | P6.1 | none | `[E]` | byte-slice API shape and validation corpus recorded before implementation | doc review | `[R]` main | `docs` |
-| P7.1 | todo | VT-facing entry surface | MoonBit byte-slice API + tests | P7.0 | none | main | public parser-facing API exists, is documented, and stays green | `moon check && moon test && moon fmt && moon info` | `[R]` main | `feat(api)` |
+| P7.1 | done | VT-facing entry surface | MoonBit byte-slice API + tests | P7.0 | none | main | public parser-facing API exists, is documented, and stays green | `moon check && moon test && moon fmt && moon info` | `[R]` main | `feat(api)` |
 | P7.2 | todo | upstream tests/fixtures | differential fixtures and parity suites | P7.1 | none | `[W]` | direct and end-to-end parity checks pass for the agreed corpus | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `test(parity)` |
 | P7.3 | todo | hot path behavior | perf notes and focused checks | P7.2 | none | `[W]` | parser hot paths are measured and deviations documented without breaking green status | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `docs/perf` |
 
 Phase 7 gate:
 
-- P7.0 is `done`
-- P7.1, P7.2, and P7.3 are `todo`
+- P7.0 and P7.1 are `done`
+- P7.2 and P7.3 are `todo`
 
 #### Phase 7 outputs
 
 - Phase 7 host-bridge checklist and parity corpus notes live in:
   [2026-04-21-p7-0-host-bridge-checklist.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-0-host-bridge-checklist.md)
+- Phase 7 implementation audits live in:
+  [2026-04-21-p7-1-stream-terminal-facade.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-1-stream-terminal-facade.md)
 
 ## Definition of done
 
