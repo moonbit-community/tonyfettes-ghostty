@@ -44,3 +44,11 @@ pub fn ScreenProtectedState::reset(self : ScreenProtectedState) -> Unit {
   self.mode = ProtectedMode::Off
   self.cursor_protected = false
 }
+
+///|
+fn ScreenProtectedState::set_cursor_protected(
+  self : ScreenProtectedState,
+  value : Bool,
+) -> Unit {
+  self.cursor_protected = value
+}

@@ -40,17 +40,29 @@ Why first:
 
 ### P6.1.B Cursor, mode, and tab bridge
 
+Status:
+
+- done
+- implementation audit:
+  [2026-04-21-p6-1-b-cursor-mode-tab-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-b-cursor-mode-tab-bridge.md)
+
 Depends on:
 
 - `P6.B`
 
 Scope:
 
-- cursor movement and positioning
+- cursor movement and positioning that are representable with the translated
+  cursor, mode, charset, input, and tabstop carriers
 - cursor-style updates
 - tab set/clear/movement
 - margins and scroll-region metadata
 - mode toggles and kitty-keyboard metadata
+
+Deferred note:
+
+- reverse-wrap-specific `cursorLeft` behavior depends on screen row soft-wrap
+  state, so that branch stays with `P6.1.C` when the screen/page model lands
 
 ### P6.1.C Screen mutation bridge
 
