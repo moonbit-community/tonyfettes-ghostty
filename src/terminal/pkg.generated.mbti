@@ -1152,6 +1152,14 @@ pub fn TerminalInputFlags::mouse_shift_capture(Self) -> Bool?
 pub fn TerminalInputFlags::new() -> Self
 pub fn TerminalInputFlags::set_mouse_shift_capture(Self, Bool) -> Unit
 
+type TerminalMetadataState derive(Eq, @debug.Debug)
+pub fn TerminalMetadataState::full_reset(Self) -> Unit
+pub fn TerminalMetadataState::new() -> Self
+pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, SemanticPromptRedraw) -> Unit
+pub fn TerminalMetadataState::set_title(Self, String) -> Unit
+pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> SemanticPromptRedraw
+pub fn TerminalMetadataState::title(Self) -> String?
+
 type TerminalTabstopsState derive(Eq, @debug.Debug)
 pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool
 pub fn TerminalTabstopsState::new(UInt16) -> Self
