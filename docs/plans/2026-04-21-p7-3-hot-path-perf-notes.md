@@ -30,7 +30,7 @@ results and any obvious deviations or caveats.
 
 Command:
 
-- `moon run tools/stream_terminal_perf`
+- `moon run --release tools/stream_terminal_perf`
 
 Configuration baked into the harness:
 
@@ -51,13 +51,14 @@ Measured hot-path cases:
 
 ## Results
 
-Local run on 2026-04-21 with `moon run tools/stream_terminal_perf`:
+Local release rerun on 2026-04-21 with
+`moon run --release tools/stream_terminal_perf`:
 
 | case | bytes per run | runs | min ms | avg ms | avg bytes/ms | approx MiB/s |
 |---|---:|---:|---:|---:|---:|---:|
-| `printable_bulk` | 294,912 | 5 | 7,296 | 7,480 | 39 | 0.04 |
-| `split_escape` | 450,000 | 5 | 1,289 | 1,300 | 346 | 0.33 |
-| `query_callbacks` | 380,000 | 5 | 25 | 27 | 14,074 | 13.42 |
+| `printable_bulk` | 294,912 | 5 | 5,682 | 5,766 | 51 | 0.05 |
+| `split_escape` | 450,000 | 5 | 998 | 1,004 | 448 | 0.43 |
+| `query_callbacks` | 380,000 | 5 | 25 | 26 | 14,615 | 13.94 |
 
 ## Interpretation
 
@@ -72,6 +73,11 @@ Local run on 2026-04-21 with `moon run tools/stream_terminal_perf`:
   churn on a very small terminal model, so it is best read as a
   parser-plus-grid-mutation measurement rather than a pure parser throughput
   number.
+- Normalizing by visible cells rather than raw input bytes makes the key
+  result clearer: `printable_bulk` is about `51.1` visible chars/ms and
+  `split_escape` is about `49.8` visible chars/ms, so escape parsing itself is
+  not materially more expensive than plain printable traffic once both paths
+  pay the same grid-mutation cost.
 
 ## Caveats
 
@@ -82,7 +88,7 @@ Local run on 2026-04-21 with `moon run tools/stream_terminal_perf`:
 
 ## Validation commands
 
-- `moon run tools/stream_terminal_perf`
+- `moon run --release tools/stream_terminal_perf`
 - `moon fmt`
 - `moon check`
 - `moon test`
