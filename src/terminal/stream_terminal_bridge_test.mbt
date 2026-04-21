@@ -63,6 +63,651 @@ test "stream terminal bridge/default state and unsupported action" {
 }
 
 ///|
+struct BridgeStreamRecorder {
+  actions : Array[StreamAction]
+}
+
+///|
+impl StreamHandler for BridgeStreamRecorder with vt(self, action) {
+  self.actions.push(action)
+}
+
+///|
+impl StreamHandler for BridgeStreamRecorder with deinit(_self) {
+  ()
+}
+
+///|
+fn apply_stream_bytes(state : StreamTerminalBridgeState, bytes : Bytes) -> Bool {
+  let actions : Array[StreamAction] = []
+  let recorder : BridgeStreamRecorder = { actions, }
+  let stream = Stream::new(recorder)
+  stream.next_slice(bytes)
+  stream.deinit()
+  for action in actions {
+    if !state.apply(action) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn expect_bridge_row(
+  state : StreamTerminalBridgeState,
+  row : CellCountInt,
+) -> PageRowState {
+  state.screen_row_snapshot(row).unwrap()
+}
+
+///|
+fn expect_bridge_cell(
+  state : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> PageCellState {
+  state.screen_cell_snapshot(row, col).unwrap()
+}
+
+///|
+test "stream terminal bridge/applies printable semantic hyperlink actions" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard apply_stream_bytes(state, b"\x1B]133;A;click_events=1\x07") &&
+    apply_stream_bytes(state, b"\x1B[1;46m") &&
+    apply_stream_bytes(state, b"\x1B]8;;https://example.com\x07") &&
+    apply_stream_bytes(state, b"A\x1B[2b") &&
+    apply_stream_bytes(state, b"\x1B]8;;\x07B") else {
+    fail("expected printable stream bytes to be handled")
+  }
+
+  let style = state.current_style_snapshot()
+  guard style.bold() &&
+    style.bg_color().palette_index() == Some(Name::Cyan.code()) else {
+    fail("expected current style to preserve bold and background color")
+  }
+  guard state.semantic_click_mode() == SemanticClickMode::ClickEvents &&
+    state.semantic_cursor_content() == SemanticContent::Prompt &&
+    state.semantic_row_prompt() == RowSemanticPrompt::Prompt &&
+    !state.hyperlink_active() else {
+    fail("expected semantic prompt and hyperlink state")
+  }
+
+  let row = expect_bridge_row(state, 0)
+  guard row.semantic_prompt() == RowSemanticPrompt::Prompt &&
+    row.styled() &&
+    row.hyperlink() &&
+    row.dirty() else {
+    fail("expected printed row metadata")
+  }
+
+  let first = expect_bridge_cell(state, 0, 0)
+  guard first.codepoint() == b'A'.to_uint() &&
+    first.semantic_content() == SemanticContent::Prompt &&
+    first.style().bold() &&
+    first.style().bg_color().palette_index() == Some(Name::Cyan.code()) else {
+    fail("expected first cell style and semantic metadata")
+  }
+  let first_link_ok = match first.hyperlink() {
+    Some(link) =>
+      link.uri() == "https://example.com" &&
+      link.explicit_id() == None &&
+      link.implicit_id() == Some(0)
+    None => false
+  }
+  guard first_link_ok else { fail("expected implicit hyperlink metadata") }
+
+  guard expect_bridge_cell(state, 0, 1).codepoint() == b'A'.to_uint() &&
+    expect_bridge_cell(state, 0, 2).codepoint() == b'A'.to_uint() &&
+    expect_bridge_cell(state, 0, 3).codepoint() == b'B'.to_uint() &&
+    expect_bridge_cell(state, 0, 3).hyperlink() == None else {
+    fail("expected repeat-print and hyperlink end behavior")
+  }
+}
+
+///|
+test "stream terminal bridge/applies semantic newline transitions" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard apply_stream_bytes(state, b"Hello\x1B]133;N\x07") else {
+    fail("expected semantic new-command bytes to be handled")
+  }
+  guard state.cursor_x() == 0 &&
+    state.cursor_y() == 1 &&
+    state.semantic_cursor_content() == SemanticContent::Prompt &&
+    state.semantic_row_prompt() == RowSemanticPrompt::Prompt else {
+    fail("expected new-command semantic prompt to fresh-line")
+  }
+  guard expect_bridge_row(state, 1).semantic_prompt() ==
+    RowSemanticPrompt::Prompt else {
+    fail("expected prompt row metadata after new-command")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B]133;I\x07\n") else {
+    fail("expected semantic linefeed bytes to be handled")
+  }
+  guard state.cursor_x() == 0 &&
+    state.cursor_y() == 2 &&
+    state.semantic_cursor_content() == SemanticContent::Output &&
+    !state.semantic_cursor_content_clear_eol() &&
+    expect_bridge_row(state, 2).semantic_prompt() == RowSemanticPrompt::None else {
+    fail("expected terminate-eol input to clear on linefeed")
+  }
+}
+
+///|
+test "stream terminal bridge/applies reverse index at the top margin" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard state.apply(StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3 })) else {
+    fail("expected top/bottom margin setup")
+  }
+  guard state.apply(StreamCursorPos({ row: 2, col: 1 })) else {
+    fail("expected cursor move to top margin")
+  }
+  guard apply_stream_bytes(state, b"A") else {
+    fail("expected first reverse-index row write")
+  }
+  guard state.apply(StreamCursorPos({ row: 3, col: 1 })) else {
+    fail("expected cursor move inside scroll region")
+  }
+  guard apply_stream_bytes(state, b"B") else {
+    fail("expected second reverse-index row write")
+  }
+  guard state.apply(StreamCursorPos({ row: 2, col: 1 })) else {
+    fail("expected cursor reset to top margin")
+  }
+
+  guard apply_stream_bytes(state, b"\x1BM") else {
+    fail("expected reverse index bytes to be handled")
+  }
+  guard state.cursor_x() == 0 && state.cursor_y() == 1 else {
+    fail("expected reverse index cursor position")
+  }
+  guard expect_bridge_cell(state, 1, 0).is_empty() &&
+    expect_bridge_cell(state, 2, 0).codepoint() == b'A'.to_uint() else {
+    fail("expected reverse index to scroll region downward")
+  }
+}
+
+///|
+test "stream terminal bridge/applies edit and scroll mutations" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard apply_stream_bytes(state, b"ABCDE") &&
+    apply_stream_bytes(state, b"\r\x1B[2C\x1B[2P") else {
+    fail("expected delete-char bytes to be handled")
+  }
+  guard expect_bridge_cell(state, 0, 0).codepoint() == b'A'.to_uint() &&
+    expect_bridge_cell(state, 0, 1).codepoint() == b'B'.to_uint() &&
+    expect_bridge_cell(state, 0, 2).codepoint() == b'E'.to_uint() &&
+    expect_bridge_cell(state, 0, 3).is_empty() else {
+    fail("expected delete chars bridge behavior")
+  }
+
+  guard apply_stream_bytes(state, b"\r\x1B[3C") else {
+    fail("expected erase-char cursor bytes to be handled")
+  }
+  guard state.apply(StreamSetAttribute(Color256Bg(5))) else {
+    fail("expected background style setup")
+  }
+  guard apply_stream_bytes(state, b"\x1B[X") else {
+    fail("expected erase-char bytes to be handled")
+  }
+  guard expect_bridge_cell(state, 0, 3).palette_index() == Some(5) else {
+    fail("expected erase chars to preserve current background style")
+  }
+
+  let pending_wrap = StreamTerminalBridgeState::new()
+  guard pending_wrap.apply(StreamCursorPos({ row: 1, col: 80 })) else {
+    fail("expected pending-wrap cursor setup")
+  }
+  guard apply_stream_bytes(pending_wrap, b"Z") else {
+    fail("expected pending-wrap print bytes to be handled")
+  }
+  guard pending_wrap.cursor_pending_wrap() else {
+    fail("expected print at right edge to enter pending wrap")
+  }
+  guard pending_wrap.apply(StreamEraseLineRightUnlessPendingWrap(false)) else {
+    fail("expected right-unless-pending-wrap action to be handled")
+  }
+  guard expect_bridge_cell(pending_wrap, 0, 79).codepoint() == b'Z'.to_uint() else {
+    fail("expected pending-wrap erase-right guard to no-op")
+  }
+
+  let scroll = StreamTerminalBridgeState::new()
+  guard apply_stream_bytes(scroll, b"A\x1BEB\x1BEC") else {
+    fail("expected scroll population bytes to be handled")
+  }
+  guard scroll.apply(StreamCursorPos({ row: 1, col: 1 })) else {
+    fail("expected scroll cursor reset")
+  }
+  guard scroll.apply(StreamScrollUp(1)) else {
+    fail("expected scroll up to be handled")
+  }
+  guard expect_bridge_cell(scroll, 0, 0).codepoint() == b'B'.to_uint() &&
+    expect_bridge_cell(scroll, 1, 0).codepoint() == b'C'.to_uint() else {
+    fail("expected scroll up to move rows")
+  }
+  guard scroll.apply(StreamScrollDown(1)) else {
+    fail("expected scroll down to be handled")
+  }
+  guard expect_bridge_cell(scroll, 0, 0).is_empty() &&
+    expect_bridge_cell(scroll, 1, 0).codepoint() == b'B'.to_uint() else {
+    fail("expected scroll down to insert a blank row")
+  }
+}
+
+///|
+test "stream terminal bridge/applies decaln full reset and kitty color protocol" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard apply_stream_bytes(
+    state, b"\x1B]21;5=rgb:01/02/03;foreground=rgb:04/05/06\x07",
+  ) else {
+    fail("expected kitty color bytes to be handled")
+  }
+  guard state.palette_dirty() &&
+    state.colors().palette_color(5) == RGB::new(1, 2, 3) &&
+    state.colors().foreground() == Some(RGB::new(4, 5, 6)) else {
+    fail("expected kitty color protocol mutation")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B[1;31;42m") &&
+    apply_stream_bytes(state, b"\x1B]8;;https://example.com\x07") &&
+    apply_stream_bytes(state, b"\x1B]133;A\x07") &&
+    apply_stream_bytes(state, b"X") &&
+    apply_stream_bytes(state, b"\x1B#8") else {
+    fail("expected decaln setup bytes to be handled")
+  }
+
+  let decaln_style = state.current_style_snapshot()
+  guard !decaln_style.bold() &&
+    decaln_style.fg_color().palette_index() == Some(Name::Red.code()) &&
+    decaln_style.bg_color().palette_index() == Some(Name::Green.code()) &&
+    expect_bridge_cell(state, 0, 0).codepoint() == b'E'.to_uint() &&
+    state.cursor_x() == 0 &&
+    state.cursor_y() == 0 else {
+    fail("expected decaln bridge behavior")
+  }
+
+  guard apply_stream_bytes(state, b"\x1Bc") else {
+    fail("expected full-reset bytes to be handled")
+  }
+  guard !state.palette_dirty() &&
+    expect_bridge_cell(state, 0, 0).is_empty() &&
+    state.cursor_x() == 0 &&
+    state.cursor_y() == 0 &&
+    state.current_style_snapshot().is_default() &&
+    !state.hyperlink_active() &&
+    state.semantic_cursor_content() == SemanticContent::Output &&
+    state.colors().palette_color(5) == RGB::new(1, 2, 3) &&
+    state.colors().foreground() == Some(RGB::new(4, 5, 6)) else {
+    fail("expected full reset bridge behavior")
+  }
+}
+
+///|
+test "stream terminal bridge/covers accessors and print guard branches" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard state.title() == None &&
+    state.shell_redraws_prompt() == SemanticPromptRedraw::Enabled &&
+    state.hyperlink_uri() == None &&
+    state.hyperlink_explicit_id() == None &&
+    state.hyperlink_implicit_id() == None &&
+    state.screen_row_snapshot(24) == None &&
+    state.screen_cell_snapshot(0, 80) == None else {
+    fail("expected default metadata and out-of-bounds accessors")
+  }
+
+  guard state.apply(StreamSetMode(Mode::EnableLeftAndRightMargin)) &&
+    state.apply(StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 })) &&
+    state.apply(StreamSetMode(Mode::Origin)) &&
+    state.apply(StreamCursorPos({ row: 1, col: 15 })) &&
+    state.apply(StreamCarriageReturn) else {
+    fail("expected carriage-return origin setup")
+  }
+  guard state.cursor_x() == 10 else {
+    fail("expected carriage return to honor origin left margin")
+  }
+
+  guard state.apply(StreamResetMode(Mode::Origin)) &&
+    state.apply(StreamCursorPos({ row: 1, col: 1 })) &&
+    state.apply(StreamCarriageReturn) else {
+    fail("expected carriage-return non-origin setup")
+  }
+  guard state.cursor_x() == 0 else {
+    fail("expected carriage return to fall back to column zero")
+  }
+
+  guard state.apply(StreamActiveStatusDisplay(StatusDisplay::StatusLine)) &&
+    state.apply(StreamPrint(b'X'.to_uint())) else {
+    fail("expected status-line print to be handled")
+  }
+  guard expect_bridge_cell(state, 0, 0).is_empty() else {
+    fail("expected print to no-op outside the main display")
+  }
+
+  guard state.apply(StreamActiveStatusDisplay(StatusDisplay::Main)) &&
+    state.apply(StreamPrint(0U)) &&
+    state.apply(StreamPrintRepeat(2)) &&
+    state.apply(StreamPrint(0x4E2DU)) else {
+    fail("expected zero-width, repeat-none, and wide print paths")
+  }
+  guard expect_bridge_cell(state, 0, 0).wide() == PageCellWide::Wide &&
+    expect_bridge_cell(state, 0, 1).wide() == PageCellWide::SpacerTail else {
+    fail("expected wide print layout")
+  }
+}
+
+///|
+test "stream terminal bridge/covers semantic prompt variants and explicit hyperlinks" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard apply_stream_bytes(state, b"Hi\x1B]133;L\x07") &&
+    apply_stream_bytes(state, b"\x1B]133;A;redraw=0\x07") else {
+    fail("expected fresh-line semantic prompt bytes")
+  }
+  guard state.cursor_x() == 0 &&
+    state.cursor_y() == 1 &&
+    state.shell_redraws_prompt() == SemanticPromptRedraw::Disabled &&
+    state.semantic_cursor_content() == SemanticContent::Prompt else {
+    fail("expected fresh-line and redraw semantic prompt behavior")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B]8;id=foo;http://example.com\x07X") else {
+    fail("expected explicit hyperlink bytes")
+  }
+  guard state.hyperlink_uri() == Some("http://example.com") &&
+    state.hyperlink_explicit_id() == Some("foo") &&
+    state.hyperlink_implicit_id() == None else {
+    fail("expected explicit hyperlink accessors")
+  }
+  let explicit_link_ok = match expect_bridge_cell(state, 1, 0).hyperlink() {
+    Some(link) =>
+      link.uri() == "http://example.com" && link.explicit_id() == Some("foo")
+    None => false
+  }
+  guard explicit_link_ok else {
+    fail("expected explicit hyperlink to be written to the grid")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B]133;P;k=c\x07") &&
+    apply_stream_bytes(state, b"\x1B]133;B\x07") else {
+    fail("expected prompt-start and input-start bytes")
+  }
+  guard state.semantic_row_prompt() == RowSemanticPrompt::PromptContinuation &&
+    state.semantic_cursor_content() == SemanticContent::Input &&
+    !state.semantic_cursor_content_clear_eol() else {
+    fail("expected prompt-start continuation and input state")
+  }
+
+  let reset_row = StreamTerminalBridgeState::new()
+  guard apply_stream_bytes(reset_row, b"\x1B]133;P;k=i\x07") &&
+    apply_stream_bytes(reset_row, b"\x1B]133;C\x07") &&
+    apply_stream_bytes(reset_row, b"\x1B]133;D\x07") else {
+    fail("expected output and end-command semantic bytes")
+  }
+  guard reset_row.semantic_cursor_content() == SemanticContent::Output &&
+    expect_bridge_row(reset_row, 0).semantic_prompt() == RowSemanticPrompt::None else {
+    fail("expected output transition to clear row prompt at column zero")
+  }
+}
+
+///|
+test "stream terminal bridge/covers movement helper branches" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard state.apply(StreamBackspace) else {
+    fail("expected backspace to be handled")
+  }
+
+  guard state.apply(StreamSetMode(Mode::Linefeed)) &&
+    apply_stream_bytes(state, b"AB") &&
+    state.apply(StreamLinefeed) else {
+    fail("expected linefeed-mode setup")
+  }
+  guard state.cursor_x() == 0 && state.cursor_y() == 1 else {
+    fail("expected linefeed mode to add carriage return")
+  }
+
+  guard state.apply(StreamSetMode(Mode::EnableLeftAndRightMargin)) &&
+    state.apply(StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 })) &&
+    state.apply(StreamCursorPos({ row: 5, col: 1 })) &&
+    state.apply(StreamIndex) else {
+    fail("expected index setup outside scroll region")
+  }
+  guard state.cursor_y() == 5 else {
+    fail("expected index outside the scroll region to move down one row")
+  }
+
+  guard state.apply(StreamReverseIndex) else {
+    fail("expected reverse index outside top margin to be handled")
+  }
+  guard state.cursor_y() == 4 else {
+    fail("expected reverse index outside top margin to move the cursor up")
+  }
+}
+
+///|
+test "stream terminal bridge/covers erase and insertion bridge arms" {
+  let state = StreamTerminalBridgeState::new()
+  guard apply_stream_bytes(state, b"ABC\x1BEDEF") &&
+    state.apply(StreamSetAttribute(Color256Bg(4))) else {
+    fail("expected erase bridge setup")
+  }
+
+  guard state.apply(StreamEraseDisplayBelow(false)) &&
+    state.apply(StreamEraseDisplayAbove(false)) &&
+    state.apply(StreamEraseDisplayComplete(false)) &&
+    state.apply(StreamEraseDisplayScrollback(false)) &&
+    state.apply(StreamEraseDisplayScrollComplete(false)) else {
+    fail("expected erase-display actions to be handled")
+  }
+
+  guard apply_stream_bytes(state, b"ABCDE") &&
+    state.apply(StreamCursorPos({ row: 1, col: 3 })) &&
+    state.apply(StreamEraseLineRight(false)) &&
+    state.apply(StreamEraseLineLeft(false)) &&
+    state.apply(StreamEraseLineComplete(false)) else {
+    fail("expected erase-line actions to be handled")
+  }
+
+  guard apply_stream_bytes(state, b"ABCDE") &&
+    state.apply(StreamCursorPos({ row: 1, col: 3 })) &&
+    state.apply(StreamEraseLineRightUnlessPendingWrap(false)) else {
+    fail("expected erase-line-right-unless-pending-wrap action")
+  }
+  guard expect_bridge_cell(state, 0, 2).palette_index() == Some(4) else {
+    fail(
+      "expected erase-line-right-unless-pending-wrap to erase when not pending wrap",
+    )
+  }
+
+  guard state.apply(StreamInsertLines(1)) &&
+    state.apply(StreamInsertBlanks(1)) &&
+    state.apply(StreamDeleteLines(1)) else {
+    fail("expected line insertion and deletion actions to be handled")
+  }
+}
+
+///|
+test "stream terminal bridge/covers kitty color query and reset branches" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard apply_stream_bytes(
+    state, b"\x1B]21;foreground=rgb:01/02/03;foreground=?;background=rgb:07/08/09;cursor=rgb:0A/0B/0C;selection_background=rgb:0D/0E/0F\x07",
+  ) else {
+    fail("expected kitty color set/query bytes")
+  }
+  guard state.colors().foreground() == Some(RGB::new(1, 2, 3)) &&
+    state.colors().background() == Some(RGB::new(7, 8, 9)) &&
+    state.colors().cursor() == Some(RGB::new(10, 11, 12)) else {
+    fail("expected kitty color set branches")
+  }
+
+  guard apply_stream_bytes(
+    state, b"\x1B]21;5=rgb:11/12/13;5=;foreground=;background=;cursor=;selection_background=\x07",
+  ) else {
+    fail("expected kitty color reset bytes")
+  }
+  guard state.colors().palette_color(5) == Name::Magenta.default_rgb() &&
+    state.colors().foreground() == None &&
+    state.colors().background() == None &&
+    state.colors().cursor() == None else {
+    fail("expected kitty color reset branches")
+  }
+}
+
+///|
+test "stream terminal bridge/covers repeat print and remaining semantic branches" {
+  let repeat_state = StreamTerminalBridgeState::new()
+  guard apply_stream_bytes(repeat_state, b"A") &&
+    repeat_state.apply(StreamActiveStatusDisplay(StatusDisplay::StatusLine)) &&
+    repeat_state.apply(StreamPrintRepeat(3)) else {
+    fail("expected repeat-print status-display setup")
+  }
+  guard expect_bridge_cell(repeat_state, 0, 0).codepoint() == b'A'.to_uint() &&
+    expect_bridge_cell(repeat_state, 0, 1).is_empty() else {
+    fail("expected repeat print to no-op outside the main display")
+  }
+
+  let semantic_state = StreamTerminalBridgeState::new()
+  guard apply_stream_bytes(semantic_state, b"Q\x1B]133;N;redraw=last\x07") else {
+    fail("expected new-command redraw bytes")
+  }
+  guard semantic_state.shell_redraws_prompt() == SemanticPromptRedraw::Last else {
+    fail("expected new-command redraw metadata")
+  }
+
+  let fresh_line_state = StreamTerminalBridgeState::new()
+  guard fresh_line_state.apply(StreamSetMode(Mode::EnableLeftAndRightMargin)) &&
+    fresh_line_state.apply(
+      StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 }),
+    ) &&
+    apply_stream_bytes(fresh_line_state, b"\x1B]133;L\x07") else {
+    fail("expected fresh-line left-margin bytes")
+  }
+  guard fresh_line_state.cursor_x() == 0 && fresh_line_state.cursor_y() == 0 else {
+    fail("expected fresh line at x<left-margin to no-op")
+  }
+}
+
+///|
+test "stream terminal bridge/covers cursor-left wrap modes" {
+  let plain = StreamTerminalBridgeState::new()
+  guard plain.apply(StreamResetMode(Mode::Wraparound)) &&
+    plain.apply(StreamCursorPos({ row: 2, col: 4 })) &&
+    plain.apply(StreamCursorLeft(CursorMovement(1))) else {
+    fail("expected plain cursor-left setup")
+  }
+  guard plain.cursor_x() == 2 && plain.cursor_y() == 1 else {
+    fail("expected cursor-left without wraparound")
+  }
+
+  let reverse = StreamTerminalBridgeState::new()
+  guard reverse.apply(StreamSetMode(Mode::ReverseWrap)) &&
+    reverse.apply(StreamCursorLeft(CursorMovement(1))) else {
+    fail("expected reverse-wrap cursor-left setup")
+  }
+  guard reverse.cursor_x() == 0 && reverse.cursor_y() == 0 else {
+    fail("expected reverse-wrap top-left clamp")
+  }
+
+  let pending = StreamTerminalBridgeState::new()
+  guard pending.apply(StreamSetMode(Mode::ReverseWrap)) &&
+    pending.apply(StreamCursorPos({ row: 1, col: 80 })) &&
+    apply_stream_bytes(pending, b"Z") &&
+    pending.apply(StreamCursorLeft(CursorMovement(1))) else {
+    fail("expected pending-wrap cursor-left setup")
+  }
+  guard !pending.cursor_pending_wrap() &&
+    pending.cursor_x() == 79 &&
+    pending.cursor_y() == 0 else {
+    fail("expected pending-wrap cursor-left to consume the wrap flag")
+  }
+
+  let extended = StreamTerminalBridgeState::new()
+  guard extended.apply(
+      StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3 }),
+    ) &&
+    extended.apply(StreamSetMode(Mode::ReverseWrapExtended)) &&
+    extended.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+    extended.apply(StreamCursorLeft(CursorMovement(1))) else {
+    fail("expected reverse-wrap-extended cursor-left setup")
+  }
+  guard extended.cursor_x() == 79 && extended.cursor_y() == 2 else {
+    fail("expected reverse-wrap-extended top wrap")
+  }
+
+  let left_margin_branch = StreamTerminalBridgeState::new()
+  guard left_margin_branch.apply(StreamSetMode(Mode::EnableLeftAndRightMargin)) &&
+    left_margin_branch.apply(
+      StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 }),
+    ) &&
+    left_margin_branch.apply(StreamSetMode(Mode::ReverseWrapExtended)) &&
+    left_margin_branch.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+    left_margin_branch.apply(StreamCursorLeft(CursorMovement(1))) else {
+    fail("expected reverse-wrap-extended left-margin setup")
+  }
+  guard left_margin_branch.cursor_x() == 19 &&
+    left_margin_branch.cursor_y() == 0 else {
+    fail("expected x<left-margin reverse wrap behavior")
+  }
+
+  let top_return = StreamTerminalBridgeState::new()
+  guard top_return.apply(StreamSetMode(Mode::ReverseWrap)) &&
+    top_return.apply(StreamCursorPos({ row: 1, col: 2 })) &&
+    top_return.apply(StreamCursorLeft(CursorMovement(2))) else {
+    fail("expected reverse-wrap top-row setup")
+  }
+  guard top_return.cursor_x() == 0 && top_return.cursor_y() == 0 else {
+    fail("expected reverse-wrap to stop at the top row")
+  }
+
+  let y_zero_return = StreamTerminalBridgeState::new()
+  guard y_zero_return.apply(
+      StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3 }),
+    ) &&
+    y_zero_return.apply(StreamSetMode(Mode::ReverseWrap)) &&
+    y_zero_return.apply(StreamCursorPos({ row: 1, col: 2 })) &&
+    y_zero_return.apply(StreamCursorLeft(CursorMovement(2))) else {
+    fail("expected reverse-wrap y-zero setup")
+  }
+  guard y_zero_return.cursor_x() == 0 && y_zero_return.cursor_y() == 0 else {
+    fail("expected reverse-wrap to stop at row zero outside the top margin")
+  }
+
+  let no_prev_wrap = StreamTerminalBridgeState::new()
+  guard no_prev_wrap.apply(StreamSetMode(Mode::ReverseWrap)) &&
+    no_prev_wrap.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+    no_prev_wrap.apply(StreamCursorLeft(CursorMovement(1))) else {
+    fail("expected reverse-wrap no-prev-wrap setup")
+  }
+  guard no_prev_wrap.cursor_x() == 0 && no_prev_wrap.cursor_y() == 1 else {
+    fail("expected reverse-wrap to stop when the previous row did not wrap")
+  }
+
+  let prev_wrap = StreamTerminalBridgeState::new()
+  guard prev_wrap.apply(StreamSetMode(Mode::ReverseWrap)) else {
+    fail("expected reverse-wrap previous-row-wrap setup")
+  }
+  for _ in 0..<81 {
+    guard prev_wrap.apply(StreamPrint(b'A'.to_uint())) else {
+      fail("expected wrap-generating print")
+    }
+  }
+  guard prev_wrap.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+    prev_wrap.apply(StreamCursorLeft(CursorMovement(1))) else {
+    fail("expected reverse-wrap previous-row-wrap action")
+  }
+  guard prev_wrap.cursor_x() == 79 && prev_wrap.cursor_y() == 0 else {
+    fail("expected reverse-wrap to jump to the previous wrapped row")
+  }
+}
+
+///|
 test "stream terminal bridge/applies protected and display actions" {
   let state = StreamTerminalBridgeState::new()
 

@@ -431,6 +431,7 @@ Phase 6 gate:
 - Active Phase 6.1 slice audits live in:
   [2026-04-20-p6-1-a-phase6a-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-a-phase6a-bridge.md)
   [2026-04-21-p6-1-b-cursor-mode-tab-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-b-cursor-mode-tab-bridge.md)
+  [2026-04-21-p6-1-c-screen-mutation-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-c-screen-mutation-bridge.md)
 
 ### Phase 7: Host bridge and equivalence
 

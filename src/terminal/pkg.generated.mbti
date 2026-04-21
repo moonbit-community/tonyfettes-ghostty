@@ -1132,6 +1132,7 @@ pub fn StreamTerminalBridgeState::charset_gr(Self) -> Slots
 pub fn StreamTerminalBridgeState::charset_single_shift(Self) -> Slots?
 pub fn StreamTerminalBridgeState::clear_palette_dirty(Self) -> Unit
 pub fn StreamTerminalBridgeState::colors(Self) -> TerminalColors
+pub fn StreamTerminalBridgeState::current_style_snapshot(Self) -> CellStyle
 pub fn StreamTerminalBridgeState::cursor_bottom_margin(Self) -> UInt16
 pub fn StreamTerminalBridgeState::cursor_left_margin(Self) -> UInt16
 pub fn StreamTerminalBridgeState::cursor_pending_wrap(Self) -> Bool
@@ -1142,6 +1143,10 @@ pub fn StreamTerminalBridgeState::cursor_x(Self) -> UInt16
 pub fn StreamTerminalBridgeState::cursor_y(Self) -> UInt16
 pub fn StreamTerminalBridgeState::display_state(Self) -> TerminalDisplayState
 pub fn StreamTerminalBridgeState::has_saved_cursor(Self) -> Bool
+pub fn StreamTerminalBridgeState::hyperlink_active(Self) -> Bool
+pub fn StreamTerminalBridgeState::hyperlink_explicit_id(Self) -> String?
+pub fn StreamTerminalBridgeState::hyperlink_implicit_id(Self) -> Int?
+pub fn StreamTerminalBridgeState::hyperlink_uri(Self) -> String?
 pub fn StreamTerminalBridgeState::kitty_keyboard_flags(Self) -> KittyKeyboardFlags
 pub fn StreamTerminalBridgeState::mode_enabled(Self, Mode) -> Bool
 pub fn StreamTerminalBridgeState::modify_other_keys_2(Self) -> Bool
@@ -1151,7 +1156,15 @@ pub fn StreamTerminalBridgeState::mouse_shift_capture(Self) -> Bool?
 pub fn StreamTerminalBridgeState::new() -> Self
 pub fn StreamTerminalBridgeState::palette_dirty(Self) -> Bool
 pub fn StreamTerminalBridgeState::protected_state(Self) -> ScreenProtectedState
+pub fn StreamTerminalBridgeState::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
+pub fn StreamTerminalBridgeState::screen_row_snapshot(Self, UInt16) -> PageRowState?
+pub fn StreamTerminalBridgeState::semantic_click_mode(Self) -> SemanticClickMode
+pub fn StreamTerminalBridgeState::semantic_cursor_content(Self) -> SemanticContent
+pub fn StreamTerminalBridgeState::semantic_cursor_content_clear_eol(Self) -> Bool
+pub fn StreamTerminalBridgeState::semantic_row_prompt(Self) -> RowSemanticPrompt
+pub fn StreamTerminalBridgeState::shell_redraws_prompt(Self) -> SemanticPromptRedraw
 pub fn StreamTerminalBridgeState::tabstop(Self, UInt16) -> Bool
+pub fn StreamTerminalBridgeState::title(Self) -> String?
 
 pub(all) enum Style {
   Mode2048

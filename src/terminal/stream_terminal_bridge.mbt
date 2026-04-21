@@ -15,8 +15,13 @@ struct StreamTerminalBridgeState {
   kitty_keyboard : KittyKeyboardState
   tabstops : TerminalTabstopsState
   saved_cursor : ScreenSavedCursorState
+  hyperlink : ScreenHyperlinkState
+  semantic : ScreenSemanticState
+  metadata : TerminalMetadataState
+  grid : ScreenGridState
   mut charset : ScreenCharsetState
   mut current_style : CellStyle
+  mut previous_char : UInt?
   mut mouse_event : MouseEvent
   mut mouse_format : MouseFormat
   mut palette_dirty : Bool
@@ -34,8 +39,13 @@ pub fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
     kitty_keyboard: KittyKeyboardState::new(),
     tabstops: TerminalTabstopsState::new(DefaultColumns),
     saved_cursor: ScreenSavedCursorState::new(),
+    hyperlink: ScreenHyperlinkState::new(),
+    semantic: ScreenSemanticState::new(),
+    metadata: TerminalMetadataState::new(),
+    grid: ScreenGridState::new(DefaultRows, DefaultColumns),
     charset: ScreenCharsetState::new(),
     current_style: CellStyle::new(),
+    previous_char: None,
     mouse_event: MouseEvent::None,
     mouse_format: MouseFormat::X10,
     palette_dirty: false,
@@ -221,11 +231,144 @@ pub fn StreamTerminalBridgeState::has_saved_cursor(
 }
 
 ///|
+pub fn StreamTerminalBridgeState::current_style_snapshot(
+  self : StreamTerminalBridgeState,
+) -> CellStyle {
+  copy_cell_style(self.current_style)
+}
+
+///|
+pub fn StreamTerminalBridgeState::semantic_click_mode(
+  self : StreamTerminalBridgeState,
+) -> SemanticClickMode {
+  self.semantic.click()
+}
+
+///|
+pub fn StreamTerminalBridgeState::semantic_cursor_content(
+  self : StreamTerminalBridgeState,
+) -> SemanticContent {
+  self.semantic.cursor_content()
+}
+
+///|
+pub fn StreamTerminalBridgeState::semantic_cursor_content_clear_eol(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.semantic.cursor_content_clear_eol()
+}
+
+///|
+pub fn StreamTerminalBridgeState::semantic_row_prompt(
+  self : StreamTerminalBridgeState,
+) -> RowSemanticPrompt {
+  self.semantic.row_prompt()
+}
+
+///|
+pub fn StreamTerminalBridgeState::title(
+  self : StreamTerminalBridgeState,
+) -> String? {
+  self.metadata.title()
+}
+
+///|
+pub fn StreamTerminalBridgeState::shell_redraws_prompt(
+  self : StreamTerminalBridgeState,
+) -> SemanticPromptRedraw {
+  self.metadata.shell_redraws_prompt()
+}
+
+///|
+pub fn StreamTerminalBridgeState::hyperlink_active(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.hyperlink.active()
+}
+
+///|
+pub fn StreamTerminalBridgeState::hyperlink_uri(
+  self : StreamTerminalBridgeState,
+) -> String? {
+  self.hyperlink.uri()
+}
+
+///|
+pub fn StreamTerminalBridgeState::hyperlink_explicit_id(
+  self : StreamTerminalBridgeState,
+) -> String? {
+  self.hyperlink.explicit_id()
+}
+
+///|
+pub fn StreamTerminalBridgeState::hyperlink_implicit_id(
+  self : StreamTerminalBridgeState,
+) -> Int? {
+  self.hyperlink.implicit_id()
+}
+
+///|
+pub fn StreamTerminalBridgeState::screen_row_snapshot(
+  self : StreamTerminalBridgeState,
+  row : CellCountInt,
+) -> PageRowState? {
+  match self.grid.row(row) {
+    Some(value) => Some(copy_page_row_state(value))
+    None => None
+  }
+}
+
+///|
+pub fn StreamTerminalBridgeState::screen_cell_snapshot(
+  self : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> PageCellState? {
+  match self.grid.cell(row, col) {
+    Some(value) => Some(copy_page_cell_state(value))
+    None => None
+  }
+}
+
+///|
 pub fn StreamTerminalBridgeState::apply(
   self : StreamTerminalBridgeState,
   action : StreamAction,
 ) -> Bool {
   match action {
+    StreamPrint(codepoint) => {
+      self.print(codepoint)
+      true
+    }
+    StreamPrintRepeat(count) => {
+      self.print_repeat(count)
+      true
+    }
+    StreamBackspace => {
+      self.cursor_left(CursorMovement(1))
+      true
+    }
+    StreamCarriageReturn => {
+      self.carriage_return()
+      true
+    }
+    StreamLinefeed => {
+      self.linefeed()
+      true
+    }
+    StreamIndex => {
+      self.index()
+      true
+    }
+    StreamNextLine => {
+      self.index()
+      self.carriage_return()
+      true
+    }
+    StreamReverseIndex => {
+      self.reverse_index()
+      true
+    }
     StreamProtectedModeOff => {
       self.protected_state.set(ProtectedMode::Off)
       true
@@ -248,6 +391,10 @@ pub fn StreamTerminalBridgeState::apply(
     }
     StreamColorOperation(command) => {
       self.apply_color_operation(command)
+      true
+    }
+    StreamKittyColorReport(command) => {
+      self.apply_kitty_color_report(command)
       true
     }
     StreamInvokeCharset(charset) => {
@@ -349,6 +496,10 @@ pub fn StreamTerminalBridgeState::apply(
       )
       true
     }
+    StreamSetAttribute(attribute) => {
+      self.current_style.apply_attribute(attribute)
+      true
+    }
     StreamTabSet => {
       self.tabstops.set(self.cursor.x())
       true
@@ -411,6 +562,151 @@ pub fn StreamTerminalBridgeState::apply(
       self.input_flags.set_mouse_shift_capture(enabled)
       true
     }
+    StreamEraseDisplayBelow(protected_req) => {
+      self.grid.erase_display(
+        self.cursor,
+        self.current_style,
+        ScreenEraseDisplayMode::Below,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseDisplayAbove(protected_req) => {
+      self.grid.erase_display(
+        self.cursor,
+        self.current_style,
+        ScreenEraseDisplayMode::Above,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseDisplayComplete(protected_req) => {
+      self.grid.erase_display(
+        self.cursor,
+        self.current_style,
+        ScreenEraseDisplayMode::Complete,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseDisplayScrollback(protected_req) => {
+      self.grid.erase_display(
+        self.cursor,
+        self.current_style,
+        ScreenEraseDisplayMode::Scrollback,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseDisplayScrollComplete(protected_req) => {
+      self.grid.erase_display(
+        self.cursor,
+        self.current_style,
+        ScreenEraseDisplayMode::ScrollComplete,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseLineRight(protected_req) => {
+      self.grid.erase_line(
+        self.cursor,
+        self.current_style,
+        ScreenEraseLineMode::Right,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseLineLeft(protected_req) => {
+      self.grid.erase_line(
+        self.cursor,
+        self.current_style,
+        ScreenEraseLineMode::Left,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseLineComplete(protected_req) => {
+      self.grid.erase_line(
+        self.cursor,
+        self.current_style,
+        ScreenEraseLineMode::Complete,
+        self.protected_state.mode(),
+        protected_req,
+      )
+      true
+    }
+    StreamEraseLineRightUnlessPendingWrap(protected_req) => {
+      if !self.cursor.pending_wrap() {
+        self.grid.erase_line(
+          self.cursor,
+          self.current_style,
+          ScreenEraseLineMode::Right,
+          self.protected_state.mode(),
+          protected_req,
+        )
+      }
+      true
+    }
+    StreamDeleteChars(count) => {
+      self.grid.delete_chars(self.cursor, self.current_style, count)
+      true
+    }
+    StreamEraseChars(count) => {
+      self.grid.erase_chars(
+        self.cursor,
+        self.current_style,
+        self.protected_state.mode(),
+        count,
+      )
+      true
+    }
+    StreamInsertLines(count) => {
+      self.grid.insert_lines(self.cursor, self.current_style, count)
+      true
+    }
+    StreamInsertBlanks(count) => {
+      self.grid.insert_blanks(self.cursor, self.current_style, count)
+      true
+    }
+    StreamDeleteLines(count) => {
+      self.grid.delete_lines(self.cursor, self.current_style, count)
+      true
+    }
+    StreamScrollUp(count) => {
+      self.grid.scroll_up(self.cursor, self.current_style, count)
+      true
+    }
+    StreamScrollDown(count) => {
+      self.grid.scroll_down(self.cursor, self.current_style, count)
+      true
+    }
+    StreamDecaln => {
+      self.decaln()
+      true
+    }
+    StreamFullReset => {
+      self.full_reset()
+      true
+    }
+    StreamStartHyperlink(link) => {
+      self.hyperlink.start(link.uri(), link.id())
+      true
+    }
+    StreamEndHyperlink => {
+      self.hyperlink.end()
+      true
+    }
+    StreamSemanticPrompt(prompt) => {
+      self.apply_semantic_prompt(prompt)
+      true
+    }
     StreamKittyKeyboardPush(flags) => {
       self.kitty_keyboard.push(flags)
       true
@@ -460,6 +756,278 @@ fn StreamTerminalBridgeState::restore_cursor(
   self.protected_state.set_cursor_protected(saved.cursor_protected())
   self.cursor.set_cursor_pos(saved.y() + 1, saved.x() + 1, false)
   self.cursor.set_pending_wrap(saved.pending_wrap())
+}
+
+///|
+fn StreamTerminalBridgeState::print(
+  self : StreamTerminalBridgeState,
+  codepoint : UInt,
+) -> Unit {
+  if self.display_state.status_display() != StatusDisplay::Main {
+    return
+  }
+
+  let width = codepoint_width(codepoint)
+  if width <= 0 {
+    return
+  }
+
+  self.grid.print(
+    self.cursor,
+    codepoint,
+    width,
+    self.current_style,
+    self.protected_state.cursor_protected(),
+    self.semantic.cursor_content(),
+    self.semantic.row_prompt(),
+    self.active_hyperlink(),
+    self.modes.get(Mode::Wraparound),
+    self.modes.get(Mode::Insert),
+  )
+  self.previous_char = Some(codepoint)
+}
+
+///|
+fn StreamTerminalBridgeState::print_repeat(
+  self : StreamTerminalBridgeState,
+  count : UInt16,
+) -> Unit {
+  if self.display_state.status_display() != StatusDisplay::Main {
+    return
+  }
+
+  match self.previous_char {
+    Some(codepoint) => {
+      let width = codepoint_width(codepoint)
+      if width <= 0 {
+        return
+      }
+
+      self.grid.print_repeat(
+        self.cursor,
+        codepoint,
+        width,
+        self.current_style,
+        self.protected_state.cursor_protected(),
+        self.semantic.cursor_content(),
+        self.semantic.row_prompt(),
+        self.active_hyperlink(),
+        self.modes.get(Mode::Wraparound),
+        self.modes.get(Mode::Insert),
+        count,
+      )
+      self.previous_char = Some(codepoint)
+    }
+    None => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::carriage_return(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.cursor.set_pending_wrap(false)
+  let target = if self.modes.get(Mode::Origin) {
+    self.cursor.left_margin().to_int()
+  } else if self.cursor.x().to_int() >= self.cursor.left_margin().to_int() {
+    self.cursor.left_margin().to_int()
+  } else {
+    0
+  }
+  self.cursor.x = target.to_uint16()
+}
+
+///|
+fn StreamTerminalBridgeState::linefeed(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.index()
+  if self.modes.get(Mode::Linefeed) {
+    self.carriage_return()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::index(self : StreamTerminalBridgeState) -> Unit {
+  self.cursor.set_pending_wrap(false)
+  if self.cursor_outside_scroll_region() {
+    if self.cursor.y().to_int() < DefaultRows.to_int() - 1 {
+      self.cursor.y = self.cursor.y() + 1
+    }
+  } else {
+    self.grid.index(self.cursor, self.current_style)
+  }
+  self.apply_semantic_after_newline()
+}
+
+///|
+fn StreamTerminalBridgeState::reverse_index(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  if self.cursor.y() != self.cursor.top_margin() ||
+    self.cursor.x().to_int() < self.cursor.left_margin().to_int() ||
+    self.cursor.x().to_int() > self.cursor.right_margin().to_int() {
+    self.cursor_up(CursorMovement(1))
+    return
+  }
+
+  self.grid.scroll_down(self.cursor, self.current_style, 1)
+}
+
+///|
+fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
+  let style = CellStyle::new()
+  style.fg_color = self.current_style.fg_color
+  style.bg_color = self.current_style.bg_color
+  self.current_style = copy_cell_style(style)
+  self.modes.set(Mode::Origin, false)
+  self.cursor.full_reset()
+  self.grid.decaln(self.current_style)
+  self.cursor.set_cursor_pos(1, 1, false)
+}
+
+///|
+fn StreamTerminalBridgeState::full_reset(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.grid.full_reset()
+  self.protected_state.reset()
+  self.display_state.full_reset()
+  self.modes.reset()
+  self.cursor.full_reset()
+  self.input_flags.full_reset()
+  self.kitty_keyboard.reset()
+  self.tabstops.reset(8)
+  self.saved_cursor.reset()
+  self.hyperlink.full_reset()
+  self.semantic.full_reset()
+  self.metadata.full_reset()
+  self.charset.reset()
+  self.current_style.reset()
+  self.previous_char = None
+  self.mouse_event = MouseEvent::None
+  self.mouse_format = MouseFormat::X10
+  self.palette_dirty = false
+}
+
+///|
+fn StreamTerminalBridgeState::apply_semantic_prompt(
+  self : StreamTerminalBridgeState,
+  prompt : SemanticPrompt,
+) -> Unit {
+  match prompt.action() {
+    FreshLine => self.semantic_prompt_fresh_line()
+    FreshLineNewPrompt => {
+      self.semantic_prompt_fresh_line()
+      self.semantic.apply_fresh_line_new_prompt(prompt)
+      match prompt.redraw() {
+        Some(value) => self.metadata.set_shell_redraws_prompt(value)
+        None => ()
+      }
+      self.sync_current_row_prompt()
+    }
+    NewCommand => {
+      self.semantic_prompt_fresh_line()
+      self.semantic.apply_fresh_line_new_prompt(prompt)
+      match prompt.redraw() {
+        Some(value) => self.metadata.set_shell_redraws_prompt(value)
+        None => ()
+      }
+      self.sync_current_row_prompt()
+    }
+    PromptStart => {
+      self.semantic.apply_prompt_start(prompt)
+      self.sync_current_row_prompt()
+    }
+    EndPromptStartInput => self.semantic.start_input(false)
+    EndPromptStartInputTerminateEol => self.semantic.start_input(true)
+    EndInputStartOutput => {
+      self.semantic.set_output()
+      if self.cursor.x() == 0 {
+        match self.grid.row(self.cursor.y()) {
+          Some(row) => row.set_semantic_prompt(RowSemanticPrompt::None)
+          None => ()
+        }
+      }
+    }
+    EndCommand => self.semantic.set_output()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::semantic_prompt_fresh_line(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  let left_margin = if self.cursor.x().to_int() <
+    self.cursor.left_margin().to_int() {
+    0
+  } else {
+    self.cursor.left_margin().to_int()
+  }
+  if self.cursor.x().to_int() == left_margin {
+    return
+  }
+
+  self.carriage_return()
+  self.index()
+}
+
+///|
+fn StreamTerminalBridgeState::sync_current_row_prompt(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  match self.grid.row(self.cursor.y()) {
+    Some(row) => row.set_semantic_prompt(self.semantic.row_prompt())
+    None => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::apply_semantic_after_newline(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  if self.semantic.cursor_content() == SemanticContent::Output {
+    return
+  }
+
+  if self.semantic.cursor_content_clear_eol() {
+    self.semantic.set_output()
+    return
+  }
+
+  self.semantic.row_prompt = RowSemanticPrompt::PromptContinuation
+  match self.grid.row(self.cursor.y()) {
+    Some(row) => row.set_semantic_prompt(RowSemanticPrompt::PromptContinuation)
+    None => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_outside_scroll_region(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.cursor.y().to_int() < self.cursor.top_margin().to_int() ||
+  self.cursor.y().to_int() > self.cursor.bottom_margin().to_int() ||
+  self.cursor.x().to_int() < self.cursor.left_margin().to_int() ||
+  self.cursor.x().to_int() > self.cursor.right_margin().to_int()
+}
+
+///|
+fn StreamTerminalBridgeState::active_hyperlink(
+  self : StreamTerminalBridgeState,
+) -> CellHyperlink? {
+  match self.hyperlink.uri() {
+    Some(uri) =>
+      match self.hyperlink.explicit_id() {
+        Some(id) => Some(CellHyperlink::explicit(uri, id))
+        None =>
+          match self.hyperlink.implicit_id() {
+            Some(id) => Some(CellHyperlink::implicit(uri, id))
+            None => None
+          }
+      }
+    None => None
+  }
 }
 
 ///|
@@ -672,22 +1240,98 @@ fn StreamTerminalBridgeState::cursor_left(
   self : StreamTerminalBridgeState,
   movement : CursorMovement,
 ) -> Unit {
-  // Reverse-wrap needs row soft-wrap state from the screen model, so this
-  // bridge slice keeps the non-wrap clamp behavior only.
-  self.cursor.set_pending_wrap(false)
-  let x = self.cursor.x().to_int()
-  let left_limit = if self.modes.get(Mode::Origin) {
-    self.cursor.left_margin().to_int()
+  let wrap_mode = if !self.modes.get(Mode::Wraparound) {
+    0
+  } else if self.modes.get(Mode::ReverseWrapExtended) {
+    2
+  } else if self.modes.get(Mode::ReverseWrap) {
+    1
   } else {
     0
   }
-  let max = if x >= left_limit { x - left_limit } else { x }
-  let count = bounded_count(movement_count_int(movement), max)
-  self.cursor.set_cursor_pos(
-    self.cursor.y() + 1,
-    (x - count + 1).to_uint16(),
-    false,
-  )
+
+  let mut count = movement_count_int(movement)
+  if wrap_mode == 0 {
+    let x = self.cursor.x().to_int()
+    let left_limit = if self.modes.get(Mode::Origin) {
+      self.cursor.left_margin().to_int()
+    } else {
+      0
+    }
+    let max = if x >= left_limit { x - left_limit } else { x }
+    self.cursor.set_pending_wrap(false)
+    self.cursor.set_cursor_pos(
+      self.cursor.y() + 1,
+      (x - bounded_count(count, max) + 1).to_uint16(),
+      false,
+    )
+    return
+  }
+
+  if self.cursor.pending_wrap() {
+    count -= 1
+    self.cursor.set_pending_wrap(false)
+  }
+  if count <= 0 {
+    return
+  }
+
+  let top = self.cursor.top_margin().to_int()
+  let bottom = self.cursor.bottom_margin().to_int()
+  let right_margin = self.cursor.right_margin().to_int()
+  let left_margin = if self.cursor.x().to_int() <
+    self.cursor.left_margin().to_int() {
+    0
+  } else {
+    self.cursor.left_margin().to_int()
+  }
+
+  if self.cursor.x().to_int() == left_margin &&
+    wrap_mode == 1 &&
+    self.cursor.y().to_int() <= top {
+    self.cursor.x = left_margin.to_uint16()
+    self.cursor.y = top.to_uint16()
+    return
+  }
+
+  while true {
+    let max = self.cursor.x().to_int() - left_margin
+    let amount = min_int(max, count)
+    count -= amount
+    self.cursor.set_cursor_pos(
+      self.cursor.y() + 1,
+      (self.cursor.x().to_int() - amount + 1).to_uint16(),
+      false,
+    )
+    if count == 0 {
+      return
+    }
+
+    if self.cursor.y().to_int() == top {
+      if wrap_mode != 2 {
+        return
+      }
+      self.cursor.x = right_margin.to_uint16()
+      self.cursor.y = bottom.to_uint16()
+      count -= 1
+      continue
+    }
+
+    if self.cursor.y().to_int() == 0 {
+      return
+    }
+
+    if wrap_mode != 2 {
+      match self.grid.row(self.cursor.y() - 1) {
+        Some(prev_row) => if !prev_row.wrap() { return }
+        None => return
+      }
+    }
+
+    self.cursor.x = right_margin.to_uint16()
+    self.cursor.y = self.cursor.y() - 1
+    count -= 1
+  }
 }
 
 ///|
@@ -710,6 +1354,54 @@ fn StreamTerminalBridgeState::apply_color_operation(
         if self.colors.has_palette_changes() {
           self.colors.reset_palette()
           self.palette_dirty = true
+        }
+    }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::apply_kitty_color_report(
+  self : StreamTerminalBridgeState,
+  command : KittyColorOsc,
+) -> Unit {
+  for request in command.requests() {
+    match request {
+      KittyQuery(_) => ()
+      KittySet(value) =>
+        match value.key() {
+          KittyPalette(index) => {
+            self.colors.set_palette_color(index, value.color())
+            self.palette_dirty = true
+          }
+          KittySpecial(special) =>
+            match special {
+              KittyForeground => self.colors.set_foreground(value.color())
+              KittyBackground => self.colors.set_background(value.color())
+              KittyCursor => self.colors.set_cursor(value.color())
+              KittySelectionForeground
+              | KittySelectionBackground
+              | KittyCursorText
+              | KittyVisualBell
+              | KittySecondTransparentBackground => ()
+            }
+        }
+      KittyReset(key) =>
+        match key {
+          KittyPalette(index) => {
+            self.colors.reset_palette_color(index)
+            self.palette_dirty = true
+          }
+          KittySpecial(special) =>
+            match special {
+              KittyForeground => self.colors.reset_foreground()
+              KittyBackground => self.colors.reset_background()
+              KittyCursor => self.colors.reset_cursor()
+              KittySelectionForeground
+              | KittySelectionBackground
+              | KittyCursorText
+              | KittyVisualBell
+              | KittySecondTransparentBackground => ()
+            }
         }
     }
   }
@@ -800,3 +1492,475 @@ fn saturated_request(value : Int) -> CellCountInt {
     value.to_uint16()
   }
 }
+
+///|
+fn codepoint_width(codepoint : UInt) -> Int {
+  if codepoint == 0U || is_zero_width(codepoint) {
+    0
+  } else if is_wide_codepoint(codepoint) {
+    2
+  } else {
+    1
+  }
+}
+
+///|
+fn is_zero_width(codepoint : UInt) -> Bool {
+  codepoint_in_range(codepoint, 0x0300U, 0x036FU) ||
+  codepoint_in_range(codepoint, 0x0483U, 0x0489U) ||
+  codepoint_in_range(codepoint, 0x0591U, 0x05BDU) ||
+  codepoint_in_range(codepoint, 0x05BFU, 0x05BFU) ||
+  codepoint_in_range(codepoint, 0x05C1U, 0x05C2U) ||
+  codepoint_in_range(codepoint, 0x05C4U, 0x05C5U) ||
+  codepoint_in_range(codepoint, 0x0610U, 0x061AU) ||
+  codepoint_in_range(codepoint, 0x064BU, 0x065FU) ||
+  codepoint_in_range(codepoint, 0x0670U, 0x0670U) ||
+  codepoint_in_range(codepoint, 0x06D6U, 0x06DCU) ||
+  codepoint_in_range(codepoint, 0x06DFU, 0x06E4U) ||
+  codepoint_in_range(codepoint, 0x06E7U, 0x06E8U) ||
+  codepoint_in_range(codepoint, 0x06EAU, 0x06EDU) ||
+  codepoint_in_range(codepoint, 0x0711U, 0x0711U) ||
+  codepoint_in_range(codepoint, 0x0730U, 0x074AU) ||
+  codepoint_in_range(codepoint, 0x07A6U, 0x07B0U) ||
+  codepoint_in_range(codepoint, 0x07EBU, 0x07F3U) ||
+  codepoint_in_range(codepoint, 0x0816U, 0x0819U) ||
+  codepoint_in_range(codepoint, 0x081BU, 0x0823U) ||
+  codepoint_in_range(codepoint, 0x0825U, 0x0827U) ||
+  codepoint_in_range(codepoint, 0x0829U, 0x082DU) ||
+  codepoint_in_range(codepoint, 0x0859U, 0x085BU) ||
+  codepoint_in_range(codepoint, 0x08D3U, 0x0902U) ||
+  codepoint_in_range(codepoint, 0x093AU, 0x093AU) ||
+  codepoint_in_range(codepoint, 0x093CU, 0x093CU) ||
+  codepoint_in_range(codepoint, 0x0941U, 0x0948U) ||
+  codepoint_in_range(codepoint, 0x094DU, 0x094DU) ||
+  codepoint_in_range(codepoint, 0x0951U, 0x0957U) ||
+  codepoint_in_range(codepoint, 0x0962U, 0x0963U) ||
+  codepoint_in_range(codepoint, 0x0981U, 0x0981U) ||
+  codepoint_in_range(codepoint, 0x09BCU, 0x09BCU) ||
+  codepoint_in_range(codepoint, 0x09C1U, 0x09C4U) ||
+  codepoint_in_range(codepoint, 0x09CDU, 0x09CDU) ||
+  codepoint_in_range(codepoint, 0x09E2U, 0x09E3U) ||
+  codepoint_in_range(codepoint, 0x0A01U, 0x0A02U) ||
+  codepoint_in_range(codepoint, 0x0A3CU, 0x0A3CU) ||
+  codepoint_in_range(codepoint, 0x0A41U, 0x0A42U) ||
+  codepoint_in_range(codepoint, 0x0A47U, 0x0A48U) ||
+  codepoint_in_range(codepoint, 0x0A4BU, 0x0A4DU) ||
+  codepoint_in_range(codepoint, 0x0A51U, 0x0A51U) ||
+  codepoint_in_range(codepoint, 0x0A70U, 0x0A71U) ||
+  codepoint_in_range(codepoint, 0x0A75U, 0x0A75U) ||
+  codepoint_in_range(codepoint, 0x0A81U, 0x0A82U) ||
+  codepoint_in_range(codepoint, 0x0ABCU, 0x0ABCU) ||
+  codepoint_in_range(codepoint, 0x0AC1U, 0x0AC5U) ||
+  codepoint_in_range(codepoint, 0x0AC7U, 0x0AC8U) ||
+  codepoint_in_range(codepoint, 0x0ACDU, 0x0ACDU) ||
+  codepoint_in_range(codepoint, 0x0AE2U, 0x0AE3U) ||
+  codepoint_in_range(codepoint, 0x0B3CU, 0x0B3CU) ||
+  codepoint_in_range(codepoint, 0x0B3FU, 0x0B3FU) ||
+  codepoint_in_range(codepoint, 0x0B41U, 0x0B44U) ||
+  codepoint_in_range(codepoint, 0x0B4DU, 0x0B4DU) ||
+  codepoint_in_range(codepoint, 0x0B56U, 0x0B56U) ||
+  codepoint_in_range(codepoint, 0x0B62U, 0x0B63U) ||
+  codepoint_in_range(codepoint, 0x0B82U, 0x0B82U) ||
+  codepoint_in_range(codepoint, 0x0BC0U, 0x0BC0U) ||
+  codepoint_in_range(codepoint, 0x0BCDU, 0x0BCDU) ||
+  codepoint_in_range(codepoint, 0x0C00U, 0x0C00U) ||
+  codepoint_in_range(codepoint, 0x0C04U, 0x0C04U) ||
+  codepoint_in_range(codepoint, 0x0C3EU, 0x0C40U) ||
+  codepoint_in_range(codepoint, 0x0C46U, 0x0C48U) ||
+  codepoint_in_range(codepoint, 0x0C4AU, 0x0C4DU) ||
+  codepoint_in_range(codepoint, 0x0C55U, 0x0C56U) ||
+  codepoint_in_range(codepoint, 0x0C62U, 0x0C63U) ||
+  codepoint_in_range(codepoint, 0x0C81U, 0x0C81U) ||
+  codepoint_in_range(codepoint, 0x0CBCU, 0x0CBCU) ||
+  codepoint_in_range(codepoint, 0x0CBFU, 0x0CBFU) ||
+  codepoint_in_range(codepoint, 0x0CC6U, 0x0CC6U) ||
+  codepoint_in_range(codepoint, 0x0CCCU, 0x0CCDU) ||
+  codepoint_in_range(codepoint, 0x0CE2U, 0x0CE3U) ||
+  codepoint_in_range(codepoint, 0x0D00U, 0x0D01U) ||
+  codepoint_in_range(codepoint, 0x0D3BU, 0x0D3CU) ||
+  codepoint_in_range(codepoint, 0x0D41U, 0x0D44U) ||
+  codepoint_in_range(codepoint, 0x0D4DU, 0x0D4DU) ||
+  codepoint_in_range(codepoint, 0x0D62U, 0x0D63U) ||
+  codepoint_in_range(codepoint, 0x0DCAU, 0x0DCAU) ||
+  codepoint_in_range(codepoint, 0x0DD2U, 0x0DD4U) ||
+  codepoint_in_range(codepoint, 0x0DD6U, 0x0DD6U) ||
+  codepoint_in_range(codepoint, 0x0E31U, 0x0E31U) ||
+  codepoint_in_range(codepoint, 0x0E34U, 0x0E3AU) ||
+  codepoint_in_range(codepoint, 0x0E47U, 0x0E4EU) ||
+  codepoint_in_range(codepoint, 0x0EB1U, 0x0EB1U) ||
+  codepoint_in_range(codepoint, 0x0EB4U, 0x0EBCU) ||
+  codepoint_in_range(codepoint, 0x0EC8U, 0x0ECDU) ||
+  codepoint_in_range(codepoint, 0x0F18U, 0x0F19U) ||
+  codepoint_in_range(codepoint, 0x0F35U, 0x0F35U) ||
+  codepoint_in_range(codepoint, 0x0F37U, 0x0F37U) ||
+  codepoint_in_range(codepoint, 0x0F39U, 0x0F39U) ||
+  codepoint_in_range(codepoint, 0x0F71U, 0x0F7EU) ||
+  codepoint_in_range(codepoint, 0x0F80U, 0x0F84U) ||
+  codepoint_in_range(codepoint, 0x0F86U, 0x0F87U) ||
+  codepoint_in_range(codepoint, 0x0F8DU, 0x0F97U) ||
+  codepoint_in_range(codepoint, 0x0F99U, 0x0FBCU) ||
+  codepoint_in_range(codepoint, 0x0FC6U, 0x0FC6U) ||
+  codepoint_in_range(codepoint, 0x102DU, 0x1030U) ||
+  codepoint_in_range(codepoint, 0x1032U, 0x1037U) ||
+  codepoint_in_range(codepoint, 0x1039U, 0x103AU) ||
+  codepoint_in_range(codepoint, 0x103DU, 0x103EU) ||
+  codepoint_in_range(codepoint, 0x1058U, 0x1059U) ||
+  codepoint_in_range(codepoint, 0x105EU, 0x1060U) ||
+  codepoint_in_range(codepoint, 0x1071U, 0x1074U) ||
+  codepoint_in_range(codepoint, 0x1082U, 0x1082U) ||
+  codepoint_in_range(codepoint, 0x1085U, 0x1086U) ||
+  codepoint_in_range(codepoint, 0x108DU, 0x108DU) ||
+  codepoint_in_range(codepoint, 0x109DU, 0x109DU) ||
+  codepoint_in_range(codepoint, 0x135DU, 0x135FU) ||
+  codepoint_in_range(codepoint, 0x1712U, 0x1714U) ||
+  codepoint_in_range(codepoint, 0x1732U, 0x1734U) ||
+  codepoint_in_range(codepoint, 0x1752U, 0x1753U) ||
+  codepoint_in_range(codepoint, 0x1772U, 0x1773U) ||
+  codepoint_in_range(codepoint, 0x17B4U, 0x17B5U) ||
+  codepoint_in_range(codepoint, 0x17B7U, 0x17BDU) ||
+  codepoint_in_range(codepoint, 0x17C6U, 0x17C6U) ||
+  codepoint_in_range(codepoint, 0x17C9U, 0x17D3U) ||
+  codepoint_in_range(codepoint, 0x17DDU, 0x17DDU) ||
+  codepoint_in_range(codepoint, 0x180BU, 0x180FU) ||
+  codepoint_in_range(codepoint, 0x1885U, 0x1886U) ||
+  codepoint_in_range(codepoint, 0x18A9U, 0x18A9U) ||
+  codepoint_in_range(codepoint, 0x1920U, 0x1922U) ||
+  codepoint_in_range(codepoint, 0x1927U, 0x1928U) ||
+  codepoint_in_range(codepoint, 0x1932U, 0x1932U) ||
+  codepoint_in_range(codepoint, 0x1939U, 0x193BU) ||
+  codepoint_in_range(codepoint, 0x1A17U, 0x1A18U) ||
+  codepoint_in_range(codepoint, 0x1A1BU, 0x1A1BU) ||
+  codepoint_in_range(codepoint, 0x1A56U, 0x1A56U) ||
+  codepoint_in_range(codepoint, 0x1A58U, 0x1A5EU) ||
+  codepoint_in_range(codepoint, 0x1A60U, 0x1A60U) ||
+  codepoint_in_range(codepoint, 0x1A62U, 0x1A62U) ||
+  codepoint_in_range(codepoint, 0x1A65U, 0x1A6CU) ||
+  codepoint_in_range(codepoint, 0x1A73U, 0x1A7CU) ||
+  codepoint_in_range(codepoint, 0x1A7FU, 0x1A7FU) ||
+  codepoint_in_range(codepoint, 0x1AB0U, 0x1AC0U) ||
+  codepoint_in_range(codepoint, 0x1B00U, 0x1B03U) ||
+  codepoint_in_range(codepoint, 0x1B34U, 0x1B34U) ||
+  codepoint_in_range(codepoint, 0x1B36U, 0x1B3AU) ||
+  codepoint_in_range(codepoint, 0x1B3CU, 0x1B3CU) ||
+  codepoint_in_range(codepoint, 0x1B42U, 0x1B42U) ||
+  codepoint_in_range(codepoint, 0x1B6BU, 0x1B73U) ||
+  codepoint_in_range(codepoint, 0x1B80U, 0x1B81U) ||
+  codepoint_in_range(codepoint, 0x1BA2U, 0x1BA5U) ||
+  codepoint_in_range(codepoint, 0x1BA8U, 0x1BA9U) ||
+  codepoint_in_range(codepoint, 0x1BABU, 0x1BADU) ||
+  codepoint_in_range(codepoint, 0x1BE6U, 0x1BE6U) ||
+  codepoint_in_range(codepoint, 0x1BE8U, 0x1BE9U) ||
+  codepoint_in_range(codepoint, 0x1BEDU, 0x1BEDU) ||
+  codepoint_in_range(codepoint, 0x1BEFU, 0x1BF1U) ||
+  codepoint_in_range(codepoint, 0x1C2CU, 0x1C33U) ||
+  codepoint_in_range(codepoint, 0x1C36U, 0x1C37U) ||
+  codepoint_in_range(codepoint, 0x1CD0U, 0x1CD2U) ||
+  codepoint_in_range(codepoint, 0x1CD4U, 0x1CE0U) ||
+  codepoint_in_range(codepoint, 0x1CE2U, 0x1CE8U) ||
+  codepoint_in_range(codepoint, 0x1CEDU, 0x1CEDU) ||
+  codepoint_in_range(codepoint, 0x1CF4U, 0x1CF4U) ||
+  codepoint_in_range(codepoint, 0x1CF8U, 0x1CF9U) ||
+  codepoint_in_range(codepoint, 0x1DC0U, 0x1DFFU) ||
+  codepoint_in_range(codepoint, 0x200BU, 0x200FU) ||
+  codepoint_in_range(codepoint, 0x202AU, 0x202EU) ||
+  codepoint_in_range(codepoint, 0x2060U, 0x2064U) ||
+  codepoint_in_range(codepoint, 0x2066U, 0x206FU) ||
+  codepoint_in_range(codepoint, 0x20D0U, 0x20F0U) ||
+  codepoint_in_range(codepoint, 0x2DE0U, 0x2DFFU) ||
+  codepoint_in_range(codepoint, 0x302AU, 0x302FU) ||
+  codepoint_in_range(codepoint, 0x3099U, 0x309AU) ||
+  codepoint_in_range(codepoint, 0xA66FU, 0xA672U) ||
+  codepoint_in_range(codepoint, 0xA674U, 0xA67DU) ||
+  codepoint_in_range(codepoint, 0xA69EU, 0xA69FU) ||
+  codepoint_in_range(codepoint, 0xA6F0U, 0xA6F1U) ||
+  codepoint_in_range(codepoint, 0xA802U, 0xA802U) ||
+  codepoint_in_range(codepoint, 0xA806U, 0xA806U) ||
+  codepoint_in_range(codepoint, 0xA80BU, 0xA80BU) ||
+  codepoint_in_range(codepoint, 0xA825U, 0xA826U) ||
+  codepoint_in_range(codepoint, 0xA8C4U, 0xA8C5U) ||
+  codepoint_in_range(codepoint, 0xA8E0U, 0xA8F1U) ||
+  codepoint_in_range(codepoint, 0xA926U, 0xA92DU) ||
+  codepoint_in_range(codepoint, 0xA947U, 0xA951U) ||
+  codepoint_in_range(codepoint, 0xA980U, 0xA982U) ||
+  codepoint_in_range(codepoint, 0xA9B3U, 0xA9B3U) ||
+  codepoint_in_range(codepoint, 0xA9B6U, 0xA9B9U) ||
+  codepoint_in_range(codepoint, 0xA9BCU, 0xA9BCU) ||
+  codepoint_in_range(codepoint, 0xA9E5U, 0xA9E5U) ||
+  codepoint_in_range(codepoint, 0xAA29U, 0xAA2EU) ||
+  codepoint_in_range(codepoint, 0xAA31U, 0xAA32U) ||
+  codepoint_in_range(codepoint, 0xAA35U, 0xAA36U) ||
+  codepoint_in_range(codepoint, 0xAA43U, 0xAA43U) ||
+  codepoint_in_range(codepoint, 0xAA4CU, 0xAA4CU) ||
+  codepoint_in_range(codepoint, 0xAA7CU, 0xAA7CU) ||
+  codepoint_in_range(codepoint, 0xAAB0U, 0xAAB0U) ||
+  codepoint_in_range(codepoint, 0xAAB2U, 0xAAB4U) ||
+  codepoint_in_range(codepoint, 0xAAB7U, 0xAAB8U) ||
+  codepoint_in_range(codepoint, 0xAABEU, 0xAABFU) ||
+  codepoint_in_range(codepoint, 0xAAC1U, 0xAAC1U) ||
+  codepoint_in_range(codepoint, 0xAAECU, 0xAAEDU) ||
+  codepoint_in_range(codepoint, 0xAAF6U, 0xAAF6U) ||
+  codepoint_in_range(codepoint, 0xABE5U, 0xABE5U) ||
+  codepoint_in_range(codepoint, 0xABE8U, 0xABE8U) ||
+  codepoint_in_range(codepoint, 0xABEDU, 0xABEDU) ||
+  codepoint_in_range(codepoint, 0xFB1EU, 0xFB1EU) ||
+  codepoint_in_range(codepoint, 0xFE00U, 0xFE0FU) ||
+  codepoint_in_range(codepoint, 0xFE20U, 0xFE2FU) ||
+  codepoint_in_range(codepoint, 0xFEFFU, 0xFEFFU) ||
+  codepoint_in_range(codepoint, 0xFFF9U, 0xFFFB) ||
+  codepoint_in_range(codepoint, 0x101FBU, 0x101FBU) ||
+  codepoint_in_range(codepoint, 0x10A01U, 0x10A03U) ||
+  codepoint_in_range(codepoint, 0x10A05U, 0x10A06U) ||
+  codepoint_in_range(codepoint, 0x10A0CU, 0x10A0FU) ||
+  codepoint_in_range(codepoint, 0x10A38U, 0x10A3AU) ||
+  codepoint_in_range(codepoint, 0x10A3FU, 0x10A3FU) ||
+  codepoint_in_range(codepoint, 0x10AE5U, 0x10AE6U) ||
+  codepoint_in_range(codepoint, 0x10D24U, 0x10D27U) ||
+  codepoint_in_range(codepoint, 0x10EABU, 0x10EACU) ||
+  codepoint_in_range(codepoint, 0x10F46U, 0x10F50U) ||
+  codepoint_in_range(codepoint, 0x11001U, 0x11001U) ||
+  codepoint_in_range(codepoint, 0x11038U, 0x11046U) ||
+  codepoint_in_range(codepoint, 0x1107FU, 0x11081U) ||
+  codepoint_in_range(codepoint, 0x110B3U, 0x110B6U) ||
+  codepoint_in_range(codepoint, 0x110B9U, 0x110BAU) ||
+  codepoint_in_range(codepoint, 0x11100U, 0x11102U) ||
+  codepoint_in_range(codepoint, 0x11127U, 0x1112BU) ||
+  codepoint_in_range(codepoint, 0x1112DU, 0x11134U) ||
+  codepoint_in_range(codepoint, 0x11173U, 0x11173U) ||
+  codepoint_in_range(codepoint, 0x11180U, 0x11181U) ||
+  codepoint_in_range(codepoint, 0x111B6U, 0x111BEU) ||
+  codepoint_in_range(codepoint, 0x111C9U, 0x111CCU) ||
+  codepoint_in_range(codepoint, 0x1122FU, 0x11231U) ||
+  codepoint_in_range(codepoint, 0x11234U, 0x11234U) ||
+  codepoint_in_range(codepoint, 0x11236U, 0x11237U) ||
+  codepoint_in_range(codepoint, 0x1123EU, 0x1123EU) ||
+  codepoint_in_range(codepoint, 0x112DFU, 0x112DFU) ||
+  codepoint_in_range(codepoint, 0x112E3U, 0x112EAU) ||
+  codepoint_in_range(codepoint, 0x11300U, 0x11301U) ||
+  codepoint_in_range(codepoint, 0x1133BU, 0x1133CU) ||
+  codepoint_in_range(codepoint, 0x11340U, 0x11340U) ||
+  codepoint_in_range(codepoint, 0x11366U, 0x1136CU) ||
+  codepoint_in_range(codepoint, 0x11370U, 0x11374U) ||
+  codepoint_in_range(codepoint, 0x11438U, 0x1143FU) ||
+  codepoint_in_range(codepoint, 0x11442U, 0x11444U) ||
+  codepoint_in_range(codepoint, 0x11446U, 0x11446U) ||
+  codepoint_in_range(codepoint, 0x1145EU, 0x1145EU) ||
+  codepoint_in_range(codepoint, 0x114B3U, 0x114B8U) ||
+  codepoint_in_range(codepoint, 0x114BAU, 0x114BAU) ||
+  codepoint_in_range(codepoint, 0x114BFU, 0x114C0U) ||
+  codepoint_in_range(codepoint, 0x114C2U, 0x114C3U) ||
+  codepoint_in_range(codepoint, 0x115B2U, 0x115B5U) ||
+  codepoint_in_range(codepoint, 0x115BCU, 0x115BDU) ||
+  codepoint_in_range(codepoint, 0x115BFU, 0x115C0U) ||
+  codepoint_in_range(codepoint, 0x115DCU, 0x115DDU) ||
+  codepoint_in_range(codepoint, 0x11633U, 0x1163AU) ||
+  codepoint_in_range(codepoint, 0x1163DU, 0x1163DU) ||
+  codepoint_in_range(codepoint, 0x1163FU, 0x11640U) ||
+  codepoint_in_range(codepoint, 0x116ABU, 0x116ABU) ||
+  codepoint_in_range(codepoint, 0x116ADU, 0x116ADU) ||
+  codepoint_in_range(codepoint, 0x116B0U, 0x116B5U) ||
+  codepoint_in_range(codepoint, 0x116B7U, 0x116B7U) ||
+  codepoint_in_range(codepoint, 0x1171DU, 0x1171FU) ||
+  codepoint_in_range(codepoint, 0x11722U, 0x11725U) ||
+  codepoint_in_range(codepoint, 0x11727U, 0x1172BU) ||
+  codepoint_in_range(codepoint, 0x1182FU, 0x11837U) ||
+  codepoint_in_range(codepoint, 0x11839U, 0x1183AU) ||
+  codepoint_in_range(codepoint, 0x1193BU, 0x1193CU) ||
+  codepoint_in_range(codepoint, 0x1193EU, 0x1193EU) ||
+  codepoint_in_range(codepoint, 0x11943U, 0x11943U) ||
+  codepoint_in_range(codepoint, 0x119D4U, 0x119D7U) ||
+  codepoint_in_range(codepoint, 0x119DAU, 0x119DBU) ||
+  codepoint_in_range(codepoint, 0x119E0U, 0x119E0U) ||
+  codepoint_in_range(codepoint, 0x11A01U, 0x11A0AU) ||
+  codepoint_in_range(codepoint, 0x11A33U, 0x11A38U) ||
+  codepoint_in_range(codepoint, 0x11A3BU, 0x11A3EU) ||
+  codepoint_in_range(codepoint, 0x11A47U, 0x11A47U) ||
+  codepoint_in_range(codepoint, 0x11A51U, 0x11A56U) ||
+  codepoint_in_range(codepoint, 0x11A59U, 0x11A5BU) ||
+  codepoint_in_range(codepoint, 0x11A8AU, 0x11A96U) ||
+  codepoint_in_range(codepoint, 0x11A98U, 0x11A99U) ||
+  codepoint_in_range(codepoint, 0x11C30U, 0x11C36U) ||
+  codepoint_in_range(codepoint, 0x11C38U, 0x11C3DU) ||
+  codepoint_in_range(codepoint, 0x11C3FU, 0x11C3FU) ||
+  codepoint_in_range(codepoint, 0x11C92U, 0x11CA7U) ||
+  codepoint_in_range(codepoint, 0x11CAAU, 0x11CB0U) ||
+  codepoint_in_range(codepoint, 0x11CB2U, 0x11CB3U) ||
+  codepoint_in_range(codepoint, 0x11CB5U, 0x11CB6U) ||
+  codepoint_in_range(codepoint, 0x11D31U, 0x11D36U) ||
+  codepoint_in_range(codepoint, 0x11D3AU, 0x11D3AU) ||
+  codepoint_in_range(codepoint, 0x11D3CU, 0x11D3DU) ||
+  codepoint_in_range(codepoint, 0x11D3FU, 0x11D45U) ||
+  codepoint_in_range(codepoint, 0x11D47U, 0x11D47U) ||
+  codepoint_in_range(codepoint, 0x11D90U, 0x11D91U) ||
+  codepoint_in_range(codepoint, 0x11D95U, 0x11D95U) ||
+  codepoint_in_range(codepoint, 0x11D97U, 0x11D97U) ||
+  codepoint_in_range(codepoint, 0x11EF3U, 0x11EF4U) ||
+  codepoint_in_range(codepoint, 0x13430U, 0x13438U) ||
+  codepoint_in_range(codepoint, 0x16AF0U, 0x16AF4U) ||
+  codepoint_in_range(codepoint, 0x16B30U, 0x16B36U) ||
+  codepoint_in_range(codepoint, 0x16F4FU, 0x16F4FU) ||
+  codepoint_in_range(codepoint, 0x16F8FU, 0x16F92U) ||
+  codepoint_in_range(codepoint, 0x16FE4U, 0x16FE4U) ||
+  codepoint_in_range(codepoint, 0x1BC9DU, 0x1BC9EU) ||
+  codepoint_in_range(codepoint, 0x1CF00U, 0x1CF2DU) ||
+  codepoint_in_range(codepoint, 0x1D167U, 0x1D169U) ||
+  codepoint_in_range(codepoint, 0x1D17BU, 0x1D182U) ||
+  codepoint_in_range(codepoint, 0x1D185U, 0x1D18BU) ||
+  codepoint_in_range(codepoint, 0x1D1AAU, 0x1D1ADU) ||
+  codepoint_in_range(codepoint, 0x1D242U, 0x1D244U) ||
+  codepoint_in_range(codepoint, 0x1DA00U, 0x1DA36U) ||
+  codepoint_in_range(codepoint, 0x1DA3BU, 0x1DA6CU) ||
+  codepoint_in_range(codepoint, 0x1DA75U, 0x1DA75U) ||
+  codepoint_in_range(codepoint, 0x1DA84U, 0x1DA84U) ||
+  codepoint_in_range(codepoint, 0x1DA9BU, 0x1DA9FU) ||
+  codepoint_in_range(codepoint, 0x1DAA1U, 0x1DAAFU) ||
+  codepoint_in_range(codepoint, 0x1E000U, 0x1E006U) ||
+  codepoint_in_range(codepoint, 0x1E008U, 0x1E018U) ||
+  codepoint_in_range(codepoint, 0x1E01BU, 0x1E021U) ||
+  codepoint_in_range(codepoint, 0x1E023U, 0x1E024U) ||
+  codepoint_in_range(codepoint, 0x1E026U, 0x1E02AU) ||
+  codepoint_in_range(codepoint, 0x1E08FU, 0x1E08FU) ||
+  codepoint_in_range(codepoint, 0x1E130U, 0x1E136U) ||
+  codepoint_in_range(codepoint, 0x1E2AEU, 0x1E2AEU) ||
+  codepoint_in_range(codepoint, 0x1E2ECU, 0x1E2EFU) ||
+  codepoint_in_range(codepoint, 0x1E4ECU, 0x1E4EFU) ||
+  codepoint_in_range(codepoint, 0x1E8D0U, 0x1E8D6U) ||
+  codepoint_in_range(codepoint, 0x1E944U, 0x1E94AU) ||
+  codepoint_in_range(codepoint, 0xE0100U, 0xE01EFU)
+}
+
+///|
+fn is_wide_codepoint(codepoint : UInt) -> Bool {
+  codepoint_in_range(codepoint, 0x1100U, 0x115FU) ||
+  codepoint_in_range(codepoint, 0x231AU, 0x231BU) ||
+  codepoint_in_range(codepoint, 0x2329U, 0x232AU) ||
+  codepoint_in_range(codepoint, 0x23E9U, 0x23ECU) ||
+  codepoint_in_range(codepoint, 0x23F0U, 0x23F0U) ||
+  codepoint_in_range(codepoint, 0x23F3U, 0x23F3U) ||
+  codepoint_in_range(codepoint, 0x25FDU, 0x25FEU) ||
+  codepoint_in_range(codepoint, 0x2614U, 0x2615U) ||
+  codepoint_in_range(codepoint, 0x2648U, 0x2653U) ||
+  codepoint_in_range(codepoint, 0x267FU, 0x267FU) ||
+  codepoint_in_range(codepoint, 0x2693U, 0x2693U) ||
+  codepoint_in_range(codepoint, 0x26A1U, 0x26A1U) ||
+  codepoint_in_range(codepoint, 0x26AAU, 0x26ABU) ||
+  codepoint_in_range(codepoint, 0x26BDU, 0x26BEU) ||
+  codepoint_in_range(codepoint, 0x26C4U, 0x26C5U) ||
+  codepoint_in_range(codepoint, 0x26CEU, 0x26CEU) ||
+  codepoint_in_range(codepoint, 0x26D4U, 0x26D4U) ||
+  codepoint_in_range(codepoint, 0x26EAU, 0x26EAU) ||
+  codepoint_in_range(codepoint, 0x26F2U, 0x26F3U) ||
+  codepoint_in_range(codepoint, 0x26F5U, 0x26F5U) ||
+  codepoint_in_range(codepoint, 0x26FAU, 0x26FAU) ||
+  codepoint_in_range(codepoint, 0x26FDU, 0x26FDU) ||
+  codepoint_in_range(codepoint, 0x2705U, 0x2705U) ||
+  codepoint_in_range(codepoint, 0x270AU, 0x270BU) ||
+  codepoint_in_range(codepoint, 0x2728U, 0x2728U) ||
+  codepoint_in_range(codepoint, 0x274CU, 0x274CU) ||
+  codepoint_in_range(codepoint, 0x274EU, 0x274EU) ||
+  codepoint_in_range(codepoint, 0x2753U, 0x2755U) ||
+  codepoint_in_range(codepoint, 0x2757U, 0x2757U) ||
+  codepoint_in_range(codepoint, 0x2795U, 0x2797U) ||
+  codepoint_in_range(codepoint, 0x27B0U, 0x27B0U) ||
+  codepoint_in_range(codepoint, 0x27BFU, 0x27BFU) ||
+  codepoint_in_range(codepoint, 0x2B1BU, 0x2B1CU) ||
+  codepoint_in_range(codepoint, 0x2B50U, 0x2B50U) ||
+  codepoint_in_range(codepoint, 0x2B55U, 0x2B55U) ||
+  codepoint_in_range(codepoint, 0x2E80U, 0x2FFBU) ||
+  codepoint_in_range(codepoint, 0x3000U, 0x303EU) ||
+  codepoint_in_range(codepoint, 0x3041U, 0x33FFU) ||
+  codepoint_in_range(codepoint, 0x3400U, 0x4DBFU) ||
+  codepoint_in_range(codepoint, 0x4E00U, 0xA4C6U) ||
+  codepoint_in_range(codepoint, 0xA960U, 0xA97CU) ||
+  codepoint_in_range(codepoint, 0xAC00U, 0xD7A3U) ||
+  codepoint_in_range(codepoint, 0xF900U, 0xFAFFU) ||
+  codepoint_in_range(codepoint, 0xFE10U, 0xFE19U) ||
+  codepoint_in_range(codepoint, 0xFE30U, 0xFE6BU) ||
+  codepoint_in_range(codepoint, 0xFF01U, 0xFF60U) ||
+  codepoint_in_range(codepoint, 0xFFE0U, 0xFFE6U) ||
+  codepoint_in_range(codepoint, 0x16FE0U, 0x16FE4U) ||
+  codepoint_in_range(codepoint, 0x17000U, 0x187F7U) ||
+  codepoint_in_range(codepoint, 0x18800U, 0x18CD5U) ||
+  codepoint_in_range(codepoint, 0x18D00U, 0x18D08U) ||
+  codepoint_in_range(codepoint, 0x1AFF0U, 0x1AFF3U) ||
+  codepoint_in_range(codepoint, 0x1AFF5U, 0x1AFFBU) ||
+  codepoint_in_range(codepoint, 0x1AFFDU, 0x1AFFEU) ||
+  codepoint_in_range(codepoint, 0x1B000U, 0x1B122U) ||
+  codepoint_in_range(codepoint, 0x1B132U, 0x1B132U) ||
+  codepoint_in_range(codepoint, 0x1B150U, 0x1B152U) ||
+  codepoint_in_range(codepoint, 0x1B155U, 0x1B155U) ||
+  codepoint_in_range(codepoint, 0x1B164U, 0x1B167U) ||
+  codepoint_in_range(codepoint, 0x1F004U, 0x1F004U) ||
+  codepoint_in_range(codepoint, 0x1F0CFU, 0x1F0CFU) ||
+  codepoint_in_range(codepoint, 0x1F18EU, 0x1F18EU) ||
+  codepoint_in_range(codepoint, 0x1F191U, 0x1F19AU) ||
+  codepoint_in_range(codepoint, 0x1F200U, 0x1F202U) ||
+  codepoint_in_range(codepoint, 0x1F210U, 0x1F23BU) ||
+  codepoint_in_range(codepoint, 0x1F240U, 0x1F248U) ||
+  codepoint_in_range(codepoint, 0x1F250U, 0x1F251U) ||
+  codepoint_in_range(codepoint, 0x1F260U, 0x1F265U) ||
+  codepoint_in_range(codepoint, 0x1F300U, 0x1F6D7U) ||
+  codepoint_in_range(codepoint, 0x1F6DCU, 0x1F6ECU) ||
+  codepoint_in_range(codepoint, 0x1F6F0U, 0x1F6FCU) ||
+  codepoint_in_range(codepoint, 0x1F7E0U, 0x1F7EBU) ||
+  codepoint_in_range(codepoint, 0x1F7F0U, 0x1F7F0U) ||
+  codepoint_in_range(codepoint, 0x1F90CU, 0x1F93AU) ||
+  codepoint_in_range(codepoint, 0x1F93CU, 0x1F945U) ||
+  codepoint_in_range(codepoint, 0x1F947U, 0x1F9FFU) ||
+  codepoint_in_range(codepoint, 0x1FA70U, 0x1FA7CU) ||
+  codepoint_in_range(codepoint, 0x1FA80U, 0x1FA88U) ||
+  codepoint_in_range(codepoint, 0x1FA90U, 0x1FABDU) ||
+  codepoint_in_range(codepoint, 0x1FABFU, 0x1FAC5U) ||
+  codepoint_in_range(codepoint, 0x1FACEU, 0x1FAD9U) ||
+  codepoint_in_range(codepoint, 0x1FADDU, 0x1FAE9U) ||
+  codepoint_in_range(codepoint, 0x1FAF0U, 0x1FAF8U) ||
+  codepoint_in_range(codepoint, 0x20000U, 0x2FFFD) ||
+  codepoint_in_range(codepoint, 0x30000U, 0x3FFFD)
+}
+
+///|
+fn codepoint_in_range(codepoint : UInt, start : UInt, end_ : UInt) -> Bool {
+  codepoint >= start && codepoint <= end_
+}
+
+///|
+fn copy_page_row_state(row : PageRowState) -> PageRowState {
+  {
+    wrap: row.wrap,
+    wrap_continuation: row.wrap_continuation,
+    grapheme: row.grapheme,
+    styled: row.styled,
+    hyperlink: row.hyperlink,
+    semantic_prompt: row.semantic_prompt,
+    kitty_virtual_placeholder: row.kitty_virtual_placeholder,
+    dirty: row.dirty,
+  }
+}
+
+///|
+fn copy_page_cell_state(cell : PageCellState) -> PageCellState {
+  {
+    content_tag: cell.content_tag,
+    codepoint: cell.codepoint,
+    palette_index: cell.palette_index,
+    bg_rgb: cell.bg_rgb,
+    style: copy_cell_style(cell.style),
+    wide: cell.wide,
+    protected_flag: cell.protected_flag,
+    hyperlink: match cell.hyperlink {
+      Some(value) => Some(copy_cell_hyperlink(value))
+      None => None
+    },
+    semantic_content: cell.semantic_content,
+  }
+}
+
+///|
+fn copy_cell_hyperlink(link : CellHyperlink) -> CellHyperlink {
+  {
+    uri: link.uri(),
+    explicit_id: link.explicit_id(),
+    implicit_id: link.implicit_id(),
+  }
+}
+
+///|

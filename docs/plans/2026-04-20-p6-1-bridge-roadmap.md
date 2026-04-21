@@ -66,6 +66,12 @@ Deferred note:
 
 ### P6.1.C Screen mutation bridge
 
+Status:
+
+- done
+- implementation audit:
+  [2026-04-21-p6-1-c-screen-mutation-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-c-screen-mutation-bridge.md)
+
 Depends on:
 
 - `P6.C`
@@ -76,6 +82,16 @@ Scope:
 - erase, insert, delete, and scroll mutations
 - hyperlink and semantic-prompt state application
 - DECALN and full reset integration
+
+Delivered note:
+
+- the bridge now applies printable text, line-motion mutations, erase and
+  scroll mutations, semantic prompt state, hyperlink state, kitty color
+  mutation commands, DECALN, and full reset against the translated terminal
+  model
+- a small coverage residue remains in invariant-only internal branches plus the
+  pre-existing `stream.mbt:222` parser branch; those findings are recorded in
+  the slice audit instead of being carried as open bugs
 
 ### P6.1.D Query and side-effect bridge
 

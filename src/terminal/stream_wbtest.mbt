@@ -16,7 +16,8 @@ impl StreamHandler for WhiteboxRecorder with deinit(_self) {
 ///|
 fn new_whitebox_stream() -> (Stream[WhiteboxRecorder], Array[StreamAction]) {
   let actions : Array[StreamAction] = []
-  (Stream::new({ actions, }), actions)
+  let recorder : WhiteboxRecorder = { actions, }
+  (Stream::new(recorder), actions)
 }
 
 ///|

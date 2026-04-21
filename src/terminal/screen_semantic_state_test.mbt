@@ -16,7 +16,8 @@ impl StreamHandler for ScreenSemanticPromptRecorder with deinit(_self) {
 ///|
 fn expect_screen_semantic_prompt(bytes : Bytes) -> SemanticPrompt raise {
   let actions : Array[StreamAction] = []
-  let stream = Stream::new({ actions, })
+  let recorder : ScreenSemanticPromptRecorder = { actions, }
+  let stream = Stream::new(recorder)
   stream.next_slice(bytes)
   stream.deinit()
 
