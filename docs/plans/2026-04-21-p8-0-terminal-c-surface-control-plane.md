@@ -3,7 +3,7 @@
 ## Goal
 
 Inventory the full upstream `src/terminal/c` wrapper surface, assign every file
-to a MoonBit target module and test location, and lock the dependency clusters
+to a MoonBit owner surface and test location, and lock the dependency clusters
 that determine the follow-on phases.
 
 ## Upstream files
@@ -35,46 +35,49 @@ that determine the follow-on phases.
 - `upstream/ghostty/src/terminal/c/terminal.zig`
 - `upstream/ghostty/src/terminal/c/types.zig`
 
-## MoonBit target files
+## MoonBit owner surfaces
 
 All translated `src/terminal/c` wrappers stay in the existing
-`src/terminal` package. The file naming rule is:
+`src/terminal` package.
 
-- implementation: `src/terminal/c_<name>.mbt`
-- blackbox tests: `src/terminal/c_<name>_test.mbt`
-- whitebox tests only when internal wrapper state needs package-private access:
-  `src/terminal/c_<name>_wbtest.mbt`
+Planning rule:
+
+- prefer existing owner modules when the C wrapper only projects behavior that
+  already belongs there
+- create new files only for coherent new MoonBit owner surfaces
+- use test files near the chosen owner surface rather than forcing a mirrored
+  `c_*.mbt` file layout
 
 Planned file map:
 
-| upstream | MoonBit target | test target | phase |
+| upstream | MoonBit owner surface | test target | phase |
 |---|---|---|---|
 | `allocator.zig` | no standalone module; absorb into MoonBit-owned return semantics | no standalone test file | `P8.A` policy |
-| `build_info.zig` | `src/terminal/c_build_info.mbt` | `src/terminal/c_build_info_test.mbt` | `P9.A` |
-| `result.zig` | `src/terminal/c_result.mbt` | `src/terminal/c_result_test.mbt` | `P9.A` |
-| `color.zig` | `src/terminal/c_color.mbt` | `src/terminal/c_color_test.mbt` | `P9.B` |
-| `focus.zig` | `src/terminal/c_focus.mbt` | `src/terminal/c_focus_test.mbt` | `P9.B` |
-| `modes.zig` | `src/terminal/c_modes.mbt` | `src/terminal/c_modes_test.mbt` | `P9.B` |
-| `paste.zig` | `src/terminal/c_paste.mbt` | `src/terminal/c_paste_test.mbt` | `P9.B` |
-| `size_report.zig` | `src/terminal/c_size_report.mbt` | `src/terminal/c_size_report_test.mbt` | `P9.B` |
-| `style.zig` | `src/terminal/c_style.mbt` | `src/terminal/c_style_test.mbt` | `P9.B` |
-| `selection.zig` | `src/terminal/c_selection.mbt` | `src/terminal/c_selection_test.mbt` | `P9.C` |
-| `row.zig` | `src/terminal/c_row.mbt` | `src/terminal/c_row_test.mbt` | `P9.C` |
-| `cell.zig` | `src/terminal/c_cell.mbt` | `src/terminal/c_cell_test.mbt` | `P9.C` |
-| `osc.zig` | `src/terminal/c_osc.mbt` | `src/terminal/c_osc_test.mbt` | `P10.A` |
-| `sgr.zig` | `src/terminal/c_sgr.mbt` | `src/terminal/c_sgr_test.mbt` | `P10.B` |
-| `terminal.zig` | `src/terminal/c_terminal.mbt` | `src/terminal/c_terminal_test.mbt` | `P11.A`, `P11.C` |
-| `grid_ref.zig` | `src/terminal/c_grid_ref.mbt` | `src/terminal/c_grid_ref_test.mbt` | `P11.B` |
-| `key_event.zig` | `src/terminal/c_key_event.mbt` | `src/terminal/c_key_event_test.mbt` | `P12.A` |
-| `mouse_event.zig` | `src/terminal/c_mouse_event.mbt` | `src/terminal/c_mouse_event_test.mbt` | `P12.A` |
-| `key_encode.zig` | `src/terminal/c_key_encode.mbt` | `src/terminal/c_key_encode_test.mbt` | `P12.B` |
-| `mouse_encode.zig` | `src/terminal/c_mouse_encode.mbt` | `src/terminal/c_mouse_encode_test.mbt` | `P12.B` |
-| `render.zig` | `src/terminal/c_render.mbt` | `src/terminal/c_render_test.mbt` | `P13.A` |
-| `formatter.zig` | `src/terminal/c_formatter.mbt` | `src/terminal/c_formatter_test.mbt` | `P13.B` |
-| `kitty_graphics.zig` | `src/terminal/c_kitty_graphics.mbt` | `src/terminal/c_kitty_graphics_test.mbt` | `P13.C` |
-| `sys.zig` | `src/terminal/c_sys.mbt` | `src/terminal/c_sys_test.mbt` | `P14.A` |
-| `types.zig` | `src/terminal/c_types.mbt` | `src/terminal/c_types_test.mbt` | `P14.B` |
-| `main.zig` | `src/terminal/c_main.mbt` | `src/terminal/c_main_test.mbt` | `P14.C` |
+| `build_info.zig` | new build-info surface in `src/terminal` | build-info surface tests | `P9.A` |
+| `result.zig` | shared result surface in `src/terminal` | result surface tests | `P9.A` |
+| `color.zig` | extend existing `color.mbt` owner module | color surface tests | `P9.B` |
+| `focus.zig` | small focus helper surface in `src/terminal` | focus helper tests | `P9.B` |
+| `modes.zig` | extend existing `modes.mbt` owner module | modes surface tests | `P9.B` |
+| `paste.zig` | small paste helper surface in `src/terminal` | paste helper tests | `P9.B` |
+| `size_report.zig` | extend existing `size_report.mbt` owner module | size-report surface tests | `P9.B` |
+| `style.zig` | extend existing style owner modules | style surface tests | `P9.B` |
+| `selection.zig` | selection view/helper surface | selection surface tests | `P9.C` |
+| `row.zig` | page/row view helper surface | row view tests | `P9.C` |
+| `cell.zig` | page/cell view helper surface | cell view tests | `P9.C` |
+| `osc.zig` | extend existing `osc.mbt` with host-facing helper surface | OSC host-surface tests | `P10.A` |
+| `sgr.zig` | extend existing `sgr.mbt` with host-facing helper surface | SGR host-surface tests | `P10.B` |
+| `terminal.zig` | expand `stream_terminal.mbt` and adjacent terminal helpers | terminal host-surface tests | `P11.A`, `P11.C` |
+| `grid_ref.zig` | grid pin/query helper surface | grid pin/query tests | `P11.B` |
+| `key_event.zig` | input event owner surface | key-event tests | `P12.A` |
+| `mouse_event.zig` | input event owner surface | mouse-event tests | `P12.A` |
+| `key_encode.zig` | input encoder surface | key-encoder tests | `P12.B` |
+| `mouse_encode.zig` | input encoder surface | mouse-encoder tests | `P12.B` |
+| `render.zig` | render-state surface | render-state tests | `P13.A` |
+| `formatter.zig` | formatter surface | formatter tests | `P13.B` |
+| `kitty_graphics.zig` | kitty-graphics surface | kitty-graphics tests | `P13.C` |
+| `sys.zig` | system callback/config surface | system surface tests | `P14.A` |
+| `types.zig` | typed surface registry | surface-registry tests | `P14.B` |
+| `main.zig` | absorbed into package-surface closeout; no standalone module required | package-surface smoke tests | `P14.C` |
 
 ## Dependency notes
 
@@ -340,12 +343,14 @@ ordering or later subplans:
 
 - No new package boundary is introduced for the `src/terminal/c` translation.
   The existing single `src/terminal` package remains the owner of the full
-  terminal surface, and the `c_*.mbt` prefix is the only new naming rule.
+  terminal surface.
+- The inventory now maps upstream wrappers to MoonBit owner surfaces, not to a
+  mandatory one-file-per-wrapper mirror.
 - `allocator.zig` remains in the upstream inventory but is treated as an
   intentionally absorbed helper: MoonBit-owned return values replace the
   exported C allocation/free protocol, so there is no planned `c_allocator`
   module.
 - The follow-on phases now have a concrete denominator: 26 upstream wrapper
-  files, with 25 planned implementation modules plus one intentionally absorbed
+  files, with owner surfaces assigned one-by-one, one intentionally absorbed
   C-only helper, and with `types.zig` and `main.zig` explicitly treated as
-  aggregate-closeout work rather than normal leaf wrappers.
+  closeout work rather than normal leaf wrappers.

@@ -48,6 +48,15 @@ Scope completion note:
 - Do not introduce native FFI just to mimic C enums, structs, callbacks, or
   wrapper layering when MoonBit can express the same behavior directly.
 - Native FFI/export work is out of scope for this plan.
+- In the single `src/terminal` package, do not force a one-wrapper/one-file
+  mirror of `src/terminal/c/*.zig`. Prefer extending existing translated owner
+  modules when the C wrapper is only projecting behavior that already belongs
+  there.
+- Treat `main.zig` as package-surface closeout work, not as a required
+  MoonBit module. File names are organizational only in MoonBit.
+- Where the upstream C surface uses `get/get_multi/set` or output-pointer APIs
+  only for ABI reasons, prefer typed MoonBit methods and return values while
+  keeping the same reachable semantics.
 
 ## Fidelity invariants
 
@@ -521,9 +530,9 @@ port. They should land before terminal/render wrappers start leaning on them.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P9.A | todo | `result.zig`, `build_info.zig` | corresponding MoonBit modules + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
-| P9.B | todo | `color.zig`, `style.zig`, `modes.zig`, `focus.zig`, `size_report.zig`, `paste.zig` | corresponding MoonBit helper modules + tests | P8.A | P9.A, P9.C | `[W]` | stateless encoders, value wrappers, and small helper contracts match upstream data/encoding behavior with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
-| P9.C | todo | `selection.zig`, `row.zig`, `cell.zig` | row/cell/selection query wrappers + tests | P8.A, P9.B | P9.A | `[W]` | row/cell data queries and selection structs match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.A | todo | `result.zig`, `build_info.zig` | shared result/build-info surface + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.B | todo | `color.zig`, `style.zig`, `modes.zig`, `focus.zig`, `size_report.zig`, `paste.zig` | extensions to existing owner modules + tests | P8.A | P9.A, P9.C | `[W]` | stateless encoders, value projections, and small helper contracts land in MoonBit owner modules with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.C | todo | `selection.zig`, `row.zig`, `cell.zig` | page/selection view helpers + tests | P8.A, P9.B | P9.A | `[W]` | row/cell data views and selection structs match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 
 Phase 9 gate:
 
@@ -536,8 +545,8 @@ Status: `todo`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P10.A | todo | `src/terminal/c/osc.zig` | OSC object wrapper + tests | P9.A, P9.B | P10.B | `[W]` | constructor/reset/next/end/data-query parity matches upstream tests and stays green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
-| P10.B | todo | `src/terminal/c/sgr.zig` | SGR object wrapper + tests | P9.A, P9.B | P10.A | `[W]` | parameter feed, next/unknown handling, and attribute query parity match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
+| P10.A | todo | `src/terminal/c/osc.zig` | host-facing OSC helper surface + tests | P9.A, P9.B | P10.B | `[W]` | constructor/reset/next/end/data-query parity matches upstream tests and stays green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
+| P10.B | todo | `src/terminal/c/sgr.zig` | host-facing SGR helper surface + tests | P9.A, P9.B | P10.A | `[W]` | parameter feed, next/unknown handling, and attribute query parity match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
 
 Phase 10 gate:
 
@@ -548,16 +557,16 @@ Phase 10 gate:
 Gate: `[S/P]` after Phase 10  
 Status: `todo`
 
-This phase broadens the current `StreamTerminal` facade toward the richer
-`src/terminal/c/terminal.zig` host surface, while keeping kitty-graphics-only
-fields deferred until Phase 13C.
+This phase broadens the current `StreamTerminal` facade and adjacent terminal
+helpers toward the richer `src/terminal/c/terminal.zig` host surface, while
+keeping kitty-graphics-only fields deferred until Phase 13C.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P11.0 | todo | `terminal.zig`, `grid_ref.zig` contracts | terminal host-surface checklist and write-set split | P10.A, P10.B, P9.C | none | `[E]` | callbacks, query surface, viewport/grid pinning, and graphics deferrals are recorded before worker tasks start | doc review | `[R]` main | `docs` |
-| P11.A | todo | `src/terminal/c/terminal.zig` core | terminal host wrapper core + tests | P11.0, P9.A, P9.B | P11.B, P11.C | main + `[W]` | `new/free/vt_write/set/reset/resize/scroll/mode` core and callback behavior match upstream non-graphics tests in one green task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
-| P11.B | todo | `src/terminal/c/grid_ref.zig` | grid pin/query wrappers + tests | P11.0, P9.C, P11.A | P11.A, P11.C | `[W]` | row/cell/style/hyperlink access from terminal grid refs matches upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
-| P11.C | todo | `src/terminal/c/terminal.zig` query surface | terminal data/multi-get parity + tests | P11.0, P11.A, P9.B, P9.C | P11.B | `[W]` | non-graphics terminal data queries, metadata, scrollback, and default/current color state close with parity tests; kitty graphics fields stay deferred to P13.C | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+| P11.A | todo | `src/terminal/c/terminal.zig` core | `StreamTerminal` surface expansion + tests | P11.0, P9.A, P9.B | P11.B, P11.C | main + `[W]` | `new/free/vt_write/set/reset/resize/scroll/mode` semantics land as MoonBit owner methods and callback behavior matches upstream non-graphics tests in one green task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+| P11.B | todo | `src/terminal/c/grid_ref.zig` | grid pin/query helpers + tests | P11.0, P9.C, P11.A | P11.A, P11.C | `[W]` | row/cell/style/hyperlink access from terminal grid refs matches upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+| P11.C | todo | `src/terminal/c/terminal.zig` query surface | typed terminal query surface + tests | P11.0, P11.A, P9.B, P9.C | P11.B | `[W]` | non-graphics terminal data, metadata, scrollback, and default/current color state close as typed MoonBit queries; kitty graphics fields stay deferred to P13.C | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
 
 Phase 11 gate:
 
@@ -570,8 +579,8 @@ Status: `todo`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P12.A | todo | `key_event.zig`, `mouse_event.zig` | event object wrappers + tests | P9.A | P12.B | `[W]` | create/free/get/set parity for key and mouse events matches upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
-| P12.B | todo | `key_encode.zig`, `mouse_encode.zig` | encoder wrappers + tests | P12.A, P11.A, P9.B | P12.A | `[W]` | encoder option surfaces and terminal-derived defaults match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+| P12.A | todo | `key_event.zig`, `mouse_event.zig` | input event owner types + tests | P9.A | P12.B | `[W]` | create/free/get/set parity for key and mouse events lands as MoonBit owner types with upstream behavior tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+| P12.B | todo | `key_encode.zig`, `mouse_encode.zig` | input encoder surfaces + tests | P12.A, P11.A, P9.B | P12.A | `[W]` | encoder option surfaces and terminal-derived defaults match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
 
 Phase 12 gate:
 
@@ -588,8 +597,8 @@ the terminal host object and input helper layers are stable.
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P13.0 | todo | `render.zig`, `formatter.zig`, `kitty_graphics.zig` contracts | dependency checklist and write-set split | P11.C, P12.B | none | `[E]` | render-state, formatter, selection/grid, and kitty-graphics deps are recorded before worker tasks start | doc review | `[R]` main | `docs` |
-| P13.A | todo | `src/terminal/c/render.zig` | render-state wrapper + tests | P13.0, P11.C | P13.B, P13.C | `[W]` | render snapshots, row iteration, row-cell query/mutation, and dirty-state parity land green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
-| P13.B | todo | `src/terminal/c/formatter.zig` | formatter wrapper + tests | P13.0, P11.B, P9.C | P13.A, P13.C | `[W]` | terminal/screen formatting buffer and allocation paths match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.A | todo | `src/terminal/c/render.zig` | render-state surface + tests | P13.0, P11.C | P13.B, P13.C | `[W]` | render snapshots, row iteration, row-cell query/mutation, and dirty-state parity land green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.B | todo | `src/terminal/c/formatter.zig` | formatter surface + tests | P13.0, P11.B, P9.C | P13.A, P13.C | `[W]` | terminal/screen formatting buffer and allocation paths match upstream tests in one task, using MoonBit-owned results instead of C allocation helpers | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
 | P13.C | todo | `src/terminal/c/kitty_graphics.zig` + remaining `terminal.zig` graphics hooks | graphics wrapper + terminal graphics parity + tests | P13.0, P11.A, P11.B, P11.C | P13.A, P13.B | `[W]` | image/query/placement surface lands green and closes the remaining graphics-dependent terminal fields | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
 
 Phase 13 gate:
@@ -604,8 +613,8 @@ Status: `todo`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P14.A | todo | `src/terminal/c/sys.zig` | system callback/config wrapper + tests | P9.A | P14.B | `[W]` | logging/image-decode callback registry matches upstream contracts with tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
-| P14.B | todo | `src/terminal/c/types.zig` | type-registry JSON + tests | P13.A, P13.B, P13.C, P12.B, P11.C, P9.C | P14.A | `[W]` | translated type metadata reflects the implemented C-surface structs/enums and stays green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
-| P14.C | todo | `src/terminal/c/main.zig` | aggregate c-surface module + smoke tests | P14.A, P14.B | none | main + `[W]` | all translated c-surface wrappers are re-exported consistently and smoke tests stay green | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(c-runtime)` |
+| P14.B | todo | `src/terminal/c/types.zig` | typed surface registry + tests | P13.A, P13.B, P13.C, P12.B, P11.C, P9.C | P14.A | `[W]` | translated metadata reflects the implemented surface and stays green in one task; JSON stays a derived representation if still needed | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
+| P14.C | todo | `src/terminal/c/main.zig` | package-surface closeout + smoke tests | P14.A, P14.B | none | main + `[W]` | the final package API is coherent, intentional, and covered by smoke tests without creating a redundant aggregator module | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(c-runtime)` |
 
 Phase 14 gate:
 

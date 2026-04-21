@@ -64,8 +64,11 @@ mechanics that are no longer part of scope.
 The translation policy for Phases `P9` through `P14` is:
 
 - Stay in the existing `src/terminal` package.
-- Use `c_*.mbt` filenames only as source-organization markers, not as package
-  boundaries.
+- Prefer extending existing translated owner modules over creating `c_*`
+  mirrors when the upstream wrapper only projects behavior that already belongs
+  to those modules.
+- Create new files only when they define a coherent MoonBit owner surface that
+  does not already have a natural home.
 - Preserve upstream wrapper layering and operation families where they encode
   real behavior:
   - `new/free/reset`
@@ -83,6 +86,8 @@ The translation policy for Phases `P9` through `P14` is:
   - `extern struct`, sized-struct, and C-union layout tricks become normal
     MoonBit types unless exact binary layout is itself part of the semantic
     contract being translated
+  - enum-keyed `get/get_multi/set` surfaces become typed methods or typed query
+    helpers when the key dispatch exists only for C ABI ergonomics
 - `allocator.zig` is intentionally absorbed, not translated as a standalone
   module:
   - buffer ownership for functions like `format_alloc` becomes ordinary
@@ -90,8 +95,8 @@ The translation policy for Phases `P9` through `P14` is:
   - there is no planned `c_allocator.mbt`
   - `alloc_alloc` / `alloc_free` are omitted from the planned `c_main` surface
     because they are pure C ABI support, not terminal semantics
-- `main.zig` remains in scope as the aggregate wrapper index, but it aggregates
-  only the pure-MoonBit translated surface, not C ABI shims.
+- `main.zig` remains in scope only as package-surface closeout and export audit;
+  it does not imply a dedicated MoonBit aggregator module.
 - If a later task reveals a truly semantic reason to preserve a C-shaped API
   detail, record that in the task audit before implementation rather than
   silently widening the scope.
