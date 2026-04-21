@@ -28,6 +28,7 @@ Non-goals for now:
 - full PTY/backend/runtime parity beyond what `src/terminal/c` requires
 - renderer/frontend work outside the `src/terminal/c/render.zig` and
   `src/terminal/c/formatter.zig` dependency surface
+- native C-callable ABI/export parity
 - packaging and distribution parity
 
 Scope completion note:
@@ -36,8 +37,6 @@ Scope completion note:
   host facade.
 - Phases 8 through 14 extend that foundation to the full `src/terminal/c`
   semantic surface in MoonBit.
-- Phase 15 is only required if the goal includes a native C-callable ABI in
-  addition to MoonBit surface parity.
 
 ## Implementation target vs ABI target
 
@@ -48,10 +47,7 @@ Scope completion note:
   must record wrapper-specific dependency maps in their own subplans.
 - Do not introduce native FFI just to mimic C enums, structs, callbacks, or
   wrapper layering when MoonBit can express the same behavior directly.
-- A native FFI/export layer is a suffix phase, not a prerequisite. Add it only
-  when we need actual C ABI parity for external callers.
-- If Phase 15 is taken, keep the FFI layer thin: MoonBit remains the canonical
-  implementation and the native export boundary is only an adapter.
+- Native FFI/export work is out of scope for this plan.
 
 ## Fidelity invariants
 
@@ -98,7 +94,7 @@ end in a green state.
 
 ## Dependency graph
 
-`control plane -> package/file mapping -> foundational values -> parser prerequisites -> Parser -> semantic decoders -> stream -> terminal handler -> host bridge -> c-surface control plane -> stateless c helpers -> parser wrappers -> terminal host object -> input events/encoders -> render/formatter/graphics -> sys/types/main -> optional native C ABI`
+`control plane -> package/file mapping -> foundational values -> parser prerequisites -> Parser -> semantic decoders -> stream -> terminal handler -> host bridge -> c-surface control plane -> stateless c helpers -> parser wrappers -> terminal host object -> input events/encoders -> render/formatter/graphics -> sys/types/main`
 
 ## Task template and status legend
 
@@ -608,30 +604,11 @@ Phase 14 gate:
 - Phase 14 completion closes pure-MoonBit parity for the full
   `src/terminal/c` semantic surface
 
-### Phase 15: Optional native C ABI export layer
-
-Gate: `[S]` after Phase 14  
-Status: `todo`
-
-Take this phase only if the repository goal expands from MoonBit translation to
-shipping an actual C-callable ABI backed by the translated implementation.
-
-| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
-|---|---|---|---|---|---|---|---|---|---|---|
-| P15.0 | todo | `src/terminal/c/main.zig` export set + headers | native-export checklist and stub plan | P14.C | none | `[E]` | exported symbol set, ownership rules, callback trampolines, and package/native build plan are recorded before implementation | doc review | `[R]` main | `docs` |
-| P15.A | todo | native C ABI for translated `src/terminal/c` surface | `extern "c"` / native-stub export layer + smoke tests | P15.0 | none | main + `[W]` | agreed symbols are callable from C, the MoonBit implementation stays canonical, and the native export layer remains thin | `moon build --target native && moon test --target native && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-ffi)` |
-
-Phase 15 gate:
-
-- P15.0 and P15.A are `done`
-- Phase 15 is only required when literal C ABI parity is part of the goal
-
 ## Definition of done
 
 The translated terminal surface is ready for review when:
 
 - all phase gates through Phase 14 are `done` for the pure-MoonBit target
-- if native C ABI parity is required, Phase 15 is also `done`
 - every implementation task landed in a green state
 - parser-core, semantic decoders, stream driver, terminal application surface,
   and every wrapper under `src/terminal/c` have MoonBit counterparts
@@ -640,5 +617,3 @@ The translated terminal surface is ready for review when:
   behavior for the agreed scope
 - delegated tasks have both subplans and audit records where required
 - the mainline history remains atomic and phase-by-phase
-- if Phase 15 is taken, the native export layer is thin and tested rather than
-  being the primary implementation
