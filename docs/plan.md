@@ -523,20 +523,26 @@ Phase 8 gate:
 ### Phase 9: Stateless C-surface helpers
 
 Gate: `[P]` after Phase 8  
-Status: `todo`
+Status: `active`
 
 These wrappers are the low-dependency foundation for the broader C-surface
 port. They should land before terminal/render wrappers start leaning on them.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P9.A | todo | `result.zig`, `build_info.zig` | shared result/build-info surface + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.A | done | `result.zig`, `build_info.zig` | shared result/build-info surface + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 | P9.B | todo | `color.zig`, `style.zig`, `modes.zig`, `focus.zig`, `size_report.zig`, `paste.zig` | extensions to existing owner modules + tests | P8.A | P9.A, P9.C | `[W]` | stateless encoders, value projections, and small helper contracts land in MoonBit owner modules with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 | P9.C | todo | `selection.zig`, `row.zig`, `cell.zig` | page/selection view helpers + tests | P8.A, P9.B | P9.A | `[W]` | row/cell data views and selection structs match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 
-Phase 9 gate:
+Phase 9 progress:
 
-- P9.A, P9.B, and P9.C are `done`
+- P9.A is `done`
+- P9.B and P9.C remain `todo`
+
+#### Phase 9 outputs
+
+- Completed Phase 9A audit lives in:
+  [2026-04-21-p9-a-result-and-build-info.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p9-a-result-and-build-info.md)
 
 ### Phase 10: Parser object wrappers
 

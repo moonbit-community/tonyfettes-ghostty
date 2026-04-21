@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn build_info() -> BuildInfo
+
 pub fn c0_from_byte(Byte) -> C0?
 
 pub fn cursor_style_from_int(Int) -> CursorStyle?
@@ -38,6 +40,8 @@ pub fn status_line_type_from_int(UInt16) -> StatusLineType?
 
 pub fn table(Charset) -> ReadOnlyArray[UInt16]
 
+pub fn terminal_result_code_from_int(Int) -> TerminalResultCode?
+
 pub fn terminator_init(Byte?) -> Terminator
 
 pub fn x11_color_lookup(String) -> RGB?
@@ -56,6 +60,22 @@ pub(all) enum ActiveSlot {
   Gl
   Gr
 } derive(Eq, @debug.Debug)
+
+type BuildInfo derive(Eq, @debug.Debug)
+pub fn BuildInfo::kitty_graphics(Self) -> Bool
+pub fn BuildInfo::optimize(Self) -> OptimizeMode
+pub fn BuildInfo::simd(Self) -> Bool
+pub fn BuildInfo::tmux_control_mode(Self) -> Bool
+pub fn BuildInfo::version(Self) -> BuildVersion
+pub fn BuildInfo::version_string(Self) -> String
+
+type BuildVersion derive(Eq, @debug.Debug)
+pub fn BuildVersion::build(Self) -> String?
+pub fn BuildVersion::major(Self) -> UInt
+pub fn BuildVersion::minor(Self) -> UInt
+pub fn BuildVersion::patch(Self) -> UInt
+pub fn BuildVersion::pre(Self) -> String?
+pub fn BuildVersion::string(Self) -> String
 
 pub(all) enum C0 {
   Nul
@@ -666,6 +686,13 @@ pub(all) enum Name {
 pub fn Name::code(Self) -> Byte
 pub fn Name::default_rgb(Self) -> RGB
 
+pub(all) enum OptimizeMode {
+  Debug
+  ReleaseSafe
+  ReleaseSmall
+  ReleaseFast
+} derive(Eq, @debug.Debug)
+
 type OscParserState derive(Eq, @debug.Debug)
 
 pub(all) enum PageCellContentTag {
@@ -1214,6 +1241,15 @@ pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, SemanticPromptRedra
 pub fn TerminalMetadataState::set_title(Self, String) -> Unit
 pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> SemanticPromptRedraw
 pub fn TerminalMetadataState::title(Self) -> String?
+
+pub(all) enum TerminalResultCode {
+  Success
+  OutOfMemory
+  InvalidValue
+  OutOfSpace
+  NoValue
+} derive(Eq, @debug.Debug)
+pub fn TerminalResultCode::code(Self) -> Int
 
 type TerminalTabstopsState derive(Eq, @debug.Debug)
 pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool

@@ -2,3 +2,12 @@ import {
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8" @utf8,
 }
+
+options(
+  targets: {
+    "build_info_debug_test.mbt": [ "debug" ],
+    "build_info_optimize_debug.mbt": [ "debug" ],
+    "build_info_optimize_release.mbt": [ "release" ],
+    "build_info_release_test.mbt": [ "release" ],
+  },
+)
