@@ -731,12 +731,39 @@ pub(all) enum ReportState {
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
 
+type ScreenCharsetState derive(Eq, @debug.Debug)
+pub fn ScreenCharsetState::charset(Self, Slots) -> Charset
+pub fn ScreenCharsetState::configure(Self, Slots, Charset) -> Unit
+pub fn ScreenCharsetState::consume_single_shift(Self) -> Slots?
+pub fn ScreenCharsetState::gl(Self) -> Slots
+pub fn ScreenCharsetState::gr(Self) -> Slots
+pub fn ScreenCharsetState::invoke(Self, ActiveSlot, Slots, Bool) -> Unit
+pub fn ScreenCharsetState::new() -> Self
+pub fn ScreenCharsetState::reset(Self) -> Unit
+pub fn ScreenCharsetState::single_shift(Self) -> Slots?
+
 type ScreenProtectedState derive(Eq, @debug.Debug)
 pub fn ScreenProtectedState::cursor_protected(Self) -> Bool
 pub fn ScreenProtectedState::mode(Self) -> ProtectedMode
 pub fn ScreenProtectedState::new() -> Self
 pub fn ScreenProtectedState::reset(Self) -> Unit
 pub fn ScreenProtectedState::set(Self, ProtectedMode) -> Unit
+
+type ScreenSavedCursor derive(Eq, @debug.Debug)
+pub fn ScreenSavedCursor::charset(Self) -> ScreenCharsetState
+pub fn ScreenSavedCursor::cursor_protected(Self) -> Bool
+pub fn ScreenSavedCursor::origin(Self) -> Bool
+pub fn ScreenSavedCursor::pending_wrap(Self) -> Bool
+pub fn ScreenSavedCursor::style(Self) -> CellStyle
+pub fn ScreenSavedCursor::x(Self) -> UInt16
+pub fn ScreenSavedCursor::y(Self) -> UInt16
+
+type ScreenSavedCursorState derive(Eq, @debug.Debug)
+pub fn ScreenSavedCursorState::has_saved(Self) -> Bool
+pub fn ScreenSavedCursorState::new() -> Self
+pub fn ScreenSavedCursorState::reset(Self) -> Unit
+pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
+pub fn ScreenSavedCursorState::save(Self, TerminalCursorState, CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
 
 type SecondaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn SecondaryDeviceAttributes::default() -> Self
