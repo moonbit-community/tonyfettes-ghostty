@@ -49,7 +49,7 @@ Planned file map:
 
 | upstream | MoonBit target | test target | phase |
 |---|---|---|---|
-| `allocator.zig` | `src/terminal/c_allocator.mbt` | `src/terminal/c_allocator_test.mbt` | `P9.A` |
+| `allocator.zig` | no standalone module; absorb into MoonBit-owned return semantics | no standalone test file | `P8.A` policy |
 | `build_info.zig` | `src/terminal/c_build_info.mbt` | `src/terminal/c_build_info_test.mbt` | `P9.A` |
 | `result.zig` | `src/terminal/c_result.mbt` | `src/terminal/c_result_test.mbt` | `P9.A` |
 | `color.zig` | `src/terminal/c_color.mbt` | `src/terminal/c_color_test.mbt` | `P9.B` |
@@ -85,7 +85,6 @@ The wrapper surface falls into seven dependency clusters.
 Files:
 
 - `result.zig`
-- `allocator.zig`
 - `build_info.zig`
 - `color.zig`
 - `style.zig`
@@ -100,6 +99,9 @@ Characteristics:
 - mostly direct value conversion or encoding helpers
 - establishes shared `Result`, data tags, and small wrapper types used
   downstream
+- `allocator.zig` is intentionally excluded from this cluster as a standalone
+  translation task; its only job is C-side buffer ownership for exported
+  functions such as `format_alloc`
 
 Phase mapping:
 
@@ -324,6 +326,9 @@ ordering or later subplans:
   substrate for `terminal.zig`, `osc.zig`, and `sgr.zig`; the remaining work is
   mostly wrapper breadth, state-query surface, and renderer/input adapter
   breadth.
+- `allocator.zig` should not consume a standalone implementation phase in this
+  pure-MoonBit plan. It is a C caller ownership helper, not a terminal
+  behavior layer.
 - `types.zig` and `main.zig` are aggregate layers and should stay last. Trying
   to land them early would either freeze unstable names or force churn across
   every later wrapper task.
@@ -336,6 +341,11 @@ ordering or later subplans:
 - No new package boundary is introduced for the `src/terminal/c` translation.
   The existing single `src/terminal` package remains the owner of the full
   terminal surface, and the `c_*.mbt` prefix is the only new naming rule.
+- `allocator.zig` remains in the upstream inventory but is treated as an
+  intentionally absorbed helper: MoonBit-owned return values replace the
+  exported C allocation/free protocol, so there is no planned `c_allocator`
+  module.
 - The follow-on phases now have a concrete denominator: 26 upstream wrapper
-  files, mapped one-by-one, with `types.zig` and `main.zig` explicitly treated
-  as aggregate-closeout work rather than normal leaf wrappers.
+  files, with 25 planned implementation modules plus one intentionally absorbed
+  C-only helper, and with `types.zig` and `main.zig` explicitly treated as
+  aggregate-closeout work rather than normal leaf wrappers.

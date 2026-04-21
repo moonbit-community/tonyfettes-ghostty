@@ -487,7 +487,7 @@ Phase 7 gate:
 ### Phase 8: `src/terminal/c` control plane
 
 Gate: `[S]` after Phase 7  
-Status: `active`
+Status: `done`
 
 This phase rebases the denominator from parser-stack-only work to the full
 `src/terminal/c` surface. It is docs-only and must not introduce code or API
@@ -496,17 +496,20 @@ surface.
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P8.0 | done | `src/terminal/c/*.zig` inventory | c-surface file map, dependency clusters, and follow-on subplan boundaries | P7.3 | none | main + `[E]` | every wrapper under `src/terminal/c` is assigned to a phase/lane and cross-package deps are recorded before implementation starts | doc review | `[R]` main | `docs` |
-| P8.A | todo | MoonBit-vs-ABI target decision | FFI/export policy note in this doc and task subplans | P8.0 | none | `[E]` | pure-MoonBit semantic parity is the default target, and the optional native-export suffix phase is explicit and scoped | doc review | `[R]` main | `docs` |
+| P8.A | done | MoonBit target policy for `src/terminal/c` | pure-MoonBit surface policy note in this doc and task subplans | P8.0 | none | `[E]` | pure-MoonBit semantic parity is the default target, and C-only ABI helpers are either absorbed or declared out of scope before implementation starts | doc review | `[R]` main | `docs` |
 
 Phase 8 gate:
 
-- P8.0 is `done`
-- P8.A is `todo`
+- P8.0 and P8.A are `done`
 
 #### Phase 8 outputs
 
 - Phase 8 inventory and dependency mapping live in:
   [2026-04-21-p8-0-terminal-c-surface-control-plane.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p8-0-terminal-c-surface-control-plane.md)
+- Phase 8 target-policy notes live in:
+  [2026-04-21-p8-a-moonbit-surface-target.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p8-a-moonbit-surface-target.md)
+- Phase 8 is complete; `P9.A`, `P9.B`, and `P9.C` are the next available
+  implementation lanes.
 
 ### Phase 9: Stateless C-surface helpers
 
@@ -518,7 +521,7 @@ port. They should land before terminal/render wrappers start leaning on them.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P9.A | todo | `result.zig`, `allocator.zig`, `build_info.zig` | corresponding MoonBit modules + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata and allocator helper semantics match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.A | todo | `result.zig`, `build_info.zig` | corresponding MoonBit modules + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 | P9.B | todo | `color.zig`, `style.zig`, `modes.zig`, `focus.zig`, `size_report.zig`, `paste.zig` | corresponding MoonBit helper modules + tests | P8.A | P9.A, P9.C | `[W]` | stateless encoders, value wrappers, and small helper contracts match upstream data/encoding behavior with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 | P9.C | todo | `selection.zig`, `row.zig`, `cell.zig` | row/cell/selection query wrappers + tests | P8.A, P9.B | P9.A | `[W]` | row/cell data queries and selection structs match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 
