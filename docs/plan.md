@@ -487,7 +487,7 @@ Phase 7 gate:
 ### Phase 8: `src/terminal/c` control plane
 
 Gate: `[S]` after Phase 7  
-Status: `todo`
+Status: `active`
 
 This phase rebases the denominator from parser-stack-only work to the full
 `src/terminal/c` surface. It is docs-only and must not introduce code or API
@@ -495,12 +495,18 @@ surface.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P8.0 | todo | `src/terminal/c/*.zig` inventory | c-surface file map, dependency clusters, and follow-on subplan boundaries | P7.3 | none | main + `[E]` | every wrapper under `src/terminal/c` is assigned to a phase/lane and cross-package deps are recorded before implementation starts | doc review | `[R]` main | `docs` |
+| P8.0 | done | `src/terminal/c/*.zig` inventory | c-surface file map, dependency clusters, and follow-on subplan boundaries | P7.3 | none | main + `[E]` | every wrapper under `src/terminal/c` is assigned to a phase/lane and cross-package deps are recorded before implementation starts | doc review | `[R]` main | `docs` |
 | P8.A | todo | MoonBit-vs-ABI target decision | FFI/export policy note in this doc and task subplans | P8.0 | none | `[E]` | pure-MoonBit semantic parity is the default target, and the optional native-export suffix phase is explicit and scoped | doc review | `[R]` main | `docs` |
 
 Phase 8 gate:
 
-- P8.0 and P8.A are `done`
+- P8.0 is `done`
+- P8.A is `todo`
+
+#### Phase 8 outputs
+
+- Phase 8 inventory and dependency mapping live in:
+  [2026-04-21-p8-0-terminal-c-surface-control-plane.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p8-0-terminal-c-surface-control-plane.md)
 
 ### Phase 9: Stateless C-surface helpers
 
