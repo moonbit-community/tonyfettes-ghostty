@@ -95,6 +95,12 @@ Delivered note:
 
 ### P6.1.D Query and side-effect bridge
 
+Status:
+
+- done
+- implementation audit:
+  [2026-04-21-p6-1-d-query-and-side-effect-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-d-query-and-side-effect-bridge.md)
+
 Depends on:
 
 - `P6.1.A`
@@ -107,6 +113,18 @@ Scope:
 - device attributes and device status responses
 - enquiry, XTWINOPS size reports, and XTVERSION
 - APC/DCS effect paths that remain intentionally no-op for terminal state
+
+Delivered note:
+
+- the bridge now routes host-visible effects through an explicit effects record
+  so PTY writes, bell delivery, title change notifications, and host queries
+  stay outside the terminal state model
+- device attributes, device status, mode reports, ENQ, XTWINOPS, XTVERSION,
+  window title mutation, and kitty-keyboard query actions are all handled
+  directly by the translated bridge
+- clipboard, notification, APC, and DCS pass-through actions are handled as
+  intentional no-op terminal mutations, matching the upstream split between
+  terminal state and host-side side effects
 
 ## Current mapping notes
 

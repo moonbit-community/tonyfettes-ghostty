@@ -1,5 +1,5 @@
 ///|
-test "stream terminal bridge/default state and unsupported action" {
+test "stream terminal bridge/default state and handled bell" {
   let state = StreamTerminalBridgeState::new()
   guard !state.palette_dirty() else {
     fail("expected palette dirty to start false")
@@ -57,8 +57,8 @@ test "stream terminal bridge/default state and unsupported action" {
     fail("expected restore without save to keep defaults")
   }
 
-  guard !state.apply(StreamBell) else {
-    fail("expected unsupported action to return false")
+  guard state.apply(StreamBell) else {
+    fail("expected bell action to be handled")
   }
 }
 
@@ -75,6 +75,56 @@ impl StreamHandler for BridgeStreamRecorder with vt(self, action) {
 ///|
 impl StreamHandler for BridgeStreamRecorder with deinit(_self) {
   ()
+}
+
+///|
+struct BridgeEffectsRecorder {
+  writes : Array[Bytes]
+  mut bell_count : Int
+  mut title_changed_count : Int
+}
+
+///|
+fn BridgeEffectsRecorder::new() -> BridgeEffectsRecorder {
+  { writes: [], bell_count: 0, title_changed_count: 0 }
+}
+
+///|
+fn BridgeEffectsRecorder::write_pty(
+  self : BridgeEffectsRecorder,
+  data : Bytes,
+) -> Unit {
+  self.writes.push(data)
+}
+
+///|
+fn BridgeEffectsRecorder::bell(self : BridgeEffectsRecorder) -> Unit {
+  self.bell_count += 1
+}
+
+///|
+fn BridgeEffectsRecorder::title_changed(self : BridgeEffectsRecorder) -> Unit {
+  self.title_changed_count += 1
+}
+
+///|
+fn expect_effect_write(
+  recorder : BridgeEffectsRecorder,
+  index : Int,
+  expected : Bytes,
+) -> Unit raise {
+  guard recorder.writes[index] == expected else {
+    fail("expected captured PTY write")
+  }
+}
+
+///|
+fn ascii_string(byte : Byte, count : Int) -> String {
+  let buffer = @buffer.new(size_hint=count)
+  for _ in 0..<count {
+    buffer.write_byte(byte)
+  }
+  buffer.to_string()
 }
 
 ///|
@@ -1441,5 +1491,183 @@ test "stream terminal bridge/empty and query color operations are handled withou
   }
   guard !state.palette_dirty() else {
     fail("expected query-only color operation to leave state unchanged")
+  }
+}
+
+///|
+test "stream terminal bridge/applies query responses and callbacks" {
+  let recorder = BridgeEffectsRecorder::new()
+  let attributes = DeviceAttributes::new(
+    PrimaryDeviceAttributes::new(ConformanceLevel::Vt420, [
+      PrimaryDeviceAttributeFeature::AnsiColor,
+      PrimaryDeviceAttributeFeature::Clipboard,
+    ]),
+    SecondaryDeviceAttributes::new(DeviceType::Vt420, 100, 7),
+    TertiaryDeviceAttributes::new(9U),
+  )
+  let effects = StreamTerminalBridgeEffects::new(
+    write_pty=fn(data) { recorder.write_pty(data) },
+    bell=fn() { recorder.bell() },
+    color_scheme=fn() { Some(ColorScheme::Light) },
+    device_attributes=fn() { Some(attributes) },
+    enquiry=fn() { b"ghostty" },
+    size=fn() { Some(Size::new(24, 80, 9, 18)) },
+    title_changed=fn() { recorder.title_changed() },
+    xtversion=fn() { "ghostty 1.2.3" },
+  )
+  let state = StreamTerminalBridgeState::with_effects(effects)
+
+  guard state.apply(StreamBell) else {
+    fail("expected bell callback path to be handled")
+  }
+  guard recorder.bell_count == 1 else { fail("expected bell callback count") }
+
+  guard state.apply(StreamWindowTitle("Hello World")) else {
+    fail("expected window-title action to be handled")
+  }
+  guard state.title() == Some("Hello World") &&
+    recorder.title_changed_count == 1 else {
+    fail("expected title state and callback")
+  }
+
+  guard state.apply(StreamDeviceStatus(DeviceStatusRequest::OperatingStatus)) &&
+    state.apply(StreamCursorPos({ row: 5, col: 10 })) &&
+    state.apply(StreamDeviceStatus(DeviceStatusRequest::CursorPosition)) &&
+    state.apply(StreamTopAndBottomMargin({ top_left: 5, bottom_right: 20 })) &&
+    state.apply(StreamSetMode(Mode::Origin)) &&
+    state.apply(StreamCursorPos({ row: 3, col: 5 })) &&
+    state.apply(StreamDeviceStatus(DeviceStatusRequest::CursorPosition)) &&
+    state.apply(StreamRequestMode(Mode::Wraparound)) &&
+    state.apply(StreamResetMode(Mode::Wraparound)) &&
+    state.apply(StreamRequestMode(Mode::Wraparound)) &&
+    state.apply(StreamRequestModeUnknown(mode_tag(9999, false))) &&
+    state.apply(StreamDeviceAttributes(DeviceAttributeRequest::Primary)) &&
+    state.apply(StreamDeviceAttributes(DeviceAttributeRequest::Secondary)) &&
+    state.apply(StreamDeviceAttributes(DeviceAttributeRequest::Tertiary)) &&
+    state.apply(StreamSizeReport(Csi14t)) &&
+    state.apply(StreamSizeReport(Csi16t)) &&
+    state.apply(StreamSizeReport(Csi18t)) &&
+    state.apply(StreamSizeReport(Csi21t)) &&
+    state.apply(StreamXtversion) &&
+    state.apply(StreamKittyKeyboardPush(KittyKeyboardFlags(1))) &&
+    state.apply(StreamKittyKeyboardQuery) &&
+    state.apply(StreamEnquiry) &&
+    state.apply(StreamDeviceStatus(DeviceStatusRequest::ColorScheme)) else {
+    fail("expected query/effect actions to be handled")
+  }
+
+  guard recorder.writes.length() == 17 else {
+    fail("expected all query/effect writes to be captured")
+  }
+  expect_effect_write(recorder, 0, b"\x1B[0n")
+  expect_effect_write(recorder, 1, b"\x1B[5;10R")
+  expect_effect_write(recorder, 2, b"\x1B[3;5R")
+  expect_effect_write(recorder, 3, b"\x1B[?7;1$y")
+  expect_effect_write(recorder, 4, b"\x1B[?7;2$y")
+  expect_effect_write(recorder, 5, b"\x1B[?9999;0$y")
+  expect_effect_write(recorder, 6, b"\x1B[?64;22;52c")
+  expect_effect_write(recorder, 7, b"\x1B[>41;100;7c")
+  expect_effect_write(recorder, 8, b"\x1BP!|00000009\x1B\\")
+  expect_effect_write(recorder, 9, b"\x1B[4;432;720t")
+  expect_effect_write(recorder, 10, b"\x1B[6;18;9t")
+  expect_effect_write(recorder, 11, b"\x1B[8;24;80t")
+  expect_effect_write(recorder, 12, b"\x1B]lHello World\x1B\\")
+  expect_effect_write(recorder, 13, b"\x1BP>|ghostty 1.2.3\x1B\\")
+  expect_effect_write(recorder, 14, b"\x1B[?1u")
+  expect_effect_write(recorder, 15, b"ghostty")
+  expect_effect_write(recorder, 16, b"\x1B[?997;2n")
+}
+
+///|
+test "stream terminal bridge/covers readonly query branches and truncation" {
+  let recorder = BridgeEffectsRecorder::new()
+  let state = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(
+      write_pty=fn(data) { recorder.write_pty(data) },
+      title_changed=fn() { recorder.title_changed() },
+    ),
+  )
+
+  let long_title = ascii_string(b'x', 1100)
+  guard state.apply(StreamWindowTitle(long_title)) else {
+    fail("expected long window title to be handled")
+  }
+  guard state.title() != Some(long_title) && recorder.title_changed_count == 1 else {
+    fail("expected long title to be truncated to upstream limit")
+  }
+
+  guard state.apply(StreamDeviceAttributes(DeviceAttributeRequest::Primary)) &&
+    state.apply(StreamDeviceStatus(DeviceStatusRequest::ColorScheme)) &&
+    state.apply(StreamSizeReport(Csi14t)) &&
+    state.apply(StreamEnquiry) &&
+    state.apply(StreamXtversion) else {
+    fail("expected readonly query branches to be handled")
+  }
+  guard recorder.writes.length() == 1 else {
+    fail("expected only default xtversion to write")
+  }
+  expect_effect_write(recorder, 0, b"\x1BP>|libghostty\x1B\\")
+
+  let untitled_recorder = BridgeEffectsRecorder::new()
+  let untitled_state = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+      untitled_recorder.write_pty(data)
+    }),
+  )
+  guard untitled_state.apply(StreamSizeReport(Csi16t)) &&
+    untitled_state.apply(StreamSizeReport(Csi18t)) &&
+    untitled_state.apply(StreamSizeReport(Csi21t)) else {
+    fail("expected untitled size-report branches to be handled")
+  }
+  guard untitled_recorder.writes.length() == 1 else {
+    fail("expected only untitled csi-21-t to write")
+  }
+  expect_effect_write(untitled_recorder, 0, b"\x1B]l\x1B\\")
+
+  let dark_recorder = BridgeEffectsRecorder::new()
+  let dark_state = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(
+      write_pty=fn(data) { dark_recorder.write_pty(data) },
+      color_scheme=fn() { Some(ColorScheme::Dark) },
+    ),
+  )
+  guard dark_state.apply(StreamDeviceStatus(DeviceStatusRequest::ColorScheme)) else {
+    fail("expected dark color-scheme branch to be handled")
+  }
+  expect_effect_write(dark_recorder, 0, b"\x1B[?997;1n")
+
+  let overflow_recorder = BridgeEffectsRecorder::new()
+  let overflow_state = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(
+      write_pty=fn(data) { overflow_recorder.write_pty(data) },
+      enquiry=fn() { @utf8.encode(ascii_string(b'e', 256)) },
+      xtversion=fn() { ascii_string(b'v', 257) },
+    ),
+  )
+  guard overflow_state.apply(StreamEnquiry) &&
+    overflow_state.apply(StreamXtversion) else {
+    fail("expected overflow query branches to be handled")
+  }
+  guard overflow_recorder.writes.length() == 0 else {
+    fail("expected oversized enquiry and xtversion to be ignored")
+  }
+}
+
+///|
+test "stream terminal bridge/handles passive effect and passthrough actions" {
+  let state = StreamTerminalBridgeState::new()
+  guard apply_stream_bytes(state, b"\x1B]52;c;?\x07") &&
+    apply_stream_bytes(state, b"\x1B]9;hello world\x07") &&
+    apply_stream_bytes(state, b"\x1B]9;4;3;40\x07") &&
+    apply_stream_bytes(state, b"\x1B]9;9;file:///tmp\x07") &&
+    apply_stream_bytes(state, b"\x1B[22;0t\x1B[22;0;5t\x1B[23;0t\x1B[23;0;5t") &&
+    apply_stream_bytes(state, b"\x1BP1;2+qa\x1B\\z") &&
+    apply_stream_bytes(state, b"\x1B_a\x1B\\z") else {
+    fail("expected passive effect and passthrough actions to be handled")
+  }
+
+  guard expect_bridge_cell(state, 0, 0).codepoint() == b'z'.to_uint() &&
+    expect_bridge_cell(state, 0, 1).codepoint() == b'z'.to_uint() else {
+    fail("expected later printable text to remain functional")
   }
 }

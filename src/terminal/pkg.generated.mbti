@@ -1124,7 +1124,10 @@ pub(all) enum StreamAction {
   StreamApcEnd
 } derive(Eq, @debug.Debug)
 
-type StreamTerminalBridgeState derive(Eq, @debug.Debug)
+type StreamTerminalBridgeEffects
+pub fn StreamTerminalBridgeEffects::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> ColorScheme?, device_attributes? : () -> DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
+
+type StreamTerminalBridgeState
 pub fn StreamTerminalBridgeState::apply(Self, StreamAction) -> Bool
 pub fn StreamTerminalBridgeState::charset(Self, Slots) -> Charset
 pub fn StreamTerminalBridgeState::charset_gl(Self) -> Slots
@@ -1165,6 +1168,7 @@ pub fn StreamTerminalBridgeState::semantic_row_prompt(Self) -> RowSemanticPrompt
 pub fn StreamTerminalBridgeState::shell_redraws_prompt(Self) -> SemanticPromptRedraw
 pub fn StreamTerminalBridgeState::tabstop(Self, UInt16) -> Bool
 pub fn StreamTerminalBridgeState::title(Self) -> String?
+pub fn StreamTerminalBridgeState::with_effects(StreamTerminalBridgeEffects) -> Self
 
 pub(all) enum Style {
   Mode2048

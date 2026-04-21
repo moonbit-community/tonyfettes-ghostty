@@ -5,7 +5,55 @@ const DefaultRows : CellCountInt = 24
 const DefaultColumns : CellCountInt = 80
 
 ///|
+const DefaultXtversion : String = "libghostty"
+
+///|
+const MaxTitleBytes : Int = 1024
+
+///|
+const MaxEnquiryBytes : Int = 256
+
+///|
+const MaxXtversionBytes : Int = 256
+
+///|
+struct StreamTerminalBridgeEffects {
+  write_pty : (Bytes) -> Unit
+  bell : () -> Unit
+  color_scheme : () -> ColorScheme?
+  device_attributes : () -> DeviceAttributes?
+  enquiry : () -> Bytes
+  size : () -> Size?
+  title_changed : () -> Unit
+  xtversion : () -> String
+}
+
+///|
+pub fn StreamTerminalBridgeEffects::new(
+  write_pty? : (Bytes) -> Unit = fn(_data) { () },
+  bell? : () -> Unit = fn() { () },
+  color_scheme? : () -> ColorScheme? = fn() { None },
+  device_attributes? : () -> DeviceAttributes? = fn() { None },
+  enquiry? : () -> Bytes = fn() { b"" },
+  size? : () -> Size? = fn() { None },
+  title_changed? : () -> Unit = fn() { () },
+  xtversion? : () -> String = fn() { "" },
+) -> StreamTerminalBridgeEffects {
+  {
+    write_pty,
+    bell,
+    color_scheme,
+    device_attributes,
+    enquiry,
+    size,
+    title_changed,
+    xtversion,
+  }
+}
+
+///|
 struct StreamTerminalBridgeState {
+  effects : StreamTerminalBridgeEffects
   protected_state : ScreenProtectedState
   display_state : TerminalDisplayState
   colors : TerminalColors
@@ -25,11 +73,19 @@ struct StreamTerminalBridgeState {
   mut mouse_event : MouseEvent
   mut mouse_format : MouseFormat
   mut palette_dirty : Bool
-} derive(Eq, Debug)
+}
 
 ///|
 pub fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
+  StreamTerminalBridgeState::with_effects(StreamTerminalBridgeEffects::new())
+}
+
+///|
+pub fn StreamTerminalBridgeState::with_effects(
+  effects : StreamTerminalBridgeEffects,
+) -> StreamTerminalBridgeState {
   {
+    effects,
     protected_state: ScreenProtectedState::new(),
     display_state: TerminalDisplayState::new(),
     colors: TerminalColors::new(),
@@ -344,6 +400,10 @@ pub fn StreamTerminalBridgeState::apply(
       self.print_repeat(count)
       true
     }
+    StreamBell => {
+      self.bell()
+      true
+    }
     StreamBackspace => {
       self.cursor_left(CursorMovement(1))
       true
@@ -367,6 +427,10 @@ pub fn StreamTerminalBridgeState::apply(
     }
     StreamReverseIndex => {
       self.reverse_index()
+      true
+    }
+    StreamEnquiry => {
+      self.report_enquiry()
       true
     }
     StreamProtectedModeOff => {
@@ -427,6 +491,14 @@ pub fn StreamTerminalBridgeState::apply(
     }
     StreamRestoreMode(mode) => {
       self.set_mode(mode, self.modes.restore(mode))
+      true
+    }
+    StreamRequestMode(mode) => {
+      self.request_mode(mode)
+      true
+    }
+    StreamRequestModeUnknown(tag) => {
+      self.request_mode_unknown(tag)
       true
     }
     StreamCursorUp(movement) => {
@@ -562,6 +634,24 @@ pub fn StreamTerminalBridgeState::apply(
       self.input_flags.set_mouse_shift_capture(enabled)
       true
     }
+    StreamSizeReport(style) => {
+      self.report_size(style)
+      true
+    }
+    StreamTitlePush(_) => true
+    StreamTitlePop(_) => true
+    StreamXtversion => {
+      self.report_xtversion()
+      true
+    }
+    StreamWindowTitle(title) => {
+      self.window_title(title)
+      true
+    }
+    StreamClipboardContents(_) => true
+    StreamReportPwd(_) => true
+    StreamShowDesktopNotification(_) => true
+    StreamProgressReport(_) => true
     StreamEraseDisplayBelow(protected_req) => {
       self.grid.erase_display(
         self.cursor,
@@ -727,7 +817,24 @@ pub fn StreamTerminalBridgeState::apply(
       self.kitty_keyboard.set_not(flags)
       true
     }
-    _ => false
+    StreamDeviceAttributes(request) => {
+      self.report_device_attributes(request)
+      true
+    }
+    StreamDeviceStatus(request) => {
+      self.device_status(request)
+      true
+    }
+    StreamKittyKeyboardQuery => {
+      self.query_kitty_keyboard()
+      true
+    }
+    StreamDcsHook(_) => true
+    StreamDcsPut(_) => true
+    StreamDcsUnhook => true
+    StreamApcStart => true
+    StreamApcPut(_) => true
+    StreamApcEnd => true
   }
 }
 
@@ -1028,6 +1135,175 @@ fn StreamTerminalBridgeState::active_hyperlink(
       }
     None => None
   }
+}
+
+///|
+fn StreamTerminalBridgeState::write_pty(
+  self : StreamTerminalBridgeState,
+  data : Bytes,
+) -> Unit {
+  (self.effects.write_pty)(data)
+}
+
+///|
+fn StreamTerminalBridgeState::bell(self : StreamTerminalBridgeState) -> Unit {
+  (self.effects.bell)()
+}
+
+///|
+fn StreamTerminalBridgeState::report_device_attributes(
+  self : StreamTerminalBridgeState,
+  request : DeviceAttributeRequest,
+) -> Unit {
+  match (self.effects.device_attributes)() {
+    Some(attributes) => self.write_pty(attributes.encode(request))
+    None => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::device_status(
+  self : StreamTerminalBridgeState,
+  request : DeviceStatusRequest,
+) -> Unit {
+  match request {
+    OperatingStatus => self.write_pty(b"\x1B[0n")
+    CursorPosition => {
+      let x = if self.modes.get(Mode::Origin) {
+        self.cursor.x().to_int() - self.cursor.left_margin().to_int()
+      } else {
+        self.cursor.x().to_int()
+      }
+      let y = if self.modes.get(Mode::Origin) {
+        self.cursor.y().to_int() - self.cursor.top_margin().to_int()
+      } else {
+        self.cursor.y().to_int()
+      }
+      let buffer = @buffer.new()
+      buffer.write_bytes(b"\x1B[")
+      write_uint_ascii(buffer, (y + 1).to_uint64())
+      buffer.write_byte(b';')
+      write_uint_ascii(buffer, (x + 1).to_uint64())
+      buffer.write_byte(b'R')
+      self.write_pty(buffer.contents())
+    }
+    ColorScheme =>
+      match (self.effects.color_scheme)() {
+        Some(Dark) => self.write_pty(b"\x1B[?997;1n")
+        Some(Light) => self.write_pty(b"\x1B[?997;2n")
+        None => ()
+      }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::report_enquiry(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  let response = (self.effects.enquiry)()
+  if response.length() == 0 || response.length() >= MaxEnquiryBytes {
+    return
+  }
+  self.write_pty(response)
+}
+
+///|
+fn StreamTerminalBridgeState::report_xtversion(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  let version_bytes = utf8_bytes((self.effects.xtversion)())
+  let reported = if version_bytes.length() == 0 {
+    utf8_bytes(DefaultXtversion)
+  } else {
+    version_bytes
+  }
+  if reported.length() > MaxXtversionBytes {
+    return
+  }
+
+  let buffer = @buffer.new(size_hint=reported.length() + 5)
+  buffer.write_bytes(b"\x1BP>|")
+  buffer.write_bytes(reported)
+  buffer.write_bytes(b"\x1B\\")
+  self.write_pty(buffer.contents())
+}
+
+///|
+fn StreamTerminalBridgeState::report_size(
+  self : StreamTerminalBridgeState,
+  style : SizeReportStyle,
+) -> Unit {
+  match style {
+    Csi14t =>
+      match (self.effects.size)() {
+        Some(size) => self.write_pty(encode(Csi14t, size))
+        None => ()
+      }
+    Csi16t =>
+      match (self.effects.size)() {
+        Some(size) => self.write_pty(encode(Csi16t, size))
+        None => ()
+      }
+    Csi18t =>
+      match (self.effects.size)() {
+        Some(size) => self.write_pty(encode(Csi18t, size))
+        None => ()
+      }
+    Csi21t => {
+      let buffer = @buffer.new()
+      buffer.write_bytes(b"\x1B]l")
+      match self.metadata.title() {
+        Some(title) => buffer.write_string_utf8(title)
+        None => ()
+      }
+      buffer.write_bytes(b"\x1B\\")
+      self.write_pty(buffer.contents())
+    }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::window_title(
+  self : StreamTerminalBridgeState,
+  raw_title : String,
+) -> Unit {
+  self.metadata.set_title(truncate_utf8(raw_title, MaxTitleBytes))
+  (self.effects.title_changed)()
+}
+
+///|
+fn StreamTerminalBridgeState::request_mode(
+  self : StreamTerminalBridgeState,
+  mode : Mode,
+) -> Unit {
+  self.send_mode_report(self.modes.get_report(mode.tag()))
+}
+
+///|
+fn StreamTerminalBridgeState::request_mode_unknown(
+  self : StreamTerminalBridgeState,
+  tag : ModeTag,
+) -> Unit {
+  self.send_mode_report(self.modes.get_report(tag))
+}
+
+///|
+fn StreamTerminalBridgeState::send_mode_report(
+  self : StreamTerminalBridgeState,
+  report : Report,
+) -> Unit {
+  self.write_pty(report.encode())
+}
+
+///|
+fn StreamTerminalBridgeState::query_kitty_keyboard(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  let buffer = @buffer.new()
+  buffer.write_bytes(b"\x1B[?")
+  write_uint_ascii(buffer, self.kitty_keyboard.current().0.to_uint64())
+  buffer.write_byte(b'u')
+  self.write_pty(buffer.contents())
 }
 
 ///|
@@ -1961,6 +2237,33 @@ fn copy_cell_hyperlink(link : CellHyperlink) -> CellHyperlink {
     explicit_id: link.explicit_id(),
     implicit_id: link.implicit_id(),
   }
+}
+
+///|
+fn utf8_bytes(value : String) -> Bytes {
+  let buffer = @buffer.new()
+  buffer.write_string_utf8(value)
+  buffer.contents()
+}
+
+///|
+fn truncate_utf8(value : String, max_bytes : Int) -> String {
+  let original = utf8_bytes(value)
+  if original.length() <= max_bytes {
+    return value
+  }
+
+  let buffer = @buffer.new(size_hint=max_bytes)
+  for char in value {
+    let encoded = @buffer.new()
+    encoded.write_char_utf8(char)
+    let bytes = encoded.contents()
+    if buffer.length() + bytes.length() > max_bytes {
+      break
+    }
+    buffer.write_bytes(bytes)
+  }
+  buffer.to_string()
 }
 
 ///|

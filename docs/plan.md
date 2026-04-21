@@ -385,7 +385,7 @@ Phase 5 gate:
 ### Phase 6: Terminal application surface
 
 Gate: `[P]` after Phase 5  
-Status: `active`
+Status: `done`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -393,14 +393,14 @@ Status: `active`
 | P6.A | done | style + attributes | terminal style modules + tests | P6.0 | P6.B, P6.C | `[W]` | parser-facing style mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 | P6.B | done | cursor/tabstops/modes | terminal state modules + tests | P6.0 | P6.A, P6.C | `[W]` | cursor and mode actions have minimal backing state and tests | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 | P6.C | done | screen/page/hyperlink state | terminal state modules + tests | P6.0 | P6.A, P6.B | `[W]` | parser-facing screen mutations compile and test in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
-| P6.1 | active | `stream_terminal.zig` | terminal application bridge + tests | P6.A, P6.B, P6.C | none | main + `[W]` | stream actions apply correctly with separated effects and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
+| P6.1 | done | `stream_terminal.zig` | terminal application bridge + tests | P6.A, P6.B, P6.C | none | main + `[W]` | stream actions apply correctly with separated effects and tests pass in the same task | `moon check && moon test && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(terminal)` |
 
 Phase 6 gate:
 
 - P6.0 is `done`
 - P6.A and P6.B are `done`
 - P6.C is `done`
-- P6.1 is `active`
+- P6.1 is `done`
 
 #### Phase 6 outputs
 
@@ -432,6 +432,7 @@ Phase 6 gate:
   [2026-04-20-p6-1-a-phase6a-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-20-p6-1-a-phase6a-bridge.md)
   [2026-04-21-p6-1-b-cursor-mode-tab-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-b-cursor-mode-tab-bridge.md)
   [2026-04-21-p6-1-c-screen-mutation-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-c-screen-mutation-bridge.md)
+  [2026-04-21-p6-1-d-query-and-side-effect-bridge.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p6-1-d-query-and-side-effect-bridge.md)
 
 ### Phase 7: Host bridge and equivalence
 
@@ -447,7 +448,7 @@ Status: `todo`
 
 Phase 7 gate:
 
-- P7.1, P7.2, and P7.3 are `done`
+- P7.0, P7.1, P7.2, and P7.3 are `todo`
 
 ## Definition of done
 
