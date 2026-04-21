@@ -731,6 +731,12 @@ pub(all) enum ReportState {
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
 
+pub(all) enum RowSemanticPrompt {
+  None
+  Prompt
+  PromptContinuation
+} derive(Eq, @debug.Debug)
+
 type ScreenCharsetState derive(Eq, @debug.Debug)
 pub fn ScreenCharsetState::charset(Self, Slots) -> Charset
 pub fn ScreenCharsetState::configure(Self, Slots, Charset) -> Unit
@@ -741,6 +747,17 @@ pub fn ScreenCharsetState::invoke(Self, ActiveSlot, Slots, Bool) -> Unit
 pub fn ScreenCharsetState::new() -> Self
 pub fn ScreenCharsetState::reset(Self) -> Unit
 pub fn ScreenCharsetState::single_shift(Self) -> Slots?
+
+type ScreenHyperlinkState derive(Eq, @debug.Debug)
+pub fn ScreenHyperlinkState::active(Self) -> Bool
+pub fn ScreenHyperlinkState::end(Self) -> Unit
+pub fn ScreenHyperlinkState::explicit_id(Self) -> String?
+pub fn ScreenHyperlinkState::full_reset(Self) -> Unit
+pub fn ScreenHyperlinkState::implicit_id(Self) -> Int?
+pub fn ScreenHyperlinkState::new() -> Self
+pub fn ScreenHyperlinkState::next_implicit_id(Self) -> Int
+pub fn ScreenHyperlinkState::start(Self, String, String?) -> Unit
+pub fn ScreenHyperlinkState::uri(Self) -> String?
 
 type ScreenProtectedState derive(Eq, @debug.Debug)
 pub fn ScreenProtectedState::cursor_protected(Self) -> Bool
@@ -765,6 +782,20 @@ pub fn ScreenSavedCursorState::reset(Self) -> Unit
 pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
 pub fn ScreenSavedCursorState::save(Self, TerminalCursorState, CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
 
+type ScreenSemanticState derive(Eq, @debug.Debug)
+pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, SemanticPrompt) -> Unit
+pub fn ScreenSemanticState::apply_prompt_start(Self, SemanticPrompt) -> Unit
+pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
+pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
+pub fn ScreenSemanticState::cursor_content(Self) -> SemanticContent
+pub fn ScreenSemanticState::cursor_content_clear_eol(Self) -> Bool
+pub fn ScreenSemanticState::full_reset(Self) -> Unit
+pub fn ScreenSemanticState::new() -> Self
+pub fn ScreenSemanticState::row_prompt(Self) -> RowSemanticPrompt
+pub fn ScreenSemanticState::seen(Self) -> Bool
+pub fn ScreenSemanticState::set_output(Self) -> Unit
+pub fn ScreenSemanticState::start_input(Self, Bool) -> Unit
+
 type SecondaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn SecondaryDeviceAttributes::default() -> Self
 pub fn SecondaryDeviceAttributes::device_type(Self) -> DeviceType
@@ -772,6 +803,18 @@ pub fn SecondaryDeviceAttributes::encode(Self) -> Bytes
 pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
 pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
 pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
+
+pub(all) enum SemanticClickMode {
+  None
+  ClickEvents
+  Cl(SemanticPromptClick)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticContent {
+  Output
+  Input
+  Prompt
+} derive(Eq, @debug.Debug)
 
 type SemanticPrompt derive(Eq, @debug.Debug)
 pub fn SemanticPrompt::action(Self) -> SemanticPromptAction
