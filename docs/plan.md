@@ -1,11 +1,11 @@
-# Ghostty Parser Translation Plan
+# Ghostty Terminal Surface Translation Plan
 
 ## Goal and non-goals
 
 Goal:
 
-- Translate the upstream Ghostty terminal parser stack from Zig to MoonBit as
-  faithfully as possible.
+- Translate the upstream Ghostty terminal parser stack and the full
+  `src/terminal/c` surface from Zig to MoonBit as faithfully as possible.
 
 Primary upstream scope:
 
@@ -17,21 +17,41 @@ Primary upstream scope:
 - `src/terminal/dcs.zig`
 - `src/terminal/sgr.zig`
 - `src/terminal/stream_terminal.zig`
-- the minimum terminal-model modules those files require
+- every file under `src/terminal/c/`
+- the minimum upstream modules those layers require, including terminal model,
+  render/formatter state, selection/focus helpers, input encoders, build info,
+  and system callback plumbing
 
 Non-goals for now:
 
-- renderer translation
 - GTK/macOS frontend translation
-- full PTY/backend parity beyond the parser-facing bridge
+- full PTY/backend/runtime parity beyond what `src/terminal/c` requires
+- renderer/frontend work outside the `src/terminal/c/render.zig` and
+  `src/terminal/c/formatter.zig` dependency surface
 - packaging and distribution parity
 
 Scope completion note:
 
-- When every gate through Phase 7 is `done`, this plan's parser-stack scope is
-  complete.
-- A broader line-by-line migration beyond the parser-facing stack needs a new
-  follow-on plan rather than reopening completed phases here.
+- Phases 0 through 7 complete the parser-stack foundation and public MoonBit
+  host facade.
+- Phases 8 through 14 extend that foundation to the full `src/terminal/c`
+  semantic surface in MoonBit.
+- Phase 15 is only required if the goal includes a native C-callable ABI in
+  addition to MoonBit surface parity.
+
+## Implementation target vs ABI target
+
+- The default target for this plan is a faithful MoonBit implementation of the
+  full `src/terminal/c` semantic surface.
+- `docs/architecture.md` remains the source of truth for the parser-stack
+  architecture from Phases 0 through 7. The broader `src/terminal/c` layers
+  must record wrapper-specific dependency maps in their own subplans.
+- Do not introduce native FFI just to mimic C enums, structs, callbacks, or
+  wrapper layering when MoonBit can express the same behavior directly.
+- A native FFI/export layer is a suffix phase, not a prerequisite. Add it only
+  when we need actual C ABI parity for external callers.
+- If Phase 15 is taken, keep the FFI layer thin: MoonBit remains the canonical
+  implementation and the native export boundary is only an adapter.
 
 ## Fidelity invariants
 
@@ -78,7 +98,7 @@ end in a green state.
 
 ## Dependency graph
 
-`control plane -> package/file mapping -> foundational values -> parser prerequisites -> Parser -> semantic decoders -> stream -> terminal handler -> host bridge -> differential/perf`
+`control plane -> package/file mapping -> foundational values -> parser prerequisites -> Parser -> semantic decoders -> stream -> terminal handler -> host bridge -> c-surface control plane -> stateless c helpers -> parser wrappers -> terminal host object -> input events/encoders -> render/formatter/graphics -> sys/types/main -> optional native C ABI`
 
 ## Task template and status legend
 
@@ -465,18 +485,160 @@ Phase 7 gate:
   [2026-04-21-p7-1-stream-terminal-facade.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-1-stream-terminal-facade.md)
   [2026-04-21-p7-2-facade-parity-suite.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-2-facade-parity-suite.md)
   [2026-04-21-p7-3-hot-path-perf-notes.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-3-hot-path-perf-notes.md)
+- Phase 7 completed the parser-stack foundation; `P8.0` is the next planned
+  task.
+
+### Phase 8: `src/terminal/c` control plane
+
+Gate: `[S]` after Phase 7  
+Status: `todo`
+
+This phase rebases the denominator from parser-stack-only work to the full
+`src/terminal/c` surface. It is docs-only and must not introduce code or API
+surface.
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P8.0 | todo | `src/terminal/c/*.zig` inventory | c-surface file map, dependency clusters, and follow-on subplan boundaries | P7.3 | none | main + `[E]` | every wrapper under `src/terminal/c` is assigned to a phase/lane and cross-package deps are recorded before implementation starts | doc review | `[R]` main | `docs` |
+| P8.A | todo | MoonBit-vs-ABI target decision | FFI/export policy note in this doc and task subplans | P8.0 | none | `[E]` | pure-MoonBit semantic parity is the default target, and the optional native-export suffix phase is explicit and scoped | doc review | `[R]` main | `docs` |
+
+Phase 8 gate:
+
+- P8.0 and P8.A are `done`
+
+### Phase 9: Stateless C-surface helpers
+
+Gate: `[P]` after Phase 8  
+Status: `todo`
+
+These wrappers are the low-dependency foundation for the broader C-surface
+port. They should land before terminal/render wrappers start leaning on them.
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P9.A | todo | `result.zig`, `allocator.zig`, `build_info.zig` | corresponding MoonBit modules + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata and allocator helper semantics match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.B | todo | `color.zig`, `style.zig`, `modes.zig`, `focus.zig`, `size_report.zig`, `paste.zig` | corresponding MoonBit helper modules + tests | P8.A | P9.A, P9.C | `[W]` | stateless encoders, value wrappers, and small helper contracts match upstream data/encoding behavior with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.C | todo | `selection.zig`, `row.zig`, `cell.zig` | row/cell/selection query wrappers + tests | P8.A, P9.B | P9.A | `[W]` | row/cell data queries and selection structs match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+
+Phase 9 gate:
+
+- P9.A, P9.B, and P9.C are `done`
+
+### Phase 10: Parser object wrappers
+
+Gate: `[P]` after Phase 9  
+Status: `todo`
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P10.A | todo | `src/terminal/c/osc.zig` | OSC object wrapper + tests | P9.A, P9.B | P10.B | `[W]` | constructor/reset/next/end/data-query parity matches upstream tests and stays green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
+| P10.B | todo | `src/terminal/c/sgr.zig` | SGR object wrapper + tests | P9.A, P9.B | P10.A | `[W]` | parameter feed, next/unknown handling, and attribute query parity match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
+
+Phase 10 gate:
+
+- P10.A and P10.B are `done`
+
+### Phase 11: Terminal host object parity
+
+Gate: `[S/P]` after Phase 10  
+Status: `todo`
+
+This phase broadens the current `StreamTerminal` facade toward the richer
+`src/terminal/c/terminal.zig` host surface, while keeping kitty-graphics-only
+fields deferred until Phase 13C.
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P11.0 | todo | `terminal.zig`, `grid_ref.zig` contracts | terminal host-surface checklist and write-set split | P10.A, P10.B, P9.C | none | `[E]` | callbacks, query surface, viewport/grid pinning, and graphics deferrals are recorded before worker tasks start | doc review | `[R]` main | `docs` |
+| P11.A | todo | `src/terminal/c/terminal.zig` core | terminal host wrapper core + tests | P11.0, P9.A, P9.B | P11.B, P11.C | main + `[W]` | `new/free/vt_write/set/reset/resize/scroll/mode` core and callback behavior match upstream non-graphics tests in one green task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+| P11.B | todo | `src/terminal/c/grid_ref.zig` | grid pin/query wrappers + tests | P11.0, P9.C, P11.A | P11.A, P11.C | `[W]` | row/cell/style/hyperlink access from terminal grid refs matches upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+| P11.C | todo | `src/terminal/c/terminal.zig` query surface | terminal data/multi-get parity + tests | P11.0, P11.A, P9.B, P9.C | P11.B | `[W]` | non-graphics terminal data queries, metadata, scrollback, and default/current color state close with parity tests; kitty graphics fields stay deferred to P13.C | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+
+Phase 11 gate:
+
+- P11.0, P11.A, P11.B, and P11.C are `done`
+
+### Phase 12: Input events and encoders
+
+Gate: `[P]` after Phase 11  
+Status: `todo`
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P12.A | todo | `key_event.zig`, `mouse_event.zig` | event object wrappers + tests | P9.A | P12.B | `[W]` | create/free/get/set parity for key and mouse events matches upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+| P12.B | todo | `key_encode.zig`, `mouse_encode.zig` | encoder wrappers + tests | P12.A, P11.A, P9.B | P12.A | `[W]` | encoder option surfaces and terminal-derived defaults match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+
+Phase 12 gate:
+
+- P12.A and P12.B are `done`
+
+### Phase 13: Render, formatter, and graphics wrappers
+
+Gate: `[S/P]` after Phase 11 and Phase 12  
+Status: `todo`
+
+These wrappers sit on broader terminal/render state and should only start after
+the terminal host object and input helper layers are stable.
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P13.0 | todo | `render.zig`, `formatter.zig`, `kitty_graphics.zig` contracts | dependency checklist and write-set split | P11.C, P12.B | none | `[E]` | render-state, formatter, selection/grid, and kitty-graphics deps are recorded before worker tasks start | doc review | `[R]` main | `docs` |
+| P13.A | todo | `src/terminal/c/render.zig` | render-state wrapper + tests | P13.0, P11.C | P13.B, P13.C | `[W]` | render snapshots, row iteration, row-cell query/mutation, and dirty-state parity land green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.B | todo | `src/terminal/c/formatter.zig` | formatter wrapper + tests | P13.0, P11.B, P9.C | P13.A, P13.C | `[W]` | terminal/screen formatting buffer and allocation paths match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.C | todo | `src/terminal/c/kitty_graphics.zig` + remaining `terminal.zig` graphics hooks | graphics wrapper + terminal graphics parity + tests | P13.0, P11.A, P11.B, P11.C | P13.A, P13.B | `[W]` | image/query/placement surface lands green and closes the remaining graphics-dependent terminal fields | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+
+Phase 13 gate:
+
+- P13.0, P13.A, P13.B, and P13.C are `done`
+
+### Phase 14: Sys, type metadata, and aggregate C surface
+
+Gate: `[P]` after Phase 13  
+Status: `todo`
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P14.A | todo | `src/terminal/c/sys.zig` | system callback/config wrapper + tests | P9.A | P14.B | `[W]` | logging/image-decode callback registry matches upstream contracts with tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
+| P14.B | todo | `src/terminal/c/types.zig` | type-registry JSON + tests | P13.A, P13.B, P13.C, P12.B, P11.C, P9.C | P14.A | `[W]` | translated type metadata reflects the implemented C-surface structs/enums and stays green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
+| P14.C | todo | `src/terminal/c/main.zig` | aggregate c-surface module + smoke tests | P14.A, P14.B | none | main + `[W]` | all translated c-surface wrappers are re-exported consistently and smoke tests stay green | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(c-runtime)` |
+
+Phase 14 gate:
+
+- P14.A, P14.B, and P14.C are `done`
+- Phase 14 completion closes pure-MoonBit parity for the full
+  `src/terminal/c` semantic surface
+
+### Phase 15: Optional native C ABI export layer
+
+Gate: `[S]` after Phase 14  
+Status: `todo`
+
+Take this phase only if the repository goal expands from MoonBit translation to
+shipping an actual C-callable ABI backed by the translated implementation.
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P15.0 | todo | `src/terminal/c/main.zig` export set + headers | native-export checklist and stub plan | P14.C | none | `[E]` | exported symbol set, ownership rules, callback trampolines, and package/native build plan are recorded before implementation | doc review | `[R]` main | `docs` |
+| P15.A | todo | native C ABI for translated `src/terminal/c` surface | `extern "c"` / native-stub export layer + smoke tests | P15.0 | none | main + `[W]` | agreed symbols are callable from C, the MoonBit implementation stays canonical, and the native export layer remains thin | `moon build --target native && moon test --target native && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-ffi)` |
+
+Phase 15 gate:
+
+- P15.0 and P15.A are `done`
+- Phase 15 is only required when literal C ABI parity is part of the goal
 
 ## Definition of done
 
-The scoped translation is ready for review when:
+The translated terminal surface is ready for review when:
 
-- all phase gates through Phase 7 are `done`
+- all phase gates through Phase 14 are `done` for the pure-MoonBit target
+- if native C ABI parity is required, Phase 15 is also `done`
 - every implementation task landed in a green state
-- parser-core, semantic decoders, stream driver, and terminal application
-  surface have MoonBit counterparts
-- translated tests and differential tests pass for the covered surface
-- the MoonBit API can accept byte slices and reproduce upstream parser behavior
+- parser-core, semantic decoders, stream driver, terminal application surface,
+  and every wrapper under `src/terminal/c` have MoonBit counterparts
+- translated tests and parity suites pass for the covered surface
+- the MoonBit API can reproduce the upstream parser and `src/terminal/c`
+  behavior for the agreed scope
 - delegated tasks have both subplans and audit records where required
 - the mainline history remains atomic and phase-by-phase
-- this closes the scoped parser-stack plan; broader libghostty work requires a
-  new follow-on plan
+- if Phase 15 is taken, the native export layer is thin and tested rather than
+  being the primary implementation
