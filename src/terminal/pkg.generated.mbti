@@ -428,6 +428,31 @@ pub(all) enum FocusEvent {
 } derive(Eq, @debug.Debug)
 pub fn FocusEvent::encode(Self) -> Bytes
 
+pub(all) enum Format {
+  Plain
+  Vt
+  Html
+} derive(Eq, @debug.Debug)
+
+type Formatter
+pub fn Formatter::format(Self) -> Bytes
+pub fn Formatter::new_terminal(StreamTerminal, FormatterOptions) -> Self
+
+type FormatterOptions derive(Eq, @debug.Debug)
+pub fn FormatterOptions::new(Format, unwrap? : Bool, trim? : Bool, selection? : Selection[GridRef]?, extra? : FormatterTerminalExtra) -> Self
+
+type FormatterScreenExtra derive(Eq, @debug.Debug)
+pub fn FormatterScreenExtra::all() -> Self
+pub fn FormatterScreenExtra::new(cursor? : Bool, style? : Bool, hyperlink? : Bool, protection? : Bool, kitty_keyboard? : Bool, charsets? : Bool) -> Self
+pub fn FormatterScreenExtra::none() -> Self
+pub fn FormatterScreenExtra::styles() -> Self
+
+type FormatterTerminalExtra derive(Eq, @debug.Debug)
+pub fn FormatterTerminalExtra::all() -> Self
+pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
+pub fn FormatterTerminalExtra::none() -> Self
+pub fn FormatterTerminalExtra::styles() -> Self
+
 type GridRef derive(Eq, @debug.Debug)
 
 type HyperlinkStart derive(Eq, @debug.Debug)
