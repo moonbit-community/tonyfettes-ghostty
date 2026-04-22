@@ -523,7 +523,7 @@ Phase 8 gate:
 ### Phase 9: Stateless C-surface helpers
 
 Gate: `[P]` after Phase 8  
-Status: `active`
+Status: `done`
 
 These wrappers are the low-dependency foundation for the broader C-surface
 port. They should land before terminal/render wrappers start leaning on them.
@@ -550,7 +550,7 @@ Phase 9 progress:
 ### Phase 10: Parser object wrappers
 
 Gate: `[P]` after Phase 9  
-Status: `todo`
+Status: `done`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -571,7 +571,7 @@ Phase 10 gate:
 ### Phase 11: Terminal host object parity
 
 Gate: `[S/P]` after Phase 10  
-Status: `active`
+Status: `done`
 
 This phase broadens the current `StreamTerminal` facade and adjacent terminal
 helpers toward the richer `src/terminal/c/terminal.zig` host surface, while
@@ -674,20 +674,20 @@ Phase 13 gate:
 ### Phase 14: Sys, type metadata, and aggregate C surface
 
 Gate: `[P]` after Phase 13  
-Status: `active`
+Status: `done`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P14.A | done | `src/terminal/c/sys.zig` | system callback/config wrapper + tests | P9.A | P14.B | `[W]` | logging/image-decode callback registry matches upstream contracts with tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
 | P14.B | done | `src/terminal/c/types.zig` | typed surface registry + tests | P13.A2, P13.B, P13.C2, P12.B1, P12.B2, P11.C, P9.C | P14.A | `[W]` | translated metadata reflects the implemented surface and stays green in one task; JSON stays a derived representation if still needed | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
-| P14.C | todo | `src/terminal/c/main.zig` | package-surface closeout + smoke tests | P14.A, P14.B | none | main + `[W]` | the final package API is coherent, intentional, and covered by smoke tests without creating a redundant aggregator module | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(c-runtime)` |
+| P14.C | done | `src/terminal/c/main.zig` | package-surface closeout + smoke tests | P14.A, P14.B | none | main + `[W]` | the final package API is coherent, intentional, and covered by smoke tests without creating a redundant aggregator module | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(c-runtime)` |
 
 Phase 14 gate:
 
 - P14.A is `done`
 - P14.B is `done`
-- P14.C remains `todo`
-- Phase 14 completion will close pure-MoonBit parity for the full
+- P14.C is `done`
+- Phase 14 closes pure-MoonBit parity for the full
   `src/terminal/c` semantic surface
 
 #### Phase 14 outputs
@@ -696,6 +696,8 @@ Phase 14 gate:
   [2026-04-22-p14-a-system-hooks-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p14-a-system-hooks-surface.md)
 - Completed P14.B audit lives in:
   [2026-04-22-p14-b-terminal-surface-registry.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p14-b-terminal-surface-registry.md)
+- Completed P14.C audit lives in:
+  [2026-04-22-p14-c-package-surface-closeout.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p14-c-package-surface-closeout.md)
 
 ## Definition of done
 
