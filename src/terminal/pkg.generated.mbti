@@ -1155,6 +1155,30 @@ pub fn RGB::new(Byte, Byte, Byte) -> Self
 pub fn RGB::parse(String) -> Self raise ColorParseError
 pub fn RGB::r(Self) -> Byte
 
+pub(all) enum RenderDirty {
+  False
+  Partial
+  Full
+} derive(Eq)
+
+type RenderState
+pub fn RenderState::background_color(Self) -> RGB
+pub fn RenderState::columns(Self) -> UInt16
+pub fn RenderState::cursor_blinking(Self) -> Bool
+pub fn RenderState::cursor_color(Self) -> RGB?
+pub fn RenderState::cursor_password_input(Self) -> Bool
+pub fn RenderState::cursor_viewport(Self) -> Coordinate?
+pub fn RenderState::cursor_viewport_wide_tail(Self) -> Bool
+pub fn RenderState::cursor_visible(Self) -> Bool
+pub fn RenderState::cursor_visual_style(Self) -> CursorVisualStyle
+pub fn RenderState::dirty(Self) -> RenderDirty
+pub fn RenderState::foreground_color(Self) -> RGB
+pub fn RenderState::new() -> Self
+pub fn RenderState::palette(Self) -> Array[RGB]
+pub fn RenderState::rows(Self) -> UInt16
+pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
+pub fn RenderState::update(Self, StreamTerminal) -> Unit
+
 pub(all) enum RenditionAspect {
   Default
   Bold
