@@ -1014,6 +1014,12 @@ pub(all) enum SgrAttribute {
   Color256Fg(Byte)
 } derive(Eq, @debug.Debug)
 
+type SgrParser derive(@debug.Debug)
+pub fn SgrParser::new() -> Self
+pub fn SgrParser::next(Self) -> SgrAttribute?
+pub fn SgrParser::reset(Self) -> Unit
+pub fn SgrParser::set_params(Self, Array[UInt16], Array[Byte]) -> TerminalResultCode
+
 pub(all) enum SgrUnderline {
   None
   Single

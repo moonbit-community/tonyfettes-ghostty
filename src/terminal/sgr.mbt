@@ -1,4 +1,7 @@
 ///|
+const SgrSeparatorCapacity : Int = 64
+
+///|
 pub(all) enum SgrUnderline {
   None
   Single
@@ -50,9 +53,9 @@ pub(all) enum SgrAttribute {
 } derive(Eq, Debug)
 
 ///|
-priv struct SgrParser {
-  params : Array[UInt16]
-  params_sep : SepList
+struct SgrParser {
+  mut params : Array[UInt16]
+  mut params_sep : SepList
   mut idx : Int
 } derive(Debug)
 
@@ -62,7 +65,42 @@ fn SgrParser::empty() -> SgrParser {
 }
 
 ///|
-fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
+pub fn SgrParser::new() -> SgrParser {
+  SgrParser::empty()
+}
+
+///|
+pub fn SgrParser::reset(self : SgrParser) -> Unit {
+  self.idx = 0
+}
+
+///|
+pub fn SgrParser::set_params(
+  self : SgrParser,
+  params : Array[UInt16],
+  separators : Array[Byte],
+) -> TerminalResultCode {
+  if params.length() > SgrSeparatorCapacity ||
+    separators.length() > SgrSeparatorCapacity {
+    return InvalidValue
+  }
+  if separators.length() != 0 && separators.length() != params.length() {
+    return InvalidValue
+  }
+
+  self.params = clone_params(params)
+  self.params_sep = SepList::init_empty()
+  for index in 0..<separators.length() {
+    if separators[index] == b':' {
+      self.params_sep.set(index)
+    }
+  }
+  self.idx = 0
+  Success
+}
+
+///|
+pub fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
   let current = self.idx
   if current >= self.params.length() {
     if current == 0 {
