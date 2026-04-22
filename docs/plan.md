@@ -630,24 +630,32 @@ Phase 12 gate:
 - Active P12.B roadmap lives in:
   [2026-04-22-p12-b-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-b-roadmap.md)
 
-### Phase 13: Render, formatter, and graphics wrappers
+### Phase 13: Render, formatter, and graphics surfaces
 
 Gate: `[S/P]` after Phase 11 and Phase 12  
-Status: `todo`
+Status: `active`
 
 These wrappers sit on broader terminal/render state and should only start after
 the terminal host object and input helper layers are stable.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P13.0 | todo | `render.zig`, `formatter.zig`, `kitty_graphics.zig` contracts | dependency checklist and write-set split | P11.C, P12.B | none | `[E]` | render-state, formatter, selection/grid, and kitty-graphics deps are recorded before worker tasks start | doc review | `[R]` main | `docs` |
-| P13.A | todo | `src/terminal/c/render.zig` | render-state surface + tests | P13.0, P11.C | P13.B, P13.C | `[W]` | render snapshots, row iteration, row-cell query/mutation, and dirty-state parity land green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
-| P13.B | todo | `src/terminal/c/formatter.zig` | formatter surface + tests | P13.0, P11.B, P9.C | P13.A, P13.C | `[W]` | terminal/screen formatting buffer and allocation paths match upstream tests in one task, using MoonBit-owned results instead of C allocation helpers | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
-| P13.C | todo | `src/terminal/c/kitty_graphics.zig` + remaining `terminal.zig` graphics hooks | graphics wrapper + terminal graphics parity + tests | P13.0, P11.A, P11.B, P11.C | P13.A, P13.B | `[W]` | image/query/placement surface lands green and closes the remaining graphics-dependent terminal fields | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.0 | done | `render.zig`, `formatter.zig`, `kitty_graphics.zig` contracts | dependency checklist and write-set split | P11.C, P12.B1, P12.B2 | none | `[E]` | render-state, formatter, selection/grid, and kitty-graphics deps are recorded before worker tasks start | doc review | `[R]` main | `docs` |
+| P13.A1 | todo | `src/terminal/c/render.zig` global state slice | render-state owner surface + tests | P13.0, P11.C | P13.B | `[W]` | render lifecycle, global snapshots, colors, cursor state, and dirty-state parity land green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.A2 | todo | `src/terminal/c/render.zig` row/cell slice | render row iterator and row-cell surface + tests | P13.A1, P11.B | P13.B | `[W]` | row iteration, row/cell queries, resolved colors, and row dirty mutation land green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.B | todo | `src/terminal/c/formatter.zig` | formatter surface + tests | P13.0, P11.B, P9.C | P13.A1, P13.A2 | `[W]` | terminal/screen formatting parity lands green in one task, using MoonBit-owned byte results instead of C allocation helpers | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.C1 | todo | kitty-graphics model/storage dependencies behind `src/terminal/c/kitty_graphics.zig` | internal kitty-graphics substrate + tests | P13.0, P11.A, P11.B, P11.C | none | `[W]` | image metadata, placement records, and command-application substrate land green before any public graphics wrapper closes | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.C2 | todo | `src/terminal/c/kitty_graphics.zig` + remaining `terminal.zig` graphics hooks | graphics host surface + terminal graphics parity + tests | P13.C1, P11.A, P11.B, P11.C | none | `[W]` | image/query/placement surface lands green and closes the remaining graphics-dependent terminal fields | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
 
 Phase 13 gate:
 
-- P13.0, P13.A, P13.B, and P13.C remain `todo`
+- P13.0 is `done`
+- P13.A1, P13.A2, P13.B, P13.C1, and P13.C2 remain `todo`
+
+#### Phase 13 outputs
+
+- Completed P13.0 checklist lives in:
+  [2026-04-22-p13-0-render-formatter-graphics-checklist.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p13-0-render-formatter-graphics-checklist.md)
 
 ### Phase 14: Sys, type metadata, and aggregate C surface
 
@@ -657,7 +665,7 @@ Status: `todo`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P14.A | todo | `src/terminal/c/sys.zig` | system callback/config wrapper + tests | P9.A | P14.B | `[W]` | logging/image-decode callback registry matches upstream contracts with tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
-| P14.B | todo | `src/terminal/c/types.zig` | typed surface registry + tests | P13.A, P13.B, P13.C, P12.B, P11.C, P9.C | P14.A | `[W]` | translated metadata reflects the implemented surface and stays green in one task; JSON stays a derived representation if still needed | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
+| P14.B | todo | `src/terminal/c/types.zig` | typed surface registry + tests | P13.A2, P13.B, P13.C2, P12.B1, P12.B2, P11.C, P9.C | P14.A | `[W]` | translated metadata reflects the implemented surface and stays green in one task; JSON stays a derived representation if still needed | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
 | P14.C | todo | `src/terminal/c/main.zig` | package-surface closeout + smoke tests | P14.A, P14.B | none | main + `[W]` | the final package API is coherent, intentional, and covered by smoke tests without creating a redundant aggregator module | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(c-runtime)` |
 
 Phase 14 gate:
