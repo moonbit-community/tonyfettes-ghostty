@@ -282,12 +282,16 @@ struct ModeState {
 ///|
 pub fn ModeState::new() -> ModeState {
   let defaults = ModePacked::default()
-  { values: defaults, saved: ModePacked::empty(), default: defaults }
+  {
+    values: copy_mode_packed(defaults),
+    saved: ModePacked::empty(),
+    default: copy_mode_packed(defaults),
+  }
 }
 
 ///|
 pub fn ModeState::reset(self : ModeState) -> Unit {
-  self.values = self.default
+  self.values = copy_mode_packed(self.default)
   self.saved = ModePacked::empty()
 }
 
@@ -311,6 +315,11 @@ pub fn ModeState::restore(self : ModeState, mode : Mode) -> Bool {
   let value = self.saved.get(mode)
   self.values.set(mode, value)
   value
+}
+
+///|
+fn copy_mode_packed(value : ModePacked) -> ModePacked {
+  { bits: value.bits }
 }
 
 ///|

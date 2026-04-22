@@ -18,14 +18,14 @@ const MaxXtversionBytes : Int = 256
 
 ///|
 priv struct StreamTerminalBridgeEffects {
-  write_pty : (Bytes) -> Unit
-  bell : () -> Unit
-  color_scheme : () -> ColorScheme?
-  device_attributes : () -> DeviceAttributes?
-  enquiry : () -> Bytes
-  size : () -> Size?
-  title_changed : () -> Unit
-  xtversion : () -> String
+  mut write_pty : (Bytes) -> Unit
+  mut bell : () -> Unit
+  mut color_scheme : () -> ColorScheme?
+  mut device_attributes : () -> DeviceAttributes?
+  mut enquiry : () -> Bytes
+  mut size : () -> Size?
+  mut title_changed : () -> Unit
+  mut xtversion : () -> String
 }
 
 ///|
@@ -49,6 +49,126 @@ fn StreamTerminalBridgeEffects::new(
     title_changed,
     xtversion,
   }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_write_pty(
+  self : StreamTerminalBridgeEffects,
+  callback : (Bytes) -> Unit,
+) -> Unit {
+  self.write_pty = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_write_pty(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.write_pty = fn(_data) { () }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_bell(
+  self : StreamTerminalBridgeEffects,
+  callback : () -> Unit,
+) -> Unit {
+  self.bell = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_bell(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.bell = fn() { () }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_color_scheme(
+  self : StreamTerminalBridgeEffects,
+  callback : () -> ColorScheme?,
+) -> Unit {
+  self.color_scheme = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_color_scheme(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.color_scheme = fn() { None }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_device_attributes(
+  self : StreamTerminalBridgeEffects,
+  callback : () -> DeviceAttributes?,
+) -> Unit {
+  self.device_attributes = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_device_attributes(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.device_attributes = fn() { None }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_enquiry(
+  self : StreamTerminalBridgeEffects,
+  callback : () -> Bytes,
+) -> Unit {
+  self.enquiry = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_enquiry(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.enquiry = fn() { b"" }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_size(
+  self : StreamTerminalBridgeEffects,
+  callback : () -> Size?,
+) -> Unit {
+  self.size = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_size(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.size = fn() { None }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_title_changed(
+  self : StreamTerminalBridgeEffects,
+  callback : () -> Unit,
+) -> Unit {
+  self.title_changed = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_title_changed(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.title_changed = fn() { () }
+}
+
+///|
+fn StreamTerminalBridgeEffects::set_xtversion(
+  self : StreamTerminalBridgeEffects,
+  callback : () -> String,
+) -> Unit {
+  self.xtversion = callback
+}
+
+///|
+fn StreamTerminalBridgeEffects::clear_xtversion(
+  self : StreamTerminalBridgeEffects,
+) -> Unit {
+  self.xtversion = fn() { "" }
 }
 
 ///|
@@ -329,6 +449,27 @@ fn StreamTerminalBridgeState::title(
 }
 
 ///|
+fn StreamTerminalBridgeState::set_title(
+  self : StreamTerminalBridgeState,
+  title : String,
+) -> Unit {
+  self.metadata.set_title(title)
+}
+
+///|
+fn StreamTerminalBridgeState::pwd(self : StreamTerminalBridgeState) -> String? {
+  self.metadata.pwd()
+}
+
+///|
+fn StreamTerminalBridgeState::set_pwd(
+  self : StreamTerminalBridgeState,
+  pwd : String,
+) -> Unit {
+  self.metadata.set_pwd(pwd)
+}
+
+///|
 fn StreamTerminalBridgeState::shell_redraws_prompt(
   self : StreamTerminalBridgeState,
 ) -> SemanticPromptRedraw {
@@ -384,6 +525,148 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
     Some(value) => Some(copy_page_cell_state(value))
     None => None
   }
+}
+
+///|
+fn StreamTerminalBridgeState::reset(self : StreamTerminalBridgeState) -> Unit {
+  self.full_reset()
+}
+
+///|
+fn StreamTerminalBridgeState::mode_get(
+  self : StreamTerminalBridgeState,
+  mode : Mode,
+) -> Bool {
+  self.mode_enabled(mode)
+}
+
+///|
+fn StreamTerminalBridgeState::mode_set(
+  self : StreamTerminalBridgeState,
+  mode : Mode,
+  enabled : Bool,
+) -> Unit {
+  self.set_mode(mode, enabled)
+}
+
+///|
+fn StreamTerminalBridgeState::set_write_pty(
+  self : StreamTerminalBridgeState,
+  callback : (Bytes) -> Unit,
+) -> Unit {
+  self.effects.set_write_pty(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_write_pty(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_write_pty()
+}
+
+///|
+fn StreamTerminalBridgeState::set_bell(
+  self : StreamTerminalBridgeState,
+  callback : () -> Unit,
+) -> Unit {
+  self.effects.set_bell(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_bell(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_bell()
+}
+
+///|
+fn StreamTerminalBridgeState::set_color_scheme(
+  self : StreamTerminalBridgeState,
+  callback : () -> ColorScheme?,
+) -> Unit {
+  self.effects.set_color_scheme(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_color_scheme(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_color_scheme()
+}
+
+///|
+fn StreamTerminalBridgeState::set_device_attributes(
+  self : StreamTerminalBridgeState,
+  callback : () -> DeviceAttributes?,
+) -> Unit {
+  self.effects.set_device_attributes(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_device_attributes(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_device_attributes()
+}
+
+///|
+fn StreamTerminalBridgeState::set_enquiry(
+  self : StreamTerminalBridgeState,
+  callback : () -> Bytes,
+) -> Unit {
+  self.effects.set_enquiry(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_enquiry(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_enquiry()
+}
+
+///|
+fn StreamTerminalBridgeState::set_size(
+  self : StreamTerminalBridgeState,
+  callback : () -> Size?,
+) -> Unit {
+  self.effects.set_size(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_size(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_size()
+}
+
+///|
+fn StreamTerminalBridgeState::set_title_changed(
+  self : StreamTerminalBridgeState,
+  callback : () -> Unit,
+) -> Unit {
+  self.effects.set_title_changed(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_title_changed(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_title_changed()
+}
+
+///|
+fn StreamTerminalBridgeState::set_xtversion(
+  self : StreamTerminalBridgeState,
+  callback : () -> String,
+) -> Unit {
+  self.effects.set_xtversion(callback)
+}
+
+///|
+fn StreamTerminalBridgeState::clear_xtversion(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.effects.clear_xtversion()
 }
 
 ///|

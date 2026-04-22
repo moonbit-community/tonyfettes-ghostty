@@ -1180,17 +1180,39 @@ pub(all) enum StreamAction {
 } derive(Eq, @debug.Debug)
 
 type StreamTerminal
+pub fn StreamTerminal::clear_bell(Self) -> Unit
+pub fn StreamTerminal::clear_color_scheme(Self) -> Unit
+pub fn StreamTerminal::clear_device_attributes(Self) -> Unit
+pub fn StreamTerminal::clear_enquiry(Self) -> Unit
 pub fn StreamTerminal::clear_palette_dirty(Self) -> Unit
+pub fn StreamTerminal::clear_size(Self) -> Unit
+pub fn StreamTerminal::clear_title_changed(Self) -> Unit
+pub fn StreamTerminal::clear_write_pty(Self) -> Unit
+pub fn StreamTerminal::clear_xtversion(Self) -> Unit
 pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
 pub fn StreamTerminal::deinit(Self) -> Unit
+pub fn StreamTerminal::mode_get(Self, Mode) -> Bool
+pub fn StreamTerminal::mode_set(Self, Mode, Bool) -> Unit
 pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> ColorScheme?, device_attributes? : () -> DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
+pub fn StreamTerminal::pwd(Self) -> String?
+pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> PageRowState?
+pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
+pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
+pub fn StreamTerminal::set_device_attributes(Self, () -> DeviceAttributes?) -> Unit
+pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
+pub fn StreamTerminal::set_pwd(Self, String) -> Unit
+pub fn StreamTerminal::set_size(Self, () -> Size?) -> Unit
+pub fn StreamTerminal::set_title(Self, String) -> Unit
+pub fn StreamTerminal::set_title_changed(Self, () -> Unit) -> Unit
+pub fn StreamTerminal::set_write_pty(Self, (Bytes) -> Unit) -> Unit
+pub fn StreamTerminal::set_xtversion(Self, () -> String) -> Unit
 pub fn StreamTerminal::title(Self) -> String?
 
 pub(all) enum Style {

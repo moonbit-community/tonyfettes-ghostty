@@ -199,6 +199,96 @@ test "stream terminal parity/set title_changed callback" {
 }
 
 ///|
+test "stream terminal parity/replaces and clears callbacks on the same terminal" {
+  let first = StreamTerminalParityRecorder::new()
+  let second = StreamTerminalParityRecorder::new()
+  let terminal = StreamTerminal::new(
+    write_pty=fn(data) { first.write_pty(data) },
+    bell=fn() { first.bell() },
+    title_changed=fn() { first.title_changed() },
+  )
+
+  terminal.next_slice(b"\x1B[?7$p\x07\x1B]2;First\x1B\\")
+  guard first.writes.length() == 1 &&
+    first.bell_count == 1 &&
+    first.title_changed_count == 1 else {
+    fail("expected initial callbacks to fire")
+  }
+
+  terminal.set_write_pty(fn(data) { second.write_pty(data) })
+  terminal.set_bell(fn() { second.bell() })
+  terminal.set_title_changed(fn() { second.title_changed() })
+
+  terminal.next_slice(b"\x1B[?7$p\x07\x1B]2;Second\x1B\\")
+  guard first.writes.length() == 1 &&
+    first.bell_count == 1 &&
+    first.title_changed_count == 1 &&
+    second.writes.length() == 1 &&
+    second.bell_count == 1 &&
+    second.title_changed_count == 1 else {
+    fail("expected callback replacement on the existing terminal")
+  }
+
+  terminal.clear_write_pty()
+  terminal.clear_bell()
+  terminal.clear_title_changed()
+  terminal.next_slice(b"\x1B[?7$p\x07\x1B]2;Third\x1B\\")
+  guard second.writes.length() == 1 &&
+    second.bell_count == 1 &&
+    second.title_changed_count == 1 else {
+    fail("expected cleared callbacks to restore silent/default behavior")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal parity/replaces callbacks with default fallback paths" {
+  let recorder = StreamTerminalParityRecorder::new()
+  let attributes = DeviceAttributes::new(
+    PrimaryDeviceAttributes::new(ConformanceLevel::Vt220, [
+      PrimaryDeviceAttributeFeature::AnsiColor,
+    ]),
+    SecondaryDeviceAttributes::new(DeviceType::Vt220, 10, 0),
+    TertiaryDeviceAttributes::new(0U),
+  )
+  let terminal = StreamTerminal::new(write_pty=fn(data) {
+    recorder.write_pty(data)
+  })
+
+  terminal.set_enquiry(fn() { b"OK" })
+  terminal.set_xtversion(fn() { "myterm 1.0" })
+  terminal.set_size(fn() { Some(Size::new(24, 80, 8, 16)) })
+  terminal.set_color_scheme(fn() { Some(ColorScheme::Light) })
+  terminal.set_device_attributes(fn() { Some(attributes) })
+  terminal.next_slice(b"\x05\x1B[>q\x1B[18t\x1B[?996n\x1B[c")
+
+  guard recorder.writes.length() == 5 else {
+    fail("expected replaced callbacks to respond")
+  }
+  expect_parity_write(recorder, 0, b"OK")
+  expect_parity_write(recorder, 1, b"\x1BP>|myterm 1.0\x1B\\")
+  expect_parity_write(recorder, 2, b"\x1B[8;24;80t")
+  expect_parity_write(recorder, 3, b"\x1B[?997;2n")
+  expect_parity_write(recorder, 4, b"\x1B[?62;22c")
+
+  terminal.clear_enquiry()
+  terminal.clear_xtversion()
+  terminal.clear_size()
+  terminal.clear_color_scheme()
+  terminal.clear_device_attributes()
+  terminal.next_slice(b"\x05\x1B[>q\x1B[18t\x1B[?996n\x1B[c")
+
+  guard recorder.writes.length() == 7 else {
+    fail("expected clear paths to restore defaults and silences")
+  }
+  expect_parity_write(recorder, 5, b"\x1BP>|libghostty\x1B\\")
+  expect_parity_write(recorder, 6, b"\x1B[?62;22c")
+
+  terminal.deinit()
+}
+
+///|
 test "stream terminal parity/set size callback" {
   let recorder = StreamTerminalParityRecorder::new()
   let terminal = StreamTerminal::new(
@@ -212,6 +302,44 @@ test "stream terminal parity/set size callback" {
     fail("expected size callback parity")
   }
   expect_parity_write(recorder, 0, b"\x1B[8;24;80t")
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal parity/metadata mode and reset controls" {
+  let terminal = StreamTerminal::new()
+
+  terminal.set_title("Hello")
+  terminal.set_pwd("/workspace")
+  terminal.set_pwd("")
+  guard terminal.pwd() == None else {
+    fail("expected empty pwd to clear state")
+  }
+  terminal.set_pwd("/workspace")
+  terminal.mode_set(Mode::CursorVisible, false)
+  terminal.mode_set(Mode::BracketedPaste, true)
+  terminal.next_slice(b"Hello")
+
+  guard terminal.title() == Some("Hello") &&
+    terminal.pwd() == Some("/workspace") &&
+    !terminal.mode_get(Mode::CursorVisible) &&
+    terminal.mode_get(Mode::BracketedPaste) &&
+    terminal.cursor_x() == 5 else {
+    fail("expected metadata and mode controls before reset")
+  }
+
+  terminal.reset()
+  guard terminal.title() == None else { fail("expected reset title default") }
+  guard terminal.pwd() == None else { fail("expected reset pwd default") }
+  guard terminal.mode_get(Mode::CursorVisible) else {
+    fail("expected reset cursor-visible mode default")
+  }
+  guard !terminal.mode_get(Mode::BracketedPaste) else {
+    fail("expected reset bracketed-paste mode default")
+  }
+  guard terminal.cursor_x() == 0 else { fail("expected reset cursor x") }
+  guard terminal.cursor_y() == 0 else { fail("expected reset cursor y") }
 
   terminal.deinit()
 }

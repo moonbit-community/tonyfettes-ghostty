@@ -122,6 +122,18 @@ test "modes/state set get save restore" {
 }
 
 ///|
+test "modes/reset restores original defaults after mutation" {
+  let state = ModeState::new()
+  state.set(Mode::CursorVisible, false)
+  state.set(Mode::BracketedPaste, true)
+
+  state.reset()
+  guard state.get(Mode::CursorVisible) && !state.get(Mode::BracketedPaste) else {
+    fail("expected reset to restore the original defaults")
+  }
+}
+
+///|
 test "modes/get report for known dec mode" {
   let state = ModeState::new()
   let report = state.get_report(mode_tag(1, false))
