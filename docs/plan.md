@@ -571,7 +571,7 @@ Phase 10 gate:
 ### Phase 11: Terminal host object parity
 
 Gate: `[S/P]` after Phase 10  
-Status: `todo`
+Status: `active`
 
 This phase broadens the current `StreamTerminal` facade and adjacent terminal
 helpers toward the richer `src/terminal/c/terminal.zig` host surface, while
@@ -579,14 +579,19 @@ keeping kitty-graphics-only fields deferred until Phase 13C.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P11.0 | todo | `terminal.zig`, `grid_ref.zig` contracts | terminal host-surface checklist and write-set split | P10.A, P10.B, P9.C | none | `[E]` | callbacks, query surface, viewport/grid pinning, and graphics deferrals are recorded before worker tasks start | doc review | `[R]` main | `docs` |
-| P11.A | todo | `src/terminal/c/terminal.zig` core | `StreamTerminal` surface expansion + tests | P11.0, P9.A, P9.B | P11.B, P11.C | main + `[W]` | `new/free/vt_write/set/reset/resize/scroll/mode` semantics land as MoonBit owner methods and callback behavior matches upstream non-graphics tests in one green task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
-| P11.B | todo | `src/terminal/c/grid_ref.zig` | grid pin/query helpers + tests | P11.0, P9.C, P11.A | P11.A, P11.C | `[W]` | row/cell/style/hyperlink access from terminal grid refs matches upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+| P11.0 | done | `terminal.zig`, `grid_ref.zig` contracts | terminal host-surface checklist and write-set split | P10.A, P10.B, P9.C | none | `[E]` | callbacks, query surface, viewport/grid pinning, and graphics deferrals are recorded before worker tasks start | doc review | `[R]` main | `docs` |
+| P11.A | todo | `src/terminal/c/terminal.zig` core | `StreamTerminal` surface expansion + tests | P11.0, P9.A, P9.B | none | main + `[W]` | `new/free/vt_write/set/reset/resize/scroll/mode` semantics land as MoonBit owner methods and callback behavior matches upstream non-graphics tests in one green task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
+| P11.B | todo | `src/terminal/c/grid_ref.zig` | grid pin/query helpers + tests | P11.0, P9.C, P11.A | P11.C | `[W]` | row/cell/style/hyperlink access from terminal grid refs matches upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
 | P11.C | todo | `src/terminal/c/terminal.zig` query surface | typed terminal query surface + tests | P11.0, P11.A, P9.B, P9.C | P11.B | `[W]` | non-graphics terminal data, metadata, scrollback, and default/current color state close as typed MoonBit queries; kitty graphics fields stay deferred to P13.C | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-terminal)` |
 
 Phase 11 gate:
 
-- P11.0, P11.A, P11.B, and P11.C are `done`
+- P11.0 is `done`
+
+#### Phase 11 outputs
+
+- Completed P11.0 checklist lives in:
+  [2026-04-22-p11-0-terminal-host-surface-checklist.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p11-0-terminal-host-surface-checklist.md)
 
 ### Phase 12: Input events and encoders
 
@@ -600,7 +605,7 @@ Status: `todo`
 
 Phase 12 gate:
 
-- P12.A and P12.B are `done`
+- P12.A and P12.B remain `todo`
 
 ### Phase 13: Render, formatter, and graphics wrappers
 
@@ -619,7 +624,7 @@ the terminal host object and input helper layers are stable.
 
 Phase 13 gate:
 
-- P13.0, P13.A, P13.B, and P13.C are `done`
+- P13.0, P13.A, P13.B, and P13.C remain `todo`
 
 ### Phase 14: Sys, type metadata, and aggregate C surface
 
@@ -634,8 +639,8 @@ Status: `todo`
 
 Phase 14 gate:
 
-- P14.A, P14.B, and P14.C are `done`
-- Phase 14 completion closes pure-MoonBit parity for the full
+- P14.A, P14.B, and P14.C remain `todo`
+- Phase 14 completion will close pure-MoonBit parity for the full
   `src/terminal/c` semantic surface
 
 ## Definition of done
