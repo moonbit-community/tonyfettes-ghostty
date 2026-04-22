@@ -177,6 +177,7 @@ fn StreamTerminalBridgeEffects::clear_xtversion(
 ///|
 priv struct StreamTerminalBridgeState {
   effects : StreamTerminalBridgeEffects
+  apc_handler : ApcHandler
   protected_state : ScreenProtectedState
   display_state : TerminalDisplayState
   colors : TerminalColors
@@ -191,6 +192,7 @@ priv struct StreamTerminalBridgeState {
   metadata : TerminalMetadataState
   mut grid : ScreenGridState
   mut scrollback : TerminalScrollbackState
+  mut kitty_graphics : KittyGraphicsState
   mut primary_storage : TerminalScreenStorage
   mut alternate_storage : TerminalScreenStorage
   mut charset : ScreenCharsetState
@@ -225,6 +227,7 @@ fn StreamTerminalBridgeState::with_effects(
   )
   {
     effects,
+    apc_handler: ApcHandler::new(),
     protected_state: ScreenProtectedState::new(),
     display_state: TerminalDisplayState::new(),
     colors: TerminalColors::new(),
@@ -239,6 +242,7 @@ fn StreamTerminalBridgeState::with_effects(
     metadata: TerminalMetadataState::new(),
     grid: primary_storage.grid,
     scrollback: primary_storage.scrollback,
+    kitty_graphics: primary_storage.kitty_graphics,
     primary_storage,
     alternate_storage,
     charset: ScreenCharsetState::new(),
@@ -734,6 +738,13 @@ fn StreamTerminalBridgeState::active_screen(
   self : StreamTerminalBridgeState,
 ) -> TerminalScreen {
   self.active_screen
+}
+
+///|
+fn StreamTerminalBridgeState::kitty_graphics(
+  self : StreamTerminalBridgeState,
+) -> KittyGraphicsState {
+  self.kitty_graphics
 }
 
 ///|
@@ -1490,9 +1501,18 @@ fn StreamTerminalBridgeState::apply(
     StreamDcsHook(_) => true
     StreamDcsPut(_) => true
     StreamDcsUnhook => true
-    StreamApcStart => true
-    StreamApcPut(_) => true
-    StreamApcEnd => true
+    StreamApcStart => {
+      self.apc_handler.start()
+      true
+    }
+    StreamApcPut(value) => {
+      self.apc_handler.feed(value)
+      true
+    }
+    StreamApcEnd => {
+      self.handle_apc_end()
+      true
+    }
   }
 }
 
@@ -1988,6 +2008,374 @@ fn StreamTerminalBridgeState::query_kitty_keyboard(
 }
 
 ///|
+fn StreamTerminalBridgeState::handle_apc_end(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  match self.apc_handler.end() {
+    Some(Kitty(command)) => self.apply_kitty_graphics(command)
+    None => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::apply_kitty_graphics(
+  self : StreamTerminalBridgeState,
+  command : KittyGraphicsCommand,
+) -> Unit {
+  match command.control {
+    Query(transmission) =>
+      self.write_kitty_graphics_response(
+        command.quiet,
+        Some(self.execute_kitty_graphics_query(transmission, command.data)),
+      )
+    Transmit(transmission) => {
+      let (quiet, response) = self.execute_kitty_graphics_transmit(
+        transmission,
+        command.quiet,
+        None,
+        command.data,
+      )
+      self.write_kitty_graphics_response(quiet, response)
+    }
+    TransmitAndDisplay(value) => {
+      let (quiet, response) = self.execute_kitty_graphics_transmit(
+        value.transmission,
+        command.quiet,
+        Some(value.display),
+        command.data,
+      )
+      self.write_kitty_graphics_response(quiet, response)
+    }
+    Display(display) =>
+      self.write_kitty_graphics_response(
+        command.quiet,
+        Some(self.execute_kitty_graphics_display(display)),
+      )
+    Delete(delete) => self.execute_kitty_graphics_delete(delete)
+    Unsupported(_) =>
+      self.write_kitty_graphics_response(
+        command.quiet,
+        Some(KittyGraphicsResponse::new(message=b"ERROR: unimplemented action")),
+      )
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::write_kitty_graphics_response(
+  self : StreamTerminalBridgeState,
+  quiet : KittyGraphicsQuiet,
+  response : KittyGraphicsResponse?,
+) -> Unit {
+  match response {
+    Some(value) => {
+      let should_write = match quiet {
+        KittyGraphicsQuiet::No => !value.empty()
+        KittyGraphicsQuiet::Ok => !value.ok()
+        KittyGraphicsQuiet::Failures => false
+      }
+      if should_write {
+        let encoded = value.encode()
+        if encoded.length() > 0 {
+          self.write_pty(encoded)
+        }
+      }
+    }
+    None => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::execute_kitty_graphics_query(
+  _self : StreamTerminalBridgeState,
+  transmission : KittyImageTransmission,
+  data : Bytes,
+) -> KittyGraphicsResponse {
+  let result = KittyGraphicsResponse::new(
+    id=transmission.image_id,
+    image_number=transmission.image_number,
+    placement_id=transmission.placement_id,
+  )
+  if transmission.image_id == 0U {
+    result.message = b"EINVAL: image ID required"
+    return result
+  }
+
+  match kitty_graphics_validate_transmission_header(transmission) {
+    Some(error) => {
+      result.message = kitty_graphics_error_message(error)
+      result
+    }
+    None => {
+      let loading = KittyGraphicsLoadingImage::new(
+        transmission,
+        data,
+        KittyGraphicsQuiet::No,
+        None,
+      )
+      match finalize_kitty_graphics_loading(loading, 0UL) {
+        Ok(_) => result
+        Err(error) => {
+          result.message = kitty_graphics_error_message(error)
+          result
+        }
+      }
+    }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::execute_kitty_graphics_transmit(
+  self : StreamTerminalBridgeState,
+  transmission : KittyImageTransmission,
+  quiet : KittyGraphicsQuiet,
+  display : KittyImageDisplay?,
+  data : Bytes,
+) -> (KittyGraphicsQuiet, KittyGraphicsResponse?) {
+  let response = KittyGraphicsResponse::new(
+    id=transmission.image_id,
+    image_number=transmission.image_number,
+    placement_id=transmission.placement_id,
+  )
+  if transmission.image_id > 0U && transmission.image_number > 0U {
+    response.message = b"EINVAL: image ID and number are mutually exclusive"
+    return (quiet, Some(response))
+  }
+
+  match self.kitty_graphics.loading {
+    Some(loading) => {
+      let effective_quiet = match quiet {
+        KittyGraphicsQuiet::No => loading.quiet
+        KittyGraphicsQuiet::Ok | KittyGraphicsQuiet::Failures => quiet
+      }
+      if quiet != KittyGraphicsQuiet::No {
+        loading.quiet = quiet
+      }
+      loading.append(data)
+
+      if transmission.more_chunks {
+        self.kitty_graphics.loading = Some(loading)
+        return (effective_quiet, None)
+      }
+
+      let pending_display = loading.display
+      let seq = self.kitty_graphics.reserve_transmit_seq()
+      self.kitty_graphics.loading = None
+      match finalize_kitty_graphics_loading(loading, seq) {
+        Ok(image) => {
+          let finished = self.finish_kitty_graphics_transmit(
+            transmission, image, pending_display,
+          )
+          (effective_quiet, Some(finished))
+        }
+        Err(error) => {
+          response.message = kitty_graphics_error_message(error)
+          (effective_quiet, Some(response))
+        }
+      }
+    }
+    None =>
+      match kitty_graphics_validate_transmission_header(transmission) {
+        Some(error) => {
+          response.message = kitty_graphics_error_message(error)
+          (quiet, Some(response))
+        }
+        None => {
+          let loading = KittyGraphicsLoadingImage::new(
+            transmission, data, quiet, display,
+          )
+          if loading.image.id == 0U {
+            loading.image.id = self.kitty_graphics.allocate_image_id()
+            if loading.image.number == 0U {
+              loading.image.implicit_id = true
+            }
+          }
+
+          if transmission.more_chunks {
+            self.kitty_graphics.loading = Some(loading)
+            (quiet, None)
+          } else {
+            let seq = self.kitty_graphics.reserve_transmit_seq()
+            match finalize_kitty_graphics_loading(loading, seq) {
+              Ok(image) => {
+                let finished = self.finish_kitty_graphics_transmit(
+                  transmission, image, display,
+                )
+                (quiet, Some(finished))
+              }
+              Err(error) => {
+                response.message = kitty_graphics_error_message(error)
+                (quiet, Some(response))
+              }
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::finish_kitty_graphics_transmit(
+  self : StreamTerminalBridgeState,
+  transmission : KittyImageTransmission,
+  image : KittyGraphicsImage,
+  display : KittyImageDisplay?,
+) -> KittyGraphicsResponse {
+  self.kitty_graphics.add_image(image)
+
+  let mut result = KittyGraphicsResponse::new(
+    id=transmission.image_id,
+    image_number=transmission.image_number,
+    placement_id=transmission.placement_id,
+  )
+  match display {
+    Some(value) => {
+      let display_copy = value
+      display_copy.image_id = image.id
+      result = self.execute_kitty_graphics_display(display_copy)
+    }
+    None => ()
+  }
+
+  if image.implicit_id {
+    return KittyGraphicsResponse::new()
+  }
+
+  result.id = image.id
+  result
+}
+
+///|
+fn StreamTerminalBridgeState::execute_kitty_graphics_display(
+  self : StreamTerminalBridgeState,
+  display : KittyImageDisplay,
+) -> KittyGraphicsResponse {
+  let result = KittyGraphicsResponse::new(
+    id=display.image_id,
+    image_number=display.image_number,
+    placement_id=display.placement_id,
+  )
+  if display.image_id == 0U && display.image_number == 0U {
+    result.message = b"EINVAL: image ID or number required"
+    return result
+  }
+
+  let image = if display.image_id != 0U {
+    self.kitty_graphics.image_by_id(display.image_id)
+  } else {
+    self.kitty_graphics.image_by_number(display.image_number)
+  }
+  let image = match image {
+    Some(value) => value
+    None => {
+      result.message = b"ENOENT: image not found"
+      return result
+    }
+  }
+  result.id = image.id
+
+  if display.virtual_placement && display.parent_id > 0U {
+    result.message = b"EINVAL: virtual placement cannot refer to a parent"
+    return result
+  }
+
+  let location = if display.virtual_placement {
+    KittyGraphicsPlacementLocation::Virtual
+  } else {
+    match self.kitty_graphics_cursor_pin() {
+      Some(pin) => KittyGraphicsPlacementLocation::Grid(pin)
+      None => {
+        result.message = b"EINVAL: failed to prepare terminal state"
+        return result
+      }
+    }
+  }
+
+  let placement = self.kitty_graphics.add_placement(
+    image.id,
+    display.placement_id,
+    location,
+    display,
+  )
+  self.apply_kitty_graphics_cursor_movement(placement, image, display)
+  result
+}
+
+///|
+fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
+  self : StreamTerminalBridgeState,
+  delete : KittyGraphicsDelete,
+) -> Unit {
+  match delete {
+    All(delete_images) => self.kitty_graphics.delete_all(delete_images)
+    Id(value) =>
+      self.kitty_graphics.delete_by_id(
+        value.image_id,
+        value.placement_id,
+        value.delete,
+      )
+    Newest(value) =>
+      self.kitty_graphics.delete_newest(
+        value.image_number,
+        value.placement_id,
+        value.delete,
+      )
+    IntersectCursor(_)
+    | AnimationFrames(_)
+    | IntersectCell(_)
+    | IntersectCellZ(_)
+    | Range(_)
+    | Column(_)
+    | Row(_)
+    | Z(_) => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
+  self : StreamTerminalBridgeState,
+) -> GridRef? {
+  self.grid_ref(
+    Point::Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
+  )
+}
+
+///|
+fn StreamTerminalBridgeState::apply_kitty_graphics_cursor_movement(
+  self : StreamTerminalBridgeState,
+  placement : KittyGraphicsPlacement,
+  image : KittyGraphicsImage,
+  display : KittyImageDisplay,
+) -> Unit {
+  if display.cursor_movement == KittyImageCursorMovement::None ||
+    placement.is_virtual() {
+    return
+  }
+
+  let size = placement.grid_size(
+    image,
+    self.grid.cols,
+    self.grid.rows,
+    self.width_px,
+    self.height_px,
+  )
+  let mut remaining = size.rows.reinterpret_as_int()
+  while remaining > 0 {
+    self.index()
+    remaining -= 1
+  }
+
+  match placement.location {
+    Grid(pin) => {
+      let target_col = (pin.x_coord().to_int() +
+      size.cols.reinterpret_as_int() +
+      1).to_uint16()
+      self.cursor.set_cursor_pos(self.cursor.y() + 1, target_col, false)
+    }
+    Virtual => ()
+  }
+}
+
+///|
 priv enum ScreenMode {
   Mode47
   Mode1047
@@ -2003,11 +2391,13 @@ fn StreamTerminalBridgeState::store_active_screen(
       self.primary_storage.grid = self.grid
       self.primary_storage.cursor = self.cursor
       self.primary_storage.scrollback = self.scrollback
+      self.primary_storage.kitty_graphics = self.kitty_graphics
     }
     TerminalScreen::Alternate => {
       self.alternate_storage.grid = self.grid
       self.alternate_storage.cursor = self.cursor
       self.alternate_storage.scrollback = self.scrollback
+      self.alternate_storage.kitty_graphics = self.kitty_graphics
     }
   }
 }
@@ -2022,11 +2412,13 @@ fn StreamTerminalBridgeState::load_active_screen(
       self.grid = self.primary_storage.grid
       self.cursor = self.primary_storage.cursor
       self.scrollback = self.primary_storage.scrollback
+      self.kitty_graphics = self.primary_storage.kitty_graphics
     }
     TerminalScreen::Alternate => {
       self.grid = self.alternate_storage.grid
       self.cursor = self.alternate_storage.cursor
       self.scrollback = self.alternate_storage.scrollback
+      self.kitty_graphics = self.alternate_storage.kitty_graphics
     }
   }
   self.active_screen = screen
@@ -2082,6 +2474,7 @@ fn StreamTerminalBridgeState::clear_active_screen(
 ) -> Unit {
   self.grid.full_reset()
   self.scrollback.full_reset(self.grid.rows)
+  self.kitty_graphics.full_reset()
 }
 
 ///|

@@ -1774,3 +1774,338 @@ test "stream terminal bridge/handles passive effect and passthrough actions" {
     fail("expected later printable text to remain functional")
   }
 }
+
+///|
+test "stream terminal bridge/applies kitty graphics transmit display and delete" {
+  let recorder = BridgeEffectsRecorder::new()
+  let state = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+      recorder.write_pty(data)
+    }),
+  )
+
+  guard apply_stream_bytes(
+    state, b"\x1B_Ga=T,t=d,f=24,i=1,p=2,s=1,v=2,c=3,r=1;////////\x1B\\",
+  ) else {
+    fail("expected kitty graphics transmit-and-display sequence")
+  }
+
+  guard state.kitty_graphics().images().length() == 1 &&
+    state.kitty_graphics().placements().length() == 1 else {
+    fail("expected stored kitty image and placement")
+  }
+  guard recorder.writes.length() == 1 else {
+    fail("expected kitty graphics success response")
+  }
+  expect_effect_write(recorder, 0, b"\x1B_Gi=1,p=2;OK\x1B\\")
+
+  let image = state.kitty_graphics().images()[0]
+  guard image.width == 1U && image.height == 2U && image.data.length() == 6 else {
+    fail("expected stored kitty image metadata")
+  }
+
+  let placement = state.kitty_graphics().placements()[0]
+  guard placement.image_id == 1U &&
+    placement.external &&
+    placement.placement_id == 2U &&
+    !placement.is_virtual() else {
+    fail("expected stored kitty placement metadata")
+  }
+  guard state.cursor_x() == 3 && state.cursor_y() == 1 else {
+    fail("expected cursor movement after placement display")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B_Ga=p,i=1,p=0,c=2,r=1;\x1B\\") else {
+    fail("expected second kitty display sequence")
+  }
+  guard state.kitty_graphics().placements().length() == 2 else {
+    fail("expected internal placement id allocation")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B_Ga=d,d=i,i=1,p=2;\x1B\\") else {
+    fail("expected kitty delete-by-id sequence")
+  }
+  guard state.kitty_graphics().placements().length() == 1 else {
+    fail("expected external placement deletion")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B_Ga=d,d=A;\x1B\\") else {
+    fail("expected kitty delete-all sequence")
+  }
+  guard state.kitty_graphics().images().length() == 0 &&
+    state.kitty_graphics().placements().length() == 0 else {
+    fail("expected delete-all to clear stored graphics")
+  }
+}
+
+///|
+test "stream terminal bridge/handles kitty graphics query chunking and quiet" {
+  let recorder = BridgeEffectsRecorder::new()
+  let state = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+      recorder.write_pty(data)
+    }),
+  )
+
+  guard apply_stream_bytes(
+    state, b"\x1B_Ga=q,t=d,f=24,i=7,s=1,v=2;////////\x1B\\",
+  ) else {
+    fail("expected kitty query sequence")
+  }
+  guard recorder.writes.length() == 1 else {
+    fail("expected kitty query response")
+  }
+  expect_effect_write(recorder, 0, b"\x1B_Gi=7;OK\x1B\\")
+  guard state.kitty_graphics().images().length() == 0 else {
+    fail("expected query to avoid storage mutation")
+  }
+
+  guard apply_stream_bytes(
+      state, b"\x1B_Ga=t,t=d,f=24,q=1,m=1,i=9,s=1,v=2;////\x1B\\",
+    ) &&
+    apply_stream_bytes(state, b"\x1B_Gm=0;////\x1B\\") else {
+    fail("expected kitty chunked transmit sequence")
+  }
+  guard state.kitty_graphics().images().length() == 1 &&
+    state.kitty_graphics().loading == None else {
+    fail("expected chunked transmit finalization")
+  }
+  guard recorder.writes.length() == 1 else {
+    fail("expected q=1 success suppression for chunked transmit")
+  }
+
+  guard apply_stream_bytes(state, b"\x1B_Ga=f;\x1B\\") else {
+    fail("expected unsupported kitty action to be handled")
+  }
+  guard recorder.writes.length() == 1 else {
+    fail("expected unsupported action without ids to stay silent")
+  }
+}
+
+///|
+test "stream terminal bridge/kitty graphics internal error and helper branches" {
+  let recorder = BridgeEffectsRecorder::new()
+  let state = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+      recorder.write_pty(data)
+    }),
+  )
+
+  state.write_kitty_graphics_response(
+    KittyGraphicsQuiet::Failures,
+    Some(KittyGraphicsResponse::new(id=1U)),
+  )
+  state.write_kitty_graphics_response(
+    KittyGraphicsQuiet::Ok,
+    Some(KittyGraphicsResponse::new(id=1U)),
+  )
+  state.write_kitty_graphics_response(
+    KittyGraphicsQuiet::No,
+    Some(KittyGraphicsResponse::new()),
+  )
+  state.write_kitty_graphics_response(
+    KittyGraphicsQuiet::Ok,
+    Some(KittyGraphicsResponse::new(id=2U, message=b"ERR")),
+  )
+  guard recorder.writes.length() == 1 else {
+    fail("expected only failing kitty responses to emit under quiet mode")
+  }
+  expect_effect_write(recorder, 0, b"\x1B_Gi=2;ERR\x1B\\")
+
+  let query_missing = KittyImageTransmission::new()
+  query_missing.format = Rgb
+  query_missing.width = 1U
+  query_missing.height = 1U
+  guard state.execute_kitty_graphics_query(query_missing, b"\x00\x01\x02").message ==
+    b"EINVAL: image ID required" else {
+    fail("expected query image-id validation")
+  }
+
+  let query_medium = KittyImageTransmission::new()
+  query_medium.image_id = 1U
+  query_medium.medium = File
+  guard state.execute_kitty_graphics_query(query_medium, b"").message ==
+    b"EINVAL: unsupported medium" else {
+    fail("expected query medium validation")
+  }
+
+  let query_invalid = KittyImageTransmission::new()
+  query_invalid.image_id = 2U
+  query_invalid.format = Rgb
+  query_invalid.width = 1U
+  query_invalid.height = 1U
+  guard state.execute_kitty_graphics_query(query_invalid, b"\x00").message ==
+    b"EINVAL: invalid data" else {
+    fail("expected query payload validation")
+  }
+
+  let conflicting = KittyImageTransmission::new()
+  conflicting.image_id = 1U
+  conflicting.image_number = 2U
+  let (conflicting_quiet, conflicting_response) = state.execute_kitty_graphics_transmit(
+    conflicting,
+    KittyGraphicsQuiet::No,
+    None,
+    b"",
+  )
+  guard conflicting_quiet == KittyGraphicsQuiet::No &&
+    conflicting_response is Some(value) &&
+    value.message == b"EINVAL: image ID and number are mutually exclusive" else {
+    fail("expected mutually-exclusive transmit validation")
+  }
+
+  let chunked = KittyImageTransmission::new()
+  chunked.format = Rgb
+  chunked.width = 1U
+  chunked.height = 1U
+  chunked.image_id = 9U
+  chunked.more_chunks = true
+  let (chunk_quiet, chunk_response) = state.execute_kitty_graphics_transmit(
+    chunked,
+    KittyGraphicsQuiet::Ok,
+    None,
+    b"\x00",
+  )
+  guard chunk_quiet == KittyGraphicsQuiet::Ok &&
+    chunk_response == None &&
+    state.kitty_graphics.loading is Some(loading_started) &&
+    loading_started.quiet == KittyGraphicsQuiet::Ok else {
+    fail("expected initial chunked transmit state")
+  }
+
+  let continuation = KittyImageTransmission::new()
+  continuation.more_chunks = true
+  let (continuation_quiet, continuation_response) = state.execute_kitty_graphics_transmit(
+    continuation,
+    KittyGraphicsQuiet::No,
+    None,
+    b"\x01",
+  )
+  guard continuation_quiet == KittyGraphicsQuiet::Ok &&
+    continuation_response == None &&
+    state.kitty_graphics.loading is Some(loading_continued) &&
+    loading_continued.data.length() == 2 else {
+    fail("expected continued chunk accumulation")
+  }
+
+  let final_chunk = KittyImageTransmission::new()
+  let (final_quiet, final_response) = state.execute_kitty_graphics_transmit(
+    final_chunk,
+    KittyGraphicsQuiet::Failures,
+    None,
+    b"",
+  )
+  guard final_quiet == KittyGraphicsQuiet::Failures &&
+    final_response is Some(value) &&
+    value.message == b"EINVAL: invalid data" &&
+    state.kitty_graphics.loading == None else {
+    fail("expected final chunk validation error")
+  }
+
+  let unsupported = KittyImageTransmission::new()
+  unsupported.medium = File
+  let (_, unsupported_response) = state.execute_kitty_graphics_transmit(
+    unsupported,
+    KittyGraphicsQuiet::No,
+    None,
+    b"",
+  )
+  guard unsupported_response is Some(value) &&
+    value.message == b"EINVAL: unsupported medium" else {
+    fail("expected transmit header validation")
+  }
+
+  let invalid_fresh = KittyImageTransmission::new()
+  invalid_fresh.format = Rgb
+  invalid_fresh.width = 1U
+  invalid_fresh.height = 1U
+  invalid_fresh.image_id = 10U
+  let (_, invalid_fresh_response) = state.execute_kitty_graphics_transmit(
+    invalid_fresh,
+    KittyGraphicsQuiet::No,
+    None,
+    b"\x00",
+  )
+  guard invalid_fresh_response is Some(value) &&
+    value.message == b"EINVAL: invalid data" else {
+    fail("expected non-chunked transmit payload validation")
+  }
+
+  let implicit = KittyImageTransmission::new()
+  implicit.format = Rgb
+  implicit.width = 1U
+  implicit.height = 1U
+  let (_, implicit_response) = state.execute_kitty_graphics_transmit(
+    implicit,
+    KittyGraphicsQuiet::No,
+    None,
+    b"\x00\x01\x02",
+  )
+  guard implicit_response is Some(value) &&
+    value.empty() &&
+    state.kitty_graphics.images().length() >= 1 &&
+    state.kitty_graphics.images()[state.kitty_graphics.images().length() - 1].implicit_id else {
+    fail("expected implicit-id transmit behavior")
+  }
+}
+
+///|
+test "stream terminal bridge/kitty graphics display and delete edge branches" {
+  let state = StreamTerminalBridgeState::new()
+  state.kitty_graphics.add_image(
+    sample_kitty_image(id=3U, number=7U, transmit_seq=4UL),
+  )
+
+  let missing = KittyImageDisplay::new()
+  guard state.execute_kitty_graphics_display(missing).message ==
+    b"EINVAL: image ID or number required" else {
+    fail("expected display identity validation")
+  }
+
+  let by_number = KittyImageDisplay::new()
+  by_number.image_number = 7U
+  by_number.virtual_placement = true
+  by_number.placement_id = 4U
+  let by_number_result = state.execute_kitty_graphics_display(by_number)
+  guard by_number_result.id == 3U &&
+    state.kitty_graphics.placements().length() == 1 &&
+    state.kitty_graphics.placements()[0].is_virtual() else {
+    fail("expected display lookup by image number")
+  }
+
+  let absent = KittyImageDisplay::new()
+  absent.image_id = 99U
+  guard state.execute_kitty_graphics_display(absent).message ==
+    b"ENOENT: image not found" else {
+    fail("expected display missing-image validation")
+  }
+
+  let parented = KittyImageDisplay::new()
+  parented.image_id = 3U
+  parented.virtual_placement = true
+  parented.parent_id = 1U
+  guard state.execute_kitty_graphics_display(parented).message ==
+    b"EINVAL: virtual placement cannot refer to a parent" else {
+    fail("expected display parent validation")
+  }
+
+  state.execute_kitty_graphics_delete(
+    Newest({ delete: false, image_number: 7U, placement_id: 4U }),
+  )
+  guard state.kitty_graphics.placements().length() == 0 else {
+    fail("expected newest delete helper usage")
+  }
+
+  state.cursor.x = 65535
+  let pinned = KittyImageDisplay::new()
+  pinned.image_id = 3U
+  guard state.execute_kitty_graphics_display(pinned).message ==
+    b"EINVAL: failed to prepare terminal state" else {
+    fail("expected cursor-pin validation")
+  }
+
+  state.execute_kitty_graphics_delete(Z({ delete: true, z: 1 }))
+  guard state.kitty_graphics.images().length() == 1 else {
+    fail("expected unimplemented delete selectors to stay no-op")
+  }
+}

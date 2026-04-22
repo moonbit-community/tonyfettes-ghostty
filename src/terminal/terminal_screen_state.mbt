@@ -31,6 +31,7 @@ priv struct TerminalScreenStorage {
   mut grid : ScreenGridState
   mut cursor : TerminalCursorState
   mut scrollback : TerminalScrollbackState
+  mut kitty_graphics : KittyGraphicsState
 } derive(Eq, Debug)
 
 ///|
@@ -217,6 +218,7 @@ fn TerminalScreenStorage::new(
     grid: ScreenGridState::new(rows, cols),
     cursor: TerminalCursorState::new(rows, cols),
     scrollback: TerminalScrollbackState::new(rows, max_scrollback),
+    kitty_graphics: KittyGraphicsState::new(),
   }
 }
 
