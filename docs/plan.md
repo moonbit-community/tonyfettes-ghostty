@@ -532,12 +532,11 @@ port. They should land before terminal/render wrappers start leaning on them.
 |---|---|---|---|---|---|---|---|---|---|---|
 | P9.A | done | `result.zig`, `build_info.zig` | shared result/build-info surface + tests | P8.A | P9.B, P9.C | `[W]` | error/result/build metadata match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 | P9.B | done | `color.zig`, `style.zig`, `modes.zig`, `focus.zig`, `size_report.zig`, `paste.zig` | extensions to existing owner modules + tests | P8.A | P9.A, P9.C | `[W]` | stateless encoders, value projections, and small helper contracts land in MoonBit owner modules with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
-| P9.C | todo | `selection.zig`, `row.zig`, `cell.zig` | page/selection view helpers + tests | P8.A, P9.B | P9.A | `[W]` | row/cell data views and selection structs match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
+| P9.C | done | `selection.zig`, `row.zig`, `cell.zig` | page/selection view helpers + tests | P8.A, P9.B | P9.A | `[W]` | row/cell data views and selection structs match upstream contracts with tests in the same task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-surface-foundation)` |
 
 Phase 9 progress:
 
-- P9.A and P9.B are `done`
-- P9.C remains `todo`
+- P9.A, P9.B, and P9.C are `done`
 
 #### Phase 9 outputs
 
@@ -545,6 +544,8 @@ Phase 9 progress:
   [2026-04-21-p9-a-result-and-build-info.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p9-a-result-and-build-info.md)
 - Completed Phase 9B audit lives in:
   [2026-04-22-p9-b-stateless-helper-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p9-b-stateless-helper-surface.md)
+- Completed Phase 9C audit lives in:
+  [2026-04-22-p9-c-row-cell-selection-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p9-c-row-cell-selection-surface.md)
 
 ### Phase 10: Parser object wrappers
 

@@ -913,6 +913,12 @@ pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
 pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
 pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
 
+type Selection[Ref] derive(Eq, @debug.Debug)
+pub fn[Ref] Selection::end(Self[Ref]) -> Ref
+pub fn[Ref] Selection::new(Ref, Ref, Bool) -> Self[Ref]
+pub fn[Ref] Selection::rectangle(Self[Ref]) -> Bool
+pub fn[Ref] Selection::start(Self[Ref]) -> Ref
+
 pub(all) enum SemanticClickMode {
   None
   ClickEvents
