@@ -440,6 +440,242 @@ pub(all) struct InvokeCharsetAction {
   locking : Bool
 } derive(Eq, @debug.Debug)
 
+pub(all) enum Key {
+  Unidentified
+  Backquote
+  Backslash
+  BracketLeft
+  BracketRight
+  Comma
+  Digit0
+  Digit1
+  Digit2
+  Digit3
+  Digit4
+  Digit5
+  Digit6
+  Digit7
+  Digit8
+  Digit9
+  Equal
+  IntlBackslash
+  IntlRo
+  IntlYen
+  KeyA
+  KeyB
+  KeyC
+  KeyD
+  KeyE
+  KeyF
+  KeyG
+  KeyH
+  KeyI
+  KeyJ
+  KeyK
+  KeyL
+  KeyM
+  KeyN
+  KeyO
+  KeyP
+  KeyQ
+  KeyR
+  KeyS
+  KeyT
+  KeyU
+  KeyV
+  KeyW
+  KeyX
+  KeyY
+  KeyZ
+  Minus
+  Period
+  Quote
+  Semicolon
+  Slash
+  AltLeft
+  AltRight
+  Backspace
+  CapsLock
+  ContextMenu
+  ControlLeft
+  ControlRight
+  Enter
+  MetaLeft
+  MetaRight
+  ShiftLeft
+  ShiftRight
+  Space
+  Tab
+  Convert
+  KanaMode
+  NonConvert
+  Delete
+  End
+  Help
+  Home
+  Insert
+  PageDown
+  PageUp
+  ArrowDown
+  ArrowLeft
+  ArrowRight
+  ArrowUp
+  NumLock
+  Numpad0
+  Numpad1
+  Numpad2
+  Numpad3
+  Numpad4
+  Numpad5
+  Numpad6
+  Numpad7
+  Numpad8
+  Numpad9
+  NumpadAdd
+  NumpadBackspace
+  NumpadClear
+  NumpadClearEntry
+  NumpadComma
+  NumpadDecimal
+  NumpadDivide
+  NumpadEnter
+  NumpadEqual
+  NumpadMemoryAdd
+  NumpadMemoryClear
+  NumpadMemoryRecall
+  NumpadMemoryStore
+  NumpadMemorySubtract
+  NumpadMultiply
+  NumpadParenLeft
+  NumpadParenRight
+  NumpadSubtract
+  NumpadSeparator
+  NumpadUp
+  NumpadDown
+  NumpadRight
+  NumpadLeft
+  NumpadBegin
+  NumpadHome
+  NumpadEnd
+  NumpadInsert
+  NumpadDelete
+  NumpadPageUp
+  NumpadPageDown
+  Escape
+  F1
+  F2
+  F3
+  F4
+  F5
+  F6
+  F7
+  F8
+  F9
+  F10
+  F11
+  F12
+  F13
+  F14
+  F15
+  F16
+  F17
+  F18
+  F19
+  F20
+  F21
+  F22
+  F23
+  F24
+  F25
+  Fn
+  FnLock
+  PrintScreen
+  ScrollLock
+  Pause
+  BrowserBack
+  BrowserFavorites
+  BrowserForward
+  BrowserHome
+  BrowserRefresh
+  BrowserSearch
+  BrowserStop
+  Eject
+  LaunchApp1
+  LaunchApp2
+  LaunchMail
+  MediaPlayPause
+  MediaSelect
+  MediaStop
+  MediaTrackNext
+  MediaTrackPrevious
+  Power
+  Sleep
+  AudioVolumeDown
+  AudioVolumeMute
+  AudioVolumeUp
+  WakeUp
+  Copy
+  Cut
+  Paste
+} derive(Eq, @debug.Debug)
+pub fn Key::codepoint(Self) -> UInt?
+
+pub(all) enum KeyAction {
+  Release
+  Press
+  Repeat
+} derive(Eq, @debug.Debug)
+
+type KeyEvent derive(Eq, @debug.Debug)
+pub fn KeyEvent::action(Self) -> KeyAction
+pub fn KeyEvent::composing(Self) -> Bool
+pub fn KeyEvent::consumed_mods(Self) -> KeyMods
+pub fn KeyEvent::effective_mods(Self) -> KeyMods
+pub fn KeyEvent::key(Self) -> Key
+pub fn KeyEvent::mods(Self) -> KeyMods
+pub fn KeyEvent::new() -> Self
+pub fn KeyEvent::set_action(Self, KeyAction) -> Unit
+pub fn KeyEvent::set_composing(Self, Bool) -> Unit
+pub fn KeyEvent::set_consumed_mods(Self, KeyMods) -> Unit
+pub fn KeyEvent::set_key(Self, Key) -> Unit
+pub fn KeyEvent::set_mods(Self, KeyMods) -> Unit
+pub fn KeyEvent::set_unshifted_codepoint(Self, UInt) -> Unit
+pub fn KeyEvent::set_utf8(Self, Bytes) -> Unit
+pub fn KeyEvent::unshifted_codepoint(Self) -> UInt
+pub fn KeyEvent::utf8(Self) -> Bytes
+
+pub(all) enum KeyModSide {
+  Left
+  Right
+} derive(Eq, @debug.Debug)
+
+type KeyMods derive(Eq, @debug.Debug)
+pub fn KeyMods::alt(Self) -> Bool
+pub fn KeyMods::alt_side(Self) -> KeyModSide
+pub fn KeyMods::binding(Self) -> Self
+pub fn KeyMods::caps_lock(Self) -> Bool
+pub fn KeyMods::ctrl(Self) -> Bool
+pub fn KeyMods::ctrl_side(Self) -> KeyModSide
+pub fn KeyMods::empty(Self) -> Bool
+pub fn KeyMods::new() -> Self
+pub fn KeyMods::num_lock(Self) -> Bool
+pub fn KeyMods::shift(Self) -> Bool
+pub fn KeyMods::shift_side(Self) -> KeyModSide
+pub fn KeyMods::super_(Self) -> Bool
+pub fn KeyMods::super_side(Self) -> KeyModSide
+pub fn KeyMods::unset(Self, Self) -> Self
+pub fn KeyMods::with_alt(Self, Bool) -> Self
+pub fn KeyMods::with_alt_side(Self, KeyModSide) -> Self
+pub fn KeyMods::with_caps_lock(Self, Bool) -> Self
+pub fn KeyMods::with_ctrl(Self, Bool) -> Self
+pub fn KeyMods::with_ctrl_side(Self, KeyModSide) -> Self
+pub fn KeyMods::with_num_lock(Self, Bool) -> Self
+pub fn KeyMods::with_shift(Self, Bool) -> Self
+pub fn KeyMods::with_shift_side(Self, KeyModSide) -> Self
+pub fn KeyMods::with_super_(Self, Bool) -> Self
+pub fn KeyMods::with_super_side(Self, KeyModSide) -> Self
+pub fn KeyMods::without_locks(Self) -> Self
+
 pub(all) enum KittyClipboardLocation {
   KittyClipboardPrimary
 } derive(Eq, @debug.Debug)
@@ -621,6 +857,27 @@ pub(all) enum ModifyKeyFormat {
 } derive(Eq, @debug.Debug)
 pub fn ModifyKeyFormat::ordinal(Self) -> Int
 
+pub(all) enum MouseAction {
+  Press
+  Release
+  Motion
+} derive(Eq, @debug.Debug)
+
+pub(all) enum MouseButton {
+  Unknown
+  Left
+  Right
+  Middle
+  Four
+  Five
+  Six
+  Seven
+  Eight
+  Nine
+  Ten
+  Eleven
+} derive(Eq, @debug.Debug)
+
 pub(all) enum MouseEvent {
   None
   X10
@@ -636,6 +893,23 @@ pub(all) enum MouseFormat {
   Urxvt
   SgrPixels
 } derive(Eq, @debug.Debug)
+
+type MouseInputEvent derive(Eq, @debug.Debug)
+pub fn MouseInputEvent::action(Self) -> MouseAction
+pub fn MouseInputEvent::button(Self) -> MouseButton?
+pub fn MouseInputEvent::clear_button(Self) -> Unit
+pub fn MouseInputEvent::mods(Self) -> KeyMods
+pub fn MouseInputEvent::new() -> Self
+pub fn MouseInputEvent::position(Self) -> MousePosition
+pub fn MouseInputEvent::set_action(Self, MouseAction) -> Unit
+pub fn MouseInputEvent::set_button(Self, MouseButton) -> Unit
+pub fn MouseInputEvent::set_mods(Self, KeyMods) -> Unit
+pub fn MouseInputEvent::set_position(Self, MousePosition) -> Unit
+
+type MousePosition derive(Eq, @debug.Debug)
+pub fn MousePosition::new(Float, Float) -> Self
+pub fn MousePosition::x(Self) -> Float
+pub fn MousePosition::y(Self) -> Float
 
 pub(all) enum MouseShape {
   Default

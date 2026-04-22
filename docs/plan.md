@@ -605,16 +605,22 @@ Phase 11 gate:
 ### Phase 12: Input events and encoders
 
 Gate: `[P]` after Phase 11  
-Status: `todo`
+Status: `active`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P12.A | todo | `key_event.zig`, `mouse_event.zig` | input event owner types + tests | P9.A | P12.B | `[W]` | create/free/get/set parity for key and mouse events lands as MoonBit owner types with upstream behavior tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+| P12.A | done | `key_event.zig`, `mouse_event.zig` | input event owner types + tests | P9.A | P12.B | `[W]` | create/free/get/set parity for key and mouse events lands as MoonBit owner types with upstream behavior tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
 | P12.B | todo | `key_encode.zig`, `mouse_encode.zig` | input encoder surfaces + tests | P12.A, P11.A, P9.B | P12.A | `[W]` | encoder option surfaces and terminal-derived defaults match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
 
 Phase 12 gate:
 
-- P12.A and P12.B remain `todo`
+- P12.A is `done`
+- P12.B remains `todo`
+
+#### Phase 12 outputs
+
+- Completed P12.A audit lives in:
+  [2026-04-22-p12-a-input-event-owner-types.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-a-input-event-owner-types.md)
 
 ### Phase 13: Render, formatter, and graphics wrappers
 
