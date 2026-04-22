@@ -32,6 +32,8 @@ pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
 
 pub fn mouse_event_sends_motion(MouseEvent) -> Bool
 
+pub fn paste_is_safe(Bytes) -> Bool
+
 pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
 
 pub fn status_display_from_int(Int) -> StatusDisplay?
@@ -420,6 +422,12 @@ pub fn DynamicRGB::reset(Self) -> Unit
 pub fn DynamicRGB::set(Self, RGB) -> Unit
 pub fn DynamicRGB::unset() -> Self
 
+pub(all) enum FocusEvent {
+  Gained
+  Lost
+} derive(Eq, @debug.Debug)
+pub fn FocusEvent::encode(Self) -> Bytes
+
 type HyperlinkStart derive(Eq, @debug.Debug)
 pub fn HyperlinkStart::id(Self) -> String?
 pub fn HyperlinkStart::uri(Self) -> String
@@ -757,6 +765,10 @@ pub fn PageRowState::set_wrap_continuation(Self, Bool) -> Unit
 pub fn PageRowState::styled(Self) -> Bool
 pub fn PageRowState::wrap(Self) -> Bool
 pub fn PageRowState::wrap_continuation(Self) -> Bool
+
+type PasteOptions derive(Eq, @debug.Debug)
+pub fn PasteOptions::encode(Self, Bytes) -> Bytes
+pub fn PasteOptions::new(Bool) -> Self
 
 pub(all) enum Point {
   Active(Coordinate)
