@@ -1180,6 +1180,7 @@ pub(all) enum StreamAction {
 } derive(Eq, @debug.Debug)
 
 type StreamTerminal
+pub fn StreamTerminal::active_screen(Self) -> TerminalScreen
 pub fn StreamTerminal::clear_bell(Self) -> Unit
 pub fn StreamTerminal::clear_color_scheme(Self) -> Unit
 pub fn StreamTerminal::clear_device_attributes(Self) -> Unit
@@ -1189,10 +1190,12 @@ pub fn StreamTerminal::clear_size(Self) -> Unit
 pub fn StreamTerminal::clear_title_changed(Self) -> Unit
 pub fn StreamTerminal::clear_write_pty(Self) -> Unit
 pub fn StreamTerminal::clear_xtversion(Self) -> Unit
+pub fn StreamTerminal::columns(Self) -> UInt16
 pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
 pub fn StreamTerminal::deinit(Self) -> Unit
+pub fn StreamTerminal::height_px(Self) -> UInt
 pub fn StreamTerminal::mode_get(Self, Mode) -> Bool
 pub fn StreamTerminal::mode_set(Self, Mode, Bool) -> Unit
 pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> ColorScheme?, device_attributes? : () -> DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
@@ -1201,8 +1204,14 @@ pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
+pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> TerminalResultCode
+pub fn StreamTerminal::rows(Self) -> UInt16
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> PageRowState?
+pub fn StreamTerminal::scroll_viewport_bottom(Self) -> Unit
+pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
+pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
+pub fn StreamTerminal::scrollback_rows(Self) -> UInt
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
 pub fn StreamTerminal::set_device_attributes(Self, () -> DeviceAttributes?) -> Unit
@@ -1214,6 +1223,8 @@ pub fn StreamTerminal::set_title_changed(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_write_pty(Self, (Bytes) -> Unit) -> Unit
 pub fn StreamTerminal::set_xtversion(Self, () -> String) -> Unit
 pub fn StreamTerminal::title(Self) -> String?
+pub fn StreamTerminal::total_rows(Self) -> UInt
+pub fn StreamTerminal::width_px(Self) -> UInt
 
 pub(all) enum Style {
   Mode2048
@@ -1300,6 +1311,11 @@ pub(all) enum TerminalResultCode {
   NoValue
 } derive(Eq, @debug.Debug)
 pub fn TerminalResultCode::code(Self) -> Int
+
+pub(all) enum TerminalScreen {
+  Primary
+  Alternate
+} derive(Eq, @debug.Debug)
 
 type TerminalTabstopsState derive(Eq, @debug.Debug)
 pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool

@@ -53,6 +53,20 @@ fn expect_terminal_cell(
 }
 
 ///|
+fn expect_row_text(
+  terminal : StreamTerminal,
+  row : CellCountInt,
+  expected : Bytes,
+) -> Unit raise {
+  for index in 0..<expected.length() {
+    guard expect_terminal_cell(terminal, row, index.to_uint16()).codepoint() ==
+      expected[index].to_uint() else {
+      fail("expected row text")
+    }
+  }
+}
+
+///|
 test "stream terminal/applies bytes across split escape writes" {
   let terminal = StreamTerminal::new()
 
@@ -155,6 +169,89 @@ test "stream terminal/uses readonly fallbacks and palette dirtiness" {
   guard !terminal.palette_dirty() else {
     fail("expected public palette dirty clear")
   }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/resize updates dimensions and reports size" {
+  let recorder = StreamTerminalEffectsRecorder::new()
+  let terminal = StreamTerminal::new(write_pty=fn(data) {
+    recorder.write_pty(data)
+  })
+
+  terminal.mode_set(Mode::SynchronizedOutput, true)
+  terminal.mode_set(Mode::InBandSizeReports, true)
+
+  guard terminal.resize(100, 40, 9U, 18U) == TerminalResultCode::Success else {
+    fail("expected resize success")
+  }
+  guard terminal.columns() == 100 &&
+    terminal.rows() == 40 &&
+    terminal.width_px() == 900U &&
+    terminal.height_px() == 720U else {
+    fail("expected resize dimensions")
+  }
+  guard !terminal.mode_get(Mode::SynchronizedOutput) else {
+    fail("expected resize to disable synchronized output")
+  }
+  guard recorder.writes.length() == 1 else {
+    fail("expected in-band resize report")
+  }
+  expect_stream_write(recorder, 0, b"\x1B[48;40;100;720;900t")
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/resize rejects zero dimensions and saturates pixels" {
+  let terminal = StreamTerminal::new()
+
+  guard terminal.resize(0, 24, 9U, 18U) == TerminalResultCode::InvalidValue &&
+    terminal.resize(80, 0, 9U, 18U) == TerminalResultCode::InvalidValue else {
+    fail("expected resize invalid-value guards")
+  }
+  guard terminal.resize(100, 40, 0xFFFFFFFF, 0xFFFFFFFF) ==
+    TerminalResultCode::Success else {
+    fail("expected resize saturation success")
+  }
+  guard terminal.width_px() == 0xFFFFFFFF && terminal.height_px() == 0xFFFFFFFF else {
+    fail("expected saturated pixel dimensions")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/scrollback viewport tracks active screen rows" {
+  let terminal = StreamTerminal::new()
+
+  guard terminal.resize(5, 2, 0U, 0U) == TerminalResultCode::Success else {
+    fail("expected resize before scrollback viewport test")
+  }
+  terminal.next_slice(b"hello\x1BD\x1BD\x1BD")
+
+  guard terminal.active_screen() == TerminalScreen::Primary else {
+    fail("expected primary screen by default")
+  }
+  guard terminal.total_rows() == 4U && terminal.scrollback_rows() == 2U else {
+    fail("expected scrollback accounting")
+  }
+  guard expect_terminal_cell(terminal, 0, 0).codepoint() == 0U &&
+    expect_terminal_cell(terminal, 1, 0).codepoint() == 0U else {
+    fail("expected scrolled viewport bottom to be blank")
+  }
+
+  terminal.scroll_viewport_top()
+  expect_row_text(terminal, 0, b"hello")
+
+  terminal.scroll_viewport_bottom()
+  guard expect_terminal_cell(terminal, 0, 0).codepoint() == 0U else {
+    fail("expected viewport bottom after scroll reset")
+  }
+
+  terminal.scroll_viewport_delta(-2)
+  expect_row_text(terminal, 0, b"hello")
 
   terminal.deinit()
 }

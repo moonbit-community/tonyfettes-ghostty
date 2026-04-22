@@ -5,6 +5,9 @@ const DefaultRows : CellCountInt = 24
 const DefaultColumns : CellCountInt = 80
 
 ///|
+const DefaultMaxScrollback : Int = 10_000
+
+///|
 const DefaultXtversion : String = "libghostty"
 
 ///|
@@ -178,21 +181,27 @@ priv struct StreamTerminalBridgeState {
   display_state : TerminalDisplayState
   colors : TerminalColors
   modes : ModeState
-  cursor : TerminalCursorState
+  mut cursor : TerminalCursorState
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
-  tabstops : TerminalTabstopsState
+  mut tabstops : TerminalTabstopsState
   saved_cursor : ScreenSavedCursorState
   hyperlink : ScreenHyperlinkState
   semantic : ScreenSemanticState
   metadata : TerminalMetadataState
-  grid : ScreenGridState
+  mut grid : ScreenGridState
+  mut scrollback : TerminalScrollbackState
+  mut primary_storage : TerminalScreenStorage
+  mut alternate_storage : TerminalScreenStorage
   mut charset : ScreenCharsetState
   mut current_style : CellStyle
   mut previous_char : UInt?
   mut mouse_event : MouseEvent
   mut mouse_format : MouseFormat
   mut palette_dirty : Bool
+  mut active_screen : TerminalScreen
+  mut width_px : UInt
+  mut height_px : UInt
 }
 
 ///|
@@ -204,13 +213,23 @@ fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
 fn StreamTerminalBridgeState::with_effects(
   effects : StreamTerminalBridgeEffects,
 ) -> StreamTerminalBridgeState {
+  let primary_storage = TerminalScreenStorage::new(
+    DefaultRows,
+    DefaultColumns,
+    DefaultMaxScrollback,
+  )
+  let alternate_storage = TerminalScreenStorage::new(
+    DefaultRows,
+    DefaultColumns,
+    0,
+  )
   {
     effects,
     protected_state: ScreenProtectedState::new(),
     display_state: TerminalDisplayState::new(),
     colors: TerminalColors::new(),
     modes: ModeState::new(),
-    cursor: TerminalCursorState::new(DefaultRows, DefaultColumns),
+    cursor: primary_storage.cursor,
     input_flags: TerminalInputFlags::new(),
     kitty_keyboard: KittyKeyboardState::new(),
     tabstops: TerminalTabstopsState::new(DefaultColumns),
@@ -218,13 +237,19 @@ fn StreamTerminalBridgeState::with_effects(
     hyperlink: ScreenHyperlinkState::new(),
     semantic: ScreenSemanticState::new(),
     metadata: TerminalMetadataState::new(),
-    grid: ScreenGridState::new(DefaultRows, DefaultColumns),
+    grid: primary_storage.grid,
+    scrollback: primary_storage.scrollback,
+    primary_storage,
+    alternate_storage,
     charset: ScreenCharsetState::new(),
     current_style: CellStyle::new(),
     previous_char: None,
     mouse_event: MouseEvent::None,
     mouse_format: MouseFormat::X10,
     palette_dirty: false,
+    active_screen: TerminalScreen::Primary,
+    width_px: 0U,
+    height_px: 0U,
   }
 }
 
@@ -509,10 +534,7 @@ fn StreamTerminalBridgeState::screen_row_snapshot(
   self : StreamTerminalBridgeState,
   row : CellCountInt,
 ) -> PageRowState? {
-  match self.grid.row(row) {
-    Some(value) => Some(copy_page_row_state(value))
-    None => None
-  }
+  self.scrollback.row(self.grid, row)
 }
 
 ///|
@@ -521,10 +543,56 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
   row : CellCountInt,
   col : CellCountInt,
 ) -> PageCellState? {
-  match self.grid.cell(row, col) {
-    Some(value) => Some(copy_page_cell_state(value))
-    None => None
-  }
+  self.scrollback.cell(self.grid, row, col)
+}
+
+///|
+fn StreamTerminalBridgeState::rows(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.grid.rows
+}
+
+///|
+fn StreamTerminalBridgeState::columns(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.grid.cols
+}
+
+///|
+fn StreamTerminalBridgeState::active_screen(
+  self : StreamTerminalBridgeState,
+) -> TerminalScreen {
+  self.active_screen
+}
+
+///|
+fn StreamTerminalBridgeState::total_rows(
+  self : StreamTerminalBridgeState,
+) -> UInt {
+  self.scrollback.total_rows(self.grid.rows)
+}
+
+///|
+fn StreamTerminalBridgeState::scrollback_rows(
+  self : StreamTerminalBridgeState,
+) -> UInt {
+  self.scrollback.scrollback_rows()
+}
+
+///|
+fn StreamTerminalBridgeState::width_px(
+  self : StreamTerminalBridgeState,
+) -> UInt {
+  self.width_px
+}
+
+///|
+fn StreamTerminalBridgeState::height_px(
+  self : StreamTerminalBridgeState,
+) -> UInt {
+  self.height_px
 }
 
 ///|
@@ -667,6 +735,64 @@ fn StreamTerminalBridgeState::clear_xtversion(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   self.effects.clear_xtversion()
+}
+
+///|
+fn StreamTerminalBridgeState::resize(
+  self : StreamTerminalBridgeState,
+  columns : CellCountInt,
+  rows : CellCountInt,
+  cell_width_px : UInt,
+  cell_height_px : UInt,
+) -> TerminalResultCode {
+  if columns == 0 || rows == 0 {
+    return TerminalResultCode::InvalidValue
+  }
+
+  let next_primary = TerminalScreenStorage::new(
+    rows,
+    columns,
+    DefaultMaxScrollback,
+  )
+  let next_alternate = TerminalScreenStorage::new(rows, columns, 0)
+  let active_screen = self.active_screen
+  self.primary_storage = next_primary
+  self.alternate_storage = next_alternate
+  self.active_screen = active_screen
+  self.load_active_screen(active_screen)
+  self.tabstops = TerminalTabstopsState::new(columns)
+  self.saved_cursor.reset()
+  self.width_px = saturated_dimension(columns, cell_width_px)
+  self.height_px = saturated_dimension(rows, cell_height_px)
+  self.modes.set(Mode::SynchronizedOutput, false)
+  if self.modes.get(Mode::InBandSizeReports) {
+    self.write_pty(
+      encode(Mode2048, Size::new(rows, columns, cell_width_px, cell_height_px)),
+    )
+  }
+  TerminalResultCode::Success
+}
+
+///|
+fn StreamTerminalBridgeState::scroll_viewport_top(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.scrollback.scroll_top()
+}
+
+///|
+fn StreamTerminalBridgeState::scroll_viewport_bottom(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.scrollback.scroll_bottom()
+}
+
+///|
+fn StreamTerminalBridgeState::scroll_viewport_delta(
+  self : StreamTerminalBridgeState,
+  delta : Int,
+) -> Unit {
+  self.scrollback.scroll_delta(delta)
 }
 
 ///|
@@ -1053,10 +1179,27 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamScrollUp(count) => {
+      if self.active_screen == TerminalScreen::Primary &&
+        self.cursor.top_margin() == 0 &&
+        self.cursor.bottom_margin() == self.grid.rows - 1 &&
+        self.cursor.left_margin() == 0 &&
+        self.cursor.right_margin() == self.grid.cols - 1 {
+        self.scrollback.capture_full_screen_scroll_up(self.grid, count.to_int())
+      }
       self.grid.scroll_up(self.cursor, self.current_style, count)
       true
     }
     StreamScrollDown(count) => {
+      if self.active_screen == TerminalScreen::Primary &&
+        self.cursor.top_margin() == 0 &&
+        self.cursor.bottom_margin() == self.grid.rows - 1 &&
+        self.cursor.left_margin() == 0 &&
+        self.cursor.right_margin() == self.grid.cols - 1 {
+        self.scrollback.capture_full_screen_scroll_down(
+          self.grid,
+          count.to_int(),
+        )
+      }
       self.grid.scroll_down(self.cursor, self.current_style, count)
       true
     }
@@ -1241,10 +1384,18 @@ fn StreamTerminalBridgeState::linefeed(
 fn StreamTerminalBridgeState::index(self : StreamTerminalBridgeState) -> Unit {
   self.cursor.set_pending_wrap(false)
   if self.cursor_outside_scroll_region() {
-    if self.cursor.y().to_int() < DefaultRows.to_int() - 1 {
+    if self.cursor.y().to_int() < self.grid.rows.to_int() - 1 {
       self.cursor.y = self.cursor.y() + 1
     }
   } else {
+    if self.active_screen == TerminalScreen::Primary &&
+      self.cursor.y() == self.cursor.bottom_margin() &&
+      self.cursor.top_margin() == 0 &&
+      self.cursor.bottom_margin() == self.grid.rows - 1 &&
+      self.cursor.left_margin() == 0 &&
+      self.cursor.right_margin() == self.grid.cols - 1 {
+      self.scrollback.capture_full_screen_scroll_up(self.grid, 1)
+    }
     self.grid.index(self.cursor, self.current_style)
   }
   self.apply_semantic_after_newline()
@@ -1261,6 +1412,13 @@ fn StreamTerminalBridgeState::reverse_index(
     return
   }
 
+  if self.active_screen == TerminalScreen::Primary &&
+    self.cursor.top_margin() == 0 &&
+    self.cursor.bottom_margin() == self.grid.rows - 1 &&
+    self.cursor.left_margin() == 0 &&
+    self.cursor.right_margin() == self.grid.cols - 1 {
+    self.scrollback.capture_full_screen_scroll_down(self.grid, 1)
+  }
   self.grid.scroll_down(self.cursor, self.current_style, 1)
 }
 
@@ -1280,14 +1438,22 @@ fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
 fn StreamTerminalBridgeState::full_reset(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  self.grid.full_reset()
+  let rows = self.grid.rows
+  let cols = self.grid.cols
+  self.primary_storage = TerminalScreenStorage::new(
+    rows,
+    cols,
+    DefaultMaxScrollback,
+  )
+  self.alternate_storage = TerminalScreenStorage::new(rows, cols, 0)
+  self.active_screen = TerminalScreen::Primary
+  self.load_active_screen(TerminalScreen::Primary)
   self.protected_state.reset()
   self.display_state.full_reset()
   self.modes.reset()
-  self.cursor.full_reset()
   self.input_flags.full_reset()
   self.kitty_keyboard.reset()
-  self.tabstops.reset(8)
+  self.tabstops = TerminalTabstopsState::new(cols)
   self.saved_cursor.reset()
   self.hyperlink.full_reset()
   self.semantic.full_reset()
@@ -1590,6 +1756,145 @@ fn StreamTerminalBridgeState::query_kitty_keyboard(
 }
 
 ///|
+priv enum ScreenMode {
+  Mode47
+  Mode1047
+  Mode1049
+} derive(Eq, Debug)
+
+///|
+fn StreamTerminalBridgeState::store_active_screen(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  match self.active_screen {
+    TerminalScreen::Primary => {
+      self.primary_storage.grid = self.grid
+      self.primary_storage.cursor = self.cursor
+      self.primary_storage.scrollback = self.scrollback
+    }
+    TerminalScreen::Alternate => {
+      self.alternate_storage.grid = self.grid
+      self.alternate_storage.cursor = self.cursor
+      self.alternate_storage.scrollback = self.scrollback
+    }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::load_active_screen(
+  self : StreamTerminalBridgeState,
+  screen : TerminalScreen,
+) -> Unit {
+  match screen {
+    TerminalScreen::Primary => {
+      self.grid = self.primary_storage.grid
+      self.cursor = self.primary_storage.cursor
+      self.scrollback = self.primary_storage.scrollback
+    }
+    TerminalScreen::Alternate => {
+      self.grid = self.alternate_storage.grid
+      self.cursor = self.alternate_storage.cursor
+      self.scrollback = self.alternate_storage.scrollback
+    }
+  }
+  self.active_screen = screen
+}
+
+///|
+fn StreamTerminalBridgeState::switch_active_screen(
+  self : StreamTerminalBridgeState,
+  screen : TerminalScreen,
+) -> Bool {
+  if self.active_screen == screen {
+    return false
+  }
+
+  self.store_active_screen()
+  self.load_active_screen(screen)
+  true
+}
+
+///|
+fn StreamTerminalBridgeState::copy_cursor_between_screens(
+  self : StreamTerminalBridgeState,
+  from : TerminalScreen,
+  to : TerminalScreen,
+) -> Unit {
+  let source = match from {
+    TerminalScreen::Primary => self.primary_storage.cursor
+    TerminalScreen::Alternate => self.alternate_storage.cursor
+  }
+  let target = match to {
+    TerminalScreen::Primary => self.primary_storage.cursor
+    TerminalScreen::Alternate => self.alternate_storage.cursor
+  }
+  target.x = min_int(source.x().to_int(), target.columns.to_int() - 1).to_uint16()
+  target.y = min_int(source.y().to_int(), target.rows.to_int() - 1).to_uint16()
+  target.visual_style = source.visual_style()
+  target.pending_wrap = source.pending_wrap()
+  target.top_margin = source.top_margin()
+  target.bottom_margin = min_int(
+    source.bottom_margin().to_int(),
+    target.rows.to_int() - 1,
+  ).to_uint16()
+  target.left_margin = source.left_margin()
+  target.right_margin = min_int(
+    source.right_margin().to_int(),
+    target.columns.to_int() - 1,
+  ).to_uint16()
+}
+
+///|
+fn StreamTerminalBridgeState::clear_active_screen(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  self.grid.full_reset()
+  self.scrollback.full_reset(self.grid.rows)
+}
+
+///|
+fn StreamTerminalBridgeState::switch_screen_mode(
+  self : StreamTerminalBridgeState,
+  mode : ScreenMode,
+  enabled : Bool,
+) -> Unit {
+  match mode {
+    ScreenMode::Mode47 => ()
+    ScreenMode::Mode1047 =>
+      if !enabled && self.active_screen == TerminalScreen::Alternate {
+        self.clear_active_screen()
+      }
+    ScreenMode::Mode1049 => if enabled { self.save_cursor() }
+  }
+
+  let from = self.active_screen
+  let to = if enabled {
+    TerminalScreen::Alternate
+  } else {
+    TerminalScreen::Primary
+  }
+  let changed = self.switch_active_screen(to)
+  match mode {
+    ScreenMode::Mode47 | ScreenMode::Mode1047 =>
+      if changed {
+        self.copy_cursor_between_screens(from, to)
+        self.load_active_screen(to)
+      }
+    ScreenMode::Mode1049 =>
+      if enabled {
+        self.clear_active_screen()
+        self.store_active_screen()
+        if changed {
+          self.copy_cursor_between_screens(from, to)
+          self.load_active_screen(to)
+        }
+      } else {
+        self.restore_cursor()
+      }
+  }
+}
+
+///|
 fn StreamTerminalBridgeState::set_mode(
   self : StreamTerminalBridgeState,
   mode : Mode,
@@ -1608,6 +1913,10 @@ fn StreamTerminalBridgeState::set_mode(
       } else {
         self.restore_cursor()
       }
+    AltScreenLegacy => self.switch_screen_mode(ScreenMode::Mode47, enabled)
+    AltScreen => self.switch_screen_mode(ScreenMode::Mode1047, enabled)
+    AltScreenSaveCursorClearEnter =>
+      self.switch_screen_mode(ScreenMode::Mode1049, enabled)
     MouseEventX10 =>
       self.mouse_event = if enabled {
         MouseEvent::X10
@@ -2482,43 +2791,12 @@ fn codepoint_in_range(codepoint : UInt, start : UInt, end_ : UInt) -> Bool {
 }
 
 ///|
-fn copy_page_row_state(row : PageRowState) -> PageRowState {
-  {
-    wrap: row.wrap,
-    wrap_continuation: row.wrap_continuation,
-    grapheme: row.grapheme,
-    styled: row.styled,
-    hyperlink: row.hyperlink,
-    semantic_prompt: row.semantic_prompt,
-    kitty_virtual_placeholder: row.kitty_virtual_placeholder,
-    dirty: row.dirty,
-  }
-}
-
-///|
-fn copy_page_cell_state(cell : PageCellState) -> PageCellState {
-  {
-    content_tag: cell.content_tag,
-    codepoint: cell.codepoint,
-    palette_index: cell.palette_index,
-    bg_rgb: cell.bg_rgb,
-    style: copy_cell_style(cell.style),
-    wide: cell.wide,
-    protected_flag: cell.protected_flag,
-    hyperlink: match cell.hyperlink {
-      Some(value) => Some(copy_cell_hyperlink(value))
-      None => None
-    },
-    semantic_content: cell.semantic_content,
-  }
-}
-
-///|
-fn copy_cell_hyperlink(link : CellHyperlink) -> CellHyperlink {
-  {
-    uri: link.uri(),
-    explicit_id: link.explicit_id(),
-    implicit_id: link.implicit_id(),
+fn saturated_dimension(count : CellCountInt, unit : UInt) -> UInt {
+  let product = count.to_uint64() * unit.to_uint64()
+  if product > 0xFFFFFFFFUL {
+    0xFFFFFFFF
+  } else {
+    product.to_uint()
   }
 }
 

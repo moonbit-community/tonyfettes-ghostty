@@ -126,6 +126,70 @@ pub fn StreamTerminal::mode_set(
 }
 
 ///|
+pub fn StreamTerminal::resize(
+  self : StreamTerminal,
+  columns : CellCountInt,
+  rows : CellCountInt,
+  cell_width_px : UInt,
+  cell_height_px : UInt,
+) -> TerminalResultCode {
+  self.bridge().resize(columns, rows, cell_width_px, cell_height_px)
+}
+
+///|
+pub fn StreamTerminal::scroll_viewport_top(self : StreamTerminal) -> Unit {
+  self.bridge().scroll_viewport_top()
+}
+
+///|
+pub fn StreamTerminal::scroll_viewport_bottom(self : StreamTerminal) -> Unit {
+  self.bridge().scroll_viewport_bottom()
+}
+
+///|
+pub fn StreamTerminal::scroll_viewport_delta(
+  self : StreamTerminal,
+  delta : Int,
+) -> Unit {
+  self.bridge().scroll_viewport_delta(delta)
+}
+
+///|
+pub fn StreamTerminal::rows(self : StreamTerminal) -> CellCountInt {
+  self.bridge().rows()
+}
+
+///|
+pub fn StreamTerminal::columns(self : StreamTerminal) -> CellCountInt {
+  self.bridge().columns()
+}
+
+///|
+pub fn StreamTerminal::active_screen(self : StreamTerminal) -> TerminalScreen {
+  self.bridge().active_screen()
+}
+
+///|
+pub fn StreamTerminal::total_rows(self : StreamTerminal) -> UInt {
+  self.bridge().total_rows()
+}
+
+///|
+pub fn StreamTerminal::scrollback_rows(self : StreamTerminal) -> UInt {
+  self.bridge().scrollback_rows()
+}
+
+///|
+pub fn StreamTerminal::width_px(self : StreamTerminal) -> UInt {
+  self.bridge().width_px()
+}
+
+///|
+pub fn StreamTerminal::height_px(self : StreamTerminal) -> UInt {
+  self.bridge().height_px()
+}
+
+///|
 pub fn StreamTerminal::screen_row_snapshot(
   self : StreamTerminal,
   row : CellCountInt,

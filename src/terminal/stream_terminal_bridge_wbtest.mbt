@@ -216,6 +216,108 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
 }
 
 ///|
+test "stream terminal bridge/switches screens and restores cursor modes" {
+  let state = StreamTerminalBridgeState::new()
+  state.cursor.x = 7
+  state.cursor.y = 3
+
+  guard !state.switch_active_screen(TerminalScreen::Primary) else {
+    fail("expected switching to the same screen to be a no-op")
+  }
+
+  state.mode_set(Mode::AltScreenLegacy, true)
+  guard state.active_screen() == TerminalScreen::Alternate &&
+    state.cursor_x() == 7 &&
+    state.cursor_y() == 3 else {
+    fail("expected legacy alt-screen switch to copy cursor")
+  }
+
+  state.cursor.x = 1
+  state.cursor.y = 1
+  state.mode_set(Mode::AltScreenLegacy, false)
+  guard state.active_screen() == TerminalScreen::Primary &&
+    state.cursor_x() == 1 &&
+    state.cursor_y() == 1 else {
+    fail("expected legacy alt-screen exit to copy alternate cursor state")
+  }
+
+  state.mode_set(Mode::AltScreen, true)
+  state.grid.write_cell(
+    0,
+    0,
+    b'Z'.to_uint(),
+    PageCellWide::Narrow,
+    CellStyle::new(),
+    false,
+    SemanticContent::Output,
+    None,
+  )
+  state.mode_set(Mode::AltScreen, false)
+  state.mode_set(Mode::AltScreen, true)
+  guard expect_bridge_cell(state, 0, 0).is_empty() else {
+    fail("expected mode 1047 exit to clear alternate screen")
+  }
+  state.mode_set(Mode::AltScreen, false)
+
+  state.cursor.x = 4
+  state.cursor.y = 2
+  state.mode_set(Mode::AltScreenSaveCursorClearEnter, true)
+  guard state.active_screen() == TerminalScreen::Alternate &&
+    state.cursor_x() == 4 &&
+    state.cursor_y() == 2 else {
+    fail("expected mode 1049 entry to copy cursor into alt screen")
+  }
+  state.cursor.x = 9
+  state.cursor.y = 9
+  state.mode_set(Mode::AltScreenSaveCursorClearEnter, false)
+  guard state.active_screen() == TerminalScreen::Primary &&
+    state.cursor_x() == 4 &&
+    state.cursor_y() == 2 else {
+    fail("expected mode 1049 exit to restore saved primary cursor")
+  }
+}
+
+///|
+test "stream terminal bridge/covers reverse index and safe none branches" {
+  let state = StreamTerminalBridgeState::new()
+  fill_ascii(state.grid, 0, [b'A', b'B', b'C'])
+  guard state.apply(StreamReverseIndex) else {
+    fail("expected reverse index to be handled")
+  }
+
+  state.hyperlink.uri = Some("https://example.com")
+  state.hyperlink.explicit_id = None
+  state.hyperlink.implicit_id = None
+  guard state.active_hyperlink() == None else {
+    fail("expected incomplete hyperlink state to stay safe")
+  }
+
+  state.cursor.y = 0
+  state.semantic.start_input(false)
+  state.apply_semantic_after_newline()
+  guard expect_bridge_row(state, 0).semantic_prompt() ==
+    RowSemanticPrompt::PromptContinuation else {
+    fail("expected semantic continuation on in-bounds newline")
+  }
+
+  state.cursor.y = state.grid.rows
+  state.semantic.row_prompt = RowSemanticPrompt::Prompt
+  state.sync_current_row_prompt()
+  state.semantic.start_input(false)
+  state.apply_semantic_after_newline()
+  state.apply_semantic_prompt(SemanticPrompt::new(EndInputStartOutput, []))
+  state.apply_semantic_prompt(SemanticPrompt::new(PromptStart, []))
+
+  state.previous_char = Some(0U)
+  state.print_repeat(1)
+
+  state.modes.set(Mode::ReverseWrap, true)
+  state.cursor.x = 0
+  state.cursor.y = state.grid.rows + 1
+  state.cursor_left(CursorMovement(2))
+}
+
+///|
 test "stream terminal bridge/applies semantic newline transitions" {
   let state = StreamTerminalBridgeState::new()
 
