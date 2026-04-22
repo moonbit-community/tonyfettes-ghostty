@@ -626,6 +626,29 @@ pub(all) enum KeyAction {
   Repeat
 } derive(Eq, @debug.Debug)
 
+type KeyEncoder derive(Eq, @debug.Debug)
+pub fn KeyEncoder::alt_esc_prefix(Self) -> Bool
+pub fn KeyEncoder::backarrow_key_mode(Self) -> Bool
+pub fn KeyEncoder::cursor_key_application(Self) -> Bool
+pub fn KeyEncoder::encode(Self, KeyEvent) -> Bytes
+pub fn KeyEncoder::host_is_macos(Self) -> Bool
+pub fn KeyEncoder::ignore_keypad_with_numlock(Self) -> Bool
+pub fn KeyEncoder::keypad_key_application(Self) -> Bool
+pub fn KeyEncoder::kitty_flags(Self) -> KittyKeyboardFlags
+pub fn KeyEncoder::macos_option_as_alt(Self) -> OptionAsAlt
+pub fn KeyEncoder::modify_other_keys_state_2(Self) -> Bool
+pub fn KeyEncoder::new() -> Self
+pub fn KeyEncoder::set_alt_esc_prefix(Self, Bool) -> Unit
+pub fn KeyEncoder::set_backarrow_key_mode(Self, Bool) -> Unit
+pub fn KeyEncoder::set_cursor_key_application(Self, Bool) -> Unit
+pub fn KeyEncoder::set_host_is_macos(Self, Bool) -> Unit
+pub fn KeyEncoder::set_ignore_keypad_with_numlock(Self, Bool) -> Unit
+pub fn KeyEncoder::set_keypad_key_application(Self, Bool) -> Unit
+pub fn KeyEncoder::set_kitty_flags(Self, KittyKeyboardFlags) -> Unit
+pub fn KeyEncoder::set_macos_option_as_alt(Self, OptionAsAlt) -> Unit
+pub fn KeyEncoder::set_modify_other_keys_state_2(Self, Bool) -> Unit
+pub fn KeyEncoder::sync_from_terminal(Self, StreamTerminal) -> Unit
+
 type KeyEvent derive(Eq, @debug.Debug)
 pub fn KeyEvent::action(Self) -> KeyAction
 pub fn KeyEvent::composing(Self) -> Bool
@@ -1002,6 +1025,13 @@ pub(all) enum OptimizeMode {
   ReleaseSafe
   ReleaseSmall
   ReleaseFast
+} derive(Eq, @debug.Debug)
+
+pub(all) enum OptionAsAlt {
+  False
+  Left
+  Right
+  True
 } derive(Eq, @debug.Debug)
 
 type OscParser derive(@debug.Debug)

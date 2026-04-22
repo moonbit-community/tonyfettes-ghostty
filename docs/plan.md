@@ -605,19 +605,19 @@ Phase 11 gate:
 ### Phase 12: Input events and encoders
 
 Gate: `[P]` after Phase 11  
-Status: `active`
+Status: `done`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P12.A | done | `key_event.zig`, `mouse_event.zig` | input event owner types + tests | P9.A | P12.B | `[W]` | create/free/get/set parity for key and mouse events lands as MoonBit owner types with upstream behavior tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
 | P12.B1 | done | `mouse_encode.zig` | mouse encoder owner surface + tests | P12.A, P11.C, P9.B | none | `[W]` | mouse encoder options, terminal-derived defaults, motion dedupe, and reporting formats land green in one task using MoonBit-owned results | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
-| P12.B2 | todo | `key_encode.zig` | key encoder owner surface + tests | P12.A, P11.C, P9.B | none | `[W]` | key encoder options, terminal-derived defaults, Kitty encoding, and legacy fallback behavior land green in one task using MoonBit-owned results | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+| P12.B2 | done | `key_encode.zig` | key encoder owner surface + tests | P12.A, P11.C, P9.B | none | `[W]` | key encoder options, terminal-derived defaults, Kitty encoding, and legacy fallback behavior land green in one task using MoonBit-owned results | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
 
 Phase 12 gate:
 
 - P12.A is `done`
 - P12.B1 is `done`
-- P12.B2 remains `todo`
+- P12.B2 is `done`
 
 #### Phase 12 outputs
 
@@ -625,6 +625,8 @@ Phase 12 gate:
   [2026-04-22-p12-a-input-event-owner-types.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-a-input-event-owner-types.md)
 - Completed P12.B1 audit lives in:
   [2026-04-22-p12-b1-mouse-encoder-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-b1-mouse-encoder-surface.md)
+- Completed P12.B2 audit lives in:
+  [2026-04-22-p12-b2-key-encoder-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-b2-key-encoder-surface.md)
 - Active P12.B roadmap lives in:
   [2026-04-22-p12-b-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-b-roadmap.md)
 
