@@ -82,13 +82,10 @@ Scope:
   - `vt_write`
 - typed callback reconfiguration on an existing `StreamTerminal`
 - non-query mutators:
-  - `scroll_viewport`
-  - `resize`
   - `reset`
   - `mode_get`
   - `mode_set`
   - title and pwd setters
-  - default/current color and palette setters
 
 Required invariants:
 
@@ -96,12 +93,6 @@ Required invariants:
 - callback changes must take effect on the existing terminal object without
   reconstruction
 - clearing a callback must be supported
-- `resize` must:
-  - reject zero rows or columns
-  - update pixel dimensions with saturating multiplication
-  - disable synchronized-output mode
-  - emit the in-band size report only when mode 2048 is enabled and
-    `write_pty` is installed
 - `device_attributes` callback false/no-callback paths must fall back to the
   translated default attributes
 - silent no-callback behavior for bell, ENQ, XTVERSION, size, and title-change
@@ -112,6 +103,35 @@ Recommended public shape:
 - keep constructor effects for convenience
 - add typed setter methods for runtime callback replacement and clearing
 - keep setters as methods on `StreamTerminal`, not as public mutable fields
+
+### P11.B0 screen-set, scrollback, and viewport substrate
+
+Scope:
+
+- extend the current fixed-grid model so the host object can represent:
+  - active and alternate screens
+  - scrollback-backed viewport movement
+  - total/scrollback row accounting
+  - pixel dimensions
+  - page pins stable enough for later grid refs
+- land the host controls that depend on that substrate:
+  - `resize`
+  - `scroll_viewport`
+
+Required invariants:
+
+- the current translated screen model is not enough here: it has one visible
+  grid and explicitly treats scrollback erase as a no-op without history state
+- `resize` must:
+  - reject zero rows or columns
+  - update pixel dimensions with saturating multiplication
+  - disable synchronized-output mode
+  - emit the in-band size report only when mode 2048 is enabled and
+    `write_pty` is installed
+- viewport movement must be driven by real scrollback state, not by a synthetic
+  cursor move or a no-op placeholder
+- the page-pin substrate must be terminal-owned so later grid refs can remain
+  opaque and stable
 
 ### P11.B `grid_ref.zig` pin/query helpers
 
@@ -136,8 +156,8 @@ Required invariants:
 
 Dependency note:
 
-- `P11.B` starts only after `P11.A` lands the stable terminal-owned pin entry
-  points. After that, `P11.B` and `P11.C` can run in parallel.
+- `P11.B` starts only after `P11.B0` lands the stable terminal-owned page-pin
+  entry points. After that, `P11.B` and `P11.C` can run in parallel.
 
 ### P11.C typed terminal query surface
 
@@ -196,29 +216,36 @@ MoonBit adaptation rules:
   - `enquiry without callback is silent`
   - `set xtversion callback`
   - `xtversion without callback reports default`
-  - `set title_changed callback`
-  - `title_changed without callback is silent`
-  - `set size callback`
-  - `size without callback is silent`
-  - `set device_attributes callback primary`
+- `set title_changed callback`
+- `title_changed without callback is silent`
+- `set size callback`
+- `size without callback is silent`
+- `set device_attributes callback primary`
   - `set device_attributes callback secondary`
   - `set device_attributes callback tertiary`
   - `device_attributes without callback uses default`
   - `device_attributes callback returns false uses default`
 - setter-side state tests:
-  - `set and get title`
-  - `set and get pwd`
-  - `resize updates pixel dimensions`
-  - `resize pixel overflow saturates`
-  - `resize disables synchronized output`
-  - `resize sends in-band size report`
-  - `resize no size report without mode 2048`
-  - `resize in-band report without write_pty callback`
-  - `set and get color_foreground`
-  - `set and get color_background`
-  - `set and get color_cursor`
-  - `set and get color_palette`
-  - `set color sets dirty flag`
+- `set and get title`
+- `set and get pwd`
+- callback replacement and clearing on the same terminal object
+
+### P11.B0 tests from `terminal.zig`
+
+- `scroll_viewport`
+- `scroll_viewport null`
+- `resize`
+- `resize null`
+- `resize invalid value`
+- `resize updates pixel dimensions`
+- `resize pixel overflow saturates`
+- `resize disables synchronized output`
+- `resize sends in-band size report`
+- `resize no size report without mode 2048`
+- `resize in-band report without write_pty callback`
+- `get active_screen`
+- `get total_rows`
+- `get scrollback_rows`
 
 ### P11.B tests from `terminal.zig` and `grid_ref.zig`
 
@@ -241,13 +268,16 @@ MoonBit adaptation rules:
 - `get active_screen`
 - `get kitty_keyboard_flags`
 - `get mouse_tracking`
-- `get total_rows`
-- `get scrollback_rows`
 - `get invalid`
 - `get title set via vt_write`
+- `set and get color_foreground`
+- `set and get color_background`
+- `set and get color_cursor`
+- `set and get color_palette`
 - `get color default vs effective with override`
 - `get color default returns no_value when unset`
 - `get color_palette_default vs current`
+- `set color sets dirty flag`
 - `get_multi success`
 - `get_multi error sets out_written`
 - `get_multi null keys returns invalid_value`
@@ -287,11 +317,15 @@ terminal surface.
 
 - `terminal.zig` mixes lifecycle, callback registration, mutators, getters,
   and graphics knobs in one wrapper file. Splitting those semantics across
-  `P11.A`, `P11.B`, and `P11.C` gives atomic green tasks without losing the
-  upstream ownership model.
+  `P11.A`, `P11.B0`, `P11.B`, and `P11.C` gives atomic green tasks without
+  losing the upstream ownership model.
 - `grid_ref.zig` is not a coordinate helper. Its semantics depend on
   `PageList.Pin`, so the MoonBit translation must model it as an opaque,
   terminal-owned pin snapshot.
 - The existing `StreamTerminal` facade already owns the persistent parser
   stream, so Phase 11 should extend that owner instead of adding a second
   public terminal wrapper.
+- The current translated terminal model does not yet have page-list, active
+  screen, or scrollback/viewpoint state. That substrate gap has to close
+  before `scroll_viewport`, `grid_ref`, `active_screen`, `total_rows`, and
+  `scrollback_rows` can be translated faithfully.
