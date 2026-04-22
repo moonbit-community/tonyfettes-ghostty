@@ -2,7 +2,7 @@
 test "build_info/current snapshot matches translated module metadata" {
   let info = build_info()
   assert_eq(info.simd(), false)
-  assert_eq(info.kitty_graphics(), false)
+  assert_eq(info.kitty_graphics(), true)
   assert_eq(info.tmux_control_mode(), false)
   let version = info.version()
   assert_eq(version.major(), 0U)

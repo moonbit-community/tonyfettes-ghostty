@@ -2,7 +2,7 @@
 const BuildSimd : Bool = false
 
 ///|
-const BuildKittyGraphics : Bool = false
+const BuildKittyGraphics : Bool = true
 
 ///|
 const BuildTmuxControlMode : Bool = false

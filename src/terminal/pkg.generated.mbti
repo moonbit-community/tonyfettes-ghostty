@@ -789,6 +789,34 @@ pub(all) enum KittyColorSpecial {
   KittySecondTransparentBackground
 } derive(Eq, @debug.Debug)
 
+type KittyGraphics
+pub fn KittyGraphics::image(Self, UInt) -> KittyImage?
+pub fn KittyGraphics::image_storage_limit(Self) -> UInt
+pub fn KittyGraphics::placement_iterator(Self, layer? : KittyPlacementLayer) -> KittyPlacementIterator
+pub fn KittyGraphics::supports_file_medium(Self) -> Bool
+pub fn KittyGraphics::supports_shared_memory_medium(Self) -> Bool
+pub fn KittyGraphics::supports_temporary_file_medium(Self) -> Bool
+
+pub(all) enum KittyGraphicsCompression {
+  None
+  ZlibDeflate
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KittyGraphicsFormat {
+  Rgb
+  Rgba
+  Png
+} derive(Eq, @debug.Debug)
+
+type KittyImage derive(Eq, @debug.Debug)
+pub fn KittyImage::compression(Self) -> KittyGraphicsCompression
+pub fn KittyImage::data(Self) -> Bytes
+pub fn KittyImage::format(Self) -> KittyGraphicsFormat
+pub fn KittyImage::height(Self) -> UInt
+pub fn KittyImage::id(Self) -> UInt
+pub fn KittyImage::number(Self) -> UInt
+pub fn KittyImage::width(Self) -> UInt
+
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
 #deprecated
 pub fn KittyKeyboardFlags::inner(Self) -> Byte
@@ -802,6 +830,61 @@ pub fn KittyKeyboardState::reset(Self) -> Unit
 pub fn KittyKeyboardState::set(Self, KittyKeyboardFlags) -> Unit
 pub fn KittyKeyboardState::set_not(Self, KittyKeyboardFlags) -> Unit
 pub fn KittyKeyboardState::set_or(Self, KittyKeyboardFlags) -> Unit
+
+type KittyPlacement
+pub fn KittyPlacement::columns(Self) -> UInt
+pub fn KittyPlacement::grid_size(Self) -> KittyPlacementGridSize
+pub fn KittyPlacement::image(Self) -> KittyImage
+pub fn KittyPlacement::image_id(Self) -> UInt
+pub fn KittyPlacement::is_virtual(Self) -> Bool
+pub fn KittyPlacement::pixel_size(Self) -> KittyPlacementPixelSize
+pub fn KittyPlacement::placement_id(Self) -> UInt
+pub fn KittyPlacement::rect(Self) -> Selection[GridRef]?
+pub fn KittyPlacement::render_info(Self) -> KittyPlacementRenderInfo
+pub fn KittyPlacement::rows(Self) -> UInt
+pub fn KittyPlacement::source_height(Self) -> UInt
+pub fn KittyPlacement::source_rect(Self) -> KittyPlacementSourceRect
+pub fn KittyPlacement::source_width(Self) -> UInt
+pub fn KittyPlacement::source_x(Self) -> UInt
+pub fn KittyPlacement::source_y(Self) -> UInt
+pub fn KittyPlacement::viewport_position(Self) -> KittyPlacementViewportPosition?
+pub fn KittyPlacement::x_offset(Self) -> UInt
+pub fn KittyPlacement::y_offset(Self) -> UInt
+pub fn KittyPlacement::z(Self) -> Int
+
+type KittyPlacementGridSize derive(Eq, @debug.Debug)
+pub fn KittyPlacementGridSize::cols(Self) -> UInt
+pub fn KittyPlacementGridSize::rows(Self) -> UInt
+
+type KittyPlacementIterator
+pub fn KittyPlacementIterator::next(Self) -> KittyPlacement?
+
+pub(all) enum KittyPlacementLayer {
+  All
+  BelowBackground
+  BelowText
+  AboveText
+} derive(Eq, @debug.Debug)
+
+type KittyPlacementPixelSize derive(Eq, @debug.Debug)
+pub fn KittyPlacementPixelSize::height(Self) -> UInt
+pub fn KittyPlacementPixelSize::width(Self) -> UInt
+
+type KittyPlacementRenderInfo derive(Eq, @debug.Debug)
+pub fn KittyPlacementRenderInfo::grid_size(Self) -> KittyPlacementGridSize
+pub fn KittyPlacementRenderInfo::pixel_size(Self) -> KittyPlacementPixelSize
+pub fn KittyPlacementRenderInfo::source_rect(Self) -> KittyPlacementSourceRect
+pub fn KittyPlacementRenderInfo::viewport_position(Self) -> KittyPlacementViewportPosition?
+
+type KittyPlacementSourceRect derive(Eq, @debug.Debug)
+pub fn KittyPlacementSourceRect::height(Self) -> UInt
+pub fn KittyPlacementSourceRect::width(Self) -> UInt
+pub fn KittyPlacementSourceRect::x(Self) -> UInt
+pub fn KittyPlacementSourceRect::y(Self) -> UInt
+
+type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
+pub fn KittyPlacementViewportPosition::col(Self) -> Int
+pub fn KittyPlacementViewportPosition::row(Self) -> Int
 
 pub(all) enum KittyTextSizingHorizontalAlign {
   KittyTextSizingHLeft
@@ -1610,6 +1693,7 @@ pub fn StreamTerminal::grid_ref_hyperlink_uri(Self, GridRef) -> String?
 pub fn StreamTerminal::grid_ref_row(Self, GridRef) -> PageRowState?
 pub fn StreamTerminal::grid_ref_style(Self, GridRef) -> CellStyle?
 pub fn StreamTerminal::height_px(Self) -> UInt
+pub fn StreamTerminal::kitty_graphics(Self) -> KittyGraphics
 pub fn StreamTerminal::kitty_keyboard_flags(Self) -> KittyKeyboardFlags
 pub fn StreamTerminal::mode_get(Self, Mode) -> Bool
 pub fn StreamTerminal::mode_set(Self, Mode, Bool) -> Unit

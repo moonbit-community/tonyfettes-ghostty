@@ -633,7 +633,7 @@ Phase 12 gate:
 ### Phase 13: Render, formatter, and graphics surfaces
 
 Gate: `[S/P]` after Phase 11 and Phase 12  
-Status: `active`
+Status: `done`
 
 These wrappers sit on broader terminal/render state and should only start after
 the terminal host object and input helper layers are stable.
@@ -645,7 +645,7 @@ the terminal host object and input helper layers are stable.
 | P13.A2 | done | `src/terminal/c/render.zig` row/cell slice | render row iterator and row-cell surface + tests | P13.A1, P11.B | P13.B | `[W]` | row iteration, row/cell queries, resolved colors, and row dirty mutation land green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
 | P13.B | done | `src/terminal/c/formatter.zig` | formatter surface + tests | P13.0, P11.B, P9.C | P13.A1, P13.A2 | `[W]` | terminal/screen formatting parity lands green in one task, using MoonBit-owned byte results instead of C allocation helpers | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
 | P13.C1 | done | kitty-graphics model/storage dependencies behind `src/terminal/c/kitty_graphics.zig` | internal kitty-graphics substrate + tests | P13.0, P11.A, P11.B, P11.C | none | `[W]` | image metadata, placement records, APC command parsing, and terminal-side command application land green before any public graphics wrapper closes | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
-| P13.C2 | todo | `src/terminal/c/kitty_graphics.zig` + remaining `terminal.zig` graphics hooks | graphics host surface + terminal graphics parity + tests | P13.C1, P11.A, P11.B, P11.C | none | `[W]` | image/query/placement surface lands green and closes the remaining graphics-dependent terminal fields | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
+| P13.C2 | done | `src/terminal/c/kitty_graphics.zig` + remaining `terminal.zig` graphics hooks | graphics host surface + terminal graphics parity + tests | P13.C1, P11.A, P11.B, P11.C | none | `[W]` | image/query/placement surface lands green and closes the remaining graphics-dependent terminal fields | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-render)` |
 
 Phase 13 gate:
 
@@ -654,7 +654,7 @@ Phase 13 gate:
 - P13.A2 is `done`
 - P13.B is `done`
 - P13.C1 is `done`
-- P13.C2 remains `todo`
+- P13.C2 is `done`
 
 #### Phase 13 outputs
 
@@ -668,6 +668,8 @@ Phase 13 gate:
   [2026-04-22-p13-b-formatter-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p13-b-formatter-surface.md)
 - Completed P13.C1 audit lives in:
   [2026-04-22-p13-c1-kitty-graphics-substrate.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p13-c1-kitty-graphics-substrate.md)
+- Completed P13.C2 audit lives in:
+  [2026-04-22-p13-c2-kitty-graphics-host-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p13-c2-kitty-graphics-host-surface.md)
 
 ### Phase 14: Sys, type metadata, and aggregate C surface
 
