@@ -610,17 +610,21 @@ Status: `active`
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P12.A | done | `key_event.zig`, `mouse_event.zig` | input event owner types + tests | P9.A | P12.B | `[W]` | create/free/get/set parity for key and mouse events lands as MoonBit owner types with upstream behavior tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
-| P12.B | todo | `key_encode.zig`, `mouse_encode.zig` | input encoder surfaces + tests | P12.A, P11.A, P9.B | P12.A | `[W]` | encoder option surfaces and terminal-derived defaults match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+| P12.B1 | todo | `mouse_encode.zig` | mouse encoder owner surface + tests | P12.A, P11.C, P9.B | none | `[W]` | mouse encoder options, terminal-derived defaults, motion dedupe, and reporting formats land green in one task using MoonBit-owned results | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
+| P12.B2 | todo | `key_encode.zig` | key encoder owner surface + tests | P12.A, P11.C, P9.B | none | `[W]` | key encoder options, terminal-derived defaults, Kitty encoding, and legacy fallback behavior land green in one task using MoonBit-owned results | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-input)` |
 
 Phase 12 gate:
 
 - P12.A is `done`
-- P12.B remains `todo`
+- P12.B1 remains `todo`
+- P12.B2 remains `todo`
 
 #### Phase 12 outputs
 
 - Completed P12.A audit lives in:
   [2026-04-22-p12-a-input-event-owner-types.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-a-input-event-owner-types.md)
+- Active P12.B roadmap lives in:
+  [2026-04-22-p12-b-roadmap.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p12-b-roadmap.md)
 
 ### Phase 13: Render, formatter, and graphics wrappers
 
