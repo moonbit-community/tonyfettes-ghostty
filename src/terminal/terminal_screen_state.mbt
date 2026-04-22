@@ -65,6 +65,23 @@ fn TerminalScrollbackState::total_rows(
 }
 
 ///|
+fn TerminalScrollbackState::scrollbar(
+  self : TerminalScrollbackState,
+  visible_rows : CellCountInt,
+) -> TerminalScrollbar {
+  if self.max_rows <= 0 {
+    let rows = visible_rows.to_uint()
+    return TerminalScrollbar::new(rows, 0U, rows)
+  }
+
+  TerminalScrollbar::new(
+    self.total_rows(visible_rows),
+    self.viewport_row_offset().reinterpret_as_uint(),
+    visible_rows.to_uint(),
+  )
+}
+
+///|
 fn TerminalScrollbackState::row(
   self : TerminalScrollbackState,
   grid : ScreenGridState,
@@ -314,11 +331,7 @@ fn TerminalScrollbackState::visible_row_source(
   }
 
   let history_rows = self.history.length()
-  let top_abs = scrollback_clamp_int(
-    history_rows - self.viewport_offset,
-    0,
-    history_rows,
-  )
+  let top_abs = self.viewport_row_offset()
   let absolute_row = top_abs + row_idx
   if absolute_row < history_rows {
     Some(TerminalVisibleRowSource::History(absolute_row))
@@ -444,17 +457,24 @@ fn TerminalScrollbackState::viewport_index_of_row_id(
     None => return None
   }
 
-  let top = scrollback_clamp_int(
-    self.history.length() - self.viewport_offset,
-    0,
-    self.history.length(),
-  )
+  let top = self.viewport_row_offset()
   let bottom = top + grid.rows.to_int()
   if absolute_row < top || absolute_row >= bottom {
     None
   } else {
     Some(absolute_row - top)
   }
+}
+
+///|
+fn TerminalScrollbackState::viewport_row_offset(
+  self : TerminalScrollbackState,
+) -> Int {
+  scrollback_clamp_int(
+    self.history.length() - self.viewport_offset,
+    0,
+    self.history.length(),
+  )
 }
 
 ///|

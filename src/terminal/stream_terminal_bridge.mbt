@@ -318,6 +318,13 @@ fn StreamTerminalBridgeState::cursor_visual_style(
 }
 
 ///|
+fn StreamTerminalBridgeState::cursor_visible(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.modes.get(Mode::CursorVisible)
+}
+
+///|
 fn StreamTerminalBridgeState::cursor_pending_wrap(
   self : StreamTerminalBridgeState,
 ) -> Bool {
@@ -393,6 +400,13 @@ fn StreamTerminalBridgeState::mouse_format(
   self : StreamTerminalBridgeState,
 ) -> MouseFormat {
   self.mouse_format
+}
+
+///|
+fn StreamTerminalBridgeState::mouse_tracking(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.mouse_event != MouseEvent::None
 }
 
 ///|
@@ -492,6 +506,45 @@ fn StreamTerminalBridgeState::set_pwd(
   pwd : String,
 ) -> Unit {
   self.metadata.set_pwd(pwd)
+}
+
+///|
+fn StreamTerminalBridgeState::set_default_foreground_color(
+  self : StreamTerminalBridgeState,
+  color : RGB?,
+) -> Unit {
+  self.colors.set_default_foreground(color)
+  self.palette_dirty = true
+}
+
+///|
+fn StreamTerminalBridgeState::set_default_background_color(
+  self : StreamTerminalBridgeState,
+  color : RGB?,
+) -> Unit {
+  self.colors.set_default_background(color)
+  self.palette_dirty = true
+}
+
+///|
+fn StreamTerminalBridgeState::set_default_cursor_color(
+  self : StreamTerminalBridgeState,
+  color : RGB?,
+) -> Unit {
+  self.colors.set_default_cursor(color)
+  self.palette_dirty = true
+}
+
+///|
+fn StreamTerminalBridgeState::set_default_palette(
+  self : StreamTerminalBridgeState,
+  palette : Array[RGB]?,
+) -> TerminalResultCode {
+  if !self.colors.set_default_palette(palette) {
+    return TerminalResultCode::InvalidValue
+  }
+  self.palette_dirty = true
+  TerminalResultCode::Success
 }
 
 ///|
@@ -698,6 +751,13 @@ fn StreamTerminalBridgeState::scrollback_rows(
 }
 
 ///|
+fn StreamTerminalBridgeState::scrollbar(
+  self : StreamTerminalBridgeState,
+) -> TerminalScrollbar {
+  self.scrollback.scrollbar(self.grid.rows)
+}
+
+///|
 fn StreamTerminalBridgeState::width_px(
   self : StreamTerminalBridgeState,
 ) -> UInt {
@@ -709,6 +769,62 @@ fn StreamTerminalBridgeState::height_px(
   self : StreamTerminalBridgeState,
 ) -> UInt {
   self.height_px
+}
+
+///|
+fn StreamTerminalBridgeState::foreground_color(
+  self : StreamTerminalBridgeState,
+) -> RGB? {
+  self.colors.foreground()
+}
+
+///|
+fn StreamTerminalBridgeState::background_color(
+  self : StreamTerminalBridgeState,
+) -> RGB? {
+  self.colors.background()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_color(
+  self : StreamTerminalBridgeState,
+) -> RGB? {
+  self.colors.cursor()
+}
+
+///|
+fn StreamTerminalBridgeState::default_foreground_color(
+  self : StreamTerminalBridgeState,
+) -> RGB? {
+  self.colors.default_foreground()
+}
+
+///|
+fn StreamTerminalBridgeState::default_background_color(
+  self : StreamTerminalBridgeState,
+) -> RGB? {
+  self.colors.default_background()
+}
+
+///|
+fn StreamTerminalBridgeState::default_cursor_color(
+  self : StreamTerminalBridgeState,
+) -> RGB? {
+  self.colors.default_cursor()
+}
+
+///|
+fn StreamTerminalBridgeState::palette(
+  self : StreamTerminalBridgeState,
+) -> Array[RGB] {
+  self.colors.palette_snapshot()
+}
+
+///|
+fn StreamTerminalBridgeState::default_palette(
+  self : StreamTerminalBridgeState,
+) -> Array[RGB] {
+  self.colors.default_palette_snapshot()
 }
 
 ///|

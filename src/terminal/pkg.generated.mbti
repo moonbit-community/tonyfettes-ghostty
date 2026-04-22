@@ -1183,6 +1183,7 @@ pub(all) enum StreamAction {
 
 type StreamTerminal
 pub fn StreamTerminal::active_screen(Self) -> TerminalScreen
+pub fn StreamTerminal::background_color(Self) -> RGB?
 pub fn StreamTerminal::clear_bell(Self) -> Unit
 pub fn StreamTerminal::clear_color_scheme(Self) -> Unit
 pub fn StreamTerminal::clear_device_attributes(Self) -> Unit
@@ -1193,10 +1194,18 @@ pub fn StreamTerminal::clear_title_changed(Self) -> Unit
 pub fn StreamTerminal::clear_write_pty(Self) -> Unit
 pub fn StreamTerminal::clear_xtversion(Self) -> Unit
 pub fn StreamTerminal::columns(Self) -> UInt16
+pub fn StreamTerminal::cursor_color(Self) -> RGB?
+pub fn StreamTerminal::cursor_pending_wrap(Self) -> Bool
+pub fn StreamTerminal::cursor_visible(Self) -> Bool
 pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
+pub fn StreamTerminal::default_background_color(Self) -> RGB?
+pub fn StreamTerminal::default_cursor_color(Self) -> RGB?
+pub fn StreamTerminal::default_foreground_color(Self) -> RGB?
+pub fn StreamTerminal::default_palette(Self) -> Array[RGB]
 pub fn StreamTerminal::deinit(Self) -> Unit
+pub fn StreamTerminal::foreground_color(Self) -> RGB?
 pub fn StreamTerminal::grid_ref(Self, Point) -> GridRef?
 pub fn StreamTerminal::grid_ref_cell(Self, GridRef) -> PageCellState?
 pub fn StreamTerminal::grid_ref_graphemes(Self, GridRef) -> Array[UInt]?
@@ -1204,11 +1213,14 @@ pub fn StreamTerminal::grid_ref_hyperlink_uri(Self, GridRef) -> String?
 pub fn StreamTerminal::grid_ref_row(Self, GridRef) -> PageRowState?
 pub fn StreamTerminal::grid_ref_style(Self, GridRef) -> CellStyle?
 pub fn StreamTerminal::height_px(Self) -> UInt
+pub fn StreamTerminal::kitty_keyboard_flags(Self) -> KittyKeyboardFlags
 pub fn StreamTerminal::mode_get(Self, Mode) -> Bool
 pub fn StreamTerminal::mode_set(Self, Mode, Bool) -> Unit
+pub fn StreamTerminal::mouse_tracking(Self) -> Bool
 pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> ColorScheme?, device_attributes? : () -> DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
+pub fn StreamTerminal::palette(Self) -> Array[RGB]
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
 pub fn StreamTerminal::point_from_grid_ref(Self, GridRef, Tag) -> Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
@@ -1221,8 +1233,13 @@ pub fn StreamTerminal::scroll_viewport_bottom(Self) -> Unit
 pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
 pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
 pub fn StreamTerminal::scrollback_rows(Self) -> UInt
+pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
+pub fn StreamTerminal::set_default_background_color(Self, RGB?) -> Unit
+pub fn StreamTerminal::set_default_cursor_color(Self, RGB?) -> Unit
+pub fn StreamTerminal::set_default_foreground_color(Self, RGB?) -> Unit
+pub fn StreamTerminal::set_default_palette(Self, Array[RGB]?) -> TerminalResultCode
 pub fn StreamTerminal::set_device_attributes(Self, () -> DeviceAttributes?) -> Unit
 pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
 pub fn StreamTerminal::set_pwd(Self, String) -> Unit
@@ -1325,6 +1342,12 @@ pub(all) enum TerminalScreen {
   Primary
   Alternate
 } derive(Eq, @debug.Debug)
+
+type TerminalScrollbar derive(Eq, @debug.Debug)
+pub fn TerminalScrollbar::len(Self) -> UInt
+pub fn TerminalScrollbar::new(UInt, UInt, UInt) -> Self
+pub fn TerminalScrollbar::offset(Self) -> UInt
+pub fn TerminalScrollbar::total(Self) -> UInt
 
 type TerminalTabstopsState derive(Eq, @debug.Debug)
 pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool
