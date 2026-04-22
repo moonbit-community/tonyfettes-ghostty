@@ -1161,6 +1161,22 @@ pub(all) enum RenderDirty {
   Full
 } derive(Eq)
 
+type RenderRowCells
+pub fn RenderRowCells::background_color(Self) -> RGB?
+pub fn RenderRowCells::cell(Self) -> PageCellState?
+pub fn RenderRowCells::foreground_color(Self) -> RGB?
+pub fn RenderRowCells::next(Self) -> Bool
+pub fn RenderRowCells::select(Self, UInt16) -> Bool
+pub fn RenderRowCells::x(Self) -> UInt16?
+
+type RenderRowIterator
+pub fn RenderRowIterator::cells(Self) -> RenderRowCells?
+pub fn RenderRowIterator::dirty(Self) -> Bool?
+pub fn RenderRowIterator::next(Self) -> Bool
+pub fn RenderRowIterator::row(Self) -> PageRowState?
+pub fn RenderRowIterator::set_dirty(Self, Bool) -> Bool
+pub fn RenderRowIterator::y(Self) -> UInt16?
+
 type RenderState
 pub fn RenderState::background_color(Self) -> RGB
 pub fn RenderState::columns(Self) -> UInt16
@@ -1175,6 +1191,7 @@ pub fn RenderState::dirty(Self) -> RenderDirty
 pub fn RenderState::foreground_color(Self) -> RGB
 pub fn RenderState::new() -> Self
 pub fn RenderState::palette(Self) -> Array[RGB]
+pub fn RenderState::row_iterator(Self) -> RenderRowIterator
 pub fn RenderState::rows(Self) -> UInt16
 pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
 pub fn RenderState::update(Self, StreamTerminal) -> Unit

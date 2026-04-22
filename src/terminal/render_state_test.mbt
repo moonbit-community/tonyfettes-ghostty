@@ -94,7 +94,7 @@ test "render state/update is false when snapshot is stable" {
 }
 
 ///|
-test "render state/update becomes full after terminal mutation" {
+test "render state/update becomes partial after terminal mutation" {
   let terminal = StreamTerminal::new()
   let state = RenderState::new()
 
@@ -103,8 +103,8 @@ test "render state/update becomes full after terminal mutation" {
   terminal.next_slice(b"A")
   state.update(terminal)
 
-  guard state.dirty() == RenderDirty::Full else {
-    fail("expected terminal mutation to dirty render state")
+  guard state.dirty() == RenderDirty::Partial else {
+    fail("expected terminal mutation to dirty render state partially")
   }
 
   terminal.deinit()
