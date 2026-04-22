@@ -44,6 +44,16 @@ pub fn table(Charset) -> ReadOnlyArray[UInt16]
 
 pub fn terminal_result_code_from_int(Int) -> TerminalResultCode?
 
+pub fn terminal_system_clear_decode_png() -> Unit
+
+pub fn terminal_system_clear_log() -> Unit
+
+pub fn terminal_system_emit_log(SystemLogLevel, Bytes, Bytes) -> Unit
+
+pub fn terminal_system_set_decode_png((Bytes) -> SystemImage?) -> Unit
+
+pub fn terminal_system_set_log((SystemLogLevel, Bytes, Bytes) -> Unit) -> Unit
+
 pub fn terminator_init(Byte?) -> Terminator
 
 pub fn x11_color_lookup(String) -> RGB?
@@ -1744,6 +1754,19 @@ type StyleColor derive(Eq, @debug.Debug)
 pub fn StyleColor::is_default(Self) -> Bool
 pub fn StyleColor::palette_index(Self) -> Byte?
 pub fn StyleColor::rgb_value(Self) -> RGB?
+
+type SystemImage derive(Eq, @debug.Debug)
+pub fn SystemImage::data(Self) -> Bytes
+pub fn SystemImage::height(Self) -> UInt
+pub fn SystemImage::new(UInt, UInt, Bytes) -> Self
+pub fn SystemImage::width(Self) -> UInt
+
+pub(all) enum SystemLogLevel {
+  Error
+  Warning
+  Info
+  Debug
+} derive(Eq, @debug.Debug)
 
 pub(all) enum Tag {
   Active

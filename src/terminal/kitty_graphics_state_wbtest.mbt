@@ -160,6 +160,8 @@ test "kitty graphics state/delete helpers" {
 
 ///|
 test "kitty graphics state/loading validation and geometry helpers" {
+  terminal_system_clear_decode_png()
+
   let transmission = KittyImageTransmission::new()
   transmission.format = Rgb
   transmission.width = 4U
@@ -194,10 +196,45 @@ test "kitty graphics state/loading validation and geometry helpers" {
 
   let png = KittyImageTransmission::new()
   png.format = Png
-  guard kitty_graphics_validate_transmission_header(png) ==
-    Some(UnsupportedFormat) else {
-    fail("expected png to stay unsupported in substrate phase")
+  guard kitty_graphics_validate_transmission_header(png) == None else {
+    fail("expected png header validation to defer to system decoder")
   }
+  guard finalize_kitty_graphics_loading(
+      KittyGraphicsLoadingImage::new(png, b"QUJD", KittyGraphicsQuiet::No, None),
+      9UL,
+    )
+    is Err(UnsupportedFormat) else {
+    fail("expected png finalization to require an installed decoder")
+  }
+
+  terminal_system_set_decode_png(fn(data) {
+    guard data == b"QUJD" else { return None }
+    Some(SystemImage::new(1U, 1U, b"\x00\x11\x22\x33"))
+  })
+  guard finalize_kitty_graphics_loading(
+      KittyGraphicsLoadingImage::new(png, b"QUJD", KittyGraphicsQuiet::No, None),
+      10UL,
+    )
+    is Ok(png_image) &&
+    png_image.transmit_seq == 10UL &&
+    png_image.width == 1U &&
+    png_image.height == 1U &&
+    png_image.format == Rgba &&
+    png_image.data == b"\x00\x11\x22\x33" else {
+    fail("expected png finalization to use the installed decoder")
+  }
+
+  terminal_system_set_decode_png(fn(_data) {
+    Some(SystemImage::new(1U, 1U, b"\x00"))
+  })
+  guard finalize_kitty_graphics_loading(
+      KittyGraphicsLoadingImage::new(png, b"QUJD", KittyGraphicsQuiet::No, None),
+      11UL,
+    )
+    is Err(InvalidData) else {
+    fail("expected decoded png payload length validation")
+  }
+  terminal_system_clear_decode_png()
 
   let compressed = KittyImageTransmission::new()
   compressed.compression = ZlibDeflate

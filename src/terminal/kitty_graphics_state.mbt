@@ -518,9 +518,6 @@ fn kitty_graphics_validate_transmission_header(
   if transmission.compression != KittyImageCompression::None {
     return Some(UnsupportedCompression)
   }
-  if transmission.format == Png {
-    return Some(UnsupportedFormat)
-  }
   None
 }
 
@@ -530,27 +527,46 @@ fn finalize_kitty_graphics_loading(
   transmit_seq : UInt64,
 ) -> Result[KittyGraphicsImage, KittyGraphicsValidationError] {
   let image = loading.image
-  if image.width == 0U || image.height == 0U {
+  let mut width = image.width
+  let mut height = image.height
+  let mut format = image.format
+  let mut data = clone_kitty_graphics_byte_array(loading.data)
+
+  if format == Png {
+    if !terminal_system_decode_png_installed() {
+      return Err(UnsupportedFormat)
+    }
+    match terminal_system_decode_png(Bytes::from_array(data)) {
+      Some(decoded) => {
+        width = decoded.width()
+        height = decoded.height()
+        format = Rgba
+        data = kitty_graphics_byte_array_from_bytes(decoded.data())
+      }
+      None => return Err(InvalidData)
+    }
+  }
+
+  if width == 0U || height == 0U {
     return Err(DimensionsRequired)
   }
-  if image.width > KittyGraphicsMaxDimension ||
-    image.height > KittyGraphicsMaxDimension {
+  if width > KittyGraphicsMaxDimension || height > KittyGraphicsMaxDimension {
     return Err(DimensionsTooLarge)
   }
 
-  let expected_len = image.width * image.height * image.format.bytes_per_pixel()
-  if loading.data.length().reinterpret_as_uint() != expected_len {
+  let expected_len = width * height * format.bytes_per_pixel()
+  if data.length().reinterpret_as_uint() != expected_len {
     return Err(InvalidData)
   }
 
   Ok({
     id: image.id,
     number: image.number,
-    width: image.width,
-    height: image.height,
-    format: image.format,
+    width,
+    height,
+    format,
     compression: KittyImageCompression::None,
-    data: Bytes::from_array(clone_kitty_graphics_byte_array(loading.data)),
+    data: Bytes::from_array(data),
     implicit_id: image.implicit_id,
     transmit_seq,
   })

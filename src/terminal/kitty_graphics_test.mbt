@@ -42,6 +42,33 @@ test "kitty graphics/exposes build info and empty owner defaults" {
 }
 
 ///|
+test "kitty graphics/png transmit uses the installed terminal decoder" {
+  let decoded_payloads : Array[Bytes] = []
+  terminal_system_clear_decode_png()
+  terminal_system_set_decode_png(fn(data) {
+    decoded_payloads.push(data)
+    Some(SystemImage::new(1U, 1U, b"\x10\x20\x30\x40"))
+  })
+
+  let terminal = StreamTerminal::new()
+  terminal.next_slice(b"\x1B_Ga=t,t=d,f=100,i=1;QUJD\x1B\\")
+
+  let image = terminal.kitty_graphics().image(1U).unwrap()
+  guard decoded_payloads == [b"ABC"] &&
+    image.id() == 1U &&
+    image.width() == 1U &&
+    image.height() == 1U &&
+    image.format() == KittyGraphicsFormat::Rgba &&
+    image.compression() == KittyGraphicsCompression::None &&
+    image.data() == b"\x10\x20\x30\x40" else {
+    fail("expected png image transmit to use the installed decoder")
+  }
+
+  terminal.deinit()
+  terminal_system_clear_decode_png()
+}
+
+///|
 test "kitty graphics/image lookup and placement geometry match transmitted state" {
   let terminal = StreamTerminal::new()
   guard terminal.resize(80, 24, 10U, 20U) == TerminalResultCode::Success else {

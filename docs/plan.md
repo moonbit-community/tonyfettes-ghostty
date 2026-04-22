@@ -674,19 +674,25 @@ Phase 13 gate:
 ### Phase 14: Sys, type metadata, and aggregate C surface
 
 Gate: `[P]` after Phase 13  
-Status: `todo`
+Status: `active`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P14.A | todo | `src/terminal/c/sys.zig` | system callback/config wrapper + tests | P9.A | P14.B | `[W]` | logging/image-decode callback registry matches upstream contracts with tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
+| P14.A | done | `src/terminal/c/sys.zig` | system callback/config wrapper + tests | P9.A | P14.B | `[W]` | logging/image-decode callback registry matches upstream contracts with tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
 | P14.B | todo | `src/terminal/c/types.zig` | typed surface registry + tests | P13.A2, P13.B, P13.C2, P12.B1, P12.B2, P11.C, P9.C | P14.A | `[W]` | translated metadata reflects the implemented surface and stays green in one task; JSON stays a derived representation if still needed | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-runtime)` |
 | P14.C | todo | `src/terminal/c/main.zig` | package-surface closeout + smoke tests | P14.A, P14.B | none | main + `[W]` | the final package API is coherent, intentional, and covered by smoke tests without creating a redundant aggregator module | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(c-runtime)` |
 
 Phase 14 gate:
 
-- P14.A, P14.B, and P14.C remain `todo`
+- P14.A is `done`
+- P14.B and P14.C remain `todo`
 - Phase 14 completion will close pure-MoonBit parity for the full
   `src/terminal/c` semantic surface
+
+#### Phase 14 outputs
+
+- Completed P14.A audit lives in:
+  [2026-04-22-p14-a-system-hooks-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p14-a-system-hooks-surface.md)
 
 ## Definition of done
 
