@@ -701,7 +701,11 @@ pub(all) enum OptimizeMode {
   ReleaseFast
 } derive(Eq, @debug.Debug)
 
-type OscParserState derive(Eq, @debug.Debug)
+type OscParser derive(@debug.Debug)
+pub fn OscParser::end(Self, Byte?) -> Command?
+pub fn OscParser::new() -> Self
+pub fn OscParser::next(Self, Byte) -> Unit
+pub fn OscParser::reset(Self) -> Unit
 
 pub(all) enum PageCellContentTag {
   Codepoint

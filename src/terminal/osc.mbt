@@ -171,7 +171,7 @@ pub(all) enum Command {
 } derive(Eq, Debug)
 
 ///|
-enum OscParserState {
+priv enum OscParserState {
   Start
   Invalid
   Prefix0
@@ -219,10 +219,10 @@ enum OscParserState {
   Prefix117
   Prefix118
   Prefix119
-} derive(Eq, Debug)
+} derive(Debug)
 
 ///|
-priv struct OscParser {
+struct OscParser {
   mut state : OscParserState
   mut capturing : Bool
   mut buffer : Array[Byte]
@@ -230,7 +230,7 @@ priv struct OscParser {
 } derive(Debug)
 
 ///|
-fn OscParser::new() -> OscParser {
+pub fn OscParser::new() -> OscParser {
   { state: Start, capturing: false, buffer: [], command: Invalid }
 }
 
@@ -240,7 +240,7 @@ fn OscParser::deinit(self : OscParser) -> Unit {
 }
 
 ///|
-fn OscParser::reset(self : OscParser) -> Unit {
+pub fn OscParser::reset(self : OscParser) -> Unit {
   self.state = Start
   self.capturing = false
   self.buffer = []
@@ -273,7 +273,7 @@ fn OscParser::allocating_capture(self : OscParser) -> Bool {
 }
 
 ///|
-fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
+pub fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
   if self.capturing {
     self.push_capture(byte)
     return
@@ -591,7 +591,7 @@ fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
 }
 
 ///|
-fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
+pub fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
   let result : Command? = match self.state {
     Start => None
     Invalid => None

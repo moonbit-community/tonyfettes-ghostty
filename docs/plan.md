@@ -554,12 +554,18 @@ Status: `todo`
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P10.A | todo | `src/terminal/c/osc.zig` | host-facing OSC helper surface + tests | P9.A, P9.B | P10.B | `[W]` | constructor/reset/next/end/data-query parity matches upstream tests and stays green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
+| P10.A | done | `src/terminal/c/osc.zig` | host-facing OSC helper surface + tests | P9.A, P9.B | P10.B | `[W]` | constructor/reset/next/end/data-query parity matches upstream tests and stays green in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
 | P10.B | todo | `src/terminal/c/sgr.zig` | host-facing SGR helper surface + tests | P9.A, P9.B | P10.A | `[W]` | parameter feed, next/unknown handling, and attribute query parity match upstream tests in one task | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(c-parsers)` |
 
 Phase 10 gate:
 
-- P10.A and P10.B are `done`
+- P10.A is `done`
+- P10.B remains `todo`
+
+#### Phase 10 outputs
+
+- Completed Phase 10A audit lives in:
+  [2026-04-22-p10-a-osc-helper-surface.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-22-p10-a-osc-helper-surface.md)
 
 ### Phase 11: Terminal host object parity
 
