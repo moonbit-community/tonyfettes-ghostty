@@ -70,7 +70,7 @@ fn TerminalScrollbackState::row(
   grid : ScreenGridState,
   row : CellCountInt,
 ) -> PageRowState? {
-  match self.visible_row_source(grid.rows.to_int(), row) {
+  match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(TerminalVisibleRowSource::History(index)) =>
       Some(copy_scrollback_row(self.history[index].row))
     Some(TerminalVisibleRowSource::Screen(index)) =>
@@ -91,7 +91,7 @@ fn TerminalScrollbackState::cell(
     return None
   }
 
-  match self.visible_row_source(grid.rows.to_int(), row) {
+  match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(TerminalVisibleRowSource::History(index)) =>
       Some(copy_scrollback_cell(self.history[index].cells[col_idx]))
     Some(TerminalVisibleRowSource::Screen(index)) =>
@@ -204,12 +204,111 @@ fn TerminalScreenStorage::new(
 }
 
 ///|
+fn TerminalScrollbackState::grid_ref(
+  self : TerminalScrollbackState,
+  screen : TerminalScreen,
+  grid : ScreenGridState,
+  point : Point,
+) -> GridRef? {
+  let x = point.coord().x()
+  let x_idx = x.to_int()
+  if x_idx < 0 || x_idx >= grid.cols.to_int() {
+    return None
+  }
+
+  match self.row_source_for_point(grid, point) {
+    Some(TerminalVisibleRowSource::History(index)) =>
+      Some(GridRef::new(screen, self.history[index].row_id, x))
+    Some(TerminalVisibleRowSource::Screen(index)) =>
+      Some(GridRef::new(screen, self.visible_row_ids[index], x))
+    None => None
+  }
+}
+
+///|
+fn TerminalScrollbackState::row_by_id(
+  self : TerminalScrollbackState,
+  grid : ScreenGridState,
+  row_id : UInt64,
+) -> PageRowState? {
+  match self.row_source_by_id(row_id) {
+    Some(TerminalVisibleRowSource::History(index)) =>
+      Some(copy_scrollback_row(self.history[index].row))
+    Some(TerminalVisibleRowSource::Screen(index)) =>
+      Some(copy_scrollback_row(grid.row_states[index]))
+    None => None
+  }
+}
+
+///|
+fn TerminalScrollbackState::cell_by_id(
+  self : TerminalScrollbackState,
+  grid : ScreenGridState,
+  row_id : UInt64,
+  col : CellCountInt,
+) -> PageCellState? {
+  let col_idx = col.to_int()
+  if col_idx < 0 || col_idx >= grid.cols.to_int() {
+    return None
+  }
+
+  match self.row_source_by_id(row_id) {
+    Some(TerminalVisibleRowSource::History(index)) =>
+      Some(copy_scrollback_cell(self.history[index].cells[col_idx]))
+    Some(TerminalVisibleRowSource::Screen(index)) =>
+      Some(copy_scrollback_cell(grid.cells[grid.cell_index(index, col_idx)]))
+    None => None
+  }
+}
+
+///|
+fn TerminalScrollbackState::point_from_row_id(
+  self : TerminalScrollbackState,
+  grid : ScreenGridState,
+  row_id : UInt64,
+  x : CellCountInt,
+  tag : Tag,
+) -> Coordinate? {
+  let x_idx = x.to_int()
+  if x_idx < 0 || x_idx >= grid.cols.to_int() {
+    return None
+  }
+
+  match tag {
+    Tag::Active =>
+      self
+      .screen_index_of_row_id(row_id)
+      .map(fn(index) { Coordinate::new(x, index.reinterpret_as_uint()) })
+    Tag::Viewport =>
+      self
+      .viewport_index_of_row_id(grid, row_id)
+      .map(fn(index) { Coordinate::new(x, index.reinterpret_as_uint()) })
+    Tag::Screen =>
+      match self.row_source_by_id(row_id) {
+        Some(TerminalVisibleRowSource::History(index)) =>
+          Some(Coordinate::new(x, index.reinterpret_as_uint()))
+        Some(TerminalVisibleRowSource::Screen(index)) =>
+          Some(
+            Coordinate::new(
+              x,
+              (self.history.length() + index).reinterpret_as_uint(),
+            ),
+          )
+        None => None
+      }
+    Tag::History =>
+      self
+      .history_index_of_row_id(row_id)
+      .map(fn(index) { Coordinate::new(x, index.reinterpret_as_uint()) })
+  }
+}
+
+///|
 fn TerminalScrollbackState::visible_row_source(
   self : TerminalScrollbackState,
   visible_rows : Int,
-  row : CellCountInt,
+  row_idx : Int,
 ) -> TerminalVisibleRowSource? {
-  let row_idx = row.to_int()
   if row_idx < 0 || row_idx >= visible_rows {
     return None
   }
@@ -225,6 +324,136 @@ fn TerminalScrollbackState::visible_row_source(
     Some(TerminalVisibleRowSource::History(absolute_row))
   } else {
     Some(TerminalVisibleRowSource::Screen(absolute_row - history_rows))
+  }
+}
+
+///|
+fn TerminalScrollbackState::row_source_for_point(
+  self : TerminalScrollbackState,
+  grid : ScreenGridState,
+  point : Point,
+) -> TerminalVisibleRowSource? {
+  let y = point.coord().y().reinterpret_as_int()
+  match point {
+    Point::Active(_) => self.active_row_source(grid, y)
+    Point::Viewport(_) => self.visible_row_source(grid.rows.to_int(), y)
+    Point::Screen(_) => self.screen_row_source(grid, y)
+    Point::History(_) => self.history_row_source(y)
+  }
+}
+
+///|
+fn TerminalScrollbackState::active_row_source(
+  _self : TerminalScrollbackState,
+  grid : ScreenGridState,
+  y : Int,
+) -> TerminalVisibleRowSource? {
+  if y < 0 || y >= grid.rows.to_int() {
+    None
+  } else {
+    Some(TerminalVisibleRowSource::Screen(y))
+  }
+}
+
+///|
+fn TerminalScrollbackState::screen_row_source(
+  self : TerminalScrollbackState,
+  grid : ScreenGridState,
+  y : Int,
+) -> TerminalVisibleRowSource? {
+  if y < 0 {
+    return None
+  }
+
+  let history_rows = self.history.length()
+  if y < history_rows {
+    Some(TerminalVisibleRowSource::History(y))
+  } else if y < history_rows + grid.rows.to_int() {
+    Some(TerminalVisibleRowSource::Screen(y - history_rows))
+  } else {
+    None
+  }
+}
+
+///|
+fn TerminalScrollbackState::history_row_source(
+  self : TerminalScrollbackState,
+  y : Int,
+) -> TerminalVisibleRowSource? {
+  if y < 0 || y >= self.history.length() {
+    None
+  } else {
+    Some(TerminalVisibleRowSource::History(y))
+  }
+}
+
+///|
+fn TerminalScrollbackState::row_source_by_id(
+  self : TerminalScrollbackState,
+  row_id : UInt64,
+) -> TerminalVisibleRowSource? {
+  match self.history_index_of_row_id(row_id) {
+    Some(index) => Some(TerminalVisibleRowSource::History(index))
+    None =>
+      self
+      .screen_index_of_row_id(row_id)
+      .map(fn(index) { TerminalVisibleRowSource::Screen(index) })
+  }
+}
+
+///|
+fn TerminalScrollbackState::history_index_of_row_id(
+  self : TerminalScrollbackState,
+  row_id : UInt64,
+) -> Int? {
+  let mut index = 0
+  while index < self.history.length() {
+    if self.history[index].row_id == row_id {
+      return Some(index)
+    }
+    index += 1
+  }
+  None
+}
+
+///|
+fn TerminalScrollbackState::screen_index_of_row_id(
+  self : TerminalScrollbackState,
+  row_id : UInt64,
+) -> Int? {
+  let mut index = 0
+  while index < self.visible_row_ids.length() {
+    if self.visible_row_ids[index] == row_id {
+      return Some(index)
+    }
+    index += 1
+  }
+  None
+}
+
+///|
+fn TerminalScrollbackState::viewport_index_of_row_id(
+  self : TerminalScrollbackState,
+  grid : ScreenGridState,
+  row_id : UInt64,
+) -> Int? {
+  let absolute_row = match self.row_source_by_id(row_id) {
+    Some(TerminalVisibleRowSource::History(index)) => index
+    Some(TerminalVisibleRowSource::Screen(index)) =>
+      self.history.length() + index
+    None => return None
+  }
+
+  let top = scrollback_clamp_int(
+    self.history.length() - self.viewport_offset,
+    0,
+    self.history.length(),
+  )
+  let bottom = top + grid.rows.to_int()
+  if absolute_row < top || absolute_row >= bottom {
+    None
+  } else {
+    Some(absolute_row - top)
   }
 }
 

@@ -428,6 +428,8 @@ pub(all) enum FocusEvent {
 } derive(Eq, @debug.Debug)
 pub fn FocusEvent::encode(Self) -> Bytes
 
+type GridRef derive(Eq, @debug.Debug)
+
 type HyperlinkStart derive(Eq, @debug.Debug)
 pub fn HyperlinkStart::id(Self) -> String?
 pub fn HyperlinkStart::uri(Self) -> String
@@ -1195,6 +1197,12 @@ pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
 pub fn StreamTerminal::deinit(Self) -> Unit
+pub fn StreamTerminal::grid_ref(Self, Point) -> GridRef?
+pub fn StreamTerminal::grid_ref_cell(Self, GridRef) -> PageCellState?
+pub fn StreamTerminal::grid_ref_graphemes(Self, GridRef) -> Array[UInt]?
+pub fn StreamTerminal::grid_ref_hyperlink_uri(Self, GridRef) -> String?
+pub fn StreamTerminal::grid_ref_row(Self, GridRef) -> PageRowState?
+pub fn StreamTerminal::grid_ref_style(Self, GridRef) -> CellStyle?
 pub fn StreamTerminal::height_px(Self) -> UInt
 pub fn StreamTerminal::mode_get(Self, Mode) -> Bool
 pub fn StreamTerminal::mode_set(Self, Mode, Bool) -> Unit
@@ -1202,6 +1210,7 @@ pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, col
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
+pub fn StreamTerminal::point_from_grid_ref(Self, GridRef, Tag) -> Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> TerminalResultCode
