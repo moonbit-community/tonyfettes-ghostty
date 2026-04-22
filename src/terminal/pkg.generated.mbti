@@ -44,6 +44,10 @@ pub fn table(Charset) -> ReadOnlyArray[UInt16]
 
 pub fn terminal_result_code_from_int(Int) -> TerminalResultCode?
 
+pub fn terminal_surface_type(String) -> TerminalSurfaceTypeInfo?
+
+pub fn terminal_surface_types() -> ReadOnlyArray[TerminalSurfaceTypeInfo]
+
 pub fn terminal_system_clear_decode_png() -> Unit
 
 pub fn terminal_system_clear_log() -> Unit
@@ -1852,6 +1856,18 @@ pub fn TerminalScrollbar::len(Self) -> UInt
 pub fn TerminalScrollbar::new(UInt, UInt, UInt) -> Self
 pub fn TerminalScrollbar::offset(Self) -> UInt
 pub fn TerminalScrollbar::total(Self) -> UInt
+
+type TerminalSurfaceTypeInfo derive(Eq, @debug.Debug)
+pub fn TerminalSurfaceTypeInfo::mapping(Self) -> TerminalSurfaceTypeMapping
+pub fn TerminalSurfaceTypeInfo::moonbit_surface(Self) -> String
+pub fn TerminalSurfaceTypeInfo::note(Self) -> String?
+pub fn TerminalSurfaceTypeInfo::upstream_name(Self) -> String
+
+pub(all) enum TerminalSurfaceTypeMapping {
+  Direct
+  Native
+  Absorbed
+} derive(Eq, @debug.Debug)
 
 type TerminalTabstopsState derive(Eq, @debug.Debug)
 pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool
