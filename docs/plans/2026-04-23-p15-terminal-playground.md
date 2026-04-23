@@ -50,7 +50,7 @@ Avoid:
 
 MoonBit:
 
-- `tools/terminal_playground_core/moon.pkg.json`
+- `tools/terminal_playground_core/moon.pkg`
 - `tools/terminal_playground_core/playground_core.mbt`
 - `tools/terminal_playground_core/playground_core_test.mbt`
 
@@ -87,3 +87,35 @@ Web shell:
 - Keep the main plan concise; implementation specifics live here.
 - If `wasm-gc` interop forces awkward export shapes, prefer adapter flattening
   over widening core package APIs.
+- `P15.A` landed as a separate adapter package under
+  `tools/terminal_playground_core/`.
+- Final adapter exports are:
+  `playground_new`, `playground_free`, `playground_reset`,
+  `playground_resize`, `playground_apply_text`, `playground_scroll_delta`,
+  `playground_render_html`, `playground_render_plain`,
+  `playground_render_vt`, `playground_state_json`,
+  `playground_cell_json`, `playground_kitty_json`,
+  `playground_pty_output`, and `playground_clear_pty_output`.
+- Adapter validation passed:
+  - `moon check tools/terminal_playground_core`
+  - `moon test tools/terminal_playground_core`
+  - `moon coverage analyze`
+  - `moon fmt`
+  - `moon info`
+  - `moon build --target wasm-gc tools/terminal_playground_core`
+- Built artifact path for the web shell:
+  `_build/wasm-gc/debug/build/tools/terminal_playground_core/terminal_playground_core.wasm`
+- Coverage residue for the touched adapter file is limited to 13 lines:
+  enum/stringification helper branches for rarely-reached values
+  (`CursorVisualStyle::Underline`, `RowSemanticPrompt::Prompt`,
+  `SemanticContent::Input`, `PageCellContentTag::CodepointGrapheme`,
+  `PageCellWide::SpacerHead`, `SgrUnderline::Double`,
+  `KittyGraphicsFormat::Rgba`, `KittyGraphicsCompression::ZlibDeflate`)
+  plus null/optional serialization helpers that are not worth widening the
+  public demo surface to hit more directly.
+- Node v23 did not honor the `js-string` builtin compile options during the
+  local smoke check; the browser loader should use `WebAssembly.instantiate`
+  or `WebAssembly.instantiateStreaming` with:
+  - `importObject = { _: {} }`
+  - `compileOptions = { builtins: ["js-string"], importedStringConstants: "_" }`
+  and feature-detect support at runtime.

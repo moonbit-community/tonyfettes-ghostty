@@ -1,0 +1,35 @@
+import {
+  "tonyfettes/ghostty/src/terminal",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/base64" @base64,
+  "moonbitlang/core/encoding/utf8" @utf8,
+}
+
+import {
+  "moonbitlang/core/json" @json,
+} for "test"
+
+options(
+  link: {
+    "wasm-gc": {
+      "exports": [
+        "playground_new",
+        "playground_free",
+        "playground_reset",
+        "playground_resize",
+        "playground_apply_text",
+        "playground_scroll_delta",
+        "playground_render_html",
+        "playground_render_plain",
+        "playground_render_vt",
+        "playground_state_json",
+        "playground_cell_json",
+        "playground_kitty_json",
+        "playground_pty_output",
+        "playground_clear_pty_output",
+      ],
+      "imported-string-constants": "_",
+      "use-js-builtin-string": true,
+    },
+  },
+)

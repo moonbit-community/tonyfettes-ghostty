@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/tools/terminal_playground_core"
+
+// Values
+pub fn playground_apply_text(Int, String) -> Unit
+
+pub fn playground_cell_json(Int, Int, Int) -> String
+
+pub fn playground_clear_pty_output(Int) -> Unit
+
+pub fn playground_free(Int) -> Unit
+
+pub fn playground_kitty_json(Int) -> String
+
+pub fn playground_new(Int, Int) -> Int
+
+pub fn playground_pty_output(Int) -> String
+
+pub fn playground_render_html(Int) -> String
+
+pub fn playground_render_plain(Int) -> String
+
+pub fn playground_render_vt(Int) -> String
+
+pub fn playground_reset(Int) -> Unit
+
+pub fn playground_resize(Int, Int, Int) -> Int
+
+pub fn playground_scroll_delta(Int, Int) -> Unit
+
+pub fn playground_state_json(Int) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
