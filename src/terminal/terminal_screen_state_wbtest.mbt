@@ -159,8 +159,8 @@ test "terminal screen state/grid ref helpers cover row id mappings" {
     fail("expected point-to-row-id mapping to stay bounded")
   }
 
-  guard scrollback.screen_row_source(grid, -1) == None &&
-    scrollback.history_row_source(-1) == None &&
+  guard scrollback.screen_row_source(grid, -1) is None &&
+    scrollback.history_row_source(-1) is None &&
     scrollback.history_row_source(0)
     is Some(TerminalVisibleRowSource::History(_)) else {
     fail("expected screen/history source guards")

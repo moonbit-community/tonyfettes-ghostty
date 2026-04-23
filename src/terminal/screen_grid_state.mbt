@@ -3,7 +3,7 @@ priv enum ScreenEraseLineMode {
   Right
   Left
   Complete
-} derive(Eq, Debug)
+}
 
 ///|
 priv enum ScreenEraseDisplayMode {
@@ -12,7 +12,7 @@ priv enum ScreenEraseDisplayMode {
   Complete
   Scrollback
   ScrollComplete
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct ScreenGridState {
@@ -20,7 +20,7 @@ priv struct ScreenGridState {
   cols : CellCountInt
   row_states : Array[PageRowState]
   cells : Array[PageCellState]
-} derive(Eq, Debug)
+}
 
 ///|
 fn ScreenGridState::new(
@@ -50,21 +50,6 @@ fn ScreenGridState::row(
     None
   } else {
     Some(self.row_states[idx])
-  }
-}
-
-///|
-fn ScreenGridState::cell(
-  self : ScreenGridState,
-  row : CellCountInt,
-  col : CellCountInt,
-) -> PageCellState? {
-  let row_idx = row.to_int()
-  let col_idx = col.to_int()
-  if !self.valid_point(row_idx, col_idx) {
-    None
-  } else {
-    Some(self.cells[self.cell_index(row_idx, col_idx)])
   }
 }
 
@@ -579,18 +564,6 @@ fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
     self.row_states[row_idx].set_dirty(false)
     row_idx += 1
   }
-}
-
-///|
-fn ScreenGridState::valid_point(
-  self : ScreenGridState,
-  row_idx : Int,
-  col_idx : Int,
-) -> Bool {
-  row_idx >= 0 &&
-  row_idx < self.rows.to_int() &&
-  col_idx >= 0 &&
-  col_idx < self.cols.to_int()
 }
 
 ///|

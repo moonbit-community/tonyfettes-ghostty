@@ -4,6 +4,24 @@ fn expect_row(grid : ScreenGridState, row : CellCountInt) -> PageRowState {
 }
 
 ///|
+fn ScreenGridState::cell(
+  self : ScreenGridState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> PageCellState? {
+  let row_idx = row.to_int()
+  let col_idx = col.to_int()
+  if row_idx < 0 ||
+    row_idx >= self.rows.to_int() ||
+    col_idx < 0 ||
+    col_idx >= self.cols.to_int() {
+    None
+  } else {
+    Some(self.cells[self.cell_index(row_idx, col_idx)])
+  }
+}
+
+///|
 fn expect_cell(
   grid : ScreenGridState,
   row : CellCountInt,

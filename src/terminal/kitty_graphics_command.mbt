@@ -3,14 +3,14 @@ priv enum KittyGraphicsQuiet {
   No
   Ok
   Failures
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
 priv enum KittyImageFormat {
   Rgb
   Rgba
   Png
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
 fn KittyImageFormat::bytes_per_pixel(self : KittyImageFormat) -> UInt {
@@ -27,13 +27,13 @@ priv enum KittyImageMedium {
   File
   TemporaryFile
   SharedMemory
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
 priv enum KittyImageCompression {
   None
   ZlibDeflate
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
 priv struct KittyImageTransmission {
@@ -48,7 +48,7 @@ priv struct KittyImageTransmission {
   mut placement_id : UInt
   mut compression : KittyImageCompression
   mut more_chunks : Bool
-} derive(Eq, Debug)
+}
 
 ///|
 fn KittyImageTransmission::new() -> KittyImageTransmission {
@@ -71,7 +71,7 @@ fn KittyImageTransmission::new() -> KittyImageTransmission {
 priv enum KittyImageCursorMovement {
   After
   None
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
 priv struct KittyImageDisplay {
@@ -93,7 +93,7 @@ priv struct KittyImageDisplay {
   mut horizontal_offset : Int
   mut vertical_offset : Int
   mut z : Int
-} derive(Eq, Debug)
+}
 
 ///|
 fn KittyImageDisplay::new() -> KittyImageDisplay {
@@ -124,21 +124,21 @@ priv struct KittyGraphicsDeleteById {
   delete : Bool
   image_id : UInt
   placement_id : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsDeleteByNumber {
   delete : Bool
   image_number : UInt
   placement_id : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsDeleteIntersectCell {
   delete : Bool
   x : UInt
   y : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsDeleteIntersectCellZ {
@@ -146,32 +146,32 @@ priv struct KittyGraphicsDeleteIntersectCellZ {
   x : UInt
   y : UInt
   z : Int
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsDeleteRange {
   delete : Bool
   first : UInt
   last : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsDeleteColumn {
   delete : Bool
   x : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsDeleteRow {
   delete : Bool
   y : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsDeleteZ {
   delete : Bool
   z : Int
-} derive(Eq, Debug)
+}
 
 ///|
 priv enum KittyGraphicsDelete {
@@ -186,13 +186,13 @@ priv enum KittyGraphicsDelete {
   Column(KittyGraphicsDeleteColumn)
   Row(KittyGraphicsDeleteRow)
   Z(KittyGraphicsDeleteZ)
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsTransmitAndDisplay {
   transmission : KittyImageTransmission
   display : KittyImageDisplay
-} derive(Eq, Debug)
+}
 
 ///|
 priv enum KittyGraphicsControl {
@@ -202,36 +202,13 @@ priv enum KittyGraphicsControl {
   Display(KittyImageDisplay)
   Delete(KittyGraphicsDelete)
   Unsupported(Byte)
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsCommand {
   control : KittyGraphicsControl
   quiet : KittyGraphicsQuiet
   data : Bytes
-} derive(Eq, Debug)
-
-///|
-fn KittyGraphicsCommand::transmission(
-  self : KittyGraphicsCommand,
-) -> KittyImageTransmission? {
-  match self.control {
-    Query(value) => Some(value)
-    Transmit(value) => Some(value)
-    TransmitAndDisplay(value) => Some(value.transmission)
-    Display(_) | Delete(_) | Unsupported(_) => None
-  }
-}
-
-///|
-fn KittyGraphicsCommand::display(
-  self : KittyGraphicsCommand,
-) -> KittyImageDisplay? {
-  match self.control {
-    Display(value) => Some(value)
-    TransmitAndDisplay(value) => Some(value.display)
-    Query(_) | Transmit(_) | Delete(_) | Unsupported(_) => None
-  }
 }
 
 ///|
@@ -240,7 +217,7 @@ priv struct KittyGraphicsResponse {
   image_number : UInt
   placement_id : UInt
   mut message : Bytes
-} derive(Eq, Debug)
+}
 
 ///|
 fn KittyGraphicsResponse::new(
@@ -308,13 +285,13 @@ priv enum KittyGraphicsParseState {
   ControlValue
   ControlValueIgnore
   Data
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
 priv struct KittyGraphicsPair {
   key : Byte
   value : Array[Byte]
-} derive(Eq, Debug)
+}
 
 ///|
 fn parse_kitty_graphics_command_bytes(

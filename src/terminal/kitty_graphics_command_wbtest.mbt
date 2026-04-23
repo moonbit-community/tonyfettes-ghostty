@@ -13,6 +13,29 @@ fn kitty_graphics_pair(key : Byte, value : Bytes) -> KittyGraphicsPair {
 }
 
 ///|
+fn KittyGraphicsCommand::transmission(
+  self : KittyGraphicsCommand,
+) -> KittyImageTransmission? {
+  match self.control {
+    Query(value) => Some(value)
+    Transmit(value) => Some(value)
+    TransmitAndDisplay(value) => Some(value.transmission)
+    Display(_) | Delete(_) | Unsupported(_) => None
+  }
+}
+
+///|
+fn KittyGraphicsCommand::display(
+  self : KittyGraphicsCommand,
+) -> KittyImageDisplay? {
+  match self.control {
+    Display(value) => Some(value)
+    TransmitAndDisplay(value) => Some(value.display)
+    Query(_) | Transmit(_) | Delete(_) | Unsupported(_) => None
+  }
+}
+
+///|
 test "kitty graphics command/response and access helpers" {
   guard KittyImageFormat::Rgb.bytes_per_pixel() == 3U &&
     KittyImageFormat::Rgba.bytes_per_pixel() == 4U &&
@@ -71,8 +94,8 @@ test "kitty graphics command/response and access helpers" {
     display_value.image_id == 7U else {
     fail("expected display accessor for display control")
   }
-  guard delete_command.transmission() == None &&
-    delete_command.display() == None else {
+  guard delete_command.transmission() is None &&
+    delete_command.display() is None else {
     fail("expected unrelated accessors to stay empty")
   }
 
@@ -170,12 +193,12 @@ test "kitty graphics command/parses transmission display and delete controls" {
 
 ///|
 test "kitty graphics command/delete parser covers selector families" {
-  guard parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"a")]) ==
-    Some(All(false)) else {
+  guard parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"a")])
+    is Some(All(false)) else {
     fail("expected delete-all selector")
   }
-  guard parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"A")]) ==
-    Some(All(true)) else {
+  guard parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"A")])
+    is Some(All(true)) else {
     fail("expected delete-all-images selector")
   }
   guard parse_kitty_graphics_delete([
@@ -189,14 +212,14 @@ test "kitty graphics command/delete parser covers selector families" {
     value.placement_id == 2U else {
     fail("expected delete-by-id selector")
   }
-  guard parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"c")]) ==
-    Some(IntersectCursor(false)) &&
-    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"C")]) ==
-    Some(IntersectCursor(true)) &&
-    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"f")]) ==
-    Some(AnimationFrames(false)) &&
-    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"F")]) ==
-    Some(AnimationFrames(true)) else {
+  guard parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"c")])
+    is Some(IntersectCursor(false)) &&
+    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"C")])
+    is Some(IntersectCursor(true)) &&
+    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"f")])
+    is Some(AnimationFrames(false)) &&
+    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"F")])
+    is Some(AnimationFrames(true)) else {
     fail("expected cursor and animation selectors")
   }
   guard parse_kitty_graphics_delete([
@@ -246,8 +269,10 @@ test "kitty graphics command/delete parser covers selector families" {
       kitty_graphics_pair(b'x', b"3"),
       kitty_graphics_pair(b'y', b"4"),
     ])
-    is Some(delete_cell_value) &&
-    delete_cell_value == IntersectCell({ delete: true, x: 3U, y: 4U }) else {
+    is Some(IntersectCell(delete_cell_value)) &&
+    delete_cell_value.delete &&
+    delete_cell_value.x == 3U &&
+    delete_cell_value.y == 4U else {
     fail("expected deleting intersect-cell selector")
   }
   guard parse_kitty_graphics_delete([
@@ -256,8 +281,11 @@ test "kitty graphics command/delete parser covers selector families" {
       kitty_graphics_pair(b'y', b"4"),
       kitty_graphics_pair(b'z', b"-1"),
     ])
-    is Some(query_cell_z_value) &&
-    query_cell_z_value == IntersectCellZ({ delete: false, x: 3U, y: 4U, z: -1 }) else {
+    is Some(IntersectCellZ(query_cell_z_value)) &&
+    !query_cell_z_value.delete &&
+    query_cell_z_value.x == 3U &&
+    query_cell_z_value.y == 4U &&
+    query_cell_z_value.z == -1 else {
     fail("expected non-deleting intersect-cell-z selector")
   }
   guard parse_kitty_graphics_delete([
@@ -302,20 +330,23 @@ test "kitty graphics command/delete parser covers selector families" {
       kitty_graphics_pair(b'd', b"x"),
       kitty_graphics_pair(b'x', b"8"),
     ])
-    is Some(column_query_value) &&
-    column_query_value == Column({ delete: false, x: 8U }) &&
+    is Some(Column(column_query_value)) &&
+    !column_query_value.delete &&
+    column_query_value.x == 8U &&
     parse_kitty_graphics_delete([
       kitty_graphics_pair(b'd', b"y"),
       kitty_graphics_pair(b'y', b"9"),
     ])
-    is Some(row_query_value) &&
-    row_query_value == Row({ delete: false, y: 9U }) &&
+    is Some(Row(row_query_value)) &&
+    !row_query_value.delete &&
+    row_query_value.y == 9U &&
     parse_kitty_graphics_delete([
       kitty_graphics_pair(b'd', b"z"),
       kitty_graphics_pair(b'z', b"-2"),
     ])
-    is Some(z_query_value) &&
-    z_query_value == Z({ delete: false, z: -2 }) else {
+    is Some(Z(z_query_value)) &&
+    !z_query_value.delete &&
+    z_query_value.z == -2 else {
     fail("expected non-deleting column row and z selectors")
   }
 }
@@ -395,8 +426,8 @@ test "kitty graphics command/helper parsers cover invalid inputs" {
     fail("expected quiet parser branches")
   }
 
-  guard parse_kitty_graphics_transmission([kitty_graphics_pair(b'f', b"1")]) ==
-    None &&
+  guard parse_kitty_graphics_transmission([kitty_graphics_pair(b'f', b"1")])
+    is None &&
     parse_kitty_graphics_transmission([
       kitty_graphics_pair(b'f', b"32"),
       kitty_graphics_pair(b't', b"f"),
@@ -407,12 +438,12 @@ test "kitty graphics command/helper parsers cover invalid inputs" {
     parse_kitty_graphics_transmission([kitty_graphics_pair(b't', b"t")])
     is Some(temp_file_transmission) &&
     temp_file_transmission.medium == TemporaryFile &&
-    parse_kitty_graphics_transmission([kitty_graphics_pair(b't', b"x")]) == None &&
-    parse_kitty_graphics_transmission([kitty_graphics_pair(b'o', b"x")]) == None else {
+    parse_kitty_graphics_transmission([kitty_graphics_pair(b't', b"x")]) is None &&
+    parse_kitty_graphics_transmission([kitty_graphics_pair(b'o', b"x")]) is None else {
     fail("expected transmission parse rejection")
   }
 
-  guard parse_kitty_graphics_display([kitty_graphics_pair(b'C', b"2")]) == None &&
+  guard parse_kitty_graphics_display([kitty_graphics_pair(b'C', b"2")]) is None &&
     parse_kitty_graphics_display([
       kitty_graphics_pair(b'I', b"8"),
       kitty_graphics_pair(b'C', b"0"),
@@ -422,7 +453,7 @@ test "kitty graphics command/helper parsers cover invalid inputs" {
     default_display.image_number == 8U &&
     default_display.cursor_movement == After &&
     !default_display.virtual_placement &&
-    parse_kitty_graphics_display([kitty_graphics_pair(b'U', b"2")]) == None else {
+    parse_kitty_graphics_display([kitty_graphics_pair(b'U', b"2")]) is None else {
     fail("expected display parse rejection")
   }
 
@@ -430,14 +461,14 @@ test "kitty graphics command/helper parsers cover invalid inputs" {
       kitty_graphics_pair(b'd', b"r"),
       kitty_graphics_pair(b'x', b"4"),
       kitty_graphics_pair(b'y', b"3"),
-    ]) ==
-    None &&
+    ])
+    is None &&
     parse_kitty_graphics_delete([
       kitty_graphics_pair(b'd', b"r"),
       kitty_graphics_pair(b'x', b"4"),
-    ]) ==
-    None &&
-    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"?")]) == None else {
+    ])
+    is None &&
+    parse_kitty_graphics_delete([kitty_graphics_pair(b'd', b"?")]) is None else {
     fail("expected delete parse rejection")
   }
 }
@@ -485,22 +516,22 @@ test "kitty graphics command/base64 and top-level parser edge cases" {
     fail("expected base64 alphabet mapping")
   }
 
-  guard parse_kitty_graphics_command_bytes([]) == None &&
-    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=,i=1")) ==
-    None &&
-    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=;")) ==
-    None &&
-    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=")) ==
-    None &&
-    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=t,q=9")) ==
-    None &&
+  guard parse_kitty_graphics_command_bytes([]) is None &&
+    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=,i=1"))
+    is None &&
+    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=;"))
+    is None &&
+    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a="))
+    is None &&
+    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=t,q=9"))
+    is None &&
     parse_kitty_graphics_command_bytes(
       kitty_graphics_bytes_array(b"a=123456789012;"),
     )
     is Some(long_value_command) &&
     long_value_command.control is Transmit(_) &&
-    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=t;*")) ==
-    None &&
+    parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=t;*"))
+    is None &&
     parse_kitty_graphics_command_bytes(
       kitty_graphics_bytes_array(b"abcdefghijkl=t,f=24,s=1,v=1;QUFB"),
     )
@@ -523,34 +554,34 @@ test "kitty graphics command/base64 and top-level parser edge cases" {
 
   guard parse_kitty_graphics_command_bytes(kitty_graphics_bytes_array(b"a=f"))
     is Some(unsupported_action_command) &&
-    unsupported_action_command.control == Unsupported(b'f') &&
+    unsupported_action_command.control is Unsupported(b'f') &&
     build_kitty_graphics_control([
       kitty_graphics_pair(b'a', b"q"),
       kitty_graphics_pair(b'f', b"1"),
-    ]) ==
-    None &&
+    ])
+    is None &&
     build_kitty_graphics_control([
       kitty_graphics_pair(b'a', b"t"),
       kitty_graphics_pair(b't', b"x"),
-    ]) ==
-    None &&
+    ])
+    is None &&
     build_kitty_graphics_control([
       kitty_graphics_pair(b'a', b"T"),
       kitty_graphics_pair(b'f', b"24"),
       kitty_graphics_pair(b'C', b"2"),
-    ]) ==
-    None &&
+    ])
+    is None &&
     build_kitty_graphics_control([
       kitty_graphics_pair(b'a', b"T"),
       kitty_graphics_pair(b'f', b"1"),
-    ]) ==
-    None &&
+    ])
+    is None &&
     build_kitty_graphics_control([
       kitty_graphics_pair(b'a', b"p"),
       kitty_graphics_pair(b'C', b"2"),
-    ]) ==
-    None &&
-    build_kitty_graphics_control([kitty_graphics_pair(b'a', b"?")]) == None else {
+    ])
+    is None &&
+    build_kitty_graphics_control([kitty_graphics_pair(b'a', b"?")]) is None else {
     fail("expected unsupported action preservation")
   }
 }

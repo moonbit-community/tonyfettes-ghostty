@@ -9,13 +9,13 @@ priv struct TerminalPinnedRow {
   row_id : UInt64
   row : PageRowState
   cells : Array[PageCellState]
-} derive(Eq, Debug)
+}
 
 ///|
 priv enum TerminalVisibleRowSource {
   History(Int)
   Screen(Int)
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct TerminalScrollbackState {
@@ -24,7 +24,7 @@ priv struct TerminalScrollbackState {
   mut visible_row_ids : Array[UInt64]
   mut next_row_id : UInt64
   mut viewport_offset : Int
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct TerminalScreenStorage {
@@ -32,7 +32,7 @@ priv struct TerminalScreenStorage {
   mut cursor : TerminalCursorState
   mut scrollback : TerminalScrollbackState
   mut kitty_graphics : KittyGraphicsState
-} derive(Eq, Debug)
+}
 
 ///|
 fn TerminalScrollbackState::new(

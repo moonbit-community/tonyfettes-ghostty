@@ -207,11 +207,6 @@ priv struct StreamTerminalBridgeState {
 }
 
 ///|
-fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
-  StreamTerminalBridgeState::with_effects(StreamTerminalBridgeEffects::new())
-}
-
-///|
 fn StreamTerminalBridgeState::with_effects(
   effects : StreamTerminalBridgeEffects,
 ) -> StreamTerminalBridgeState {
@@ -255,27 +250,6 @@ fn StreamTerminalBridgeState::with_effects(
     width_px: 0U,
     height_px: 0U,
   }
-}
-
-///|
-fn StreamTerminalBridgeState::protected_state(
-  self : StreamTerminalBridgeState,
-) -> ScreenProtectedState {
-  self.protected_state
-}
-
-///|
-fn StreamTerminalBridgeState::display_state(
-  self : StreamTerminalBridgeState,
-) -> TerminalDisplayState {
-  self.display_state
-}
-
-///|
-fn StreamTerminalBridgeState::colors(
-  self : StreamTerminalBridgeState,
-) -> TerminalColors {
-  self.colors
 }
 
 ///|
@@ -336,41 +310,6 @@ fn StreamTerminalBridgeState::cursor_pending_wrap(
 }
 
 ///|
-fn StreamTerminalBridgeState::cursor_top_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.top_margin()
-}
-
-///|
-fn StreamTerminalBridgeState::cursor_bottom_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.bottom_margin()
-}
-
-///|
-fn StreamTerminalBridgeState::cursor_left_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.left_margin()
-}
-
-///|
-fn StreamTerminalBridgeState::cursor_right_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.right_margin()
-}
-
-///|
-fn StreamTerminalBridgeState::mouse_shift_capture(
-  self : StreamTerminalBridgeState,
-) -> Bool? {
-  self.input_flags.mouse_shift_capture()
-}
-
-///|
 fn StreamTerminalBridgeState::modify_other_keys_2(
   self : StreamTerminalBridgeState,
 ) -> Bool {
@@ -382,14 +321,6 @@ fn StreamTerminalBridgeState::kitty_keyboard_flags(
   self : StreamTerminalBridgeState,
 ) -> KittyKeyboardFlags {
   self.kitty_keyboard.current()
-}
-
-///|
-fn StreamTerminalBridgeState::tabstop(
-  self : StreamTerminalBridgeState,
-  col : CellCountInt,
-) -> Bool {
-  self.tabstops.get(col)
 }
 
 ///|
@@ -414,74 +345,10 @@ fn StreamTerminalBridgeState::mouse_tracking(
 }
 
 ///|
-fn StreamTerminalBridgeState::charset(
-  self : StreamTerminalBridgeState,
-  slot : Slots,
-) -> Charset {
-  self.charset.charset(slot)
-}
-
-///|
-fn StreamTerminalBridgeState::charset_gl(
-  self : StreamTerminalBridgeState,
-) -> Slots {
-  self.charset.gl()
-}
-
-///|
-fn StreamTerminalBridgeState::charset_gr(
-  self : StreamTerminalBridgeState,
-) -> Slots {
-  self.charset.gr()
-}
-
-///|
-fn StreamTerminalBridgeState::charset_single_shift(
-  self : StreamTerminalBridgeState,
-) -> Slots? {
-  self.charset.single_shift()
-}
-
-///|
-fn StreamTerminalBridgeState::has_saved_cursor(
-  self : StreamTerminalBridgeState,
-) -> Bool {
-  self.saved_cursor.has_saved()
-}
-
-///|
 fn StreamTerminalBridgeState::current_style_snapshot(
   self : StreamTerminalBridgeState,
 ) -> CellStyle {
   copy_cell_style(self.current_style)
-}
-
-///|
-fn StreamTerminalBridgeState::semantic_click_mode(
-  self : StreamTerminalBridgeState,
-) -> SemanticClickMode {
-  self.semantic.click()
-}
-
-///|
-fn StreamTerminalBridgeState::semantic_cursor_content(
-  self : StreamTerminalBridgeState,
-) -> SemanticContent {
-  self.semantic.cursor_content()
-}
-
-///|
-fn StreamTerminalBridgeState::semantic_cursor_content_clear_eol(
-  self : StreamTerminalBridgeState,
-) -> Bool {
-  self.semantic.cursor_content_clear_eol()
-}
-
-///|
-fn StreamTerminalBridgeState::semantic_row_prompt(
-  self : StreamTerminalBridgeState,
-) -> RowSemanticPrompt {
-  self.semantic.row_prompt()
 }
 
 ///|
@@ -549,41 +416,6 @@ fn StreamTerminalBridgeState::set_default_palette(
   }
   self.palette_dirty = true
   TerminalResultCode::Success
-}
-
-///|
-fn StreamTerminalBridgeState::shell_redraws_prompt(
-  self : StreamTerminalBridgeState,
-) -> SemanticPromptRedraw {
-  self.metadata.shell_redraws_prompt()
-}
-
-///|
-fn StreamTerminalBridgeState::hyperlink_active(
-  self : StreamTerminalBridgeState,
-) -> Bool {
-  self.hyperlink.active()
-}
-
-///|
-fn StreamTerminalBridgeState::hyperlink_uri(
-  self : StreamTerminalBridgeState,
-) -> String? {
-  self.hyperlink.uri()
-}
-
-///|
-fn StreamTerminalBridgeState::hyperlink_explicit_id(
-  self : StreamTerminalBridgeState,
-) -> String? {
-  self.hyperlink.explicit_id()
-}
-
-///|
-fn StreamTerminalBridgeState::hyperlink_implicit_id(
-  self : StreamTerminalBridgeState,
-) -> Int? {
-  self.hyperlink.implicit_id()
 }
 
 ///|
@@ -738,13 +570,6 @@ fn StreamTerminalBridgeState::active_screen(
   self : StreamTerminalBridgeState,
 ) -> TerminalScreen {
   self.active_screen
-}
-
-///|
-fn StreamTerminalBridgeState::kitty_graphics(
-  self : StreamTerminalBridgeState,
-) -> KittyGraphicsState {
-  self.kitty_graphics
 }
 
 ///|
@@ -2052,11 +1877,13 @@ fn StreamTerminalBridgeState::apply_kitty_graphics(
         Some(self.execute_kitty_graphics_display(display)),
       )
     Delete(delete) => self.execute_kitty_graphics_delete(delete)
-    Unsupported(_) =>
+    Unsupported(action) => {
+      ignore(action)
       self.write_kitty_graphics_response(
         command.quiet,
         Some(KittyGraphicsResponse::new(message=b"ERROR: unimplemented action")),
       )
+    }
   }
 }
 
@@ -2090,6 +1917,10 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_query(
   transmission : KittyImageTransmission,
   data : Bytes,
 ) -> KittyGraphicsResponse {
+  // These parsed fields are preserved for upstream parity, but this bridge
+  // currently only validates direct in-band payloads.
+  ignore(transmission.size)
+  ignore(transmission.offset)
   let result = KittyGraphicsResponse::new(
     id=transmission.image_id,
     image_number=transmission.image_number,
@@ -2131,6 +1962,10 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_transmit(
   display : KittyImageDisplay?,
   data : Bytes,
 ) -> (KittyGraphicsQuiet, KittyGraphicsResponse?) {
+  // Offset/declared-size transport semantics are not modeled yet, but the
+  // parsed header stays faithful to upstream.
+  ignore(transmission.size)
+  ignore(transmission.offset)
   let response = KittyGraphicsResponse::new(
     id=transmission.image_id,
     image_number=transmission.image_number,
@@ -2249,6 +2084,11 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_display(
   self : StreamTerminalBridgeState,
   display : KittyImageDisplay,
 ) -> KittyGraphicsResponse {
+  // Parsed placement-offset metadata is preserved even though the current
+  // MoonBit host surface does not apply those variants yet.
+  ignore(display.parent_placement_id)
+  ignore(display.horizontal_offset)
+  ignore(display.vertical_offset)
   let result = KittyGraphicsResponse::new(
     id=display.image_id,
     image_number=display.image_number,
@@ -2319,14 +2159,36 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
         value.placement_id,
         value.delete,
       )
-    IntersectCursor(_)
-    | AnimationFrames(_)
-    | IntersectCell(_)
-    | IntersectCellZ(_)
-    | Range(_)
-    | Column(_)
-    | Row(_)
-    | Z(_) => ()
+    IntersectCursor(delete) => ignore(delete)
+    AnimationFrames(delete) => ignore(delete)
+    IntersectCell(value) => {
+      ignore(value.delete)
+      ignore(value.x)
+      ignore(value.y)
+    }
+    IntersectCellZ(value) => {
+      ignore(value.delete)
+      ignore(value.x)
+      ignore(value.y)
+      ignore(value.z)
+    }
+    Range(value) => {
+      ignore(value.delete)
+      ignore(value.first)
+      ignore(value.last)
+    }
+    Column(value) => {
+      ignore(value.delete)
+      ignore(value.x)
+    }
+    Row(value) => {
+      ignore(value.delete)
+      ignore(value.y)
+    }
+    Z(value) => {
+      ignore(value.delete)
+      ignore(value.z)
+    }
   }
 }
 
@@ -2380,7 +2242,7 @@ priv enum ScreenMode {
   Mode47
   Mode1047
   Mode1049
-} derive(Eq, Debug)
+}
 
 ///|
 fn StreamTerminalBridgeState::store_active_screen(

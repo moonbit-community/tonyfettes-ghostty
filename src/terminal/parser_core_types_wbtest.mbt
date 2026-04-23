@@ -1,4 +1,23 @@
 ///|
+
+///|
+fn TransitionAction::ordinal(self : TransitionAction) -> Int {
+  match self {
+    None => 0
+    Ignore => 1
+    Print => 2
+    Execute => 3
+    Collect => 4
+    Param => 5
+    EscDispatch => 6
+    CsiDispatch => 7
+    Put => 8
+    OscPut => 9
+    ApcPut => 10
+  }
+}
+
+///|
 test "parser core types/parser state roundtrip and count" {
   let states : Array[(ParserState, Int)] = [
     (Ground, 0),
@@ -51,30 +70,16 @@ test "parser core types/transition action roundtrip" {
 
   for entry in actions {
     assert_eq(entry.0.ordinal(), entry.1)
-    guard transition_action_from_int(entry.1) == Some(entry.0) else {
+    guard transition_action_from_int(entry.1) is Some(found) &&
+      found.ordinal() == entry.1 else {
       fail("expected transition action roundtrip for \{entry.1}")
     }
   }
 
-  guard transition_action_from_int(-1) == None else {
+  guard transition_action_from_int(-1) is None else {
     fail("expected negative transition action to be rejected")
   }
-  guard transition_action_from_int(actions.length()) == None else {
+  guard transition_action_from_int(actions.length()) is None else {
     fail("expected transition action overflow to be rejected")
-  }
-}
-
-///|
-test "parser core types/transition equality uses both fields" {
-  let left : Transition = { state: CsiParam, action: Param }
-  let same : Transition = { state: CsiParam, action: Param }
-  let different_state : Transition = { state: Ground, action: Param }
-  let different_action : Transition = { state: CsiParam, action: Print }
-  guard left == same else { fail("expected identical transition") }
-  guard left != different_state else {
-    fail("expected state difference to matter")
-  }
-  guard left != different_action else {
-    fail("expected action difference to matter")
   }
 }

@@ -10,7 +10,7 @@ test "apc/unknown command is ignored" {
   let handler = ApcHandler::new()
   handler.start()
   feed_apc_bytes(handler, b"Xabcdef1234")
-  guard handler.end() == None else {
+  guard handler.end() is None else {
     fail("expected unknown APC to be ignored")
   }
 }
@@ -20,7 +20,7 @@ test "apc/malformed kitty command returns none" {
   let handler = ApcHandler::new()
   handler.start()
   feed_apc_bytes(handler, b"Gabcdef1234")
-  guard handler.end() == None else {
+  guard handler.end() is None else {
     fail("expected malformed kitty APC to return no command")
   }
 }
@@ -30,13 +30,13 @@ test "apc/kitty overflow returns none" {
   let handler = ApcHandler::new()
   handler.start()
   feed_apc_bytes(handler, b"Ga=p,i=10000000000")
-  guard handler.end() == None else {
+  guard handler.end() is None else {
     fail("expected kitty APC u32 overflow to return no command")
   }
 
   handler.start()
   feed_apc_bytes(handler, b"Ga=p,i=1,z=-9999999999")
-  guard handler.end() == None else {
+  guard handler.end() is None else {
     fail("expected kitty APC i32 overflow to return no command")
   }
 }
@@ -83,7 +83,7 @@ test "apc/unsupported action is preserved as typed command" {
   guard handler.end() is Some(Kitty(command)) else {
     fail("expected unsupported kitty action to remain typed")
   }
-  guard command.control == Unsupported(b'f') else {
+  guard command.control is Unsupported(b'f') else {
     fail("expected unsupported action tag")
   }
 }
@@ -137,13 +137,8 @@ test "apc/parser helpers preserve upstream defaults" {
 ///|
 test "apc/private helper branches and parser states" {
   let handler = ApcHandler::new()
-  handler.deinit()
-  guard handler.state is Inactive else {
-    fail("expected deinit to reset state")
-  }
-
   handler.start()
-  guard handler.end() == None else {
+  guard handler.end() is None else {
     fail("expected identify-without-bytes end to return none")
   }
 
@@ -155,7 +150,7 @@ test "apc/private helper branches and parser states" {
   guard handler.state is Inactive else {
     fail("expected feed while inactive to be ignored")
   }
-  guard handler.end() == None else {
+  guard handler.end() is None else {
     fail("expected inactive end to return none")
   }
 
@@ -179,8 +174,8 @@ test "apc/private helper branches and parser states" {
   }
   guard parse_kitty_graphics_command_bytes([
       b'a', b'=', b'd', b',', b'd', b'=', b'r',
-    ]) ==
-    None else {
+    ])
+    is None else {
     fail("expected invalid delete selector to fail")
   }
 }

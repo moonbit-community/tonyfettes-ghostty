@@ -347,3 +347,38 @@ test "kitty graphics/rgba placement clamps to screen bounds" {
 
   terminal.deinit()
 }
+
+///|
+test "kitty graphics/no-op delete selectors preserve visible state" {
+  let terminal = StreamTerminal::new()
+  guard terminal.resize(80, 5, 10U, 20U) == TerminalResultCode::Success else {
+    fail("expected resize before kitty graphics delete-selector test")
+  }
+
+  terminal.next_slice(b"\x1B_Ga=t,t=d,f=24,i=1,s=1,v=2;////////\x1B\\")
+  terminal.next_slice(b"\x1B_Ga=p,i=1,p=1,c=1,r=1;\x1B\\")
+
+  let graphics = terminal.kitty_graphics()
+  guard graphics.image(1U) is Some(_) && placement_count(graphics) == 1 else {
+    fail("expected initial kitty graphics state")
+  }
+
+  for
+    sequence in [
+      b"\x1B_Ga=d,d=c;\x1B\\", b"\x1B_Ga=d,d=f;\x1B\\", b"\x1B_Ga=d,d=p,x=0,y=0;\x1B\\",
+      b"\x1B_Ga=d,d=q,x=0,y=0,z=0;\x1B\\", b"\x1B_Ga=d,d=R,x=0,y=0;\x1B\\", b"\x1B_Ga=d,d=X,x=0;\x1B\\",
+      b"\x1B_Ga=d,d=Y,y=0;\x1B\\",
+    ] {
+    terminal.next_slice(sequence)
+  }
+
+  let placement = next_placement(graphics)
+  guard graphics.image(1U) is Some(_) &&
+    placement_count(graphics) == 1 &&
+    placement.image_id() == 1U &&
+    placement.rect().unwrap().rectangle() else {
+    fail("expected no-op kitty delete selectors to preserve image state")
+  }
+
+  terminal.deinit()
+}

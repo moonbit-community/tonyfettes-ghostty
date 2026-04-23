@@ -12,7 +12,7 @@ priv enum KittyGraphicsValidationError {
   UnsupportedFormat
   UnsupportedMedium
   UnsupportedCompression
-} derive(Eq, Debug)
+}
 
 ///|
 fn kitty_graphics_error_message(error : KittyGraphicsValidationError) -> Bytes {
@@ -30,7 +30,7 @@ fn kitty_graphics_error_message(error : KittyGraphicsValidationError) -> Bytes {
 priv enum KittyGraphicsPlacementLocation {
   Grid(GridRef)
   Virtual
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsImage {
@@ -43,7 +43,7 @@ priv struct KittyGraphicsImage {
   data : Bytes
   mut implicit_id : Bool
   transmit_seq : UInt64
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsLoadingImage {
@@ -51,7 +51,7 @@ priv struct KittyGraphicsLoadingImage {
   data : Array[Byte]
   display : KittyImageDisplay?
   mut quiet : KittyGraphicsQuiet
-} derive(Eq, Debug)
+}
 
 ///|
 fn KittyGraphicsLoadingImage::new(
@@ -103,7 +103,7 @@ priv struct KittyGraphicsPlacement {
   columns : UInt
   rows : UInt
   z : Int
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsSourceRect {
@@ -111,19 +111,19 @@ priv struct KittyGraphicsSourceRect {
   y : UInt
   width : UInt
   height : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsPixelSize {
   width : UInt
   height : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsGridSize {
   cols : UInt
   rows : UInt
-} derive(Eq, Debug)
+}
 
 ///|
 fn KittyGraphicsPlacement::is_virtual(self : KittyGraphicsPlacement) -> Bool {
@@ -247,19 +247,19 @@ fn KittyGraphicsPlacement::grid_size(
 
 ///|
 priv struct KittyGraphicsState {
-  mut dirty : Bool
+  mut _dirty : Bool
   mut next_image_id : UInt
   mut next_internal_placement_id : UInt
   mut next_transmit_seq : UInt64
   mut images : Array[KittyGraphicsImage]
   mut placements : Array[KittyGraphicsPlacement]
   mut loading : KittyGraphicsLoadingImage?
-} derive(Eq, Debug)
+}
 
 ///|
 fn KittyGraphicsState::new() -> KittyGraphicsState {
   {
-    dirty: false,
+    _dirty: false,
     next_image_id: KittyGraphicsNextImageIdStart,
     next_internal_placement_id: 0U,
     next_transmit_seq: 0UL,
@@ -271,30 +271,13 @@ fn KittyGraphicsState::new() -> KittyGraphicsState {
 
 ///|
 fn KittyGraphicsState::full_reset(self : KittyGraphicsState) -> Unit {
-  self.dirty = false
+  self._dirty = false
   self.next_image_id = KittyGraphicsNextImageIdStart
   self.next_internal_placement_id = 0U
   self.next_transmit_seq = 0UL
   self.images = []
   self.placements = []
   self.loading = None
-}
-
-///|
-fn KittyGraphicsState::dirty(self : KittyGraphicsState) -> Bool {
-  self.dirty
-}
-
-///|
-fn KittyGraphicsState::clear_dirty(self : KittyGraphicsState) -> Unit {
-  self.dirty = false
-}
-
-///|
-fn KittyGraphicsState::images(
-  self : KittyGraphicsState,
-) -> Array[KittyGraphicsImage] {
-  self.images
 }
 
 ///|
@@ -368,7 +351,7 @@ fn KittyGraphicsState::add_image(
   }
   next.push(image)
   self.images = next
-  self.dirty = true
+  self._dirty = true
 }
 
 ///|
@@ -417,7 +400,7 @@ fn KittyGraphicsState::add_placement(
   }
   next.push(placement)
   self.placements = next
-  self.dirty = true
+  self._dirty = true
   placement
 }
 
@@ -434,7 +417,7 @@ fn KittyGraphicsState::delete_all(
   if delete_images {
     self.images = []
   }
-  self.dirty = true
+  self._dirty = true
 }
 
 ///|
@@ -465,7 +448,7 @@ fn KittyGraphicsState::delete_by_id(
     self.delete_image_if_unused(image_id)
   }
   if removed || delete_unused {
-    self.dirty = true
+    self._dirty = true
   }
 }
 
@@ -504,7 +487,7 @@ fn KittyGraphicsState::delete_image_if_unused(
   }
   self.images = next
   if removed {
-    self.dirty = true
+    self._dirty = true
   }
 }
 

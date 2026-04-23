@@ -20,6 +20,23 @@ fn sample_kitty_image(
 }
 
 ///|
+fn KittyGraphicsState::dirty(self : KittyGraphicsState) -> Bool {
+  self._dirty
+}
+
+///|
+fn KittyGraphicsState::clear_dirty(self : KittyGraphicsState) -> Unit {
+  self._dirty = false
+}
+
+///|
+fn KittyGraphicsState::images(
+  self : KittyGraphicsState,
+) -> Array[KittyGraphicsImage] {
+  self.images
+}
+
+///|
 fn sample_display(
   image_id? : UInt = 1U,
   placement_id? : UInt = 0U,
@@ -143,7 +160,7 @@ test "kitty graphics state/delete helpers" {
   }
 
   state.delete_by_id(1U, 4U, true)
-  guard state.placements().length() == 1 && state.image_by_id(1U) == None else {
+  guard state.placements().length() == 1 && state.image_by_id(1U) is None else {
     fail("expected delete-by-id with delete-unused")
   }
 
@@ -167,7 +184,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
   transmission.width = 4U
   transmission.height = 2U
 
-  guard kitty_graphics_validate_transmission_header(transmission) == None else {
+  guard kitty_graphics_validate_transmission_header(transmission) is None else {
     fail("expected direct rgb transmission header to be supported")
   }
 
@@ -196,7 +213,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
 
   let png = KittyImageTransmission::new()
   png.format = Png
-  guard kitty_graphics_validate_transmission_header(png) == None else {
+  guard kitty_graphics_validate_transmission_header(png) is None else {
     fail("expected png header validation to defer to system decoder")
   }
   guard finalize_kitty_graphics_loading(
@@ -238,8 +255,8 @@ test "kitty graphics state/loading validation and geometry helpers" {
 
   let compressed = KittyImageTransmission::new()
   compressed.compression = ZlibDeflate
-  guard kitty_graphics_validate_transmission_header(compressed) ==
-    Some(UnsupportedCompression) else {
+  guard kitty_graphics_validate_transmission_header(compressed)
+    is Some(UnsupportedCompression) else {
     fail("expected compressed direct medium to stay unsupported")
   }
 
@@ -412,7 +429,7 @@ test "kitty graphics state/reset and edge helper branches" {
   guard !state.dirty() &&
     state.images().length() == 0 &&
     state.placements().length() == 0 &&
-    state.loading == None else {
+    state.loading is None else {
     fail("expected full reset to clear graphics state")
   }
 
@@ -449,8 +466,8 @@ test "kitty graphics state/reset and edge helper branches" {
 
   let file_medium = KittyImageTransmission::new()
   file_medium.medium = File
-  guard kitty_graphics_validate_transmission_header(file_medium) ==
-    Some(UnsupportedMedium) else {
+  guard kitty_graphics_validate_transmission_header(file_medium)
+    is Some(UnsupportedMedium) else {
     fail("expected unsupported medium validation")
   }
 

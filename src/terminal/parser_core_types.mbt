@@ -14,7 +14,7 @@ priv enum ParserState {
   DcsIgnore
   OscString
   SosPmApcString
-} derive(Eq, Debug)
+} derive(Eq)
 
 ///|
 const ParserStateCount : Int = 14
@@ -78,23 +78,6 @@ priv enum TransitionAction {
   Put
   OscPut
   ApcPut
-} derive(Eq, Debug)
-
-///|
-fn TransitionAction::ordinal(self : TransitionAction) -> Int {
-  match self {
-    None => 0
-    Ignore => 1
-    Print => 2
-    Execute => 3
-    Collect => 4
-    Param => 5
-    EscDispatch => 6
-    CsiDispatch => 7
-    Put => 8
-    OscPut => 9
-    ApcPut => 10
-  }
 }
 
 ///|
@@ -119,4 +102,4 @@ fn transition_action_from_int(value : Int) -> TransitionAction? {
 priv struct Transition {
   state : ParserState
   action : TransitionAction
-} derive(Eq, Debug)
+}

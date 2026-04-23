@@ -1,6 +1,8 @@
 ///|
 test "kitty graphics wb/skips placements whose backing image is missing" {
-  let bridge = StreamTerminalBridgeState::new()
+  let bridge = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(),
+  )
   bridge.kitty_graphics.placements = [
     {
       image_id: 9U,
@@ -62,7 +64,9 @@ test "kitty graphics wb/format and compression helpers stay total" {
 
 ///|
 test "kitty graphics wb/rect guards impossible zero-row state" {
-  let bridge = StreamTerminalBridgeState::new()
+  let bridge = StreamTerminalBridgeState::with_effects(
+    StreamTerminalBridgeEffects::new(),
+  )
   bridge.grid = { rows: 0, cols: 1, row_states: [], cells: [] }
   bridge.scrollback.visible_row_ids = [7UL]
 

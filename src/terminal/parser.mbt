@@ -13,7 +13,7 @@ const MaxParamValue : UInt16 = 65535
 ///|
 priv struct SepList {
   mut bits : UInt64
-} derive(Eq, Debug)
+} derive(Debug)
 
 ///|
 fn SepList::init_empty() -> SepList {
@@ -47,20 +47,20 @@ priv struct Csi {
   params : Array[UInt16]
   params_sep : SepList
   final_byte : Byte
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct Esc {
   intermediates : Array[Byte]
   final_byte : Byte
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct Dcs {
   intermediates : Array[Byte]
   params : Array[UInt16]
   final_byte : Byte
-} derive(Eq, Debug)
+}
 
 ///|
 priv enum Action {
@@ -75,7 +75,7 @@ priv enum Action {
   ApcStart
   ApcPut(Byte)
   ApcEnd
-} derive(Eq, Debug)
+}
 
 ///|
 type ActionList = FixedArray[Action?]
@@ -89,7 +89,7 @@ priv struct Parser {
   mut param_acc : UInt16
   mut param_acc_idx : Int
   osc_parser : OscParser
-} derive(Debug)
+}
 
 ///|
 fn Parser::new() -> Parser {

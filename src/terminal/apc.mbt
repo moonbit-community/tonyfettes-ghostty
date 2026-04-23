@@ -4,31 +4,26 @@ priv enum ApcState {
   Ignore
   Identify
   Kitty(KittyGraphicsParser)
-} derive(Debug)
+}
 
 ///|
 priv enum ApcCommand {
   Kitty(KittyGraphicsCommand)
-} derive(Eq, Debug)
+}
 
 ///|
 priv struct KittyGraphicsParser {
   bytes : Array[Byte]
-} derive(Debug)
+}
 
 ///|
 priv struct ApcHandler {
   mut state : ApcState
-} derive(Debug)
+}
 
 ///|
 fn ApcHandler::new() -> ApcHandler {
   { state: Inactive }
-}
-
-///|
-fn ApcHandler::deinit(self : ApcHandler) -> Unit {
-  self.state = Inactive
 }
 
 ///|

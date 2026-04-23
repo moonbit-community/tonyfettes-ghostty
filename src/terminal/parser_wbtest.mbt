@@ -1,8 +1,13 @@
 ///|
 fn expect_no_actions(actions : ActionList) -> Unit raise {
-  guard actions[0] == None && actions[1] == None && actions[2] == None else {
+  guard actions[0] is None && actions[1] is None && actions[2] is None else {
     fail("expected no parser actions")
   }
+}
+
+///|
+fn expect_action_none(action : Action?, message : String) -> Unit raise {
+  guard action is None else { fail(message) }
 }
 
 ///|
@@ -10,25 +15,21 @@ test "parser/ground print and execute smoke" {
   let parser = Parser::new()
 
   let print_actions = parser.next(b'a')
-  guard print_actions[0] == None else { fail("unexpected print exit action") }
+  expect_action_none(print_actions[0], "unexpected print exit action")
   guard print_actions[1] is Some(Print(value)) && value == b'a'.to_uint() else {
     fail("expected print action")
   }
-  guard print_actions[2] == None else { fail("unexpected print entry action") }
+  expect_action_none(print_actions[2], "unexpected print entry action")
   guard parser.state == Ground else {
     fail("expected ground state after print")
   }
 
   let execute_actions = parser.next(0x19)
-  guard execute_actions[0] == None else {
-    fail("unexpected execute exit action")
-  }
+  expect_action_none(execute_actions[0], "unexpected execute exit action")
   guard execute_actions[1] is Some(Execute(value)) && value == 0x19 else {
     fail("expected execute action")
   }
-  guard execute_actions[2] == None else {
-    fail("unexpected execute entry action")
-  }
+  expect_action_none(execute_actions[2], "unexpected execute entry action")
 }
 
 ///|
@@ -40,9 +41,10 @@ test "parser/deinit delegates to embedded osc parser" {
   parser.deinit()
 
   let actions = parser.next(0x07)
-  guard actions[0] == None else {
-    fail("expected parser deinit to reset embedded osc parser")
-  }
+  expect_action_none(
+    actions[0],
+    "expected parser deinit to reset embedded osc parser",
+  )
 }
 
 ///|
@@ -52,14 +54,14 @@ test "parser/esc dispatch with intermediate" {
   expect_no_actions(parser.next(b'('))
 
   let actions = parser.next(b'B')
-  guard actions[0] == None else { fail("unexpected ESC exit action") }
+  expect_action_none(actions[0], "unexpected ESC exit action")
   guard actions[1] is Some(EscDispatch(dispatch)) else {
     fail("expected ESC dispatch")
   }
   guard dispatch.final_byte == b'B' && dispatch.intermediates == [b'('] else {
     fail("unexpected ESC dispatch payload")
   }
-  guard actions[2] == None else { fail("unexpected ESC entry action") }
+  expect_action_none(actions[2], "unexpected ESC entry action")
   guard parser.state == Ground else { fail("expected ground state") }
 }
 
@@ -157,7 +159,7 @@ test "parser/csi colon for non-m final suppresses dispatch" {
   }
 
   let actions = parser.next(b'h')
-  guard actions[0] == None && actions[1] == None && actions[2] == None else {
+  guard actions[0] is None && actions[1] is None && actions[2] is None else {
     fail("expected colon-separated non-SGR CSI to be dropped")
   }
   guard parser.state == Ground else { fail("expected ground state") }
@@ -193,7 +195,7 @@ test "parser/osc dispatch on bel and st ordering" {
     title == "abc" else {
     fail("expected OSC BEL dispatch in exit slot")
   }
-  guard bel_actions[1] == None && bel_actions[2] == None else {
+  guard bel_actions[1] is None && bel_actions[2] is None else {
     fail("unexpected BEL OSC trailing actions")
   }
 
@@ -206,7 +208,7 @@ test "parser/osc dispatch on bel and st ordering" {
     title == "xyz" else {
     fail("expected OSC ST dispatch on ESC exit")
   }
-  guard esc_actions[1] == None && esc_actions[2] == None else {
+  guard esc_actions[1] is None && esc_actions[2] is None else {
     fail("unexpected OSC ST ESC-slot actions")
   }
   let slash_actions = st_parser.next(b'\\')
@@ -247,7 +249,7 @@ test "parser/osc clipboard dispatch" {
   guard contents.kind() == b'c' && contents.data() == "?" else {
     fail("expected clipboard payload")
   }
-  guard actions[1] == None && actions[2] == None else {
+  guard actions[1] is None && actions[2] is None else {
     fail("unexpected OSC clipboard trailing actions")
   }
 }
@@ -273,7 +275,7 @@ test "parser/osc kitty color dispatch" {
   guard command.terminator() == Bel else {
     fail("expected kitty color BEL terminator")
   }
-  guard actions[1] == None && actions[2] == None else {
+  guard actions[1] is None && actions[2] is None else {
     fail("unexpected OSC kitty color trailing actions")
   }
 }
@@ -291,7 +293,7 @@ test "parser/osc9 desktop notification report-pwd and semantic prompt dispatch" 
     notification.body() == "hello world" else {
     fail("expected OSC 9 desktop notification dispatch in exit slot")
   }
-  guard notification_actions[1] == None && notification_actions[2] == None else {
+  guard notification_actions[1] is None && notification_actions[2] is None else {
     fail("unexpected OSC 9 desktop notification trailing actions")
   }
 
@@ -372,7 +374,7 @@ test "parser/osc5522 kitty clipboard dispatch" {
     command.operation() == Some(KittyClipboardRead) else {
     fail("expected OSC 5522 typed options")
   }
-  guard actions[1] == None && actions[2] == None else {
+  guard actions[1] is None && actions[2] is None else {
     fail("unexpected OSC 5522 trailing actions")
   }
 }
@@ -391,7 +393,7 @@ test "parser/osc3008 and osc66 dispatch" {
     command.user() == Some("root") else {
     fail("expected OSC 3008 dispatch in exit slot")
   }
-  guard context_actions[1] == None && context_actions[2] == None else {
+  guard context_actions[1] is None && context_actions[2] is None else {
     fail("unexpected OSC 3008 trailing actions")
   }
 
@@ -410,7 +412,7 @@ test "parser/osc3008 and osc66 dispatch" {
     command.text() == "long" else {
     fail("expected OSC 66 dispatch in exit slot")
   }
-  guard text_actions[1] == None && text_actions[2] == None else {
+  guard text_actions[1] is None && text_actions[2] is None else {
     fail("unexpected OSC 66 trailing actions")
   }
 }
@@ -427,7 +429,7 @@ test "parser/osc hyperlink dispatch" {
     link.uri() == "http://example.com" else {
     fail("expected OSC hyperlink start dispatch in exit slot")
   }
-  guard start_actions[1] == None && start_actions[2] == None else {
+  guard start_actions[1] is None && start_actions[2] is None else {
     fail("unexpected hyperlink start trailing actions")
   }
 
@@ -436,10 +438,10 @@ test "parser/osc hyperlink dispatch" {
     expect_no_actions(end_parser.next(byte))
   }
   let end_actions = end_parser.next(0x07)
-  guard end_actions[0] == Some(OscDispatch(HyperlinkEnd)) else {
+  guard end_actions[0] is Some(OscDispatch(HyperlinkEnd)) else {
     fail("expected OSC hyperlink end dispatch in exit slot")
   }
-  guard end_actions[1] == None && end_actions[2] == None else {
+  guard end_actions[1] is None && end_actions[2] is None else {
     fail("unexpected hyperlink end trailing actions")
   }
 }
@@ -467,7 +469,7 @@ test "parser/osc semantic prompt dispatch" {
   guard prompt.redraw() == Some(Enabled) else {
     fail("expected semantic prompt redraw option")
   }
-  guard actions[1] == None && actions[2] == None else {
+  guard actions[1] is None && actions[2] is None else {
     fail("unexpected semantic prompt trailing actions")
   }
 }
@@ -532,7 +534,7 @@ test "parser/dcs hook put unhook and params" {
   }
 
   let unhook_actions = parser.next(0x1B)
-  guard unhook_actions[0] == Some(DcsUnhook) else {
+  guard unhook_actions[0] is Some(DcsUnhook) else {
     fail("expected DCS unhook on exit")
   }
 }
@@ -564,7 +566,7 @@ test "parser/dcs params and overflow regression" {
 test "parser/apc start put and end ordering" {
   let parser = Parser::new()
   let start_actions = parser.next(0x9F)
-  guard start_actions[2] == Some(ApcStart) else {
+  guard start_actions[2] is Some(ApcStart) else {
     fail("expected APC start on entry")
   }
   guard parser.state == SosPmApcString else {
@@ -577,6 +579,6 @@ test "parser/apc start put and end ordering" {
   }
 
   let end_actions = parser.next(0x9C)
-  guard end_actions[0] == Some(ApcEnd) else { fail("expected APC end on exit") }
+  guard end_actions[0] is Some(ApcEnd) else { fail("expected APC end on exit") }
   guard parser.state == Ground else { fail("expected ground after APC end") }
 }

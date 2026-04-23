@@ -1,4 +1,172 @@
 ///|
+fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
+  StreamTerminalBridgeState::with_effects(StreamTerminalBridgeEffects::new())
+}
+
+///|
+fn StreamTerminalBridgeState::protected_state(
+  self : StreamTerminalBridgeState,
+) -> ScreenProtectedState {
+  self.protected_state
+}
+
+///|
+fn StreamTerminalBridgeState::display_state(
+  self : StreamTerminalBridgeState,
+) -> TerminalDisplayState {
+  self.display_state
+}
+
+///|
+fn StreamTerminalBridgeState::colors(
+  self : StreamTerminalBridgeState,
+) -> TerminalColors {
+  self.colors
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_top_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.top_margin()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_bottom_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.bottom_margin()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_left_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.left_margin()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_right_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.right_margin()
+}
+
+///|
+fn StreamTerminalBridgeState::mouse_shift_capture(
+  self : StreamTerminalBridgeState,
+) -> Bool? {
+  self.input_flags.mouse_shift_capture()
+}
+
+///|
+fn StreamTerminalBridgeState::tabstop(
+  self : StreamTerminalBridgeState,
+  col : CellCountInt,
+) -> Bool {
+  self.tabstops.get(col)
+}
+
+///|
+fn StreamTerminalBridgeState::charset(
+  self : StreamTerminalBridgeState,
+  slot : Slots,
+) -> Charset {
+  self.charset.charset(slot)
+}
+
+///|
+fn StreamTerminalBridgeState::charset_gl(
+  self : StreamTerminalBridgeState,
+) -> Slots {
+  self.charset.gl()
+}
+
+///|
+fn StreamTerminalBridgeState::charset_gr(
+  self : StreamTerminalBridgeState,
+) -> Slots {
+  self.charset.gr()
+}
+
+///|
+fn StreamTerminalBridgeState::charset_single_shift(
+  self : StreamTerminalBridgeState,
+) -> Slots? {
+  self.charset.single_shift()
+}
+
+///|
+fn StreamTerminalBridgeState::has_saved_cursor(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.saved_cursor.has_saved()
+}
+
+///|
+fn StreamTerminalBridgeState::semantic_click_mode(
+  self : StreamTerminalBridgeState,
+) -> SemanticClickMode {
+  self.semantic.click()
+}
+
+///|
+fn StreamTerminalBridgeState::semantic_cursor_content(
+  self : StreamTerminalBridgeState,
+) -> SemanticContent {
+  self.semantic.cursor_content()
+}
+
+///|
+fn StreamTerminalBridgeState::semantic_cursor_content_clear_eol(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.semantic.cursor_content_clear_eol()
+}
+
+///|
+fn StreamTerminalBridgeState::semantic_row_prompt(
+  self : StreamTerminalBridgeState,
+) -> RowSemanticPrompt {
+  self.semantic.row_prompt()
+}
+
+///|
+fn StreamTerminalBridgeState::shell_redraws_prompt(
+  self : StreamTerminalBridgeState,
+) -> SemanticPromptRedraw {
+  self.metadata.shell_redraws_prompt()
+}
+
+///|
+fn StreamTerminalBridgeState::hyperlink_active(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.hyperlink.active()
+}
+
+///|
+fn StreamTerminalBridgeState::hyperlink_uri(
+  self : StreamTerminalBridgeState,
+) -> String? {
+  self.hyperlink.uri()
+}
+
+///|
+fn StreamTerminalBridgeState::hyperlink_explicit_id(
+  self : StreamTerminalBridgeState,
+) -> String? {
+  self.hyperlink.explicit_id()
+}
+
+///|
+fn StreamTerminalBridgeState::hyperlink_implicit_id(
+  self : StreamTerminalBridgeState,
+) -> Int? {
+  self.hyperlink.implicit_id()
+}
+
+///|
 test "stream terminal bridge/default state and handled bell" {
   let state = StreamTerminalBridgeState::new()
   guard !state.palette_dirty() else {
@@ -1790,8 +1958,8 @@ test "stream terminal bridge/applies kitty graphics transmit display and delete"
     fail("expected kitty graphics transmit-and-display sequence")
   }
 
-  guard state.kitty_graphics().images().length() == 1 &&
-    state.kitty_graphics().placements().length() == 1 else {
+  guard state.kitty_graphics.images.length() == 1 &&
+    state.kitty_graphics.placements().length() == 1 else {
     fail("expected stored kitty image and placement")
   }
   guard recorder.writes.length() == 1 else {
@@ -1799,12 +1967,12 @@ test "stream terminal bridge/applies kitty graphics transmit display and delete"
   }
   expect_effect_write(recorder, 0, b"\x1B_Gi=1,p=2;OK\x1B\\")
 
-  let image = state.kitty_graphics().images()[0]
+  let image = state.kitty_graphics.images[0]
   guard image.width == 1U && image.height == 2U && image.data.length() == 6 else {
     fail("expected stored kitty image metadata")
   }
 
-  let placement = state.kitty_graphics().placements()[0]
+  let placement = state.kitty_graphics.placements()[0]
   guard placement.image_id == 1U &&
     placement.external &&
     placement.placement_id == 2U &&
@@ -1818,22 +1986,22 @@ test "stream terminal bridge/applies kitty graphics transmit display and delete"
   guard apply_stream_bytes(state, b"\x1B_Ga=p,i=1,p=0,c=2,r=1;\x1B\\") else {
     fail("expected second kitty display sequence")
   }
-  guard state.kitty_graphics().placements().length() == 2 else {
+  guard state.kitty_graphics.placements().length() == 2 else {
     fail("expected internal placement id allocation")
   }
 
   guard apply_stream_bytes(state, b"\x1B_Ga=d,d=i,i=1,p=2;\x1B\\") else {
     fail("expected kitty delete-by-id sequence")
   }
-  guard state.kitty_graphics().placements().length() == 1 else {
+  guard state.kitty_graphics.placements().length() == 1 else {
     fail("expected external placement deletion")
   }
 
   guard apply_stream_bytes(state, b"\x1B_Ga=d,d=A;\x1B\\") else {
     fail("expected kitty delete-all sequence")
   }
-  guard state.kitty_graphics().images().length() == 0 &&
-    state.kitty_graphics().placements().length() == 0 else {
+  guard state.kitty_graphics.images.length() == 0 &&
+    state.kitty_graphics.placements().length() == 0 else {
     fail("expected delete-all to clear stored graphics")
   }
 }
@@ -1856,7 +2024,7 @@ test "stream terminal bridge/handles kitty graphics query chunking and quiet" {
     fail("expected kitty query response")
   }
   expect_effect_write(recorder, 0, b"\x1B_Gi=7;OK\x1B\\")
-  guard state.kitty_graphics().images().length() == 0 else {
+  guard state.kitty_graphics.images.length() == 0 else {
     fail("expected query to avoid storage mutation")
   }
 
@@ -1866,8 +2034,8 @@ test "stream terminal bridge/handles kitty graphics query chunking and quiet" {
     apply_stream_bytes(state, b"\x1B_Gm=0;////\x1B\\") else {
     fail("expected kitty chunked transmit sequence")
   }
-  guard state.kitty_graphics().images().length() == 1 &&
-    state.kitty_graphics().loading == None else {
+  guard state.kitty_graphics.images.length() == 1 &&
+    state.kitty_graphics.loading is None else {
     fail("expected chunked transmit finalization")
   }
   guard recorder.writes.length() == 1 else {
@@ -1967,7 +2135,7 @@ test "stream terminal bridge/kitty graphics internal error and helper branches" 
     b"\x00",
   )
   guard chunk_quiet == KittyGraphicsQuiet::Ok &&
-    chunk_response == None &&
+    chunk_response is None &&
     state.kitty_graphics.loading is Some(loading_started) &&
     loading_started.quiet == KittyGraphicsQuiet::Ok else {
     fail("expected initial chunked transmit state")
@@ -1982,7 +2150,7 @@ test "stream terminal bridge/kitty graphics internal error and helper branches" 
     b"\x01",
   )
   guard continuation_quiet == KittyGraphicsQuiet::Ok &&
-    continuation_response == None &&
+    continuation_response is None &&
     state.kitty_graphics.loading is Some(loading_continued) &&
     loading_continued.data.length() == 2 else {
     fail("expected continued chunk accumulation")
@@ -1998,7 +2166,7 @@ test "stream terminal bridge/kitty graphics internal error and helper branches" 
   guard final_quiet == KittyGraphicsQuiet::Failures &&
     final_response is Some(value) &&
     value.message == b"EINVAL: invalid data" &&
-    state.kitty_graphics.loading == None else {
+    state.kitty_graphics.loading is None else {
     fail("expected final chunk validation error")
   }
 
