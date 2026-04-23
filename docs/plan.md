@@ -702,7 +702,7 @@ Phase 14 gate:
 ### Phase 15: Interactive Demo
 
 Gate: `[S/P]` after Phase 14  
-Status: `active`
+Status: `done`
 
 This phase is a follow-on deliverable, not part of the core translation
 denominator. It packages the translated terminal surface into a browser-facing
@@ -712,7 +712,7 @@ playground with a MoonBit `wasm-gc` adapter and a TypeScript shell.
 |---|---|---|---|---|---|---|---|---|---|---|
 | P15.A | done | browser-host demo boundary | exported `wasm-gc` playground adapter package + tests | P14.C | P15.B | main | a narrow exported MoonBit facade exists for session lifecycle, VT input, formatted output, and typed state inspection | `moon check && moon test && moon coverage analyze && moon fmt && moon info && moon build --target wasm-gc` | `[R]` main | `feat(demo)` |
 | P15.B | done | browser-facing demo shell | TypeScript/HTML/CSS playground | P15.A | none | main | the browser demo loads the adapter, exposes built-in scenarios and editable input, and renders the terminal plus inspector/export panels without external setup | `tsc -p demo/terminal_playground` | `[R]` main | `feat(demo)` |
-| P15.C | active | local demo delivery | static serving path, smoke check, and usage note | P15.A, P15.B | none | main | the demo can be served locally, the generated artifact paths are stable, and the usage flow is documented in the audit | `python3 -m http.server` smoke check | `[R]` main | `docs(demo)` |
+| P15.C | done | local demo delivery | static serving path, smoke check, and usage note | P15.A, P15.B | none | main | the demo can be served locally, the generated artifact paths are stable, and the usage flow is documented in the audit | `python3 -m http.server` smoke check | `[R]` main | `docs(demo)` |
 
 Phase 15 gate:
 

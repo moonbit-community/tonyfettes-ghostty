@@ -122,3 +122,11 @@ Web shell:
   and feature-detect support at runtime.
 - `P15.B` ships the compiled `dist/main.js` alongside the TypeScript source so
   the demo can be served as static files without adding an npm build step.
+- `P15.C` smoke check passed via:
+  - `python3 -m http.server 12381 --bind 127.0.0.1`
+  - `curl -sSf http://127.0.0.1:12381/demo/terminal_playground/`
+  - `curl -sSIf http://127.0.0.1:12381/_build/wasm-gc/debug/build/tools/terminal_playground_core/terminal_playground_core.wasm`
+- Local entry URL:
+  `http://127.0.0.1:12381/demo/terminal_playground/`
+- The served wasm artifact returned `200 OK` with `Content-Type:
+  application/wasm`.
