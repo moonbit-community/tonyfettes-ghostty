@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ghostty Terminal Playground</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./dist/main.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-icon" src="./assets/ghostty-icon.png" alt="">
+        <div class="brand-copy">
+          <h1>Terminal Playground</h1>
+          <p id="statusText">Loading wasm-gc adapter…</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <label>
+          Cols
+          <input id="colsInput" type="number" min="1" max="240" value="80">
+        </label>
+        <label>
+          Rows
+          <input id="rowsInput" type="number" min="1" max="120" value="24">
+        </label>
+        <button id="resizeButton" type="button">Resize</button>
+        <button id="resetButton" type="button">Reset</button>
+        <button id="applyButton" type="button">Apply</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="stage">
+        <div class="stage-toolbar">
+          <div class="stage-meta">
+            <span id="screenTag">primary</span>
+            <span id="cursorTag">cursor 0,0</span>
+            <span id="replyTag">pty 0</span>
+          </div>
+          <div class="stage-actions">
+            <button id="scrollUpButton" type="button">Scroll Up</button>
+            <button id="scrollDownButton" type="button">Scroll Down</button>
+            <button id="clearPtyButton" type="button">Clear PTY</button>
+          </div>
+        </div>
+        <div id="viewport" class="viewport"></div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="strip">
+          <div class="section-title">Scenarios</div>
+          <div id="scenarioGrid" class="scenario-grid"></div>
+        </section>
+
+        <section class="strip">
+          <div class="section-title">Input</div>
+          <textarea id="editorInput" rows="11" spellcheck="false"></textarea>
+          <p class="hint">\x1b, \u001b, \u{001B}, \r, \n, \t</p>
+        </section>
+
+        <section class="strip summary-strip">
+          <div class="section-title">State</div>
+          <dl id="stateSummary" class="summary-grid"></dl>
+        </section>
+
+        <section class="strip">
+          <div class="section-title">Cell</div>
+          <div class="cell-toolbar">
+            <label>
+              Row
+              <input id="inspectRowInput" type="number" min="0" value="0">
+            </label>
+            <label>
+              Col
+              <input id="inspectColInput" type="number" min="0" value="0">
+            </label>
+            <button id="inspectButton" type="button">Inspect</button>
+            <button id="cursorButton" type="button">Cursor</button>
+          </div>
+          <pre id="cellOutput" class="code-panel"></pre>
+        </section>
+
+        <section class="strip kitty-strip">
+          <div class="section-title">Kitty</div>
+          <div class="kitty-header">
+            <img class="kitty-reference" src="./assets/kitty-dog.png" alt="">
+            <canvas id="kittyCanvas" width="96" height="96"></canvas>
+          </div>
+          <pre id="kittyOutput" class="code-panel"></pre>
+        </section>
+
+        <section class="strip dual-strip">
+          <div>
+            <div class="section-title">Plain</div>
+            <pre id="plainOutput" class="code-panel"></pre>
+          </div>
+          <div>
+            <div class="section-title">VT</div>
+            <pre id="vtOutput" class="code-panel"></pre>
+          </div>
+        </section>
+
+        <section class="strip">
+          <div class="section-title">PTY</div>
+          <pre id="ptyOutput" class="code-panel"></pre>
+        </section>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

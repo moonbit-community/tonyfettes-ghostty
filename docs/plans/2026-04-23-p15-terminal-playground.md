@@ -59,6 +59,7 @@ Web shell:
 - `demo/terminal_playground/index.html`
 - `demo/terminal_playground/styles.css`
 - `demo/terminal_playground/src/main.ts`
+- `demo/terminal_playground/dist/main.js`
 - `demo/terminal_playground/tsconfig.json`
 - local raster assets copied from upstream Ghostty art
 
@@ -119,3 +120,5 @@ Web shell:
   - `importObject = { _: {} }`
   - `compileOptions = { builtins: ["js-string"], importedStringConstants: "_" }`
   and feature-detect support at runtime.
+- `P15.B` ships the compiled `dist/main.js` alongside the TypeScript source so
+  the demo can be served as static files without adding an npm build step.
