@@ -408,5 +408,7 @@ Commit scope:
 - Local Pages artifact smoke was run from a temporary `site/` directory on
   `http://127.0.0.1:18080/`; root redirect, demo HTML, and compiled
   `main.js` all returned HTTP 200.
-- The deployment URL is pending the first successful GitHub Actions Pages run
-  after this workflow reaches `main`.
+- First GitHub Actions Pages publish succeeded on run
+  `25277265241` for commit `e69d0a59f09d775ced7868d724524b3afcf5db37`.
+- Published demo URL:
+  `https://moonbit-community.github.io/tonyfettes-ghostty/demo/rabbita_asciinema/`.
