@@ -1,0 +1,12 @@
+{
+  "name": "tonyfettes/ghostty-rabbita-asciinema",
+  "version": "0.1.0",
+  "deps": {
+    "tonyfettes/ghostty": {
+      "path": "../..",
+      "version": "0.1.0"
+    },
+    "moonbit-community/rabbita": "0.12.1"
+  },
+  "preferred-target": "js"
+}

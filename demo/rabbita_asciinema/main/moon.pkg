@@ -1,0 +1,18 @@
+import {
+  "moonbit-community/rabbita" @rabbita,
+  "moonbit-community/rabbita/cmd",
+  "moonbit-community/rabbita/html",
+  "moonbit-community/rabbita/js",
+  "moonbit-community/rabbita/sub",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+  "tonyfettes/ghostty/src/terminal",
+}
+
+supported_targets = "js"
+
+options(
+  "is-main": true,
+)
