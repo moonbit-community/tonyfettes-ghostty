@@ -90,11 +90,12 @@ in a nested demo module:
 - `.github/workflows/pages.yml`
 - `demo/rabbita_asciinema/main/moon.pkg`
 - `demo/rabbita_asciinema/main/asciicast.mbt`
-- `demo/rabbita_asciinema/main/asciicast_test.mbt`
+- `demo/rabbita_asciinema/main/asciicast_wbtest.mbt`
 - `demo/rabbita_asciinema/main/file_loader.mbt`
 - `demo/rabbita_asciinema/main/ghostty_terminal.mbt`
-- `demo/rabbita_asciinema/main/ghostty_terminal_test.mbt`
+- `demo/rabbita_asciinema/main/ghostty_terminal_wbtest.mbt`
 - `demo/rabbita_asciinema/main/main.mbt`
+- `demo/rabbita_asciinema/main/main_wbtest.mbt`
 - `demo/rabbita_asciinema/main/pkg.generated.mbti`
 - `demo/rabbita_asciinema/README.md`
 
@@ -154,6 +155,8 @@ Validation:
 
 ### P16.1: Demo module skeleton
 
+Status: done.
+
 Create the nested JS module and static app shell.
 
 Acceptance:
@@ -172,6 +175,8 @@ Commit scope:
 - `feat(rabbita-player)`
 
 ### P16.2: Asciicast parser
+
+Status: done.
 
 Port the parser from `rabbita_xterm/examples/web/asciicast.mbt` into the demo
 module, keeping it private to the player unless a reusable package is later
@@ -197,6 +202,8 @@ Commit scope:
 - `feat(rabbita-player)`
 
 ### P16.3: Ghostty terminal Rabbita adapter
+
+Status: done.
 
 Create a small managed adapter inside the demo module. It should be shaped like
 `rabbita_xterm` but own `@terminal.StreamTerminal` and `@terminal.RenderState`
@@ -238,6 +245,8 @@ Commit scope:
 - `feat(rabbita-player)`
 
 ### P16.4: Player UI
+
+Status: done.
 
 Adapt the Rabbita update/view structure from `rabbita_xterm/examples/web`.
 
@@ -349,28 +358,33 @@ Commit scope:
 
 ## Coverage findings for touched files
 
-Not applicable yet. This is a planning document.
-
-When implementation starts, record:
-
-- whether `moon coverage analyze` was run after tests
-- uncovered executable lines in touched `demo/rabbita_asciinema/main/*.mbt`
-  files
-- uncovered executable lines in any touched `src/terminal/*.mbt` files
-- whether uncovered lines were covered or explicitly deferred with review
-  signoff
+- `moon -C demo/rabbita_asciinema test --target js` passed with 515 tests.
+- `moon -C demo/rabbita_asciinema coverage analyze -- -f summary` was run
+  after tests.
+- Fully covered demo files are omitted by the summary output. The asciicast
+  parser and JS `LoadedFile` conversion are covered.
+- `demo/rabbita_asciinema/main/ghostty_terminal.mbt` has 250/253 lines
+  covered. Remaining lines are defensive fallbacks:
+  - `plain_viewport` handling a missing in-range screen cell
+  - `grid_ref_graphemes` returning `None` for a cell that reports a grapheme
+- `demo/rabbita_asciinema/main/main.mbt` has 211/228 lines covered. Remaining
+  lines are:
+  - `initial_cast` fallback for a broken embedded sample cast
+  - async browser file-picker execution inside the Rabbita command
+  - an unreachable `jump_to` `events.get` fallback after target clamping
+  - the browser `main` mount path, which is exercised by build/static smoke
+    checks rather than unit tests
+- No `src/terminal` files were changed for P16.1-P16.4.
 
 ## Public API visibility findings
 
-No public API changed in this planning step.
-
-Implementation review must explicitly check:
-
-- `demo/rabbita_asciinema/main/pkg.generated.mbti`
-- `src/terminal/pkg.generated.mbti` if any core terminal API is touched
-- whether any public mutable fields were added
-- whether renderer needs are forcing public exposure of terminal internals that
-  should instead stay package-private or be wrapped by a narrower helper
+- `demo/rabbita_asciinema/main/pkg.generated.mbti` exposes no demo internals;
+  the player package keeps parser, adapter, and model types private.
+- `src/terminal/pkg.generated.mbti` is intentionally unchanged for
+  P16.1-P16.4. Renderer needs were satisfied by existing public terminal APIs:
+  `screen_cell_snapshot`, `grid_ref`, `grid_ref_graphemes`, `palette`,
+  cursor/size accessors, and title/side-effect callbacks.
+- No public mutable fields were added.
 
 ## Audit notes
 
@@ -379,6 +393,7 @@ Implementation review must explicitly check:
 - The highest-risk implementation area is renderer correctness, not parser
   ingestion. The terminal can already consume bytes; the player must render the
   active viewport faithfully enough for terminal output inspection.
-- A formatter-HTML prototype is acceptable for fast smoke testing, but the
-  final player should not rely on full-scrollback formatter output as the main
-  screen viewport.
+- The implemented renderer is cell-based over the active viewport and does not
+  use formatter full-scrollback HTML or Rabbita `inner_html` for cast output.
+- Demo validation currently has only existing root-package deprecation warnings
+  in `src/terminal/key_event_test.mbt` and `src/terminal/osc.mbt`.

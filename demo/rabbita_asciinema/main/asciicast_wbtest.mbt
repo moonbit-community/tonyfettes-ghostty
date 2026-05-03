@@ -15,6 +15,25 @@ fn expect_parse_error(source : String) -> String raise {
 }
 
 ///|
+fn expect_event(
+  event : CastEvent,
+  delay_ms : Int,
+  kind : String,
+  data : String,
+) -> Unit raise {
+  assert_eq(event.delay_ms, delay_ms)
+  assert_eq(event.data, data)
+  match event.kind {
+    Output => if kind != "o" { fail("expected output event") }
+    Input => if kind != "i" { fail("expected input event") }
+    Marker => if kind != "m" { fail("expected marker event") }
+    Resize => if kind != "r" { fail("expected resize event") }
+    Exit => if kind != "x" { fail("expected exit event") }
+    Unknown(code) => if code != kind { fail("expected unknown event") }
+  }
+}
+
+///|
 test "asciicast/parser parses v3 relative timing and event kinds" {
   let cast = expect_cast(
     "{\"version\":3,\"term\":{\"cols\":80,\"rows\":24},\"title\":\"demo\"}\n" +
@@ -31,24 +50,12 @@ test "asciicast/parser parses v3 relative timing and event kinds" {
   assert_eq(cast.rows, 24)
   assert_eq(cast.duration_ms, 2100)
   assert_eq(cast.events.length(), 6)
-  guard cast.events[0] == { delay_ms: 100, kind: Output, data: "hello" } else {
-    fail("expected output event")
-  }
-  guard cast.events[1] == { delay_ms: 200, kind: Input, data: "ls" } else {
-    fail("expected input event")
-  }
-  guard cast.events[2] == { delay_ms: 300, kind: Marker, data: "mark" } else {
-    fail("expected marker event")
-  }
-  guard cast.events[3] == { delay_ms: 400, kind: Resize, data: "100x30" } else {
-    fail("expected resize event")
-  }
-  guard cast.events[4] == { delay_ms: 500, kind: Exit, data: "0" } else {
-    fail("expected exit event")
-  }
-  guard cast.events[5] == { delay_ms: 600, kind: Unknown("z"), data: "payload" } else {
-    fail("expected unknown event")
-  }
+  expect_event(cast.events[0], 100, "o", "hello")
+  expect_event(cast.events[1], 200, "i", "ls")
+  expect_event(cast.events[2], 300, "m", "mark")
+  expect_event(cast.events[3], 400, "r", "100x30")
+  expect_event(cast.events[4], 500, "x", "0")
+  expect_event(cast.events[5], 600, "z", "payload")
 }
 
 ///|

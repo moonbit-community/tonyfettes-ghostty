@@ -6,14 +6,14 @@ priv enum CastKind {
   Resize
   Exit
   Unknown(String)
-} derive(Eq)
+}
 
 ///|
 priv struct CastEvent {
   delay_ms : Int
   kind : CastKind
   data : String
-} derive(Eq)
+}
 
 ///|
 priv struct Cast {
