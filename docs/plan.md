@@ -718,6 +718,24 @@ Phase 15 gate:
 
 - This phase is complete when P15.A, P15.B, and P15.C are `done`.
 
+### Phase 16: Rabbita Asciinema Player
+
+Gate: `[S]` after Phase 14
+Status: `done`
+
+This phase is a browser demo that integrates the translated Ghostty terminal
+surface with `moonbit-community/rabbita` and plays asciicast recordings without
+xterm.js.
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P16 | done | `rabbita_xterm/examples/web`, Ghostty terminal parser stack | `demo/rabbita_asciinema`, `.github/workflows/pages.yml` | P14.C | none | main | Rabbita app plays asciicast v2/v3 through `StreamTerminal`, supports file load/playback controls, and is ready for GitHub Pages Actions deployment | `moon check && moon test && moon coverage analyze && moon fmt && moon info && moon -C demo/rabbita_asciinema check --target js && moon -C demo/rabbita_asciinema test --target js && moon -C demo/rabbita_asciinema coverage analyze && moon -C demo/rabbita_asciinema fmt && moon -C demo/rabbita_asciinema info && moon -C demo/rabbita_asciinema build --target js --release main` | `[R]` main | `feat(rabbita-player)`, `ci(rabbita-player)` |
+
+#### Phase 16 outputs
+
+- Completed P16 plan and audit lives in:
+  [2026-05-03-p16-rabbita-asciinema-player.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-05-03-p16-rabbita-asciinema-player.md)
+
 ## Definition of done
 
 The translated terminal surface is ready for review when:

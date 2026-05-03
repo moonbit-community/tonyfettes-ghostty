@@ -84,8 +84,6 @@ in a nested demo module:
 - `moon.work`
 - `demo/rabbita_asciinema/moon.mod.json`
 - `demo/rabbita_asciinema/index.html`
-- `demo/rabbita_asciinema/package.json`
-- `demo/rabbita_asciinema/vite.config.js`
 - `demo/rabbita_asciinema/styles.css`
 - `.github/workflows/pages.yml`
 - `demo/rabbita_asciinema/main/moon.pkg`
@@ -164,6 +162,8 @@ Acceptance:
 - `demo/rabbita_asciinema` builds as a Rabbita app with a placeholder view
 - `moon.work` includes the root module and the demo module
 - the root module does not gain a Rabbita dependency
+- the browser entry references the MoonBit release JS artifact directly, so
+  deployment does not require a Node/Vite build step
 
 Validation:
 
@@ -275,6 +275,8 @@ Commit scope:
 
 ### P16.5: Closeout and documentation
 
+Status: done.
+
 Document how to build and serve the demo.
 
 Acceptance:
@@ -304,6 +306,8 @@ Commit scope:
   implementation and docs are landed together
 
 ### P16.6: GitHub Pages deployment
+
+Status: ready for first publish.
 
 Deploy the finished demo to GitHub Pages from GitHub Actions. Use
 `rabbita_xterm/.github/workflows/pages.yml` as the local reference pattern:
@@ -397,3 +401,12 @@ Commit scope:
   use formatter full-scrollback HTML or Rabbita `inner_html` for cast output.
 - Demo validation currently has only existing root-package deprecation warnings
   in `src/terminal/key_event_test.mbt` and `src/terminal/osc.mbt`.
+- GitHub Pages workflow is added in `.github/workflows/pages.yml`. It installs
+  MoonBit, runs root and demo validation, builds the demo, copies
+  `demo/rabbita_asciinema` plus `_build/js` into the Pages artifact, and
+  publishes through `actions/deploy-pages`.
+- Local Pages artifact smoke was run from a temporary `site/` directory on
+  `http://127.0.0.1:18080/`; root redirect, demo HTML, and compiled
+  `main.js` all returned HTTP 200.
+- The deployment URL is pending the first successful GitHub Actions Pages run
+  after this workflow reaches `main`.
