@@ -407,6 +407,42 @@ shape fields that are introduced before their later-phase use
 (`PageListNode.prev`, `PageListNode.next`, `PageList.cols`,
 `PageList.first`, `PageList.last`).
 
+### 2026-05-14: Resize Without Reflow Row-Count Checkpoint
+
+Implemented in canonical first:
+
+- Added `PageList::resize_without_reflow` for the same-column/no-reflow resize
+  path.
+- Added `PageList::trim_trailing_blank_rows`, mirroring upstream
+  `trimTrailingBlankRows`: it trims trailing active rows with no text and stops
+  at tracked pins.
+- Same-column row shrink no longer goes through `flatten_rows` and
+  `rebuild_from_rows`.
+- Same-column row grow now mirrors upstream active-area behavior:
+  - if the cursor is at the bottom, resize pulls available scrollback rows into
+    the active area;
+  - if the cursor is above the bottom, resize grows the active area without
+    pulling down scrollback.
+- Added focused tests for both row-grow branches.
+
+Not complete yet:
+
+- Column resize still uses the existing `reflow_rows`/`rebuild_from_rows` path
+  until Phase 4 ports `resizeCols` and `ReflowCursor`.
+- The PageList node/page fields introduced for upstream shape still become
+  fully used in later phases.
+
+Validation run in canonical:
+
+- `moon check`
+- `moon test src/terminal/stream_terminal_resize_wbtest.mbt`
+- `moon test src/terminal/terminal_screen_state_wbtest.mbt`
+- `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`
+- `moon test src/terminal/formatter_wbtest.mbt`
+- `moon test src/terminal`
+
+Result: all checks passed.
+
 ## Stop Conditions
 
 Stop and ask before implementation if any of these happens:

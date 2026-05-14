@@ -88,6 +88,33 @@ test "resize row shrink keeps tracked blank cursor row visible" {
 }
 
 ///|
+test "resize row grow at bottom pulls scrollback into active area" {
+  let term = new_terminal(5, 2)
+  term.next_slice(b"1\r\n2\r\n3")
+  assert_eq(term.scrollback_rows(), 1U)
+  assert_eq(term.cursor_y(), 1)
+  ignore(term.resize(5, 3, 0U, 0U))
+  assert_eq(term.scrollback_rows(), 0U)
+  assert_eq(cell_codepoint(term, 0, 0), b'1'.to_uint())
+  assert_eq(cell_codepoint(term, 1, 0), b'2'.to_uint())
+  assert_eq(cell_codepoint(term, 2, 0), b'3'.to_uint())
+}
+
+///|
+test "resize row grow above bottom preserves active y without pulling scrollback" {
+  let term = new_terminal(5, 2)
+  term.next_slice(b"1\r\n2\r\n3")
+  term.next_slice(b"\x1B[H")
+  assert_eq(term.scrollback_rows(), 1U)
+  assert_eq(term.cursor_y(), 0)
+  ignore(term.resize(5, 3, 0U, 0U))
+  assert_eq(term.scrollback_rows(), 1U)
+  assert_eq(cell_codepoint(term, 0, 0), b'2'.to_uint())
+  assert_eq(cell_codepoint(term, 1, 0), b'3'.to_uint())
+  assert_eq(cell_codepoint(term, 2, 0), 0U)
+}
+
+///|
 test "resize alternate screen keeps 1049 saved primary cursor" {
   let term = new_terminal(5, 3)
   term.next_slice(b"\x1B[2;5H")
