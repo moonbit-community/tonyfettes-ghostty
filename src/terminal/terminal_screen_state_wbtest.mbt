@@ -42,7 +42,7 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
     None,
   )
 
-  let scrollback = PageList::new(2, 1)
+  let scrollback = PageList::new(2, 5, 1)
   guard scrollback.row(grid, 3) == None &&
     scrollback.cell(grid, 0, 9) == None &&
     scrollback.cell(grid, 3, 0) == None else {
@@ -77,7 +77,7 @@ test "terminal screen state/zero max scrollback trim and resets" {
   fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
   fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
 
-  let scrollback = PageList::new(2, 0)
+  let scrollback = PageList::new(2, 3, 0)
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 0)
   scrollback.capture_full_screen_scroll_down(grid, 0)
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
@@ -86,7 +86,7 @@ test "terminal screen state/zero max scrollback trim and resets" {
     fail("expected zero max scrollback to drop history")
   }
 
-  let limited = PageList::new(2, 1)
+  let limited = PageList::new(2, 3, 1)
   limited.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
   limited.scroll_top()
   limited.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
@@ -107,7 +107,7 @@ test "terminal screen state/grid ref helpers cover row id mappings" {
   fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
   fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
 
-  let scrollback = PageList::new(2, 2)
+  let scrollback = PageList::new(2, 3, 2)
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
 
   guard !scrollback.row_by_id(grid, 0UL).unwrap().hyperlink() &&

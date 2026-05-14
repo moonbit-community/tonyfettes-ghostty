@@ -115,6 +115,21 @@ If MoonBit cannot immediately introduce linked pages, the task must stop and
 record the exact blocker. Continuing with `flatten_rows`/`rebuild_from_rows`
 without approval is out of scope.
 
+Approved translation boundary:
+
+- `ScreenGridState` currently owns the active rows and cells while `PageList`
+  owns scrollback metadata. This cannot represent upstream `Pin.node`, because
+  upstream pins point to concrete rows inside PageList storage.
+- For this task, PageList becomes the owner of the active rows and cells. The
+  existing `ScreenGridState` surface must be reduced to a compatibility view or
+  mutation facade over PageList-owned storage.
+- This is an approved structural translation of upstream PageList page/node
+  ownership. It is not approval to introduce row-index based pin models such as
+  `absolute_row` or `source_row`.
+- Implementation must preserve the upstream naming and behavior of `Pin`,
+  `trackPin`, `untrackPin`, `pointFromPin`, `Viewport`, and `ReflowCursor`
+  wherever MoonBit syntax permits.
+
 ### Pin
 
 MoonBit needs an internal `Pin` equivalent with the same meaning as upstream:
@@ -349,6 +364,48 @@ Use separate conventional commits:
 
 Each implementation commit must include tests and validation for that completed
 step. Do not leave a red intermediate commit.
+
+## Progress Log
+
+### 2026-05-14: PageList Storage/Pin Checkpoint
+
+Implemented in canonical first:
+
+- Added upstream-shaped `PageListPage`, `PageListNode`, and `PageListPin`.
+- Moved tracked pins from row-id backing to `node/y/x/garbage`.
+- Made `TerminalScreenStorage::new` create the active `ScreenGridState` as a
+  view over PageList-owned active storage.
+- Rebuilt `track_pin`, `untrack_pin`, `point_from_pin`, `grid_ref_from_pin`,
+  and `pin_x` on top of internal pins.
+- Moved resize cursor/saved-cursor pins and kitty placement pins through
+  node/y identity instead of row IDs.
+- Removed the disallowed local helpers/symbols from implementation:
+  `trim_leading_blank_pinned_rows`, `row_id_at_absolute`,
+  `absolute_index_of_row_id`, `PageListTrackedPin`, `track_pin_at_row_id`,
+  `source_row`, and `absolute_row`.
+
+Not complete yet:
+
+- `flatten_rows`, `reflow_rows`, and `rebuild_from_rows` still exist as the
+  remaining local resize path. Phase 1 is therefore not complete.
+- `resizeWithoutReflow`, `resizeCols`, `ReflowCursor`, `Viewport`, saved cursor
+  screen ownership, and kitty placement ownership still need to be ported in
+  the later phases below.
+
+Validation run in canonical:
+
+- `moon check`
+- `moon test src/terminal/terminal_screen_state_wbtest.mbt`
+- `moon test src/terminal/stream_terminal_resize_wbtest.mbt`
+- `moon test src/terminal/formatter_wbtest.mbt`
+- `moon test src/terminal/kitty_graphics_wbtest.mbt`
+- `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`
+- `moon test src/terminal`
+
+Result: all checks passed. `moon check` still reports warnings for upstream
+shape fields that are introduced before their later-phase use
+(`PageListNode.prev`, `PageListNode.next`, `PageList.cols`,
+`PageList.first`, `PageList.last`).
 
 ## Stop Conditions
 
