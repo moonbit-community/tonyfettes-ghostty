@@ -134,6 +134,17 @@ fn KittyGraphicsPlacement::is_virtual(self : KittyGraphicsPlacement) -> Bool {
 }
 
 ///|
+fn KittyGraphicsPlacement::deinit(
+  self : KittyGraphicsPlacement,
+  scrollback : PageList,
+) -> Unit {
+  match self.location {
+    Pin(id) => scrollback.untrack_pin(id)
+    Virtual => ()
+  }
+}
+
+///|
 fn KittyGraphicsPlacement::source_rect(
   self : KittyGraphicsPlacement,
   image : KittyGraphicsImage,
@@ -270,13 +281,16 @@ fn KittyGraphicsState::new() -> KittyGraphicsState {
 }
 
 ///|
-fn KittyGraphicsState::full_reset(self : KittyGraphicsState) -> Unit {
+fn KittyGraphicsState::full_reset(
+  self : KittyGraphicsState,
+  scrollback : PageList,
+) -> Unit {
   self._dirty = false
   self.next_image_id = KittyGraphicsNextImageIdStart
   self.next_internal_placement_id = 0U
   self.next_transmit_seq = 0UL
   self.images = []
-  self.placements = []
+  self.clear_placements(scrollback)
   self.loading = None
 }
 
@@ -357,6 +371,7 @@ fn KittyGraphicsState::add_image(
 ///|
 fn KittyGraphicsState::add_placement(
   self : KittyGraphicsState,
+  scrollback : PageList,
   image_id : UInt,
   requested_id : UInt,
   location : KittyGraphicsPlacementLocation,
@@ -393,7 +408,7 @@ fn KittyGraphicsState::add_placement(
       existing.image_id == image_id &&
       existing.external &&
       existing.placement_id == placement_id {
-      ()
+      existing.deinit(scrollback)
     } else {
       next.push(existing)
     }
@@ -407,13 +422,14 @@ fn KittyGraphicsState::add_placement(
 ///|
 fn KittyGraphicsState::delete_all(
   self : KittyGraphicsState,
+  scrollback : PageList,
   delete_images : Bool,
 ) -> Unit {
   if self.placements.length() == 0 &&
     (!delete_images || self.images.length() == 0) {
     return
   }
-  self.placements = []
+  self.clear_placements(scrollback)
   if delete_images {
     self.images = []
   }
@@ -423,6 +439,7 @@ fn KittyGraphicsState::delete_all(
 ///|
 fn KittyGraphicsState::delete_by_id(
   self : KittyGraphicsState,
+  scrollback : PageList,
   image_id : UInt,
   placement_id : UInt,
   delete_unused : Bool,
@@ -439,6 +456,7 @@ fn KittyGraphicsState::delete_by_id(
     }
     if matches {
       removed = true
+      placement.deinit(scrollback)
     } else {
       next.push(placement)
     }
@@ -455,14 +473,27 @@ fn KittyGraphicsState::delete_by_id(
 ///|
 fn KittyGraphicsState::delete_newest(
   self : KittyGraphicsState,
+  scrollback : PageList,
   image_number : UInt,
   placement_id : UInt,
   delete_unused : Bool,
 ) -> Unit {
   match self.image_by_number(image_number) {
-    Some(image) => self.delete_by_id(image.id, placement_id, delete_unused)
+    Some(image) =>
+      self.delete_by_id(scrollback, image.id, placement_id, delete_unused)
     None => ()
   }
+}
+
+///|
+fn KittyGraphicsState::clear_placements(
+  self : KittyGraphicsState,
+  scrollback : PageList,
+) -> Unit {
+  for placement in self.placements {
+    placement.deinit(scrollback)
+  }
+  self.placements = []
 }
 
 ///|

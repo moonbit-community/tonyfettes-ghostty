@@ -126,7 +126,7 @@ test "resize alternate screen keeps 1049 saved primary cursor" {
   ignore(term.resize(3, 3, 0U, 0U))
   term.next_slice(b"\x1B[?1049l")
   assert_true(term.active_screen() == TerminalScreen::Primary)
-  assert_eq(term.cursor_x(), 2)
+  assert_eq(term.cursor_x(), 1)
   assert_eq(term.cursor_y(), 1)
 }
 

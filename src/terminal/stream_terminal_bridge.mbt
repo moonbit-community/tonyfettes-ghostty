@@ -2183,10 +2183,8 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_display(
     }
   }
 
-  if display.placement_id != 0U {
-    self.untrack_kitty_pins_by_id(image.id, display.placement_id)
-  }
   let placement = self.kitty_graphics.add_placement(
+    self.scrollback,
     image.id,
     display.placement_id,
     location,
@@ -2202,26 +2200,22 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
   delete : KittyGraphicsDelete,
 ) -> Unit {
   match delete {
-    All(delete_images) => {
-      self.untrack_all_kitty_pins()
-      self.kitty_graphics.delete_all(delete_images)
-    }
-    Id(value) => {
-      self.untrack_kitty_pins_by_id(value.image_id, value.placement_id)
+    All(delete_images) =>
+      self.kitty_graphics.delete_all(self.scrollback, delete_images)
+    Id(value) =>
       self.kitty_graphics.delete_by_id(
+        self.scrollback,
         value.image_id,
         value.placement_id,
         value.delete,
       )
-    }
-    Newest(value) => {
-      self.untrack_kitty_pins_newest(value.image_number, value.placement_id)
+    Newest(value) =>
       self.kitty_graphics.delete_newest(
+        self.scrollback,
         value.image_number,
         value.placement_id,
         value.delete,
       )
-    }
     IntersectCursor(delete) => ignore(delete)
     AnimationFrames(delete) => ignore(delete)
     IntersectCell(value) => {
@@ -2263,58 +2257,6 @@ fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
     self.grid,
     Point::Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
   )
-}
-
-///|
-fn StreamTerminalBridgeState::untrack_all_kitty_pins(
-  self : StreamTerminalBridgeState,
-) -> Unit {
-  for placement in self.kitty_graphics.placements() {
-    self.untrack_kitty_placement_pin(placement)
-  }
-}
-
-///|
-fn StreamTerminalBridgeState::untrack_kitty_pins_by_id(
-  self : StreamTerminalBridgeState,
-  image_id : UInt,
-  placement_id : UInt,
-) -> Unit {
-  for placement in self.kitty_graphics.placements() {
-    let matches = if placement_id == 0U {
-      placement.image_id == image_id
-    } else {
-      placement.image_id == image_id &&
-      placement.external &&
-      placement.placement_id == placement_id
-    }
-    if matches {
-      self.untrack_kitty_placement_pin(placement)
-    }
-  }
-}
-
-///|
-fn StreamTerminalBridgeState::untrack_kitty_pins_newest(
-  self : StreamTerminalBridgeState,
-  image_number : UInt,
-  placement_id : UInt,
-) -> Unit {
-  match self.kitty_graphics.image_by_number(image_number) {
-    Some(image) => self.untrack_kitty_pins_by_id(image.id, placement_id)
-    None => ()
-  }
-}
-
-///|
-fn StreamTerminalBridgeState::untrack_kitty_placement_pin(
-  self : StreamTerminalBridgeState,
-  placement : KittyGraphicsPlacement,
-) -> Unit {
-  match placement.location {
-    Pin(id) => self.scrollback.untrack_pin(id)
-    Virtual => ()
-  }
 }
 
 ///|
@@ -2452,10 +2394,9 @@ fn StreamTerminalBridgeState::copy_cursor_between_screens(
 fn StreamTerminalBridgeState::clear_active_screen(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  self.untrack_all_kitty_pins()
+  self.kitty_graphics.full_reset(self.scrollback)
   self.grid.full_reset()
   self.scrollback.full_reset(self.grid.rows)
-  self.kitty_graphics.full_reset()
 }
 
 ///|

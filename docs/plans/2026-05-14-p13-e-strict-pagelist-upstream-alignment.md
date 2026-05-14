@@ -359,8 +359,9 @@ Use separate conventional commits:
 2. `refactor(terminal): port pagelist pin storage`
 3. `refactor(terminal): port pagelist resize without reflow`
 4. `refactor(terminal): port pagelist reflow cursor`
-5. `fix(terminal): align saved cursor and kitty placement pins`
-6. `test(terminal): cover upstream pagelist resize regressions`
+5. `refactor(terminal): port pagelist viewport state`
+6. `fix(terminal): align saved cursor and kitty placement pins`
+7. `test(terminal): cover upstream pagelist resize regressions`
 
 Each implementation commit must include tests and validation for that completed
 step. Do not leave a red intermediate commit.
@@ -487,6 +488,50 @@ Validation run in canonical:
 
 Result: all checks passed. The strict forbidden-symbol grep returned no
 matches. `moon info` did not change generated interfaces.
+
+### 2026-05-14: Viewport And Kitty Ownership Checkpoint
+
+Implemented in canonical first:
+
+- Ported upstream-shaped viewport state with `Active`, `Top`, and `Pin`.
+- Made the viewport pin permanent and used `PageList::pin_row_offset` to
+  derive top offsets by walking `PageListNode.prev` / `PageListNode.next`
+  through `first` and `last`.
+- Added `PageList::relink_nodes` so history rows, the active node, and
+  viewport offset calculation share the same linked-node ordering.
+- Added a RED viewport test covering `scroll_top` surviving future scrollback
+  capture, then kept it green under the linked-node viewport implementation.
+- Verified upstream Ghostty's `?1049h` saved-primary-cursor behavior with a
+  temporary Zig test and updated the MoonBit expectation to match upstream:
+  after alternate-screen column shrink in that blank-row case, the restored
+  primary x coordinate is `1`.
+- Moved Kitty graphics placement pin untracking to placement removal
+  ownership:
+  - `KittyGraphicsPlacement::deinit` untracks grid-backed placement pins.
+  - `KittyGraphicsState::add_placement` deinitializes replaced external
+    placements.
+  - `delete_all`, `delete_by_id`, `delete_newest`, and `full_reset` now
+    deinitialize placements instead of relying on bridge-side pre-scans.
+  - `StreamTerminalBridgeState` no longer contains separate
+    `untrack_kitty_*` helpers.
+
+Not complete yet:
+
+- `PageListRow.row_id`, `PageList.history`, and `PageList.visible_row_ids`
+  still exist as compatibility/internal indexing surfaces. They must be
+  isolated behind Phase 7 public `GridRef` compatibility before this plan can
+  be called fully upstream-aligned.
+
+Validation run in canonical:
+
+- `moon check`
+- `moon test src/terminal/kitty_graphics_state_wbtest.mbt`
+- `moon test src/terminal/kitty_graphics_test.mbt`
+- `moon test src/terminal/stream_terminal_resize_wbtest.mbt`
+- `moon test src/terminal/terminal_screen_state_wbtest.mbt`
+
+Result: all checks passed. Existing warnings remain the deprecated `assert_eq`
+test warnings and the current `PageList.cols` unused-field warning.
 
 ## Stop Conditions
 

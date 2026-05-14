@@ -78,21 +78,25 @@ test "kitty graphics state/image replacement and newest lookup" {
 ///|
 test "kitty graphics state/internal and external placements" {
   let state = KittyGraphicsState::new()
+  let scrollback = PageList::new(3, 10, 10)
   state.add_image(sample_kitty_image())
 
   let first = state.add_placement(
+    scrollback,
     1U,
     0U,
     KittyGraphicsPlacementLocation::Pin(5UL),
     sample_display(),
   )
   let second = state.add_placement(
+    scrollback,
     1U,
     0U,
     KittyGraphicsPlacementLocation::Pin(6UL),
     sample_display(),
   )
   let replaced = state.add_placement(
+    scrollback,
     1U,
     9U,
     KittyGraphicsPlacementLocation::Virtual,
@@ -100,6 +104,7 @@ test "kitty graphics state/internal and external placements" {
   )
   ignore(
     state.add_placement(
+      scrollback,
       1U,
       9U,
       KittyGraphicsPlacementLocation::Pin(8UL),
@@ -124,11 +129,13 @@ test "kitty graphics state/internal and external placements" {
 ///|
 test "kitty graphics state/delete helpers" {
   let state = KittyGraphicsState::new()
+  let scrollback = PageList::new(3, 10, 10)
   state.add_image(sample_kitty_image(id=1U, number=1U, transmit_seq=1UL))
   state.add_image(sample_kitty_image(id=2U, number=2U, transmit_seq=2UL))
 
   ignore(
     state.add_placement(
+      scrollback,
       1U,
       4U,
       KittyGraphicsPlacementLocation::Pin(1UL),
@@ -137,6 +144,7 @@ test "kitty graphics state/delete helpers" {
   )
   ignore(
     state.add_placement(
+      scrollback,
       2U,
       5U,
       KittyGraphicsPlacementLocation::Pin(2UL),
@@ -149,17 +157,17 @@ test "kitty graphics state/delete helpers" {
     fail("expected used image to remain present")
   }
 
-  state.delete_by_id(1U, 4U, true)
+  state.delete_by_id(scrollback, 1U, 4U, true)
   guard state.placements().length() == 1 && state.image_by_id(1U) is None else {
     fail("expected delete-by-id with delete-unused")
   }
 
-  state.delete_newest(2U, 0U, false)
+  state.delete_newest(scrollback, 2U, 0U, false)
   guard state.placements().length() == 0 && state.image_by_id(2U) is Some(_) else {
     fail("expected newest delete to keep image when requested")
   }
 
-  state.delete_all(true)
+  state.delete_all(scrollback, true)
   guard state.images().length() == 0 && state.placements().length() == 0 else {
     fail("expected delete-all to clear state")
   }
@@ -363,7 +371,9 @@ test "kitty graphics state/loading validation and geometry helpers" {
   }
 
   let explicit = sample_display(columns=3U, rows=2U)
+  let explicit_scrollback = PageList::new(3, 10, 10)
   let placed = KittyGraphicsState::new().add_placement(
+    explicit_scrollback,
     1U,
     0U,
     KittyGraphicsPlacementLocation::Virtual,
@@ -383,6 +393,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
 ///|
 test "kitty graphics state/reset and edge helper branches" {
   let state = KittyGraphicsState::new()
+  let scrollback = PageList::new(3, 10, 10)
   let first_id = state.allocate_image_id()
   let second_id = state.allocate_image_id()
   let first_seq = state.reserve_transmit_seq()
@@ -397,6 +408,7 @@ test "kitty graphics state/reset and edge helper branches" {
   state.add_image(sample_kitty_image(id=5U))
   ignore(
     state.add_placement(
+      scrollback,
       5U,
       0U,
       KittyGraphicsPlacementLocation::Pin(7UL),
@@ -411,7 +423,7 @@ test "kitty graphics state/reset and edge helper branches" {
       None,
     ),
   )
-  state.full_reset()
+  state.full_reset(scrollback)
   guard !state.dirty() &&
     state.images().length() == 0 &&
     state.placements().length() == 0 &&
@@ -419,8 +431,8 @@ test "kitty graphics state/reset and edge helper branches" {
     fail("expected full reset to clear graphics state")
   }
 
-  state.delete_newest(99U, 0U, false)
-  state.delete_all(false)
+  state.delete_newest(scrollback, 99U, 0U, false)
+  state.delete_all(scrollback, false)
   guard state.images().length() == 0 && state.placements().length() == 0 else {
     fail("expected no-op deletes on empty state")
   }
