@@ -161,8 +161,7 @@ pub fn StreamTerminal::format_scrollback_rows_since(
   last_row_id : UInt64?,
 ) -> (Bytes, UInt64?) {
   let state = self.bridge()
-  let history = state.scrollback.history
-  let len = history.length()
+  let len = state.scrollback.compat_history_length()
   if len == 0 {
     return (b"", last_row_id)
   }
@@ -171,7 +170,7 @@ pub fn StreamTerminal::format_scrollback_rows_since(
   match last_row_id {
     None => ()
     Some(last) =>
-      while start < len && history[start].row_id <= last {
+      while start < len && state.scrollback.compat_history_row_id(start) <= last {
         start += 1
       }
   }
@@ -181,9 +180,12 @@ pub fn StreamTerminal::format_scrollback_rows_since(
 
   let buffer = @buffer.new()
   for index = start; index < len; index = index + 1 {
-    formatter_write_history_row(history[index], buffer)
+    formatter_write_history_row(
+      state.scrollback.compat_history_row(index),
+      buffer,
+    )
   }
-  (buffer.contents(), Some(history[len - 1].row_id))
+  (buffer.contents(), Some(state.scrollback.compat_history_row_id(len - 1)))
 }
 
 ///|

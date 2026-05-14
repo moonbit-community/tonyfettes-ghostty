@@ -533,6 +533,42 @@ Validation run in canonical:
 Result: all checks passed. Existing warnings remain the deprecated `assert_eq`
 test warnings and the current `PageList.cols` unused-field warning.
 
+### 2026-05-14: Public Compatibility Boundary Checkpoint
+
+Implemented in canonical first:
+
+- Removed `row_id` from `PageListRow`; row snapshots and reflow rows now carry
+  only row state, cells, node, and row offset.
+- Removed `PageList.visible_row_ids` and moved public row-id compatibility into
+  a named `PageListCompatRows` adapter.
+- Kept row IDs only at the public compatibility boundary:
+  - `GridRef.row_id` production and lookup;
+  - `point_from_row_id`, `row_by_id`, and `cell_by_id`;
+  - `format_scrollback_rows_since` incremental history watermarks.
+- Reflow now assigns fresh compatibility row IDs in display order after
+  `PageListReflowCursor` finishes. This keeps the incremental scrollback
+  watermark monotonic without making row IDs part of cursor, saved cursor,
+  viewport, or kitty placement tracking.
+- Updated the white-box impossible-state kitty test to manipulate the named
+  compatibility adapter instead of the removed `visible_row_ids` field.
+
+Validation run in canonical:
+
+- `moon check`
+- `moon test src/terminal/stream_terminal_resize_wbtest.mbt`
+- `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`
+- `moon test src/terminal/formatter_wbtest.mbt`
+- `moon test src/terminal/terminal_screen_state_wbtest.mbt`
+- `moon test src/terminal/kitty_graphics_wbtest.mbt`
+- `moon test src/terminal`
+- `moon test`
+- `moon coverage analyze`
+- `rg -n "\\b(flatten_rows|reflow_rows|rebuild_from_rows|emit_reflow_line|PageListReflowCell|trim_leading_blank_pinned_rows|trim_trailing_blank_pinned_rows|wrapped_rows_for_pin|row_id_at_absolute|absolute_index_of_row_id|renumber_rows_in_display_order|reflow_content_len|PageListTrackedPin|track_pin_at_row_id|mark_pins_for_row_id_garbage|update_pins_for_row_id)\\b|\\bsource_row\\b|\\babsolute_row\\b" src/terminal`
+
+Result: checks passed. `moon coverage analyze` completed and reported existing
+uncovered lines; it did not fail. The strict forbidden-symbol grep returned no
+matches.
+
 ## Stop Conditions
 
 Stop and ask before implementation if any of these happens:
