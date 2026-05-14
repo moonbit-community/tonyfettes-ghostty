@@ -21,7 +21,7 @@ priv struct PageListNode {
 
 ///|
 priv struct PageListRow {
-  mut row_id : UInt64
+  row_id : UInt64
   row : PageRowState
   cells : Array[PageCellState]
   node : PageListNode
@@ -57,14 +57,6 @@ priv struct PageListPin {
 }
 
 ///|
-priv struct PageListReflowCell {
-  cell : PageCellState
-  node : PageListNode
-  y : CellCountInt
-  x : Int
-}
-
-///|
 priv struct PageList {
   max_rows : Int
   mut rows : CellCountInt
@@ -88,6 +80,32 @@ priv struct TerminalScreenStorage {
   saved_cursor : ScreenSavedCursorState
   mut scrollback : PageList
   mut kitty_graphics : KittyGraphicsState
+}
+
+///|
+priv enum PageListReflowWriteResult {
+  Success
+  Repeat
+  SkipNext
+}
+
+///|
+priv struct PageListReflowCursor {
+  cols : CellCountInt
+  rows : Array[PageListRow]
+  mut row_id : UInt64
+  mut node : PageListNode
+  mut x : Int
+  mut pending_wrap : Bool
+  mut new_rows : Int
+  mut total_rows : Int
+}
+
+///|
+priv struct PageListPreservedCursor {
+  tracked_pin : UInt64
+  remaining_rows : Int
+  wrapped_rows : Int
 }
 
 ///|
@@ -513,6 +531,56 @@ fn PageList::viewport_index_for_source(
 }
 
 ///|
+fn PageList::preserved_cursor(
+  self : PageList,
+  grid : ScreenGridState,
+  cursor_pin : UInt64?,
+) -> PageListPreservedCursor? {
+  match cursor_pin {
+    Some(id) =>
+      match self.tracked_pin_index(id) {
+        Some(pin_index) => {
+          let pin = self.tracked_pins[pin_index]
+          match self.point_from_pin_node(grid, pin, Tag::Active) {
+            Some(point) => {
+              let y = point.y().reinterpret_as_int()
+              Some({
+                tracked_pin: id,
+                remaining_rows: self.rows.to_int() - y - 1,
+                wrapped_rows: self.count_wrap_continuations_left_up(grid, pin),
+              })
+            }
+            None => None
+          }
+        }
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+fn PageList::count_wrap_continuations_left_up(
+  self : PageList,
+  grid : ScreenGridState,
+  pin : PageListPin,
+) -> Int {
+  match self.row_source_for_pin(pin) {
+    Some(PageListRowSource::Screen(index)) => {
+      let mut wrapped = 0
+      for row_idx in 0..<=index {
+        if row_idx < grid.row_states.length() &&
+          grid.row_states[row_idx].wrap_continuation() {
+          wrapped += 1
+        }
+      }
+      wrapped
+    }
+    _ => 0
+  }
+}
+
+///|
 fn PageList::move_pins_for_cell(
   self : PageList,
   source_node : PageListNode,
@@ -636,23 +704,38 @@ fn PageList::resize(
       )
     None => None
   }
-  let cursor_remaining_rows = grid.rows.to_int() - cursor.y().to_int() - 1
   let result = if target_cols == grid.cols {
     self.resize_without_reflow(
       grid, target_cols, target_rows, cursor, cursor_pin, saved_pin,
     )
+  } else if target_cols > grid.cols {
+    let cols_result = self.resize_cols(grid, target_cols, cursor_pin, saved_pin)
+    if target_rows == cols_result.grid.rows {
+      cols_result
+    } else {
+      self.resize_without_reflow(
+        cols_result.grid,
+        target_cols,
+        target_rows,
+        cursor,
+        cursor_pin,
+        saved_pin,
+      )
+    }
   } else {
-    let flattened = self.flatten_rows(grid)
-    let resized = self.reflow_rows(flattened, grid.cols, target_cols)
-    self.rebuild_from_rows(
-      resized,
-      target_rows,
-      target_cols,
-      cursor_pin,
-      saved_pin,
-      Some(cursor_remaining_rows),
-      true,
-    )
+    let rows_result = if target_rows == grid.rows {
+      { grid, cursor: None, saved_cursor: None }
+    } else {
+      self.resize_without_reflow(
+        grid,
+        grid.cols,
+        target_rows,
+        cursor,
+        cursor_pin,
+        saved_pin,
+      )
+    }
+    self.resize_cols(rows_result.grid, target_cols, cursor_pin, saved_pin)
   }
   match cursor_pin {
     Some(id) => self.untrack_pin(id)
@@ -842,6 +925,340 @@ fn PageList::resize_without_reflow(
 }
 
 ///|
+fn PageList::resize_cols(
+  self : PageList,
+  grid : ScreenGridState,
+  cols : CellCountInt,
+  cursor_pin : UInt64?,
+  saved_pin : UInt64?,
+) -> PageListResizeResult {
+  let preserved_cursor = self.preserved_cursor(grid, cursor_pin)
+  self.cols = cols
+
+  let source_rows : Array[PageListRow] = []
+  for row in self.history {
+    source_rows.push(row)
+  }
+  for row_idx in 0..<grid.rows.to_int() {
+    let row = snapshot_scrollback_row(
+      grid,
+      row_idx,
+      self.visible_row_ids[row_idx],
+    )
+    source_rows.push({
+      row_id: row.row_id,
+      row: row.row,
+      cells: row.cells,
+      node: self.active_node,
+      y: row_idx.to_uint16(),
+    })
+  }
+
+  let cursor = PageListReflowCursor::new(self, cols)
+  for row in source_rows {
+    cursor.reflow_row(self, row)
+  }
+  let reflowed = cursor.finish(self)
+  while cursor.total_rows < self.rows.to_int() {
+    reflowed.push(
+      make_pinned_row(
+        self.allocate_row_id(),
+        PageRowState::new(),
+        [],
+        cols,
+        false,
+        false,
+        false,
+      ),
+    )
+    cursor.total_rows += 1
+  }
+
+  let active_rows = self.rows.to_int()
+  let bottom_start = max_int(0, reflowed.length() - active_rows)
+  let active_start = match preserved_cursor {
+    Some(preserved) =>
+      match self.tracked_pin_index(preserved.tracked_pin) {
+        Some(pin_index) => {
+          let pin = self.tracked_pins[pin_index]
+          let mut pin_row = -1
+          for row_idx in 0..<reflowed.length() {
+            if physical_equal(reflowed[row_idx].node, pin.node) &&
+              reflowed[row_idx].y == pin.y {
+              pin_row = row_idx
+            }
+          }
+          if pin_row < 0 {
+            bottom_start
+          } else {
+            let mut wrapped_after = 0
+            let mut row_idx = bottom_start
+            while row_idx <= pin_row {
+              if reflowed[row_idx].row.wrap_continuation() {
+                wrapped_after += 1
+              }
+              row_idx += 1
+            }
+            let added_wraps = max_int(0, wrapped_after - preserved.wrapped_rows)
+            let remaining = max_int(0, preserved.remaining_rows - added_wraps)
+            let desired = pin_row + remaining + 1 - active_rows
+            scrollback_clamp_int(desired, 0, bottom_start)
+          }
+        }
+        None => bottom_start
+      }
+    None => bottom_start
+  }
+  let active_end = min_int(reflowed.length(), active_start + active_rows)
+
+  let history_rows : Array[PageListRow] = []
+  for index in 0..<active_start {
+    history_rows.push(reflowed[index])
+  }
+  for index in active_end..<reflowed.length() {
+    self.mark_pins_for_row_garbage(reflowed[index])
+  }
+  self.history = history_rows
+  self.trim_history()
+
+  let grid_rows : Array[PageListRow] = []
+  let visible_ids : Array[UInt64] = []
+  for index in active_start..<active_end {
+    grid_rows.push(reflowed[index])
+    visible_ids.push(reflowed[index].row_id)
+  }
+  self.visible_row_ids = visible_ids
+  self.viewport_offset = scrollback_clamp_int(
+    self.viewport_offset,
+    0,
+    self.history.length(),
+  )
+
+  let resized_grid = screen_grid_from_rows(self.rows, cols, grid_rows)
+  let active_node = PageListNode::new({
+    rows: resized_grid.rows,
+    cols: resized_grid.cols,
+    row_states: resized_grid.row_states,
+    cells: resized_grid.cells,
+  })
+  self.active_node = active_node
+  self.rows = resized_grid.rows
+  self.cols = resized_grid.cols
+  self.first = if self.history.length() > 0 {
+    Some(self.history[0].node)
+  } else {
+    Some(active_node)
+  }
+  self.last = Some(active_node)
+  for row_idx in 0..<grid_rows.length() {
+    self.move_pins_for_row(
+      grid_rows[row_idx].node,
+      grid_rows[row_idx].y,
+      active_node,
+      row_idx.to_uint16(),
+    )
+  }
+
+  {
+    grid: resized_grid,
+    cursor: self.page_point_from_pin_rows(grid_rows, cols, cursor_pin),
+    saved_cursor: self.page_point_from_pin_rows(grid_rows, cols, saved_pin),
+  }
+}
+
+///|
+fn PageListReflowCursor::new(
+  list : PageList,
+  cols : CellCountInt,
+) -> PageListReflowCursor {
+  {
+    cols,
+    rows: [],
+    row_id: list.allocate_row_id(),
+    node: PageListNode::new(PageListPage::new(1, cols)),
+    x: 0,
+    pending_wrap: false,
+    new_rows: 0,
+    total_rows: 1,
+  }
+}
+
+///|
+fn PageListReflowCursor::row(self : PageListReflowCursor) -> PageListRow {
+  {
+    row_id: self.row_id,
+    row: self.node.page.row_states[0],
+    cells: self.node.page.cells,
+    node: self.node,
+    y: 0,
+  }
+}
+
+///|
+fn PageListReflowCursor::finish(
+  self : PageListReflowCursor,
+  list : PageList,
+) -> Array[PageListRow] {
+  let row = self.row()
+  if !pinned_row_is_blank(row) || list.pinned_row_is_tracked(row) {
+    apply_cell_flags_to_row(row.row, row.cells)
+    self.rows.push(row)
+  }
+  self.total_rows = self.rows.length()
+  self.rows
+}
+
+///|
+fn PageListReflowCursor::reflow_row(
+  self : PageListReflowCursor,
+  list : PageList,
+  source : PageListRow,
+) -> Unit {
+  let mut cols_len = source.cells.length()
+  if !source.row.wrap() {
+    while cols_len > 0 && source.cells[cols_len - 1].is_empty() {
+      cols_len -= 1
+    }
+    if cols_len == 0 && source.row.semantic_prompt() != RowSemanticPrompt::None {
+      cols_len = 1
+    }
+  }
+
+  for index in 0..<list.tracked_pins.length() {
+    let pin = list.tracked_pins[index]
+    if !pin.garbage &&
+      physical_equal(pin.node, source.node) &&
+      pin.y == source.y {
+      if pin.x >= cols_len {
+        list.tracked_pins[index].x = min_int(
+          pin.x,
+          self.cols.to_int() - 1 - self.x,
+        )
+      }
+      cols_len = max_int(cols_len, list.tracked_pins[index].x + 1)
+    }
+  }
+
+  if cols_len == 0 {
+    if !source.row.wrap_continuation() {
+      self.new_rows += 1
+    }
+    return
+  }
+
+  while self.new_rows > 0 {
+    self.cursor_scroll_or_new_page(list)
+    self.new_rows -= 1
+  }
+
+  self.copy_row_metadata(source.row)
+  let mut x = 0
+  while x < cols_len {
+    if self.pending_wrap {
+      self.node.page.row_states[0].set_wrap(true)
+      self.cursor_scroll_or_new_page(list)
+      self.copy_row_metadata(source.row)
+      self.node.page.row_states[0].set_wrap_continuation(true)
+    }
+
+    list.move_pins_for_cell(source.node, source.y, x, self.node, 0, self.x)
+
+    match self.write_cell(source.cells[x]) {
+      PageListReflowWriteResult::Success => x += 1
+      PageListReflowWriteResult::SkipNext => {
+        if x + 1 < cols_len {
+          list.move_pins_for_cell(
+            source.node,
+            source.y,
+            x + 1,
+            self.node,
+            0,
+            self.x,
+          )
+        }
+        x += 2
+      }
+      PageListReflowWriteResult::Repeat => ()
+    }
+  }
+
+  if !source.row.wrap() {
+    self.new_rows += 1
+  }
+}
+
+///|
+fn PageListReflowCursor::write_cell(
+  self : PageListReflowCursor,
+  cell : PageCellState,
+) -> PageListReflowWriteResult {
+  match cell.wide() {
+    PageCellWide::Narrow => {
+      self.node.page.cells[self.x] = copy_scrollback_cell(cell)
+      self.cursor_forward()
+      PageListReflowWriteResult::Success
+    }
+    PageCellWide::Wide =>
+      if self.cols.to_int() > 1 {
+        if self.x == self.cols.to_int() - 1 {
+          self.node.page.cells[self.x] = reflow_spacer_head_cell()
+          self.cursor_forward()
+          PageListReflowWriteResult::Repeat
+        } else {
+          self.node.page.cells[self.x] = copy_scrollback_cell(cell)
+          self.cursor_forward()
+          PageListReflowWriteResult::Success
+        }
+      } else {
+        self.node.page.cells[self.x] = PageCellState::new()
+        self.cursor_forward()
+        PageListReflowWriteResult::SkipNext
+      }
+    PageCellWide::SpacerTail =>
+      if self.cols.to_int() > 1 {
+        self.node.page.cells[self.x] = copy_scrollback_cell(cell)
+        self.cursor_forward()
+        PageListReflowWriteResult::Success
+      } else {
+        PageListReflowWriteResult::Success
+      }
+    PageCellWide::SpacerHead => PageListReflowWriteResult::Success
+  }
+}
+
+///|
+fn PageListReflowCursor::cursor_forward(self : PageListReflowCursor) -> Unit {
+  if self.x == self.cols.to_int() - 1 {
+    self.pending_wrap = true
+  } else {
+    self.x += 1
+  }
+}
+
+///|
+fn PageListReflowCursor::cursor_scroll_or_new_page(
+  self : PageListReflowCursor,
+  list : PageList,
+) -> Unit {
+  let row = self.row()
+  apply_cell_flags_to_row(row.row, row.cells)
+  self.rows.push(row)
+  self.row_id = list.allocate_row_id()
+  self.node = PageListNode::new(PageListPage::new(1, self.cols))
+  self.x = 0
+  self.pending_wrap = false
+  self.total_rows = self.rows.length() + 1
+}
+
+///|
+fn PageListReflowCursor::copy_row_metadata(
+  self : PageListReflowCursor,
+  row : PageRowState,
+) -> Unit {
+  self.node.page.row_states[0].set_semantic_prompt(row.semantic_prompt())
+}
+
+///|
 fn TerminalScreenStorage::resize(
   self : TerminalScreenStorage,
   rows : CellCountInt,
@@ -923,306 +1340,6 @@ fn TerminalScreenStorage::new(
     saved_cursor: ScreenSavedCursorState::new(),
     scrollback,
     kitty_graphics: KittyGraphicsState::new(),
-  }
-}
-
-///|
-fn PageList::flatten_rows(
-  self : PageList,
-  grid : ScreenGridState,
-) -> Array[PageListRow] {
-  let rows : Array[PageListRow] = []
-  for index in 0..<self.history.length() {
-    rows.push(copy_pinned_row(self.history[index], grid.cols))
-  }
-  for row_idx in 0..<grid.rows.to_int() {
-    let row = snapshot_scrollback_row(
-      grid,
-      row_idx,
-      self.visible_row_ids[row_idx],
-    )
-    rows.push({
-      row_id: row.row_id,
-      row: row.row,
-      cells: row.cells,
-      node: self.active_node,
-      y: row_idx.to_uint16(),
-    })
-  }
-  rows
-}
-
-///|
-fn PageList::reflow_rows(
-  self : PageList,
-  rows : Array[PageListRow],
-  old_cols : CellCountInt,
-  new_cols : CellCountInt,
-) -> Array[PageListRow] {
-  let output : Array[PageListRow] = []
-  let line_cells : Array[PageListReflowCell] = []
-  let mut line_row = PageRowState::new()
-  let mut line_row_id = 0UL
-  let mut line_started = false
-  for index in 0..<rows.length() {
-    let source = rows[index]
-    if !line_started {
-      line_row_id = source.row_id
-      line_row = copy_scrollback_row(source.row)
-      line_started = true
-    }
-    let content_len = self.reflow_content_len(source, old_cols, new_cols)
-    for col in 0..<content_len {
-      line_cells.push({
-        cell: copy_scrollback_cell(source.cells[col]),
-        node: source.node,
-        y: source.y,
-        x: col,
-      })
-    }
-    if !source.row.wrap() {
-      self.emit_reflow_line(output, line_row_id, line_row, line_cells, new_cols)
-      line_cells.clear()
-      line_started = false
-    }
-  }
-  if line_started {
-    self.emit_reflow_line(output, line_row_id, line_row, line_cells, new_cols)
-  }
-  trim_trailing_blank_pinned_rows(self, output, new_cols)
-}
-
-///|
-fn PageList::emit_reflow_line(
-  self : PageList,
-  output : Array[PageListRow],
-  row_id : UInt64,
-  row_template : PageRowState,
-  cells : Array[PageListReflowCell],
-  cols : CellCountInt,
-) -> Unit {
-  let width = cols.to_int()
-  if cells.length() == 0 {
-    output.push(
-      make_pinned_row(row_id, row_template, [], cols, false, false, false),
-    )
-    return
-  }
-
-  let mut current_row_id = row_id
-  let mut current_cells : Array[PageCellState] = []
-  let mut current_node = PageListNode::new(PageListPage::new(1, cols))
-  let mut wrap_continuation = false
-  let mut index = 0
-  while index < cells.length() {
-    if current_cells.length() == width {
-      let row = make_pinned_row(
-        current_row_id, row_template, current_cells, cols, true, wrap_continuation,
-        true,
-      )
-      self.move_pins_for_row(current_node, 0, row.node, row.y)
-      output.push(row)
-      current_row_id = self.allocate_row_id()
-      current_cells = []
-      current_node = PageListNode::new(PageListPage::new(1, cols))
-      wrap_continuation = true
-    }
-
-    let source = cells[index]
-    self.move_pins_for_cell(
-      source.node,
-      source.y,
-      source.x,
-      current_node,
-      0,
-      current_cells.length(),
-    )
-    match source.cell.wide() {
-      PageCellWide::Wide =>
-        if width == 1 {
-          current_cells.push(PageCellState::new())
-          if index + 1 < cells.length() &&
-            physical_equal(cells[index + 1].node, source.node) &&
-            cells[index + 1].y == source.y &&
-            cells[index + 1].x == source.x + 1 &&
-            cells[index + 1].cell.wide() == PageCellWide::SpacerTail {
-            self.move_pins_for_cell(
-              cells[index + 1].node,
-              cells[index + 1].y,
-              cells[index + 1].x,
-              current_node,
-              0,
-              current_cells.length() - 1,
-            )
-            index += 2
-          } else {
-            index += 1
-          }
-        } else if current_cells.length() == width - 1 {
-          current_cells.push(reflow_spacer_head_cell())
-        } else {
-          current_cells.push(copy_scrollback_cell(source.cell))
-          index += 1
-        }
-      PageCellWide::SpacerTail =>
-        if width == 1 {
-          index += 1
-        } else {
-          current_cells.push(copy_scrollback_cell(source.cell))
-          index += 1
-        }
-      PageCellWide::SpacerHead => {
-        self.move_pins_for_cell(
-          source.node,
-          source.y,
-          source.x,
-          current_node,
-          0,
-          current_cells.length(),
-        )
-        index += 1
-      }
-      PageCellWide::Narrow => {
-        current_cells.push(copy_scrollback_cell(source.cell))
-        index += 1
-      }
-    }
-  }
-
-  let row = make_pinned_row(
-    current_row_id, row_template, current_cells, cols, false, wrap_continuation,
-    true,
-  )
-  self.move_pins_for_row(current_node, 0, row.node, row.y)
-  output.push(row)
-}
-
-///|
-fn PageList::rebuild_from_rows(
-  self : PageList,
-  rows : Array[PageListRow],
-  active_rows : CellCountInt,
-  cols : CellCountInt,
-  cursor_pin : UInt64?,
-  saved_pin : UInt64?,
-  cursor_remaining_rows : Int?,
-  renumber : Bool,
-) -> PageListResizeResult {
-  let target_rows = active_rows.to_int()
-  let content_rows = trim_trailing_blank_pinned_rows(self, rows, cols)
-  let padded = content_rows
-  while padded.length() < target_rows {
-    padded.push(
-      make_pinned_row(
-        self.allocate_row_id(),
-        PageRowState::new(),
-        [],
-        cols,
-        false,
-        false,
-        false,
-      ),
-    )
-  }
-  if renumber {
-    self.renumber_rows_in_display_order(padded)
-  }
-
-  let active_start = self.active_start_for_resize(
-    padded, target_rows, cursor_pin, cursor_remaining_rows,
-  )
-  let active_end = min_int(padded.length(), active_start + target_rows)
-  let history_rows : Array[PageListRow] = []
-  for index in 0..<active_start {
-    let source = padded[index]
-    let row = make_pinned_row(
-      source.row_id,
-      source.row,
-      source.cells,
-      cols,
-      source.row.wrap(),
-      source.row.wrap_continuation(),
-      false,
-    )
-    self.move_pins_for_row(source.node, source.y, row.node, row.y)
-    history_rows.push(row)
-  }
-  for index in active_end..<padded.length() {
-    self.mark_pins_for_row_garbage(padded[index])
-  }
-  self.history = history_rows
-  self.trim_history()
-
-  let visible_ids : Array[UInt64] = []
-  let grid_rows : Array[PageListRow] = []
-  for index in active_start..<active_end {
-    let row = copy_pinned_row(padded[index], cols)
-    grid_rows.push(row)
-    visible_ids.push(row.row_id)
-  }
-  self.visible_row_ids = visible_ids
-  self.viewport_offset = scrollback_clamp_int(
-    self.viewport_offset,
-    0,
-    self.history.length(),
-  )
-  let grid = screen_grid_from_rows(active_rows, cols, grid_rows)
-  let active_node = PageListNode::new({
-    rows: grid.rows,
-    cols: grid.cols,
-    row_states: grid.row_states,
-    cells: grid.cells,
-  })
-  self.active_node = active_node
-  self.rows = grid.rows
-  self.cols = grid.cols
-  self.first = if self.history.length() > 0 {
-    Some(self.history[0].node)
-  } else {
-    Some(active_node)
-  }
-  self.last = Some(active_node)
-  for row_idx in 0..<grid_rows.length() {
-    self.move_pins_for_row(
-      grid_rows[row_idx].node,
-      grid_rows[row_idx].y,
-      active_node,
-      row_idx.to_uint16(),
-    )
-  }
-  {
-    grid,
-    cursor: self.page_point_from_pin_rows(grid_rows, cols, cursor_pin),
-    saved_cursor: self.page_point_from_pin_rows(grid_rows, cols, saved_pin),
-  }
-}
-
-///|
-fn PageList::active_start_for_resize(
-  self : PageList,
-  rows : Array[PageListRow],
-  target_rows : Int,
-  cursor_pin : UInt64?,
-  cursor_remaining_rows : Int?,
-) -> Int {
-  let bottom_start = max_int(0, rows.length() - target_rows)
-  match (cursor_pin, cursor_remaining_rows) {
-    (Some(pin_id), Some(remaining)) =>
-      match self.tracked_pin_index(pin_id) {
-        Some(pin_index) => {
-          let pin = self.tracked_pins[pin_index]
-          for row_idx in 0..<rows.length() {
-            if physical_equal(rows[row_idx].node, pin.node) &&
-              rows[row_idx].y == pin.y {
-              let desired = row_idx + remaining + 1 - target_rows
-              return scrollback_clamp_int(desired, 0, bottom_start)
-            }
-          }
-          bottom_start
-        }
-        None => bottom_start
-      }
-    _ => bottom_start
   }
 }
 
@@ -1659,25 +1776,6 @@ fn snapshot_scrollback_row(
 }
 
 ///|
-fn trim_trailing_blank_pinned_rows(
-  list : PageList,
-  rows : Array[PageListRow],
-  cols : CellCountInt,
-) -> Array[PageListRow] {
-  let mut end_ = rows.length()
-  while end_ > 0 &&
-        pinned_row_is_blank(rows[end_ - 1]) &&
-        !list.pinned_row_is_tracked(rows[end_ - 1]) {
-    end_ -= 1
-  }
-  let trimmed : Array[PageListRow] = []
-  for index in 0..<end_ {
-    trimmed.push(copy_pinned_row(rows[index], cols))
-  }
-  trimmed
-}
-
-///|
 fn PageList::trim_trailing_blank_rows(
   self : PageList,
   rows : Array[PageListRow],
@@ -1730,16 +1828,6 @@ fn pinned_row_has_text_any(row : PageListRow) -> Bool {
     }
   }
   false
-}
-
-///|
-fn PageList::renumber_rows_in_display_order(
-  self : PageList,
-  rows : Array[PageListRow],
-) -> Unit {
-  for index in 0..<rows.length() {
-    rows[index].row_id = self.allocate_row_id()
-  }
 }
 
 ///|
@@ -1826,45 +1914,6 @@ fn apply_cell_flags_to_row(
   row.set_grapheme(grapheme)
   row.set_styled(styled)
   row.set_hyperlink(hyperlink)
-}
-
-///|
-fn PageList::reflow_content_len(
-  self : PageList,
-  source : PageListRow,
-  old_cols : CellCountInt,
-  new_cols : CellCountInt,
-) -> Int {
-  let limit = min_int(source.cells.length(), old_cols.to_int())
-  let mut content_len = if source.row.wrap() {
-    limit
-  } else {
-    let mut index = limit
-    let mut len = 0
-    while index > 0 {
-      index -= 1
-      if reflow_cell_has_content(source.cells[index]) {
-        len = index + 1
-        break
-      }
-    }
-    len
-  }
-  for index in 0..<self.tracked_pins.length() {
-    if !self.tracked_pins[index].garbage &&
-      physical_equal(self.tracked_pins[index].node, source.node) &&
-      self.tracked_pins[index].y == source.y &&
-      self.tracked_pins[index].x < limit {
-      if !source.row.wrap() && self.tracked_pins[index].x >= content_len {
-        self.tracked_pins[index].x = min_int(
-          self.tracked_pins[index].x,
-          new_cols.to_int() - 1,
-        )
-      }
-      content_len = max_int(content_len, self.tracked_pins[index].x + 1)
-    }
-  }
-  content_len
 }
 
 ///|

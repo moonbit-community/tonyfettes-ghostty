@@ -443,6 +443,51 @@ Validation run in canonical:
 
 Result: all checks passed.
 
+### 2026-05-14: Reflow Cursor Checkpoint
+
+Implemented in canonical first:
+
+- Replaced the column-resize dispatch with upstream ordering from
+  `PageList.zig::resize`:
+  - same columns use `resize_without_reflow`;
+  - growing columns runs `resize_cols` before row resize;
+  - shrinking columns runs row resize before `resize_cols`.
+- Added `PageList::resize_cols` backed by a `PageListReflowCursor`
+  translation of upstream `ReflowCursor`.
+- Ported the reflow cursor behaviors that move pins while cells are rewritten:
+  pending wrap handling, spacer-head retry for wide cells at the right edge,
+  one-column wide-cell skip-next handling, deferred blank rows, semantic prompt
+  metadata copying, and total row padding.
+- Added preserved-cursor accounting for active row selection during column
+  reflow.
+- Removed the remaining local column-reflow path and its helpers:
+  `PageListReflowCell`, `flatten_rows`, `reflow_rows`, `emit_reflow_line`,
+  `rebuild_from_rows`, `active_start_for_resize`,
+  `trim_trailing_blank_pinned_rows`, `renumber_rows_in_display_order`, and
+  `reflow_content_len`.
+- Made `PageListRow.row_id` immutable after removing the old renumbering path.
+
+Not complete yet:
+
+- The remaining phases still need to finish saved-cursor screen ownership,
+  kitty placement pin ownership, viewport alignment, and additional upstream
+  regression coverage.
+
+Validation run in canonical:
+
+- `moon check`
+- `moon test src/terminal/stream_terminal_resize_wbtest.mbt`
+- `moon test src/terminal/terminal_screen_state_wbtest.mbt`
+- `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`
+- `moon test src/terminal/formatter_wbtest.mbt`
+- `moon test src/terminal`
+- `moon fmt`
+- `moon info`
+- `rg -n "\\b(flatten_rows|reflow_rows|rebuild_from_rows|emit_reflow_line|PageListReflowCell|trim_leading_blank_pinned_rows|trim_trailing_blank_pinned_rows|wrapped_rows_for_pin|row_id_at_absolute|absolute_index_of_row_id|renumber_rows_in_display_order|reflow_content_len|PageListTrackedPin|track_pin_at_row_id|mark_pins_for_row_id_garbage|update_pins_for_row_id)\\b|\\bsource_row\\b|\\babsolute_row\\b" src/terminal`
+
+Result: all checks passed. The strict forbidden-symbol grep returned no
+matches. `moon info` did not change generated interfaces.
+
 ## Stop Conditions
 
 Stop and ask before implementation if any of these happens:
