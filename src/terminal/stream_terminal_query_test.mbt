@@ -35,8 +35,10 @@ test "stream terminal query/exposes cursor and scrollbar state" {
   terminal.next_slice(b"hello\x1BD\x1BD\x1BD")
 
   let bottom = terminal.scrollbar()
-  guard bottom.total() == 4U && bottom.offset() == 2U && bottom.len() == 2U else {
-    fail("expected active viewport scrollbar snapshot")
+  guard bottom.total() == 5U && bottom.offset() == 3U && bottom.len() == 2U else {
+    fail(
+      "expected active viewport scrollbar snapshot total=\{bottom.total()} offset=\{bottom.offset()} len=\{bottom.len()}",
+    )
   }
 
   terminal.scroll_viewport_top()
@@ -44,7 +46,7 @@ test "stream terminal query/exposes cursor and scrollbar state" {
     fail("expected viewport-top scrollbar offset")
   }
   terminal.scroll_viewport_bottom()
-  guard terminal.scrollbar().offset() == 2U else {
+  guard terminal.scrollbar().offset() == 3U else {
     fail("expected viewport-bottom scrollbar offset")
   }
 

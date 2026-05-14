@@ -112,6 +112,32 @@ pub fn StreamTerminal::cursor_pending_wrap(self : StreamTerminal) -> Bool {
 }
 
 ///|
+pub fn StreamTerminal::cursor_top_margin(self : StreamTerminal) -> CellCountInt {
+  self.bridge().cursor_top_margin()
+}
+
+///|
+pub fn StreamTerminal::cursor_bottom_margin(
+  self : StreamTerminal,
+) -> CellCountInt {
+  self.bridge().cursor_bottom_margin()
+}
+
+///|
+pub fn StreamTerminal::cursor_left_margin(
+  self : StreamTerminal,
+) -> CellCountInt {
+  self.bridge().cursor_left_margin()
+}
+
+///|
+pub fn StreamTerminal::cursor_right_margin(
+  self : StreamTerminal,
+) -> CellCountInt {
+  self.bridge().cursor_right_margin()
+}
+
+///|
 pub fn StreamTerminal::kitty_keyboard_flags(
   self : StreamTerminal,
 ) -> KittyKeyboardFlags {
@@ -131,6 +157,11 @@ pub fn StreamTerminal::palette_dirty(self : StreamTerminal) -> Bool {
 ///|
 pub fn StreamTerminal::clear_palette_dirty(self : StreamTerminal) -> Unit {
   self.bridge().clear_palette_dirty()
+}
+
+///|
+pub fn StreamTerminal::take_scrollback_cleared(self : StreamTerminal) -> Bool {
+  self.bridge().take_scrollback_cleared()
 }
 
 ///|

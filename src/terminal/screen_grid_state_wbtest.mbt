@@ -678,16 +678,6 @@ test "screen grid/erase line and display modes" {
   scroll_grid.erase_display(
     scroll_cursor,
     CellStyle::new(),
-    ScreenEraseDisplayMode::Scrollback,
-    ProtectedMode::Off,
-    false,
-  )
-  guard expect_cell(scroll_grid, 0, 0).codepoint() == b'X'.to_uint() else {
-    fail("expected scrollback erase to be a no-op without scrollback state")
-  }
-  scroll_grid.erase_display(
-    scroll_cursor,
-    CellStyle::new(),
     ScreenEraseDisplayMode::ScrollComplete,
     ProtectedMode::Off,
     false,

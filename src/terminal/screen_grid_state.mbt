@@ -10,7 +10,6 @@ priv enum ScreenEraseDisplayMode {
   Below
   Above
   Complete
-  Scrollback
   ScrollComplete
 }
 
@@ -397,7 +396,6 @@ fn ScreenGridState::erase_display(
 ) -> Unit {
   let respect_protected = protected_mode == ProtectedMode::Iso || protected_req
   match mode {
-    ScreenEraseDisplayMode::Scrollback => ()
     ScreenEraseDisplayMode::ScrollComplete =>
       self.erase_display(
         cursor,
@@ -631,6 +629,7 @@ fn ScreenGridState::print_wrap(
     self.row_states[row_idx].set_wrap(true)
   }
 
+  cursor.pending_wrap = false
   self.index(cursor, style)
   cursor.x = cursor.left_margin
   if semantic_content == SemanticContent::Prompt {

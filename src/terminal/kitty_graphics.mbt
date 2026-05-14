@@ -587,9 +587,7 @@ fn kitty_placement_grid(placement : KittyPlacement) -> ScreenGridState {
 }
 
 ///|
-fn kitty_placement_scrollback(
-  placement : KittyPlacement,
-) -> TerminalScrollbackState {
+fn kitty_placement_scrollback(placement : KittyPlacement) -> PageList {
   if placement.screen == placement.bridge.active_screen {
     placement.bridge.scrollback
   } else {

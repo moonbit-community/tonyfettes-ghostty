@@ -154,6 +154,132 @@ pub fn Formatter::format(self : Formatter) -> Bytes {
 }
 
 ///|
+/// Format primary-screen history rows whose row ids are newer than
+/// `last_row_id`. The returned row id is the last emitted history row.
+pub fn StreamTerminal::format_scrollback_rows_since(
+  self : StreamTerminal,
+  last_row_id : UInt64?,
+) -> (Bytes, UInt64?) {
+  let state = self.bridge()
+  let history = state.scrollback.history
+  let len = history.length()
+  if len == 0 {
+    return (b"", last_row_id)
+  }
+
+  let mut start = 0
+  match last_row_id {
+    None => ()
+    Some(last) =>
+      while start < len && history[start].row_id <= last {
+        start += 1
+      }
+  }
+  if start >= len {
+    return (b"", last_row_id)
+  }
+
+  let buffer = @buffer.new()
+  for index = start; index < len; index = index + 1 {
+    formatter_write_history_row(history[index], buffer)
+  }
+  (buffer.contents(), Some(history[len - 1].row_id))
+}
+
+///|
+/// Format the current render viewport as framebuffer-style VT bytes.
+///
+/// Each row starts with an absolute cursor position. The output never relies on
+/// CR/LF for layout, so the host terminal's pending-wrap state cannot shift the
+/// following rows.
+pub fn RenderState::format_vt_framebuffer(self : RenderState) -> Bytes {
+  let buffer = @buffer.new()
+  let columns = self.columns().to_int()
+  let rows = self.row_iterator()
+  while rows.next() {
+    match rows.y() {
+      Some(y) => formatter_write_vt_cup(buffer, (y + 1).to_uint64(), 1UL)
+      None => ()
+    }
+    match rows.cells() {
+      Some(cells) =>
+        formatter_write_render_state_frame_row(cells, columns, buffer)
+      None => ()
+    }
+  }
+  buffer.contents()
+}
+
+///|
+fn formatter_write_render_state_frame_row(
+  cells : RenderRowCells,
+  columns : Int,
+  buffer : @buffer.Buffer,
+) -> Unit {
+  let output = FormatterOutputState::new()
+  let last = formatter_render_state_last_cell(cells, columns)
+  if last >= 0 {
+    let mut blank_cells = 0
+    let mut x = 0
+    while x <= last {
+      if !cells.select(x.to_uint16()) {
+        x += 1
+        continue
+      }
+
+      match cells.cell() {
+        None => ()
+        Some(cell) => {
+          match cell.wide() {
+            PageCellWide::SpacerHead | PageCellWide::SpacerTail => {
+              x += 1
+              continue
+            }
+            PageCellWide::Narrow | PageCellWide::Wide => ()
+          }
+
+          if formatter_history_cell_is_blank(cell) {
+            blank_cells += 1
+            x += 1
+            continue
+          }
+
+          if blank_cells > 0 {
+            formatter_write_spaces(buffer, blank_cells)
+            blank_cells = 0
+          }
+
+          output.sync_vt_style(formatter_cell_style(cell), buffer)
+          formatter_write_cell_text(Format::Vt, cell, buffer)
+        }
+      }
+      x += 1
+    }
+  }
+  output.close(Format::Vt, buffer)
+  buffer.write_bytes(VtEraseToEndOfLine)
+}
+
+///|
+fn formatter_render_state_last_cell(
+  cells : RenderRowCells,
+  columns : Int,
+) -> Int {
+  let mut last = -1
+  let mut x = 0
+  while x < columns {
+    if cells.select(x.to_uint16()) {
+      match cells.cell() {
+        Some(cell) => if !formatter_history_cell_is_blank(cell) { last = x }
+        None => ()
+      }
+    }
+    x += 1
+  }
+  last
+}
+
+///|
 priv struct FormatterSelectionBounds {
   start : Coordinate
   end_ : Coordinate
@@ -207,6 +333,9 @@ const HtmlStyleClose : Bytes = b"</div>"
 
 ///|
 const VtStyleReset : Bytes = b"\x1B[0m"
+
+///|
+const VtEraseToEndOfLine : Bytes = b"\x1B[K"
 
 ///|
 const NewlinePlain : Bytes = b"\n"
@@ -474,6 +603,62 @@ fn formatter_cell_is_blank(formatter : Formatter, cell : PageCellState) -> Bool 
     return true
   }
   formatter.opts.trim && cell.codepoint() == b' '.to_uint()
+}
+
+///|
+fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
+  if !cell.is_empty() || cell.has_styling() {
+    return false
+  }
+  if !cell.has_text() {
+    return true
+  }
+  cell.codepoint() == b' '.to_uint()
+}
+
+///|
+fn formatter_write_history_row(
+  row : PageListRow,
+  buffer : @buffer.Buffer,
+) -> Unit {
+  let output = FormatterOutputState::new()
+  let mut last = row.cells.length() - 1
+  while last >= 0 && formatter_history_cell_is_blank(row.cells[last]) {
+    last -= 1
+  }
+
+  if last >= 0 {
+    let mut blank_cells = 0
+    let mut x = 0
+    while x <= last {
+      let cell = row.cells[x]
+      match cell.wide() {
+        PageCellWide::SpacerHead | PageCellWide::SpacerTail => {
+          x += 1
+          continue
+        }
+        PageCellWide::Narrow | PageCellWide::Wide => ()
+      }
+
+      if formatter_history_cell_is_blank(cell) {
+        blank_cells += 1
+        x += 1
+        continue
+      }
+
+      if blank_cells > 0 {
+        formatter_write_spaces(buffer, blank_cells)
+        blank_cells = 0
+      }
+
+      output.sync_vt_style(formatter_cell_style(cell), buffer)
+      formatter_write_cell_text(Format::Vt, cell, buffer)
+      x += 1
+    }
+  }
+
+  output.close(Format::Vt, buffer)
+  buffer.write_bytes(NewlineVt)
 }
 
 ///|
@@ -762,6 +947,19 @@ fn formatter_write_screen_extras(
     write_uint_ascii(buffer, (state.cursor.x() + 1).to_uint64())
     buffer.write_byte(b'H')
   }
+}
+
+///|
+fn formatter_write_vt_cup(
+  buffer : @buffer.Buffer,
+  row : UInt64,
+  column : UInt64,
+) -> Unit {
+  buffer.write_bytes(b"\x1B[")
+  write_uint_ascii(buffer, row)
+  buffer.write_byte(b';')
+  write_uint_ascii(buffer, column)
+  buffer.write_byte(b'H')
 }
 
 ///|

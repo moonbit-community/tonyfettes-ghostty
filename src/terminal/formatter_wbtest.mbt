@@ -125,7 +125,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
     None => fail("expected oversized selection to clamp to visible width")
   }
   state.grid = ScreenGridState::new(2, 2)
-  state.scrollback = TerminalScrollbackState::new(2, 0)
+  state.scrollback = PageList::new(2, 0)
   state.grid.cells[3].set_wide(PageCellWide::SpacerHead)
   let spacer_head_bounds : FormatterSelectionBounds = {
     start: Coordinate::new(1, 1U),
@@ -154,7 +154,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
     fail("expected blank-row helper to treat missing rows as blank")
   }
   sparse_state.grid = ScreenGridState::new(1, 2)
-  sparse_state.scrollback = TerminalScrollbackState::new(1, 0)
+  sparse_state.scrollback = PageList::new(1, 0)
   let missing_row_cell_probe : FormatterSelectionBounds = {
     start: Coordinate::new(1, 9U),
     end_: Coordinate::new(1, 9U),
@@ -383,7 +383,7 @@ test "formatter helpers/cover explicit empty format guard" {
   let terminal = StreamTerminal::new()
   let state = terminal.bridge()
   state.grid = { rows: 0, cols: 0, row_states: [], cells: [] }
-  state.scrollback = TerminalScrollbackState::new(0, 0)
+  state.scrollback = PageList::new(0, 0)
   let formatter = plain_formatter(terminal)
   guard formatter.format() == b"" else {
     fail("expected zero-row formatter guard")

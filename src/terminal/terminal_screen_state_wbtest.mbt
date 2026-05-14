@@ -42,14 +42,14 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
     None,
   )
 
-  let scrollback = TerminalScrollbackState::new(2, 1)
+  let scrollback = PageList::new(2, 1)
   guard scrollback.row(grid, 3) == None &&
     scrollback.cell(grid, 0, 9) == None &&
     scrollback.cell(grid, 3, 0) == None else {
     fail("expected out of bounds viewport access to stay safe")
   }
 
-  scrollback.capture_full_screen_scroll_up(grid, 1)
+  scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
   scrollback.scroll_top()
 
   let row = scrollback.row(grid, 0).unwrap()
@@ -77,19 +77,19 @@ test "terminal screen state/zero max scrollback trim and resets" {
   fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
   fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
 
-  let scrollback = TerminalScrollbackState::new(2, 0)
-  scrollback.capture_full_screen_scroll_up(grid, 0)
+  let scrollback = PageList::new(2, 0)
+  scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 0)
   scrollback.capture_full_screen_scroll_down(grid, 0)
-  scrollback.capture_full_screen_scroll_up(grid, 1)
+  scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
   scrollback.trim_history()
   guard scrollback.scrollback_rows() == 0U else {
     fail("expected zero max scrollback to drop history")
   }
 
-  let limited = TerminalScrollbackState::new(2, 1)
-  limited.capture_full_screen_scroll_up(grid, 1)
+  let limited = PageList::new(2, 1)
+  limited.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
   limited.scroll_top()
-  limited.capture_full_screen_scroll_up(grid, 1)
+  limited.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
   guard limited.scrollback_rows() == 1U else {
     fail("expected history trimming")
   }
@@ -107,8 +107,8 @@ test "terminal screen state/grid ref helpers cover row id mappings" {
   fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
   fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
 
-  let scrollback = TerminalScrollbackState::new(2, 2)
-  scrollback.capture_full_screen_scroll_up(grid, 1)
+  let scrollback = PageList::new(2, 2)
+  scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
 
   guard !scrollback.row_by_id(grid, 0UL).unwrap().hyperlink() &&
     scrollback.row_by_id(grid, 999UL) == None else {
@@ -161,8 +161,7 @@ test "terminal screen state/grid ref helpers cover row id mappings" {
 
   guard scrollback.screen_row_source(grid, -1) is None &&
     scrollback.history_row_source(-1) is None &&
-    scrollback.history_row_source(0)
-    is Some(TerminalVisibleRowSource::History(_)) else {
+    scrollback.history_row_source(0) is Some(PageListRowSource::History(_)) else {
     fail("expected screen/history source guards")
   }
 

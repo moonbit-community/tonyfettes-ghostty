@@ -191,7 +191,7 @@ priv struct StreamTerminalBridgeState {
   semantic : ScreenSemanticState
   metadata : TerminalMetadataState
   mut grid : ScreenGridState
-  mut scrollback : TerminalScrollbackState
+  mut scrollback : PageList
   mut kitty_graphics : KittyGraphicsState
   mut primary_storage : TerminalScreenStorage
   mut alternate_storage : TerminalScreenStorage
@@ -204,6 +204,7 @@ priv struct StreamTerminalBridgeState {
   mut active_screen : TerminalScreen
   mut width_px : UInt
   mut height_px : UInt
+  mut scrollback_cleared : Bool
 }
 
 ///|
@@ -249,6 +250,7 @@ fn StreamTerminalBridgeState::with_effects(
     active_screen: TerminalScreen::Primary,
     width_px: 0U,
     height_px: 0U,
+    scrollback_cleared: false,
   }
 }
 
@@ -264,6 +266,15 @@ fn StreamTerminalBridgeState::clear_palette_dirty(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   self.palette_dirty = false
+}
+
+///|
+fn StreamTerminalBridgeState::take_scrollback_cleared(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  let value = self.scrollback_cleared
+  self.scrollback_cleared = false
+  value
 }
 
 ///|
@@ -307,6 +318,34 @@ fn StreamTerminalBridgeState::cursor_pending_wrap(
   self : StreamTerminalBridgeState,
 ) -> Bool {
   self.cursor.pending_wrap()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_top_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.top_margin()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_bottom_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.bottom_margin()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_left_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.left_margin()
+}
+
+///|
+fn StreamTerminalBridgeState::cursor_right_margin(
+  self : StreamTerminalBridgeState,
+) -> CellCountInt {
+  self.cursor.right_margin()
 }
 
 ///|
@@ -817,19 +856,41 @@ fn StreamTerminalBridgeState::resize(
     return TerminalResultCode::InvalidValue
   }
 
-  let next_primary = TerminalScreenStorage::new(
+  let active_screen = self.active_screen
+  let saved_cursor = if self.saved_cursor.has_saved() {
+    Some(self.saved_cursor.restore())
+  } else {
+    None
+  }
+  let saved_owner = self.saved_cursor.owner
+  self.store_active_screen()
+  let primary_resize = self.primary_storage.resize(
     rows,
     columns,
-    DefaultMaxScrollback,
+    if saved_owner == Some(TerminalScreen::Primary) {
+      saved_cursor
+    } else {
+      None
+    },
   )
-  let next_alternate = TerminalScreenStorage::new(rows, columns, 0)
-  let active_screen = self.active_screen
-  self.primary_storage = next_primary
-  self.alternate_storage = next_alternate
-  self.active_screen = active_screen
+  let alternate_resize = self.alternate_storage.resize(
+    rows,
+    columns,
+    if saved_owner == Some(TerminalScreen::Alternate) {
+      saved_cursor
+    } else {
+      None
+    },
+  )
+  match saved_owner {
+    None => ()
+    Some(TerminalScreen::Primary) =>
+      self.saved_cursor.resize(primary_resize.saved_cursor, columns)
+    Some(TerminalScreen::Alternate) =>
+      self.saved_cursor.resize(alternate_resize.saved_cursor, columns)
+  }
   self.load_active_screen(active_screen)
   self.tabstops = TerminalTabstopsState::new(columns)
-  self.saved_cursor.reset()
   self.width_px = saturated_dimension(columns, cell_width_px)
   self.height_px = saturated_dimension(rows, cell_height_px)
   self.modes.set(Mode::SynchronizedOutput, false)
@@ -1160,16 +1221,14 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamEraseDisplayScrollback(protected_req) => {
-      self.grid.erase_display(
-        self.cursor,
-        self.current_style,
-        ScreenEraseDisplayMode::Scrollback,
-        self.protected_state.mode(),
-        protected_req,
-      )
+      ignore(protected_req)
+      self.scrollback.clear_history()
+      self.scrollback_cleared = true
       true
     }
     StreamEraseDisplayScrollComplete(protected_req) => {
+      self.scrollback.clear_history()
+      self.scrollback_cleared = true
       self.grid.erase_display(
         self.cursor,
         self.current_style,
@@ -1247,12 +1306,12 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamScrollUp(count) => {
-      if self.active_screen == TerminalScreen::Primary &&
-        self.cursor.top_margin() == 0 &&
-        self.cursor.bottom_margin() == self.grid.rows - 1 &&
-        self.cursor.left_margin() == 0 &&
-        self.cursor.right_margin() == self.grid.cols - 1 {
-        self.scrollback.capture_full_screen_scroll_up(self.grid, count.to_int())
+      if self.primary_top_scroll_region_captures_scrollback() {
+        self.scrollback.capture_top_scroll_region_up(
+          self.grid,
+          self.cursor.bottom_margin().to_int(),
+          count.to_int(),
+        )
       }
       self.grid.scroll_up(self.cursor, self.current_style, count)
       true
@@ -1352,6 +1411,7 @@ fn StreamTerminalBridgeState::save_cursor(
     self.modes.get(Mode::Origin),
     self.charset,
   )
+  self.saved_cursor.owner = Some(self.active_screen)
 }
 
 ///|
@@ -1467,15 +1527,26 @@ fn StreamTerminalBridgeState::index(self : StreamTerminalBridgeState) -> Unit {
   } else {
     if self.active_screen == TerminalScreen::Primary &&
       self.cursor.y() == self.cursor.bottom_margin() &&
-      self.cursor.top_margin() == 0 &&
-      self.cursor.bottom_margin() == self.grid.rows - 1 &&
-      self.cursor.left_margin() == 0 &&
-      self.cursor.right_margin() == self.grid.cols - 1 {
-      self.scrollback.capture_full_screen_scroll_up(self.grid, 1)
+      self.primary_top_scroll_region_captures_scrollback() {
+      self.scrollback.capture_top_scroll_region_up(
+        self.grid,
+        self.cursor.bottom_margin().to_int(),
+        1,
+      )
     }
     self.grid.index(self.cursor, self.current_style)
   }
   self.apply_semantic_after_newline()
+}
+
+///|
+fn StreamTerminalBridgeState::primary_top_scroll_region_captures_scrollback(
+  self : StreamTerminalBridgeState,
+) -> Bool {
+  self.active_screen == TerminalScreen::Primary &&
+  self.cursor.top_margin() == 0 &&
+  self.cursor.left_margin() == 0 &&
+  self.cursor.right_margin() == self.grid.cols - 1
 }
 
 ///|
@@ -1541,6 +1612,7 @@ fn StreamTerminalBridgeState::full_reset(
   self.mouse_event = MouseEvent::None
   self.mouse_format = MouseFormat::X10
   self.palette_dirty = false
+  self.scrollback_cleared = true
 }
 
 ///|
@@ -2694,7 +2766,6 @@ fn StreamTerminalBridgeState::apply_color_operation(
   self : StreamTerminalBridgeState,
   command : ColorCommand,
 ) -> Unit {
-  let _ = command.op()
   let requests = command.requests()
   if requests.length() == 0 {
     return
@@ -2703,7 +2774,7 @@ fn StreamTerminalBridgeState::apply_color_operation(
   for request in requests {
     match request {
       Set(set) => self.apply_color_set(set)
-      Query(_) => ()
+      Query(target) => self.apply_color_query(target, command.terminator())
       Reset(target) => self.apply_color_reset(target)
       ResetPalette =>
         if self.colors.has_palette_changes() {
@@ -2711,6 +2782,91 @@ fn StreamTerminalBridgeState::apply_color_operation(
           self.palette_dirty = true
         }
     }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::apply_color_query(
+  self : StreamTerminalBridgeState,
+  target : ColorTarget,
+  terminator : Terminator,
+) -> Unit {
+  match target {
+    Palette(index) => {
+      let buffer = @buffer.new()
+      buffer.write_bytes(b"\x1B]4;")
+      write_uint_ascii(buffer, index.to_uint64())
+      buffer.write_byte(b';')
+      write_osc_rgb(buffer, self.colors.palette_color(index))
+      write_osc_terminator(buffer, terminator)
+      self.write_pty(buffer.contents())
+    }
+    Dynamic(dynamic) =>
+      match self.dynamic_color_query(dynamic) {
+        Some(color) => {
+          let buffer = @buffer.new()
+          buffer.write_bytes(b"\x1B]")
+          write_uint_ascii(buffer, dynamic.code().to_uint64())
+          buffer.write_byte(b';')
+          write_osc_rgb(buffer, color)
+          write_osc_terminator(buffer, terminator)
+          self.write_pty(buffer.contents())
+        }
+        None => ()
+      }
+    Special(_) => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::dynamic_color_query(
+  self : StreamTerminalBridgeState,
+  dynamic : Dynamic,
+) -> RGB? {
+  match dynamic {
+    Foreground =>
+      match self.colors.foreground() {
+        Some(color) => Some(color)
+        None => self.colors.default_foreground()
+      }
+    Background =>
+      match self.colors.background() {
+        Some(color) => Some(color)
+        None => self.colors.default_background()
+      }
+    Cursor =>
+      match self.colors.cursor() {
+        Some(color) => Some(color)
+        None => self.colors.default_cursor()
+      }
+    PointerForeground
+    | PointerBackground
+    | TektronixForeground
+    | TektronixBackground
+    | HighlightBackground
+    | TektronixCursor
+    | HighlightForeground => None
+  }
+}
+
+///|
+fn write_osc_rgb(buffer : @buffer.Buffer, color : RGB) -> Unit {
+  buffer.write_bytes(b"rgb:")
+  write_hex_byte(buffer, color.r())
+  buffer.write_byte(b'/')
+  write_hex_byte(buffer, color.g())
+  buffer.write_byte(b'/')
+  write_hex_byte(buffer, color.b())
+}
+
+///|
+fn write_osc_terminator(
+  buffer : @buffer.Buffer,
+  terminator : Terminator,
+) -> Unit {
+  match terminator {
+    Bel => buffer.write_byte(b'\x07')
+    St => buffer.write_bytes(b"\x1B\\")
   }
 }
 
@@ -2860,416 +3016,439 @@ fn codepoint_width(codepoint : UInt) -> Int {
 }
 
 ///|
+let zero_width_codepoint_ranges : ReadOnlyArray[(UInt, UInt)] = [
+  (0x0300U, 0x036FU),
+  (0x0483U, 0x0489U),
+  (0x0591U, 0x05BDU),
+  (0x05BFU, 0x05BFU),
+  (0x05C1U, 0x05C2U),
+  (0x05C4U, 0x05C5U),
+  (0x0610U, 0x061AU),
+  (0x064BU, 0x065FU),
+  (0x0670U, 0x0670U),
+  (0x06D6U, 0x06DCU),
+  (0x06DFU, 0x06E4U),
+  (0x06E7U, 0x06E8U),
+  (0x06EAU, 0x06EDU),
+  (0x0711U, 0x0711U),
+  (0x0730U, 0x074AU),
+  (0x07A6U, 0x07B0U),
+  (0x07EBU, 0x07F3U),
+  (0x0816U, 0x0819U),
+  (0x081BU, 0x0823U),
+  (0x0825U, 0x0827U),
+  (0x0829U, 0x082DU),
+  (0x0859U, 0x085BU),
+  (0x08D3U, 0x0902U),
+  (0x093AU, 0x093AU),
+  (0x093CU, 0x093CU),
+  (0x0941U, 0x0948U),
+  (0x094DU, 0x094DU),
+  (0x0951U, 0x0957U),
+  (0x0962U, 0x0963U),
+  (0x0981U, 0x0981U),
+  (0x09BCU, 0x09BCU),
+  (0x09C1U, 0x09C4U),
+  (0x09CDU, 0x09CDU),
+  (0x09E2U, 0x09E3U),
+  (0x0A01U, 0x0A02U),
+  (0x0A3CU, 0x0A3CU),
+  (0x0A41U, 0x0A42U),
+  (0x0A47U, 0x0A48U),
+  (0x0A4BU, 0x0A4DU),
+  (0x0A51U, 0x0A51U),
+  (0x0A70U, 0x0A71U),
+  (0x0A75U, 0x0A75U),
+  (0x0A81U, 0x0A82U),
+  (0x0ABCU, 0x0ABCU),
+  (0x0AC1U, 0x0AC5U),
+  (0x0AC7U, 0x0AC8U),
+  (0x0ACDU, 0x0ACDU),
+  (0x0AE2U, 0x0AE3U),
+  (0x0B3CU, 0x0B3CU),
+  (0x0B3FU, 0x0B3FU),
+  (0x0B41U, 0x0B44U),
+  (0x0B4DU, 0x0B4DU),
+  (0x0B56U, 0x0B56U),
+  (0x0B62U, 0x0B63U),
+  (0x0B82U, 0x0B82U),
+  (0x0BC0U, 0x0BC0U),
+  (0x0BCDU, 0x0BCDU),
+  (0x0C00U, 0x0C00U),
+  (0x0C04U, 0x0C04U),
+  (0x0C3EU, 0x0C40U),
+  (0x0C46U, 0x0C48U),
+  (0x0C4AU, 0x0C4DU),
+  (0x0C55U, 0x0C56U),
+  (0x0C62U, 0x0C63U),
+  (0x0C81U, 0x0C81U),
+  (0x0CBCU, 0x0CBCU),
+  (0x0CBFU, 0x0CBFU),
+  (0x0CC6U, 0x0CC6U),
+  (0x0CCCU, 0x0CCDU),
+  (0x0CE2U, 0x0CE3U),
+  (0x0D00U, 0x0D01U),
+  (0x0D3BU, 0x0D3CU),
+  (0x0D41U, 0x0D44U),
+  (0x0D4DU, 0x0D4DU),
+  (0x0D62U, 0x0D63U),
+  (0x0DCAU, 0x0DCAU),
+  (0x0DD2U, 0x0DD4U),
+  (0x0DD6U, 0x0DD6U),
+  (0x0E31U, 0x0E31U),
+  (0x0E34U, 0x0E3AU),
+  (0x0E47U, 0x0E4EU),
+  (0x0EB1U, 0x0EB1U),
+  (0x0EB4U, 0x0EBCU),
+  (0x0EC8U, 0x0ECDU),
+  (0x0F18U, 0x0F19U),
+  (0x0F35U, 0x0F35U),
+  (0x0F37U, 0x0F37U),
+  (0x0F39U, 0x0F39U),
+  (0x0F71U, 0x0F7EU),
+  (0x0F80U, 0x0F84U),
+  (0x0F86U, 0x0F87U),
+  (0x0F8DU, 0x0F97U),
+  (0x0F99U, 0x0FBCU),
+  (0x0FC6U, 0x0FC6U),
+  (0x102DU, 0x1030U),
+  (0x1032U, 0x1037U),
+  (0x1039U, 0x103AU),
+  (0x103DU, 0x103EU),
+  (0x1058U, 0x1059U),
+  (0x105EU, 0x1060U),
+  (0x1071U, 0x1074U),
+  (0x1082U, 0x1082U),
+  (0x1085U, 0x1086U),
+  (0x108DU, 0x108DU),
+  (0x109DU, 0x109DU),
+  (0x135DU, 0x135FU),
+  (0x1712U, 0x1714U),
+  (0x1732U, 0x1734U),
+  (0x1752U, 0x1753U),
+  (0x1772U, 0x1773U),
+  (0x17B4U, 0x17B5U),
+  (0x17B7U, 0x17BDU),
+  (0x17C6U, 0x17C6U),
+  (0x17C9U, 0x17D3U),
+  (0x17DDU, 0x17DDU),
+  (0x180BU, 0x180FU),
+  (0x1885U, 0x1886U),
+  (0x18A9U, 0x18A9U),
+  (0x1920U, 0x1922U),
+  (0x1927U, 0x1928U),
+  (0x1932U, 0x1932U),
+  (0x1939U, 0x193BU),
+  (0x1A17U, 0x1A18U),
+  (0x1A1BU, 0x1A1BU),
+  (0x1A56U, 0x1A56U),
+  (0x1A58U, 0x1A5EU),
+  (0x1A60U, 0x1A60U),
+  (0x1A62U, 0x1A62U),
+  (0x1A65U, 0x1A6CU),
+  (0x1A73U, 0x1A7CU),
+  (0x1A7FU, 0x1A7FU),
+  (0x1AB0U, 0x1AC0U),
+  (0x1B00U, 0x1B03U),
+  (0x1B34U, 0x1B34U),
+  (0x1B36U, 0x1B3AU),
+  (0x1B3CU, 0x1B3CU),
+  (0x1B42U, 0x1B42U),
+  (0x1B6BU, 0x1B73U),
+  (0x1B80U, 0x1B81U),
+  (0x1BA2U, 0x1BA5U),
+  (0x1BA8U, 0x1BA9U),
+  (0x1BABU, 0x1BADU),
+  (0x1BE6U, 0x1BE6U),
+  (0x1BE8U, 0x1BE9U),
+  (0x1BEDU, 0x1BEDU),
+  (0x1BEFU, 0x1BF1U),
+  (0x1C2CU, 0x1C33U),
+  (0x1C36U, 0x1C37U),
+  (0x1CD0U, 0x1CD2U),
+  (0x1CD4U, 0x1CE0U),
+  (0x1CE2U, 0x1CE8U),
+  (0x1CEDU, 0x1CEDU),
+  (0x1CF4U, 0x1CF4U),
+  (0x1CF8U, 0x1CF9U),
+  (0x1DC0U, 0x1DFFU),
+  (0x200BU, 0x200FU),
+  (0x202AU, 0x202EU),
+  (0x2060U, 0x2064U),
+  (0x2066U, 0x206FU),
+  (0x20D0U, 0x20F0U),
+  (0x2DE0U, 0x2DFFU),
+  (0x302AU, 0x302FU),
+  (0x3099U, 0x309AU),
+  (0xA66FU, 0xA672U),
+  (0xA674U, 0xA67DU),
+  (0xA69EU, 0xA69FU),
+  (0xA6F0U, 0xA6F1U),
+  (0xA802U, 0xA802U),
+  (0xA806U, 0xA806U),
+  (0xA80BU, 0xA80BU),
+  (0xA825U, 0xA826U),
+  (0xA8C4U, 0xA8C5U),
+  (0xA8E0U, 0xA8F1U),
+  (0xA926U, 0xA92DU),
+  (0xA947U, 0xA951U),
+  (0xA980U, 0xA982U),
+  (0xA9B3U, 0xA9B3U),
+  (0xA9B6U, 0xA9B9U),
+  (0xA9BCU, 0xA9BCU),
+  (0xA9E5U, 0xA9E5U),
+  (0xAA29U, 0xAA2EU),
+  (0xAA31U, 0xAA32U),
+  (0xAA35U, 0xAA36U),
+  (0xAA43U, 0xAA43U),
+  (0xAA4CU, 0xAA4CU),
+  (0xAA7CU, 0xAA7CU),
+  (0xAAB0U, 0xAAB0U),
+  (0xAAB2U, 0xAAB4U),
+  (0xAAB7U, 0xAAB8U),
+  (0xAABEU, 0xAABFU),
+  (0xAAC1U, 0xAAC1U),
+  (0xAAECU, 0xAAEDU),
+  (0xAAF6U, 0xAAF6U),
+  (0xABE5U, 0xABE5U),
+  (0xABE8U, 0xABE8U),
+  (0xABEDU, 0xABEDU),
+  (0xFB1EU, 0xFB1EU),
+  (0xFE00U, 0xFE0FU),
+  (0xFE20U, 0xFE2FU),
+  (0xFEFFU, 0xFEFFU),
+  (0xFFF9U, 0xFFFBU),
+  (0x101FBU, 0x101FBU),
+  (0x10A01U, 0x10A03U),
+  (0x10A05U, 0x10A06U),
+  (0x10A0CU, 0x10A0FU),
+  (0x10A38U, 0x10A3AU),
+  (0x10A3FU, 0x10A3FU),
+  (0x10AE5U, 0x10AE6U),
+  (0x10D24U, 0x10D27U),
+  (0x10EABU, 0x10EACU),
+  (0x10F46U, 0x10F50U),
+  (0x11001U, 0x11001U),
+  (0x11038U, 0x11046U),
+  (0x1107FU, 0x11081U),
+  (0x110B3U, 0x110B6U),
+  (0x110B9U, 0x110BAU),
+  (0x11100U, 0x11102U),
+  (0x11127U, 0x1112BU),
+  (0x1112DU, 0x11134U),
+  (0x11173U, 0x11173U),
+  (0x11180U, 0x11181U),
+  (0x111B6U, 0x111BEU),
+  (0x111C9U, 0x111CCU),
+  (0x1122FU, 0x11231U),
+  (0x11234U, 0x11234U),
+  (0x11236U, 0x11237U),
+  (0x1123EU, 0x1123EU),
+  (0x112DFU, 0x112DFU),
+  (0x112E3U, 0x112EAU),
+  (0x11300U, 0x11301U),
+  (0x1133BU, 0x1133CU),
+  (0x11340U, 0x11340U),
+  (0x11366U, 0x1136CU),
+  (0x11370U, 0x11374U),
+  (0x11438U, 0x1143FU),
+  (0x11442U, 0x11444U),
+  (0x11446U, 0x11446U),
+  (0x1145EU, 0x1145EU),
+  (0x114B3U, 0x114B8U),
+  (0x114BAU, 0x114BAU),
+  (0x114BFU, 0x114C0U),
+  (0x114C2U, 0x114C3U),
+  (0x115B2U, 0x115B5U),
+  (0x115BCU, 0x115BDU),
+  (0x115BFU, 0x115C0U),
+  (0x115DCU, 0x115DDU),
+  (0x11633U, 0x1163AU),
+  (0x1163DU, 0x1163DU),
+  (0x1163FU, 0x11640U),
+  (0x116ABU, 0x116ABU),
+  (0x116ADU, 0x116ADU),
+  (0x116B0U, 0x116B5U),
+  (0x116B7U, 0x116B7U),
+  (0x1171DU, 0x1171FU),
+  (0x11722U, 0x11725U),
+  (0x11727U, 0x1172BU),
+  (0x1182FU, 0x11837U),
+  (0x11839U, 0x1183AU),
+  (0x1193BU, 0x1193CU),
+  (0x1193EU, 0x1193EU),
+  (0x11943U, 0x11943U),
+  (0x119D4U, 0x119D7U),
+  (0x119DAU, 0x119DBU),
+  (0x119E0U, 0x119E0U),
+  (0x11A01U, 0x11A0AU),
+  (0x11A33U, 0x11A38U),
+  (0x11A3BU, 0x11A3EU),
+  (0x11A47U, 0x11A47U),
+  (0x11A51U, 0x11A56U),
+  (0x11A59U, 0x11A5BU),
+  (0x11A8AU, 0x11A96U),
+  (0x11A98U, 0x11A99U),
+  (0x11C30U, 0x11C36U),
+  (0x11C38U, 0x11C3DU),
+  (0x11C3FU, 0x11C3FU),
+  (0x11C92U, 0x11CA7U),
+  (0x11CAAU, 0x11CB0U),
+  (0x11CB2U, 0x11CB3U),
+  (0x11CB5U, 0x11CB6U),
+  (0x11D31U, 0x11D36U),
+  (0x11D3AU, 0x11D3AU),
+  (0x11D3CU, 0x11D3DU),
+  (0x11D3FU, 0x11D45U),
+  (0x11D47U, 0x11D47U),
+  (0x11D90U, 0x11D91U),
+  (0x11D95U, 0x11D95U),
+  (0x11D97U, 0x11D97U),
+  (0x11EF3U, 0x11EF4U),
+  (0x13430U, 0x13438U),
+  (0x16AF0U, 0x16AF4U),
+  (0x16B30U, 0x16B36U),
+  (0x16F4FU, 0x16F4FU),
+  (0x16F8FU, 0x16F92U),
+  (0x16FE4U, 0x16FE4U),
+  (0x1BC9DU, 0x1BC9EU),
+  (0x1CF00U, 0x1CF2DU),
+  (0x1D167U, 0x1D169U),
+  (0x1D17BU, 0x1D182U),
+  (0x1D185U, 0x1D18BU),
+  (0x1D1AAU, 0x1D1ADU),
+  (0x1D242U, 0x1D244U),
+  (0x1DA00U, 0x1DA36U),
+  (0x1DA3BU, 0x1DA6CU),
+  (0x1DA75U, 0x1DA75U),
+  (0x1DA84U, 0x1DA84U),
+  (0x1DA9BU, 0x1DA9FU),
+  (0x1DAA1U, 0x1DAAFU),
+  (0x1E000U, 0x1E006U),
+  (0x1E008U, 0x1E018U),
+  (0x1E01BU, 0x1E021U),
+  (0x1E023U, 0x1E024U),
+  (0x1E026U, 0x1E02AU),
+  (0x1E08FU, 0x1E08FU),
+  (0x1E130U, 0x1E136U),
+  (0x1E2AEU, 0x1E2AEU),
+  (0x1E2ECU, 0x1E2EFU),
+  (0x1E4ECU, 0x1E4EFU),
+  (0x1E8D0U, 0x1E8D6U),
+  (0x1E944U, 0x1E94AU),
+  (0xE0100U, 0xE01EFU),
+]
+
+///|
+let wide_codepoint_ranges : ReadOnlyArray[(UInt, UInt)] = [
+  (0x1100U, 0x115FU),
+  (0x231AU, 0x231BU),
+  (0x2329U, 0x232AU),
+  (0x23E9U, 0x23ECU),
+  (0x23F0U, 0x23F0U),
+  (0x23F3U, 0x23F3U),
+  (0x25FDU, 0x25FEU),
+  (0x2614U, 0x2615U),
+  (0x2648U, 0x2653U),
+  (0x267FU, 0x267FU),
+  (0x2693U, 0x2693U),
+  (0x26A1U, 0x26A1U),
+  (0x26AAU, 0x26ABU),
+  (0x26BDU, 0x26BEU),
+  (0x26C4U, 0x26C5U),
+  (0x26CEU, 0x26CEU),
+  (0x26D4U, 0x26D4U),
+  (0x26EAU, 0x26EAU),
+  (0x26F2U, 0x26F3U),
+  (0x26F5U, 0x26F5U),
+  (0x26FAU, 0x26FAU),
+  (0x26FDU, 0x26FDU),
+  (0x2705U, 0x2705U),
+  (0x270AU, 0x270BU),
+  (0x2728U, 0x2728U),
+  (0x274CU, 0x274CU),
+  (0x274EU, 0x274EU),
+  (0x2753U, 0x2755U),
+  (0x2757U, 0x2757U),
+  (0x2795U, 0x2797U),
+  (0x27B0U, 0x27B0U),
+  (0x27BFU, 0x27BFU),
+  (0x2B1BU, 0x2B1CU),
+  (0x2B50U, 0x2B50U),
+  (0x2B55U, 0x2B55U),
+  (0x2E80U, 0x2FFBU),
+  (0x3000U, 0x303EU),
+  (0x3041U, 0x33FFU),
+  (0x3400U, 0x4DBFU),
+  (0x4E00U, 0xA4C6U),
+  (0xA960U, 0xA97CU),
+  (0xAC00U, 0xD7A3U),
+  (0xF900U, 0xFAFFU),
+  (0xFE10U, 0xFE19U),
+  (0xFE30U, 0xFE6BU),
+  (0xFF01U, 0xFF60U),
+  (0xFFE0U, 0xFFE6U),
+  (0x16FE0U, 0x16FE4U),
+  (0x17000U, 0x187F7U),
+  (0x18800U, 0x18CD5U),
+  (0x18D00U, 0x18D08U),
+  (0x1AFF0U, 0x1AFF3U),
+  (0x1AFF5U, 0x1AFFBU),
+  (0x1AFFDU, 0x1AFFEU),
+  (0x1B000U, 0x1B122U),
+  (0x1B132U, 0x1B132U),
+  (0x1B150U, 0x1B152U),
+  (0x1B155U, 0x1B155U),
+  (0x1B164U, 0x1B167U),
+  (0x1F004U, 0x1F004U),
+  (0x1F0CFU, 0x1F0CFU),
+  (0x1F18EU, 0x1F18EU),
+  (0x1F191U, 0x1F19AU),
+  (0x1F200U, 0x1F202U),
+  (0x1F210U, 0x1F23BU),
+  (0x1F240U, 0x1F248U),
+  (0x1F250U, 0x1F251U),
+  (0x1F260U, 0x1F265U),
+  (0x1F300U, 0x1F6D7U),
+  (0x1F6DCU, 0x1F6ECU),
+  (0x1F6F0U, 0x1F6FCU),
+  (0x1F7E0U, 0x1F7EBU),
+  (0x1F7F0U, 0x1F7F0U),
+  (0x1F90CU, 0x1F93AU),
+  (0x1F93CU, 0x1F945U),
+  (0x1F947U, 0x1F9FFU),
+  (0x1FA70U, 0x1FA7CU),
+  (0x1FA80U, 0x1FA88U),
+  (0x1FA90U, 0x1FABDU),
+  (0x1FABFU, 0x1FAC5U),
+  (0x1FACEU, 0x1FAD9U),
+  (0x1FADDU, 0x1FAE9U),
+  (0x1FAF0U, 0x1FAF8U),
+  (0x20000U, 0x2FFFDU),
+  (0x30000U, 0x3FFFDU),
+]
+
+///|
 fn is_zero_width(codepoint : UInt) -> Bool {
-  codepoint_in_range(codepoint, 0x0300U, 0x036FU) ||
-  codepoint_in_range(codepoint, 0x0483U, 0x0489U) ||
-  codepoint_in_range(codepoint, 0x0591U, 0x05BDU) ||
-  codepoint_in_range(codepoint, 0x05BFU, 0x05BFU) ||
-  codepoint_in_range(codepoint, 0x05C1U, 0x05C2U) ||
-  codepoint_in_range(codepoint, 0x05C4U, 0x05C5U) ||
-  codepoint_in_range(codepoint, 0x0610U, 0x061AU) ||
-  codepoint_in_range(codepoint, 0x064BU, 0x065FU) ||
-  codepoint_in_range(codepoint, 0x0670U, 0x0670U) ||
-  codepoint_in_range(codepoint, 0x06D6U, 0x06DCU) ||
-  codepoint_in_range(codepoint, 0x06DFU, 0x06E4U) ||
-  codepoint_in_range(codepoint, 0x06E7U, 0x06E8U) ||
-  codepoint_in_range(codepoint, 0x06EAU, 0x06EDU) ||
-  codepoint_in_range(codepoint, 0x0711U, 0x0711U) ||
-  codepoint_in_range(codepoint, 0x0730U, 0x074AU) ||
-  codepoint_in_range(codepoint, 0x07A6U, 0x07B0U) ||
-  codepoint_in_range(codepoint, 0x07EBU, 0x07F3U) ||
-  codepoint_in_range(codepoint, 0x0816U, 0x0819U) ||
-  codepoint_in_range(codepoint, 0x081BU, 0x0823U) ||
-  codepoint_in_range(codepoint, 0x0825U, 0x0827U) ||
-  codepoint_in_range(codepoint, 0x0829U, 0x082DU) ||
-  codepoint_in_range(codepoint, 0x0859U, 0x085BU) ||
-  codepoint_in_range(codepoint, 0x08D3U, 0x0902U) ||
-  codepoint_in_range(codepoint, 0x093AU, 0x093AU) ||
-  codepoint_in_range(codepoint, 0x093CU, 0x093CU) ||
-  codepoint_in_range(codepoint, 0x0941U, 0x0948U) ||
-  codepoint_in_range(codepoint, 0x094DU, 0x094DU) ||
-  codepoint_in_range(codepoint, 0x0951U, 0x0957U) ||
-  codepoint_in_range(codepoint, 0x0962U, 0x0963U) ||
-  codepoint_in_range(codepoint, 0x0981U, 0x0981U) ||
-  codepoint_in_range(codepoint, 0x09BCU, 0x09BCU) ||
-  codepoint_in_range(codepoint, 0x09C1U, 0x09C4U) ||
-  codepoint_in_range(codepoint, 0x09CDU, 0x09CDU) ||
-  codepoint_in_range(codepoint, 0x09E2U, 0x09E3U) ||
-  codepoint_in_range(codepoint, 0x0A01U, 0x0A02U) ||
-  codepoint_in_range(codepoint, 0x0A3CU, 0x0A3CU) ||
-  codepoint_in_range(codepoint, 0x0A41U, 0x0A42U) ||
-  codepoint_in_range(codepoint, 0x0A47U, 0x0A48U) ||
-  codepoint_in_range(codepoint, 0x0A4BU, 0x0A4DU) ||
-  codepoint_in_range(codepoint, 0x0A51U, 0x0A51U) ||
-  codepoint_in_range(codepoint, 0x0A70U, 0x0A71U) ||
-  codepoint_in_range(codepoint, 0x0A75U, 0x0A75U) ||
-  codepoint_in_range(codepoint, 0x0A81U, 0x0A82U) ||
-  codepoint_in_range(codepoint, 0x0ABCU, 0x0ABCU) ||
-  codepoint_in_range(codepoint, 0x0AC1U, 0x0AC5U) ||
-  codepoint_in_range(codepoint, 0x0AC7U, 0x0AC8U) ||
-  codepoint_in_range(codepoint, 0x0ACDU, 0x0ACDU) ||
-  codepoint_in_range(codepoint, 0x0AE2U, 0x0AE3U) ||
-  codepoint_in_range(codepoint, 0x0B3CU, 0x0B3CU) ||
-  codepoint_in_range(codepoint, 0x0B3FU, 0x0B3FU) ||
-  codepoint_in_range(codepoint, 0x0B41U, 0x0B44U) ||
-  codepoint_in_range(codepoint, 0x0B4DU, 0x0B4DU) ||
-  codepoint_in_range(codepoint, 0x0B56U, 0x0B56U) ||
-  codepoint_in_range(codepoint, 0x0B62U, 0x0B63U) ||
-  codepoint_in_range(codepoint, 0x0B82U, 0x0B82U) ||
-  codepoint_in_range(codepoint, 0x0BC0U, 0x0BC0U) ||
-  codepoint_in_range(codepoint, 0x0BCDU, 0x0BCDU) ||
-  codepoint_in_range(codepoint, 0x0C00U, 0x0C00U) ||
-  codepoint_in_range(codepoint, 0x0C04U, 0x0C04U) ||
-  codepoint_in_range(codepoint, 0x0C3EU, 0x0C40U) ||
-  codepoint_in_range(codepoint, 0x0C46U, 0x0C48U) ||
-  codepoint_in_range(codepoint, 0x0C4AU, 0x0C4DU) ||
-  codepoint_in_range(codepoint, 0x0C55U, 0x0C56U) ||
-  codepoint_in_range(codepoint, 0x0C62U, 0x0C63U) ||
-  codepoint_in_range(codepoint, 0x0C81U, 0x0C81U) ||
-  codepoint_in_range(codepoint, 0x0CBCU, 0x0CBCU) ||
-  codepoint_in_range(codepoint, 0x0CBFU, 0x0CBFU) ||
-  codepoint_in_range(codepoint, 0x0CC6U, 0x0CC6U) ||
-  codepoint_in_range(codepoint, 0x0CCCU, 0x0CCDU) ||
-  codepoint_in_range(codepoint, 0x0CE2U, 0x0CE3U) ||
-  codepoint_in_range(codepoint, 0x0D00U, 0x0D01U) ||
-  codepoint_in_range(codepoint, 0x0D3BU, 0x0D3CU) ||
-  codepoint_in_range(codepoint, 0x0D41U, 0x0D44U) ||
-  codepoint_in_range(codepoint, 0x0D4DU, 0x0D4DU) ||
-  codepoint_in_range(codepoint, 0x0D62U, 0x0D63U) ||
-  codepoint_in_range(codepoint, 0x0DCAU, 0x0DCAU) ||
-  codepoint_in_range(codepoint, 0x0DD2U, 0x0DD4U) ||
-  codepoint_in_range(codepoint, 0x0DD6U, 0x0DD6U) ||
-  codepoint_in_range(codepoint, 0x0E31U, 0x0E31U) ||
-  codepoint_in_range(codepoint, 0x0E34U, 0x0E3AU) ||
-  codepoint_in_range(codepoint, 0x0E47U, 0x0E4EU) ||
-  codepoint_in_range(codepoint, 0x0EB1U, 0x0EB1U) ||
-  codepoint_in_range(codepoint, 0x0EB4U, 0x0EBCU) ||
-  codepoint_in_range(codepoint, 0x0EC8U, 0x0ECDU) ||
-  codepoint_in_range(codepoint, 0x0F18U, 0x0F19U) ||
-  codepoint_in_range(codepoint, 0x0F35U, 0x0F35U) ||
-  codepoint_in_range(codepoint, 0x0F37U, 0x0F37U) ||
-  codepoint_in_range(codepoint, 0x0F39U, 0x0F39U) ||
-  codepoint_in_range(codepoint, 0x0F71U, 0x0F7EU) ||
-  codepoint_in_range(codepoint, 0x0F80U, 0x0F84U) ||
-  codepoint_in_range(codepoint, 0x0F86U, 0x0F87U) ||
-  codepoint_in_range(codepoint, 0x0F8DU, 0x0F97U) ||
-  codepoint_in_range(codepoint, 0x0F99U, 0x0FBCU) ||
-  codepoint_in_range(codepoint, 0x0FC6U, 0x0FC6U) ||
-  codepoint_in_range(codepoint, 0x102DU, 0x1030U) ||
-  codepoint_in_range(codepoint, 0x1032U, 0x1037U) ||
-  codepoint_in_range(codepoint, 0x1039U, 0x103AU) ||
-  codepoint_in_range(codepoint, 0x103DU, 0x103EU) ||
-  codepoint_in_range(codepoint, 0x1058U, 0x1059U) ||
-  codepoint_in_range(codepoint, 0x105EU, 0x1060U) ||
-  codepoint_in_range(codepoint, 0x1071U, 0x1074U) ||
-  codepoint_in_range(codepoint, 0x1082U, 0x1082U) ||
-  codepoint_in_range(codepoint, 0x1085U, 0x1086U) ||
-  codepoint_in_range(codepoint, 0x108DU, 0x108DU) ||
-  codepoint_in_range(codepoint, 0x109DU, 0x109DU) ||
-  codepoint_in_range(codepoint, 0x135DU, 0x135FU) ||
-  codepoint_in_range(codepoint, 0x1712U, 0x1714U) ||
-  codepoint_in_range(codepoint, 0x1732U, 0x1734U) ||
-  codepoint_in_range(codepoint, 0x1752U, 0x1753U) ||
-  codepoint_in_range(codepoint, 0x1772U, 0x1773U) ||
-  codepoint_in_range(codepoint, 0x17B4U, 0x17B5U) ||
-  codepoint_in_range(codepoint, 0x17B7U, 0x17BDU) ||
-  codepoint_in_range(codepoint, 0x17C6U, 0x17C6U) ||
-  codepoint_in_range(codepoint, 0x17C9U, 0x17D3U) ||
-  codepoint_in_range(codepoint, 0x17DDU, 0x17DDU) ||
-  codepoint_in_range(codepoint, 0x180BU, 0x180FU) ||
-  codepoint_in_range(codepoint, 0x1885U, 0x1886U) ||
-  codepoint_in_range(codepoint, 0x18A9U, 0x18A9U) ||
-  codepoint_in_range(codepoint, 0x1920U, 0x1922U) ||
-  codepoint_in_range(codepoint, 0x1927U, 0x1928U) ||
-  codepoint_in_range(codepoint, 0x1932U, 0x1932U) ||
-  codepoint_in_range(codepoint, 0x1939U, 0x193BU) ||
-  codepoint_in_range(codepoint, 0x1A17U, 0x1A18U) ||
-  codepoint_in_range(codepoint, 0x1A1BU, 0x1A1BU) ||
-  codepoint_in_range(codepoint, 0x1A56U, 0x1A56U) ||
-  codepoint_in_range(codepoint, 0x1A58U, 0x1A5EU) ||
-  codepoint_in_range(codepoint, 0x1A60U, 0x1A60U) ||
-  codepoint_in_range(codepoint, 0x1A62U, 0x1A62U) ||
-  codepoint_in_range(codepoint, 0x1A65U, 0x1A6CU) ||
-  codepoint_in_range(codepoint, 0x1A73U, 0x1A7CU) ||
-  codepoint_in_range(codepoint, 0x1A7FU, 0x1A7FU) ||
-  codepoint_in_range(codepoint, 0x1AB0U, 0x1AC0U) ||
-  codepoint_in_range(codepoint, 0x1B00U, 0x1B03U) ||
-  codepoint_in_range(codepoint, 0x1B34U, 0x1B34U) ||
-  codepoint_in_range(codepoint, 0x1B36U, 0x1B3AU) ||
-  codepoint_in_range(codepoint, 0x1B3CU, 0x1B3CU) ||
-  codepoint_in_range(codepoint, 0x1B42U, 0x1B42U) ||
-  codepoint_in_range(codepoint, 0x1B6BU, 0x1B73U) ||
-  codepoint_in_range(codepoint, 0x1B80U, 0x1B81U) ||
-  codepoint_in_range(codepoint, 0x1BA2U, 0x1BA5U) ||
-  codepoint_in_range(codepoint, 0x1BA8U, 0x1BA9U) ||
-  codepoint_in_range(codepoint, 0x1BABU, 0x1BADU) ||
-  codepoint_in_range(codepoint, 0x1BE6U, 0x1BE6U) ||
-  codepoint_in_range(codepoint, 0x1BE8U, 0x1BE9U) ||
-  codepoint_in_range(codepoint, 0x1BEDU, 0x1BEDU) ||
-  codepoint_in_range(codepoint, 0x1BEFU, 0x1BF1U) ||
-  codepoint_in_range(codepoint, 0x1C2CU, 0x1C33U) ||
-  codepoint_in_range(codepoint, 0x1C36U, 0x1C37U) ||
-  codepoint_in_range(codepoint, 0x1CD0U, 0x1CD2U) ||
-  codepoint_in_range(codepoint, 0x1CD4U, 0x1CE0U) ||
-  codepoint_in_range(codepoint, 0x1CE2U, 0x1CE8U) ||
-  codepoint_in_range(codepoint, 0x1CEDU, 0x1CEDU) ||
-  codepoint_in_range(codepoint, 0x1CF4U, 0x1CF4U) ||
-  codepoint_in_range(codepoint, 0x1CF8U, 0x1CF9U) ||
-  codepoint_in_range(codepoint, 0x1DC0U, 0x1DFFU) ||
-  codepoint_in_range(codepoint, 0x200BU, 0x200FU) ||
-  codepoint_in_range(codepoint, 0x202AU, 0x202EU) ||
-  codepoint_in_range(codepoint, 0x2060U, 0x2064U) ||
-  codepoint_in_range(codepoint, 0x2066U, 0x206FU) ||
-  codepoint_in_range(codepoint, 0x20D0U, 0x20F0U) ||
-  codepoint_in_range(codepoint, 0x2DE0U, 0x2DFFU) ||
-  codepoint_in_range(codepoint, 0x302AU, 0x302FU) ||
-  codepoint_in_range(codepoint, 0x3099U, 0x309AU) ||
-  codepoint_in_range(codepoint, 0xA66FU, 0xA672U) ||
-  codepoint_in_range(codepoint, 0xA674U, 0xA67DU) ||
-  codepoint_in_range(codepoint, 0xA69EU, 0xA69FU) ||
-  codepoint_in_range(codepoint, 0xA6F0U, 0xA6F1U) ||
-  codepoint_in_range(codepoint, 0xA802U, 0xA802U) ||
-  codepoint_in_range(codepoint, 0xA806U, 0xA806U) ||
-  codepoint_in_range(codepoint, 0xA80BU, 0xA80BU) ||
-  codepoint_in_range(codepoint, 0xA825U, 0xA826U) ||
-  codepoint_in_range(codepoint, 0xA8C4U, 0xA8C5U) ||
-  codepoint_in_range(codepoint, 0xA8E0U, 0xA8F1U) ||
-  codepoint_in_range(codepoint, 0xA926U, 0xA92DU) ||
-  codepoint_in_range(codepoint, 0xA947U, 0xA951U) ||
-  codepoint_in_range(codepoint, 0xA980U, 0xA982U) ||
-  codepoint_in_range(codepoint, 0xA9B3U, 0xA9B3U) ||
-  codepoint_in_range(codepoint, 0xA9B6U, 0xA9B9U) ||
-  codepoint_in_range(codepoint, 0xA9BCU, 0xA9BCU) ||
-  codepoint_in_range(codepoint, 0xA9E5U, 0xA9E5U) ||
-  codepoint_in_range(codepoint, 0xAA29U, 0xAA2EU) ||
-  codepoint_in_range(codepoint, 0xAA31U, 0xAA32U) ||
-  codepoint_in_range(codepoint, 0xAA35U, 0xAA36U) ||
-  codepoint_in_range(codepoint, 0xAA43U, 0xAA43U) ||
-  codepoint_in_range(codepoint, 0xAA4CU, 0xAA4CU) ||
-  codepoint_in_range(codepoint, 0xAA7CU, 0xAA7CU) ||
-  codepoint_in_range(codepoint, 0xAAB0U, 0xAAB0U) ||
-  codepoint_in_range(codepoint, 0xAAB2U, 0xAAB4U) ||
-  codepoint_in_range(codepoint, 0xAAB7U, 0xAAB8U) ||
-  codepoint_in_range(codepoint, 0xAABEU, 0xAABFU) ||
-  codepoint_in_range(codepoint, 0xAAC1U, 0xAAC1U) ||
-  codepoint_in_range(codepoint, 0xAAECU, 0xAAEDU) ||
-  codepoint_in_range(codepoint, 0xAAF6U, 0xAAF6U) ||
-  codepoint_in_range(codepoint, 0xABE5U, 0xABE5U) ||
-  codepoint_in_range(codepoint, 0xABE8U, 0xABE8U) ||
-  codepoint_in_range(codepoint, 0xABEDU, 0xABEDU) ||
-  codepoint_in_range(codepoint, 0xFB1EU, 0xFB1EU) ||
-  codepoint_in_range(codepoint, 0xFE00U, 0xFE0FU) ||
-  codepoint_in_range(codepoint, 0xFE20U, 0xFE2FU) ||
-  codepoint_in_range(codepoint, 0xFEFFU, 0xFEFFU) ||
-  codepoint_in_range(codepoint, 0xFFF9U, 0xFFFB) ||
-  codepoint_in_range(codepoint, 0x101FBU, 0x101FBU) ||
-  codepoint_in_range(codepoint, 0x10A01U, 0x10A03U) ||
-  codepoint_in_range(codepoint, 0x10A05U, 0x10A06U) ||
-  codepoint_in_range(codepoint, 0x10A0CU, 0x10A0FU) ||
-  codepoint_in_range(codepoint, 0x10A38U, 0x10A3AU) ||
-  codepoint_in_range(codepoint, 0x10A3FU, 0x10A3FU) ||
-  codepoint_in_range(codepoint, 0x10AE5U, 0x10AE6U) ||
-  codepoint_in_range(codepoint, 0x10D24U, 0x10D27U) ||
-  codepoint_in_range(codepoint, 0x10EABU, 0x10EACU) ||
-  codepoint_in_range(codepoint, 0x10F46U, 0x10F50U) ||
-  codepoint_in_range(codepoint, 0x11001U, 0x11001U) ||
-  codepoint_in_range(codepoint, 0x11038U, 0x11046U) ||
-  codepoint_in_range(codepoint, 0x1107FU, 0x11081U) ||
-  codepoint_in_range(codepoint, 0x110B3U, 0x110B6U) ||
-  codepoint_in_range(codepoint, 0x110B9U, 0x110BAU) ||
-  codepoint_in_range(codepoint, 0x11100U, 0x11102U) ||
-  codepoint_in_range(codepoint, 0x11127U, 0x1112BU) ||
-  codepoint_in_range(codepoint, 0x1112DU, 0x11134U) ||
-  codepoint_in_range(codepoint, 0x11173U, 0x11173U) ||
-  codepoint_in_range(codepoint, 0x11180U, 0x11181U) ||
-  codepoint_in_range(codepoint, 0x111B6U, 0x111BEU) ||
-  codepoint_in_range(codepoint, 0x111C9U, 0x111CCU) ||
-  codepoint_in_range(codepoint, 0x1122FU, 0x11231U) ||
-  codepoint_in_range(codepoint, 0x11234U, 0x11234U) ||
-  codepoint_in_range(codepoint, 0x11236U, 0x11237U) ||
-  codepoint_in_range(codepoint, 0x1123EU, 0x1123EU) ||
-  codepoint_in_range(codepoint, 0x112DFU, 0x112DFU) ||
-  codepoint_in_range(codepoint, 0x112E3U, 0x112EAU) ||
-  codepoint_in_range(codepoint, 0x11300U, 0x11301U) ||
-  codepoint_in_range(codepoint, 0x1133BU, 0x1133CU) ||
-  codepoint_in_range(codepoint, 0x11340U, 0x11340U) ||
-  codepoint_in_range(codepoint, 0x11366U, 0x1136CU) ||
-  codepoint_in_range(codepoint, 0x11370U, 0x11374U) ||
-  codepoint_in_range(codepoint, 0x11438U, 0x1143FU) ||
-  codepoint_in_range(codepoint, 0x11442U, 0x11444U) ||
-  codepoint_in_range(codepoint, 0x11446U, 0x11446U) ||
-  codepoint_in_range(codepoint, 0x1145EU, 0x1145EU) ||
-  codepoint_in_range(codepoint, 0x114B3U, 0x114B8U) ||
-  codepoint_in_range(codepoint, 0x114BAU, 0x114BAU) ||
-  codepoint_in_range(codepoint, 0x114BFU, 0x114C0U) ||
-  codepoint_in_range(codepoint, 0x114C2U, 0x114C3U) ||
-  codepoint_in_range(codepoint, 0x115B2U, 0x115B5U) ||
-  codepoint_in_range(codepoint, 0x115BCU, 0x115BDU) ||
-  codepoint_in_range(codepoint, 0x115BFU, 0x115C0U) ||
-  codepoint_in_range(codepoint, 0x115DCU, 0x115DDU) ||
-  codepoint_in_range(codepoint, 0x11633U, 0x1163AU) ||
-  codepoint_in_range(codepoint, 0x1163DU, 0x1163DU) ||
-  codepoint_in_range(codepoint, 0x1163FU, 0x11640U) ||
-  codepoint_in_range(codepoint, 0x116ABU, 0x116ABU) ||
-  codepoint_in_range(codepoint, 0x116ADU, 0x116ADU) ||
-  codepoint_in_range(codepoint, 0x116B0U, 0x116B5U) ||
-  codepoint_in_range(codepoint, 0x116B7U, 0x116B7U) ||
-  codepoint_in_range(codepoint, 0x1171DU, 0x1171FU) ||
-  codepoint_in_range(codepoint, 0x11722U, 0x11725U) ||
-  codepoint_in_range(codepoint, 0x11727U, 0x1172BU) ||
-  codepoint_in_range(codepoint, 0x1182FU, 0x11837U) ||
-  codepoint_in_range(codepoint, 0x11839U, 0x1183AU) ||
-  codepoint_in_range(codepoint, 0x1193BU, 0x1193CU) ||
-  codepoint_in_range(codepoint, 0x1193EU, 0x1193EU) ||
-  codepoint_in_range(codepoint, 0x11943U, 0x11943U) ||
-  codepoint_in_range(codepoint, 0x119D4U, 0x119D7U) ||
-  codepoint_in_range(codepoint, 0x119DAU, 0x119DBU) ||
-  codepoint_in_range(codepoint, 0x119E0U, 0x119E0U) ||
-  codepoint_in_range(codepoint, 0x11A01U, 0x11A0AU) ||
-  codepoint_in_range(codepoint, 0x11A33U, 0x11A38U) ||
-  codepoint_in_range(codepoint, 0x11A3BU, 0x11A3EU) ||
-  codepoint_in_range(codepoint, 0x11A47U, 0x11A47U) ||
-  codepoint_in_range(codepoint, 0x11A51U, 0x11A56U) ||
-  codepoint_in_range(codepoint, 0x11A59U, 0x11A5BU) ||
-  codepoint_in_range(codepoint, 0x11A8AU, 0x11A96U) ||
-  codepoint_in_range(codepoint, 0x11A98U, 0x11A99U) ||
-  codepoint_in_range(codepoint, 0x11C30U, 0x11C36U) ||
-  codepoint_in_range(codepoint, 0x11C38U, 0x11C3DU) ||
-  codepoint_in_range(codepoint, 0x11C3FU, 0x11C3FU) ||
-  codepoint_in_range(codepoint, 0x11C92U, 0x11CA7U) ||
-  codepoint_in_range(codepoint, 0x11CAAU, 0x11CB0U) ||
-  codepoint_in_range(codepoint, 0x11CB2U, 0x11CB3U) ||
-  codepoint_in_range(codepoint, 0x11CB5U, 0x11CB6U) ||
-  codepoint_in_range(codepoint, 0x11D31U, 0x11D36U) ||
-  codepoint_in_range(codepoint, 0x11D3AU, 0x11D3AU) ||
-  codepoint_in_range(codepoint, 0x11D3CU, 0x11D3DU) ||
-  codepoint_in_range(codepoint, 0x11D3FU, 0x11D45U) ||
-  codepoint_in_range(codepoint, 0x11D47U, 0x11D47U) ||
-  codepoint_in_range(codepoint, 0x11D90U, 0x11D91U) ||
-  codepoint_in_range(codepoint, 0x11D95U, 0x11D95U) ||
-  codepoint_in_range(codepoint, 0x11D97U, 0x11D97U) ||
-  codepoint_in_range(codepoint, 0x11EF3U, 0x11EF4U) ||
-  codepoint_in_range(codepoint, 0x13430U, 0x13438U) ||
-  codepoint_in_range(codepoint, 0x16AF0U, 0x16AF4U) ||
-  codepoint_in_range(codepoint, 0x16B30U, 0x16B36U) ||
-  codepoint_in_range(codepoint, 0x16F4FU, 0x16F4FU) ||
-  codepoint_in_range(codepoint, 0x16F8FU, 0x16F92U) ||
-  codepoint_in_range(codepoint, 0x16FE4U, 0x16FE4U) ||
-  codepoint_in_range(codepoint, 0x1BC9DU, 0x1BC9EU) ||
-  codepoint_in_range(codepoint, 0x1CF00U, 0x1CF2DU) ||
-  codepoint_in_range(codepoint, 0x1D167U, 0x1D169U) ||
-  codepoint_in_range(codepoint, 0x1D17BU, 0x1D182U) ||
-  codepoint_in_range(codepoint, 0x1D185U, 0x1D18BU) ||
-  codepoint_in_range(codepoint, 0x1D1AAU, 0x1D1ADU) ||
-  codepoint_in_range(codepoint, 0x1D242U, 0x1D244U) ||
-  codepoint_in_range(codepoint, 0x1DA00U, 0x1DA36U) ||
-  codepoint_in_range(codepoint, 0x1DA3BU, 0x1DA6CU) ||
-  codepoint_in_range(codepoint, 0x1DA75U, 0x1DA75U) ||
-  codepoint_in_range(codepoint, 0x1DA84U, 0x1DA84U) ||
-  codepoint_in_range(codepoint, 0x1DA9BU, 0x1DA9FU) ||
-  codepoint_in_range(codepoint, 0x1DAA1U, 0x1DAAFU) ||
-  codepoint_in_range(codepoint, 0x1E000U, 0x1E006U) ||
-  codepoint_in_range(codepoint, 0x1E008U, 0x1E018U) ||
-  codepoint_in_range(codepoint, 0x1E01BU, 0x1E021U) ||
-  codepoint_in_range(codepoint, 0x1E023U, 0x1E024U) ||
-  codepoint_in_range(codepoint, 0x1E026U, 0x1E02AU) ||
-  codepoint_in_range(codepoint, 0x1E08FU, 0x1E08FU) ||
-  codepoint_in_range(codepoint, 0x1E130U, 0x1E136U) ||
-  codepoint_in_range(codepoint, 0x1E2AEU, 0x1E2AEU) ||
-  codepoint_in_range(codepoint, 0x1E2ECU, 0x1E2EFU) ||
-  codepoint_in_range(codepoint, 0x1E4ECU, 0x1E4EFU) ||
-  codepoint_in_range(codepoint, 0x1E8D0U, 0x1E8D6U) ||
-  codepoint_in_range(codepoint, 0x1E944U, 0x1E94AU) ||
-  codepoint_in_range(codepoint, 0xE0100U, 0xE01EFU)
+  codepoint_in_ranges(codepoint, zero_width_codepoint_ranges[:])
 }
 
 ///|
 fn is_wide_codepoint(codepoint : UInt) -> Bool {
-  codepoint_in_range(codepoint, 0x1100U, 0x115FU) ||
-  codepoint_in_range(codepoint, 0x231AU, 0x231BU) ||
-  codepoint_in_range(codepoint, 0x2329U, 0x232AU) ||
-  codepoint_in_range(codepoint, 0x23E9U, 0x23ECU) ||
-  codepoint_in_range(codepoint, 0x23F0U, 0x23F0U) ||
-  codepoint_in_range(codepoint, 0x23F3U, 0x23F3U) ||
-  codepoint_in_range(codepoint, 0x25FDU, 0x25FEU) ||
-  codepoint_in_range(codepoint, 0x2614U, 0x2615U) ||
-  codepoint_in_range(codepoint, 0x2648U, 0x2653U) ||
-  codepoint_in_range(codepoint, 0x267FU, 0x267FU) ||
-  codepoint_in_range(codepoint, 0x2693U, 0x2693U) ||
-  codepoint_in_range(codepoint, 0x26A1U, 0x26A1U) ||
-  codepoint_in_range(codepoint, 0x26AAU, 0x26ABU) ||
-  codepoint_in_range(codepoint, 0x26BDU, 0x26BEU) ||
-  codepoint_in_range(codepoint, 0x26C4U, 0x26C5U) ||
-  codepoint_in_range(codepoint, 0x26CEU, 0x26CEU) ||
-  codepoint_in_range(codepoint, 0x26D4U, 0x26D4U) ||
-  codepoint_in_range(codepoint, 0x26EAU, 0x26EAU) ||
-  codepoint_in_range(codepoint, 0x26F2U, 0x26F3U) ||
-  codepoint_in_range(codepoint, 0x26F5U, 0x26F5U) ||
-  codepoint_in_range(codepoint, 0x26FAU, 0x26FAU) ||
-  codepoint_in_range(codepoint, 0x26FDU, 0x26FDU) ||
-  codepoint_in_range(codepoint, 0x2705U, 0x2705U) ||
-  codepoint_in_range(codepoint, 0x270AU, 0x270BU) ||
-  codepoint_in_range(codepoint, 0x2728U, 0x2728U) ||
-  codepoint_in_range(codepoint, 0x274CU, 0x274CU) ||
-  codepoint_in_range(codepoint, 0x274EU, 0x274EU) ||
-  codepoint_in_range(codepoint, 0x2753U, 0x2755U) ||
-  codepoint_in_range(codepoint, 0x2757U, 0x2757U) ||
-  codepoint_in_range(codepoint, 0x2795U, 0x2797U) ||
-  codepoint_in_range(codepoint, 0x27B0U, 0x27B0U) ||
-  codepoint_in_range(codepoint, 0x27BFU, 0x27BFU) ||
-  codepoint_in_range(codepoint, 0x2B1BU, 0x2B1CU) ||
-  codepoint_in_range(codepoint, 0x2B50U, 0x2B50U) ||
-  codepoint_in_range(codepoint, 0x2B55U, 0x2B55U) ||
-  codepoint_in_range(codepoint, 0x2E80U, 0x2FFBU) ||
-  codepoint_in_range(codepoint, 0x3000U, 0x303EU) ||
-  codepoint_in_range(codepoint, 0x3041U, 0x33FFU) ||
-  codepoint_in_range(codepoint, 0x3400U, 0x4DBFU) ||
-  codepoint_in_range(codepoint, 0x4E00U, 0xA4C6U) ||
-  codepoint_in_range(codepoint, 0xA960U, 0xA97CU) ||
-  codepoint_in_range(codepoint, 0xAC00U, 0xD7A3U) ||
-  codepoint_in_range(codepoint, 0xF900U, 0xFAFFU) ||
-  codepoint_in_range(codepoint, 0xFE10U, 0xFE19U) ||
-  codepoint_in_range(codepoint, 0xFE30U, 0xFE6BU) ||
-  codepoint_in_range(codepoint, 0xFF01U, 0xFF60U) ||
-  codepoint_in_range(codepoint, 0xFFE0U, 0xFFE6U) ||
-  codepoint_in_range(codepoint, 0x16FE0U, 0x16FE4U) ||
-  codepoint_in_range(codepoint, 0x17000U, 0x187F7U) ||
-  codepoint_in_range(codepoint, 0x18800U, 0x18CD5U) ||
-  codepoint_in_range(codepoint, 0x18D00U, 0x18D08U) ||
-  codepoint_in_range(codepoint, 0x1AFF0U, 0x1AFF3U) ||
-  codepoint_in_range(codepoint, 0x1AFF5U, 0x1AFFBU) ||
-  codepoint_in_range(codepoint, 0x1AFFDU, 0x1AFFEU) ||
-  codepoint_in_range(codepoint, 0x1B000U, 0x1B122U) ||
-  codepoint_in_range(codepoint, 0x1B132U, 0x1B132U) ||
-  codepoint_in_range(codepoint, 0x1B150U, 0x1B152U) ||
-  codepoint_in_range(codepoint, 0x1B155U, 0x1B155U) ||
-  codepoint_in_range(codepoint, 0x1B164U, 0x1B167U) ||
-  codepoint_in_range(codepoint, 0x1F004U, 0x1F004U) ||
-  codepoint_in_range(codepoint, 0x1F0CFU, 0x1F0CFU) ||
-  codepoint_in_range(codepoint, 0x1F18EU, 0x1F18EU) ||
-  codepoint_in_range(codepoint, 0x1F191U, 0x1F19AU) ||
-  codepoint_in_range(codepoint, 0x1F200U, 0x1F202U) ||
-  codepoint_in_range(codepoint, 0x1F210U, 0x1F23BU) ||
-  codepoint_in_range(codepoint, 0x1F240U, 0x1F248U) ||
-  codepoint_in_range(codepoint, 0x1F250U, 0x1F251U) ||
-  codepoint_in_range(codepoint, 0x1F260U, 0x1F265U) ||
-  codepoint_in_range(codepoint, 0x1F300U, 0x1F6D7U) ||
-  codepoint_in_range(codepoint, 0x1F6DCU, 0x1F6ECU) ||
-  codepoint_in_range(codepoint, 0x1F6F0U, 0x1F6FCU) ||
-  codepoint_in_range(codepoint, 0x1F7E0U, 0x1F7EBU) ||
-  codepoint_in_range(codepoint, 0x1F7F0U, 0x1F7F0U) ||
-  codepoint_in_range(codepoint, 0x1F90CU, 0x1F93AU) ||
-  codepoint_in_range(codepoint, 0x1F93CU, 0x1F945U) ||
-  codepoint_in_range(codepoint, 0x1F947U, 0x1F9FFU) ||
-  codepoint_in_range(codepoint, 0x1FA70U, 0x1FA7CU) ||
-  codepoint_in_range(codepoint, 0x1FA80U, 0x1FA88U) ||
-  codepoint_in_range(codepoint, 0x1FA90U, 0x1FABDU) ||
-  codepoint_in_range(codepoint, 0x1FABFU, 0x1FAC5U) ||
-  codepoint_in_range(codepoint, 0x1FACEU, 0x1FAD9U) ||
-  codepoint_in_range(codepoint, 0x1FADDU, 0x1FAE9U) ||
-  codepoint_in_range(codepoint, 0x1FAF0U, 0x1FAF8U) ||
-  codepoint_in_range(codepoint, 0x20000U, 0x2FFFD) ||
-  codepoint_in_range(codepoint, 0x30000U, 0x3FFFD)
+  codepoint_in_ranges(codepoint, wide_codepoint_ranges[:])
+}
+
+///|
+fn codepoint_in_ranges(
+  codepoint : UInt,
+  ranges : ArrayView[(UInt, UInt)],
+) -> Bool {
+  for range in ranges {
+    if codepoint_in_range(codepoint, range.0, range.1) {
+      return true
+    }
+  }
+  false
 }
 
 ///|

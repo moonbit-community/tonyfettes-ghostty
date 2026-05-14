@@ -25,34 +25,6 @@ fn StreamTerminalBridgeState::colors(
 }
 
 ///|
-fn StreamTerminalBridgeState::cursor_top_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.top_margin()
-}
-
-///|
-fn StreamTerminalBridgeState::cursor_bottom_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.bottom_margin()
-}
-
-///|
-fn StreamTerminalBridgeState::cursor_left_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.left_margin()
-}
-
-///|
-fn StreamTerminalBridgeState::cursor_right_margin(
-  self : StreamTerminalBridgeState,
-) -> CellCountInt {
-  self.cursor.right_margin()
-}
-
-///|
 fn StreamTerminalBridgeState::mouse_shift_capture(
   self : StreamTerminalBridgeState,
 ) -> Bool? {

@@ -7,8 +7,8 @@ pub(all) enum CursorVisualStyle {
 
 ///|
 struct TerminalCursorState {
-  rows : CellCountInt
-  columns : CellCountInt
+  mut rows : CellCountInt
+  mut columns : CellCountInt
   mut x : CellCountInt
   mut y : CellCountInt
   mut visual_style : CursorVisualStyle
@@ -216,6 +216,27 @@ pub fn TerminalCursorState::full_reset(self : TerminalCursorState) -> Unit {
 }
 
 ///|
+fn TerminalCursorState::resize(
+  self : TerminalCursorState,
+  rows : CellCountInt,
+  columns : CellCountInt,
+) -> Unit {
+  let actual_rows = nonzero_dimension(rows)
+  let actual_columns = nonzero_dimension(columns)
+  self.rows = actual_rows
+  self.columns = actual_columns
+  self.x = min_cursor_coordinate(self.x, actual_columns)
+  self.y = min_cursor_coordinate(self.y, actual_rows)
+  self.top_margin = 0
+  self.bottom_margin = actual_rows - 1
+  self.left_margin = 0
+  self.right_margin = actual_columns - 1
+  if self.x < actual_columns - 1 {
+    self.pending_wrap = false
+  }
+}
+
+///|
 fn nonzero_dimension(value : CellCountInt) -> CellCountInt {
   if value == 0 {
     1
@@ -251,4 +272,16 @@ fn bounded_one_indexed_position(
   let adjusted = value + offset
   let bounded = if adjusted > limit { limit } else { adjusted }
   (bounded - 1).to_uint16()
+}
+
+///|
+fn min_cursor_coordinate(
+  value : CellCountInt,
+  limit : CellCountInt,
+) -> CellCountInt {
+  if value >= limit {
+    limit - 1
+  } else {
+    value
+  }
 }

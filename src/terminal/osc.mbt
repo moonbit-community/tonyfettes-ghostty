@@ -923,7 +923,7 @@ fn parse_get_set_ansi_color(
   body : String,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_string()).collect()
+  let parts = body.split(";").map(part => part.to_owned()).collect()
   let mut index = 0
   while index + 1 < parts.length() {
     let color = match parse_decimal(parts[index]) {
@@ -956,7 +956,7 @@ fn parse_reset_ansi_color(
   body : String,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_string()).collect()
+  let parts = body.split(";").map(part => part.to_owned()).collect()
   let mut saw_value = false
   for part in parts {
     let text = part
@@ -986,7 +986,7 @@ fn parse_get_set_dynamic_color(
   body : String,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_string()).collect()
+  let parts = body.split(";").map(part => part.to_owned()).collect()
   let mut current = Some(start)
   for part in parts {
     let dynamic = match current {
@@ -1017,7 +1017,7 @@ fn parse_reset_dynamic_color(
   dynamic : Dynamic,
   body : String,
 ) -> Array[ColorRequest] {
-  let parts = body.split(";").map(part => part.to_string()).collect()
+  let parts = body.split(";").map(part => part.to_owned()).collect()
   let mut saw_non_empty = false
   for part in parts {
     if part != "" {

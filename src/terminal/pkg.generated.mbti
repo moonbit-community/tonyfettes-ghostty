@@ -331,8 +331,6 @@ pub fn Coordinate::x(Self) -> UInt16
 pub fn Coordinate::y(Self) -> UInt
 
 pub(all) struct CursorMovement(UInt16) derive(Eq, @debug.Debug)
-#deprecated
-pub fn CursorMovement::inner(Self) -> UInt16
 
 pub(all) struct CursorPosition {
   row : UInt16
@@ -832,8 +830,6 @@ pub fn KittyImage::number(Self) -> UInt
 pub fn KittyImage::width(Self) -> UInt
 
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
-#deprecated
-pub fn KittyKeyboardFlags::inner(Self) -> Byte
 
 type KittyKeyboardState derive(Eq, @debug.Debug)
 pub fn KittyKeyboardState::current(Self) -> KittyKeyboardFlags
@@ -1311,6 +1307,7 @@ pub fn RenderState::cursor_visible(Self) -> Bool
 pub fn RenderState::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn RenderState::dirty(Self) -> RenderDirty
 pub fn RenderState::foreground_color(Self) -> RGB
+pub fn RenderState::format_vt_framebuffer(Self) -> Bytes
 pub fn RenderState::new() -> Self
 pub fn RenderState::palette(Self) -> Array[RGB]
 pub fn RenderState::row_iterator(Self) -> RenderRowIterator
@@ -1688,8 +1685,12 @@ pub fn StreamTerminal::clear_title_changed(Self) -> Unit
 pub fn StreamTerminal::clear_write_pty(Self) -> Unit
 pub fn StreamTerminal::clear_xtversion(Self) -> Unit
 pub fn StreamTerminal::columns(Self) -> UInt16
+pub fn StreamTerminal::cursor_bottom_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_color(Self) -> RGB?
+pub fn StreamTerminal::cursor_left_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_pending_wrap(Self) -> Bool
+pub fn StreamTerminal::cursor_right_margin(Self) -> UInt16
+pub fn StreamTerminal::cursor_top_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_visible(Self) -> Bool
 pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
@@ -1700,6 +1701,7 @@ pub fn StreamTerminal::default_foreground_color(Self) -> RGB?
 pub fn StreamTerminal::default_palette(Self) -> Array[RGB]
 pub fn StreamTerminal::deinit(Self) -> Unit
 pub fn StreamTerminal::foreground_color(Self) -> RGB?
+pub fn StreamTerminal::format_scrollback_rows_since(Self, UInt64?) -> (Bytes, UInt64?)
 pub fn StreamTerminal::grid_ref(Self, Point) -> GridRef?
 pub fn StreamTerminal::grid_ref_cell(Self, GridRef) -> PageCellState?
 pub fn StreamTerminal::grid_ref_graphemes(Self, GridRef) -> Array[UInt]?
@@ -1743,6 +1745,7 @@ pub fn StreamTerminal::set_title(Self, String) -> Unit
 pub fn StreamTerminal::set_title_changed(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_write_pty(Self, (Bytes) -> Unit) -> Unit
 pub fn StreamTerminal::set_xtversion(Self, () -> String) -> Unit
+pub fn StreamTerminal::take_scrollback_cleared(Self) -> Bool
 pub fn StreamTerminal::title(Self) -> String?
 pub fn StreamTerminal::total_rows(Self) -> UInt
 pub fn StreamTerminal::width_px(Self) -> UInt
