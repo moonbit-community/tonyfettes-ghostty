@@ -57,6 +57,13 @@ priv struct PageListPin {
 }
 
 ///|
+priv enum PageListViewport {
+  Active
+  Top
+  Pin
+}
+
+///|
 priv struct PageList {
   max_rows : Int
   mut rows : CellCountInt
@@ -67,10 +74,11 @@ priv struct PageList {
   mut history : Array[PageListRow]
   mut visible_row_ids : Array[UInt64]
   mut next_row_id : UInt64
-  mut viewport_offset : Int
+  mut viewport : PageListViewport
   mut tracked_pins : Array[PageListPin]
   mut next_pin_id : UInt64
-  mut viewport_pin : UInt64?
+  mut viewport_pin : UInt64
+  mut viewport_pin_row_offset : Int?
 }
 
 ///|
@@ -145,12 +153,15 @@ fn PageList::new(
     history: [],
     visible_row_ids: [],
     next_row_id: 0UL,
-    viewport_offset: 0,
+    viewport: PageListViewport::Active,
     tracked_pins: [],
     next_pin_id: 0UL,
-    viewport_pin: None,
+    viewport_pin: 0UL,
+    viewport_pin_row_offset: None,
   }
   state.reset_visible_row_ids(state.rows.to_int())
+  state.viewport_pin = state.track_pin(active_node, 0, 0)
+  state.relink_nodes()
   state
 }
 
@@ -172,6 +183,23 @@ fn PageList::scrollback_rows(self : PageList) -> UInt {
 ///|
 fn PageList::total_rows(self : PageList, visible_rows : CellCountInt) -> UInt {
   visible_rows.to_uint() + self.scrollback_rows()
+}
+
+///|
+fn PageList::total_rows_int(self : PageList) -> Int {
+  let mut total = 0
+  let mut node = self.first
+  let mut done = false
+  while !done {
+    match node {
+      Some(current) => {
+        total += current.page.rows.to_int()
+        node = current.next
+      }
+      None => done = true
+    }
+  }
+  total
 }
 
 ///|
@@ -229,24 +257,28 @@ fn PageList::cell(
 
 ///|
 fn PageList::scroll_top(self : PageList) -> Unit {
-  self.set_viewport_row_offset(0)
+  if self.max_rows <= 0 {
+    self.viewport = PageListViewport::Active
+  } else {
+    self.viewport = PageListViewport::Top
+  }
+  self.viewport_pin_row_offset = None
 }
 
 ///|
 fn PageList::scroll_bottom(self : PageList) -> Unit {
-  self.viewport_offset = 0
-  self.clear_viewport_pin()
+  self.viewport = PageListViewport::Active
+  self.viewport_pin_row_offset = None
 }
 
 ///|
 fn PageList::scroll_delta(self : PageList, delta : Int) -> Unit {
-  let current_offset = self.history.length() - self.viewport_row_offset()
-  let next_offset = scrollback_clamp_int(
-    current_offset - delta,
-    0,
-    self.history.length(),
-  )
-  self.set_viewport_row_offset(self.history.length() - next_offset)
+  if self.max_rows <= 0 {
+    self.viewport = PageListViewport::Active
+    self.viewport_pin_row_offset = None
+    return
+  }
+  self.set_viewport_row_offset(self.viewport_row_offset() + delta)
 }
 
 ///|
@@ -281,17 +313,10 @@ fn PageList::capture_top_scroll_region_up(
       row_idx += 1
     }
 
-    if self.viewport_offset > 0 {
-      self.viewport_offset += count
-    }
     self.trim_history()
-    self.viewport_offset = scrollback_clamp_int(
-      self.viewport_offset,
-      0,
-      self.history.length(),
-    )
   } else {
-    self.viewport_offset = 0
+    self.viewport = PageListViewport::Active
+    self.viewport_pin_row_offset = None
   }
 
   self.shift_visible_row_ids_top_region_up(bottom, count)
@@ -309,19 +334,15 @@ fn PageList::capture_full_screen_scroll_down(
   }
 
   self.shift_visible_row_ids_down(count)
-  self.viewport_offset = scrollback_clamp_int(
-    self.viewport_offset,
-    0,
-    self.history.length(),
-  )
 }
 
 ///|
 fn PageList::full_reset(self : PageList, rows : CellCountInt) -> Unit {
   self.history = []
-  self.viewport_offset = 0
-  self.clear_viewport_pin()
+  self.viewport = PageListViewport::Active
+  self.viewport_pin_row_offset = None
   self.reset_visible_row_ids(rows.to_int())
+  self.relink_nodes()
   for index in 0..<self.tracked_pins.length() {
     self.mark_pin_garbage(index)
   }
@@ -331,8 +352,9 @@ fn PageList::full_reset(self : PageList, rows : CellCountInt) -> Unit {
 fn PageList::clear_history(self : PageList) -> Unit {
   self.mark_pins_for_rows_garbage(self.history)
   self.history = []
-  self.viewport_offset = 0
-  self.clear_viewport_pin()
+  self.viewport = PageListViewport::Active
+  self.viewport_pin_row_offset = None
+  self.relink_nodes()
 }
 
 ///|
@@ -655,6 +677,13 @@ fn PageList::mark_pins_for_row_garbage(
 
 ///|
 fn PageList::mark_pin_garbage(self : PageList, index : Int) -> Unit {
+  if self.tracked_pins[index].id == self.viewport_pin {
+    self.tracked_pins[index].node = self.active_node
+    self.tracked_pins[index].y = 0
+    self.tracked_pins[index].x = 0
+    self.tracked_pins[index].garbage = false
+    return
+  }
   self.tracked_pins[index].node = self.active_node
   self.tracked_pins[index].y = 0
   self.tracked_pins[index].x = 0
@@ -662,22 +691,135 @@ fn PageList::mark_pin_garbage(self : PageList, index : Int) -> Unit {
 }
 
 ///|
-fn PageList::clear_viewport_pin(self : PageList) -> Unit {
-  match self.viewport_pin {
-    Some(id) => self.untrack_pin(id)
-    None => ()
+fn PageList::set_viewport_row_offset(self : PageList, row : Int) -> Unit {
+  if self.max_rows <= 0 {
+    self.viewport = PageListViewport::Active
+    self.viewport_pin_row_offset = None
+    return
   }
-  self.viewport_pin = None
+  let top = scrollback_clamp_int(row, 0, self.history.length())
+  if top == 0 {
+    self.viewport = PageListViewport::Top
+    self.viewport_pin_row_offset = None
+  } else if top >= self.history.length() {
+    self.viewport = PageListViewport::Active
+    self.viewport_pin_row_offset = None
+  } else {
+    let row = self.history[top]
+    self.set_viewport_pin(row)
+    self.viewport = PageListViewport::Pin
+    self.viewport_pin_row_offset = Some(top)
+  }
 }
 
 ///|
-fn PageList::set_viewport_row_offset(self : PageList, row : Int) -> Unit {
-  let top = scrollback_clamp_int(row, 0, self.history.length())
-  self.viewport_offset = self.history.length() - top
-  self.clear_viewport_pin()
-  if top < self.history.length() {
-    let row = self.history[top]
-    self.viewport_pin = Some(self.track_pin(row.node, row.y, 0))
+fn PageList::pin_is_active(self : PageList, pin : PageListPin) -> Bool {
+  match self.row_source_for_pin(pin) {
+    Some(PageListRowSource::Screen(_)) => true
+    _ => false
+  }
+}
+
+///|
+fn PageList::fixup_viewport(self : PageList, removed : Int) -> Unit {
+  match self.viewport {
+    PageListViewport::Active => ()
+    PageListViewport::Pin =>
+      match self.tracked_pin_index(self.viewport_pin) {
+        Some(index) =>
+          if self.pin_is_active(self.tracked_pins[index]) {
+            self.viewport = PageListViewport::Active
+            self.viewport_pin_row_offset = None
+          } else {
+            match self.viewport_pin_row_offset {
+              Some(offset) =>
+                if offset < removed {
+                  self.viewport = PageListViewport::Top
+                  self.viewport_pin_row_offset = None
+                } else {
+                  self.viewport_pin_row_offset = Some(offset - removed)
+                }
+              None => ()
+            }
+          }
+        None => {
+          self.viewport = PageListViewport::Active
+          self.viewport_pin_row_offset = None
+        }
+      }
+    PageListViewport::Top =>
+      match self.first {
+        Some(first) =>
+          if physical_equal(first, self.active_node) {
+            self.viewport = PageListViewport::Active
+            self.viewport_pin_row_offset = None
+          }
+        None => {
+          self.viewport = PageListViewport::Active
+          self.viewport_pin_row_offset = None
+        }
+      }
+  }
+}
+
+///|
+fn PageList::relink_nodes(self : PageList) -> Unit {
+  let mut previous : PageListNode? = None
+  let mut first : PageListNode? = None
+  for row in self.history {
+    row.node.prev = previous
+    row.node.next = None
+    match previous {
+      Some(node) => node.next = Some(row.node)
+      None => first = Some(row.node)
+    }
+    previous = Some(row.node)
+  }
+  self.active_node.prev = previous
+  self.active_node.next = None
+  match previous {
+    Some(node) => node.next = Some(self.active_node)
+    None => first = Some(self.active_node)
+  }
+  self.first = first
+  self.last = Some(self.active_node)
+}
+
+///|
+fn PageList::pin_row_offset(self : PageList, pin : PageListPin) -> Int? {
+  let total_rows = self.total_rows_int()
+  let mut node = self.last
+  let mut rows_from_bottom = 0
+  let mut result : Int? = None
+  let mut done = false
+  while !done {
+    match node {
+      Some(current) => {
+        let row_count = current.page.rows.to_int()
+        rows_from_bottom += row_count
+        if physical_equal(current, pin.node) {
+          result = Some(total_rows - rows_from_bottom + pin.y.to_int())
+          done = true
+        } else {
+          node = current.prev
+        }
+      }
+      None => done = true
+    }
+  }
+  result
+}
+
+///|
+fn PageList::set_viewport_pin(self : PageList, row : PageListRow) -> Unit {
+  match self.tracked_pin_index(self.viewport_pin) {
+    Some(index) => {
+      self.tracked_pins[index].node = row.node
+      self.tracked_pins[index].y = row.y
+      self.tracked_pins[index].x = 0
+      self.tracked_pins[index].garbage = false
+    }
+    None => self.viewport_pin = self.track_pin(row.node, row.y, 0)
   }
 }
 
@@ -692,6 +834,7 @@ fn PageList::resize(
 ) -> PageListResizeResult {
   let target_cols = screen_dimension(cols)
   let target_rows = screen_dimension(rows)
+  self.viewport_pin_row_offset = None
   let cursor_pin = self.track_pin_at_point(
     grid,
     Point::Active(Coordinate::new(cursor.x(), cursor.y().to_uint())),
@@ -737,6 +880,7 @@ fn PageList::resize(
     }
     self.resize_cols(rows_result.grid, target_cols, cursor_pin, saved_pin)
   }
+  self.fixup_viewport(0)
   match cursor_pin {
     Some(id) => self.untrack_pin(id)
     None => ()
@@ -886,11 +1030,6 @@ fn PageList::resize_without_reflow(
 
   self.visible_row_ids = visible_ids
   self.trim_history()
-  self.viewport_offset = scrollback_clamp_int(
-    self.viewport_offset,
-    0,
-    self.history.length(),
-  )
 
   let resized_grid = screen_grid_from_rows(rows, cols, grid_rows)
   let active_node = PageListNode::new({
@@ -902,12 +1041,6 @@ fn PageList::resize_without_reflow(
   self.active_node = active_node
   self.rows = resized_grid.rows
   self.cols = resized_grid.cols
-  self.first = if self.history.length() > 0 {
-    Some(self.history[0].node)
-  } else {
-    Some(active_node)
-  }
-  self.last = Some(active_node)
   for row_idx in 0..<grid_rows.length() {
     self.move_pins_for_row(
       grid_rows[row_idx].node,
@@ -916,6 +1049,7 @@ fn PageList::resize_without_reflow(
       row_idx.to_uint16(),
     )
   }
+  self.relink_nodes()
 
   {
     grid: resized_grid,
@@ -1028,11 +1162,6 @@ fn PageList::resize_cols(
     visible_ids.push(reflowed[index].row_id)
   }
   self.visible_row_ids = visible_ids
-  self.viewport_offset = scrollback_clamp_int(
-    self.viewport_offset,
-    0,
-    self.history.length(),
-  )
 
   let resized_grid = screen_grid_from_rows(self.rows, cols, grid_rows)
   let active_node = PageListNode::new({
@@ -1044,12 +1173,6 @@ fn PageList::resize_cols(
   self.active_node = active_node
   self.rows = resized_grid.rows
   self.cols = resized_grid.cols
-  self.first = if self.history.length() > 0 {
-    Some(self.history[0].node)
-  } else {
-    Some(active_node)
-  }
-  self.last = Some(active_node)
   for row_idx in 0..<grid_rows.length() {
     self.move_pins_for_row(
       grid_rows[row_idx].node,
@@ -1058,6 +1181,7 @@ fn PageList::resize_cols(
       row_idx.to_uint16(),
     )
   }
+  self.relink_nodes()
 
   {
     grid: resized_grid,
@@ -1617,32 +1741,42 @@ fn PageList::viewport_index_of_row_id(
 
 ///|
 fn PageList::viewport_row_offset(self : PageList) -> Int {
-  match self.viewport_pin {
-    Some(id) =>
-      match self.tracked_pin_index(id) {
-        Some(index) =>
-          if !self.tracked_pins[index].garbage {
-            match self.row_source_for_pin(self.tracked_pins[index]) {
-              Some(PageListRowSource::History(row)) =>
-                return scrollback_clamp_int(row, 0, self.history.length())
-              Some(PageListRowSource::Screen(row)) =>
-                return scrollback_clamp_int(
-                  self.history.length() + row,
-                  0,
-                  self.history.length(),
-                )
-              None => ()
+  match self.viewport {
+    PageListViewport::Top => 0
+    PageListViewport::Active => self.history.length()
+    PageListViewport::Pin =>
+      match self.viewport_pin_row_offset {
+        Some(offset) => scrollback_clamp_int(offset, 0, self.history.length())
+        None =>
+          match self.tracked_pin_index(self.viewport_pin) {
+            Some(index) =>
+              if !self.tracked_pins[index].garbage {
+                match self.pin_row_offset(self.tracked_pins[index]) {
+                  Some(row) => {
+                    let offset = scrollback_clamp_int(
+                      row,
+                      0,
+                      self.history.length(),
+                    )
+                    self.viewport_pin_row_offset = Some(offset)
+                    offset
+                  }
+                  None => {
+                    self.viewport = PageListViewport::Active
+                    self.history.length()
+                  }
+                }
+              } else {
+                self.viewport = PageListViewport::Active
+                self.history.length()
+              }
+            None => {
+              self.viewport = PageListViewport::Active
+              self.history.length()
             }
           }
-        None => ()
       }
-    None => ()
   }
-  scrollback_clamp_int(
-    self.history.length() - self.viewport_offset,
-    0,
-    self.history.length(),
-  )
 }
 
 ///|
@@ -1660,10 +1794,13 @@ fn PageList::trim_history(self : PageList) -> Unit {
   if self.max_rows <= 0 {
     self.mark_pins_for_rows_garbage(self.history)
     self.history = []
-    self.clear_viewport_pin()
+    self.viewport = PageListViewport::Active
+    self.viewport_pin_row_offset = None
+    self.relink_nodes()
     return
   }
 
+  self.relink_nodes()
   let excess = self.history.length() - self.max_rows
   if excess <= 0 {
     return
@@ -1677,13 +1814,16 @@ fn PageList::trim_history(self : PageList) -> Unit {
   for index in excess..<self.history.length() {
     trimmed.push(self.history[index])
   }
+  match self.viewport {
+    PageListViewport::Pin => {
+      let _ = self.viewport_row_offset()
+    }
+    _ => ()
+  }
   self.history = trimmed
+  self.relink_nodes()
+  self.fixup_viewport(excess)
   self.mark_pins_for_rows_garbage(removed)
-  self.viewport_offset = scrollback_clamp_int(
-    self.viewport_offset - excess,
-    0,
-    self.history.length(),
-  )
 }
 
 ///|
