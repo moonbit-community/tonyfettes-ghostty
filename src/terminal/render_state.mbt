@@ -12,7 +12,7 @@ struct RenderState {
   mut columns : CellCountInt
   mut dirty : RenderDirty
   mut screen : TerminalScreen
-  mut viewport_origin : GridRef?
+  mut viewport_origin : Coordinate?
   mut background : RGB
   mut foreground : RGB
   mut cursor_color : RGB?
@@ -245,11 +245,13 @@ fn resolve_viewport_origin(
   terminal : StreamTerminal,
   rows : CellCountInt,
   columns : CellCountInt,
-) -> GridRef? {
+) -> Coordinate? {
   if rows == 0 || columns == 0 {
     None
   } else {
-    terminal.grid_ref(Point::Viewport(Coordinate::new(0, 0U)))
+    terminal
+    .bridge()
+    .point_from_point(Point::Viewport(Coordinate::new(0, 0U)), Tag::Screen)
   }
 }
 
@@ -286,18 +288,15 @@ fn resolve_cursor_viewport(terminal : StreamTerminal) -> (Coordinate?, Bool) {
   let cursor_point = Point::Active(
     Coordinate::new(terminal.cursor_x(), terminal.cursor_y().to_uint()),
   )
-  match terminal.grid_ref(cursor_point) {
-    Some(grid_ref) =>
-      match terminal.point_from_grid_ref(grid_ref, Tag::Viewport) {
-        Some(viewport) => {
-          let wide_tail = match terminal.grid_ref_cell(grid_ref) {
-            Some(cell) => cell.wide() == PageCellWide::SpacerTail
-            None => false
-          }
-          (Some(viewport), wide_tail)
-        }
-        None => (None, false)
+  let state = terminal.bridge()
+  match state.point_from_point(cursor_point, Tag::Viewport) {
+    Some(viewport) => {
+      let wide_tail = match state.cell_at_point(cursor_point) {
+        Some(cell) => cell.wide() == PageCellWide::SpacerTail
+        None => false
       }
+      (Some(viewport), wide_tail)
+    }
     None => (None, false)
   }
 }

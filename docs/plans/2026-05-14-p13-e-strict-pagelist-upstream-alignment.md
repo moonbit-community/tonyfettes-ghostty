@@ -6,8 +6,9 @@ Replace the current MoonBit PageList resize work with a strict translation of
 upstream Ghostty's PageList/pin/reflow cursor model.
 
 This is not another local repair pass over the existing row-id/flatten model.
-The implementation must first align the internal model with upstream Zig, then
-reintroduce MoonBit public compatibility only at the package boundary.
+The implementation must first align the internal model with upstream Zig, and
+must not reintroduce row-id compatibility unless a concrete downstream consumer
+requires it.
 
 ## Current Problem
 
@@ -44,10 +45,9 @@ Disallowed unless explicitly approved in this document before implementation:
 - `trim_leading_blank_pinned_rows`
 - any new resize helper that has no direct upstream source section
 
-If MoonBit needs an adapter because the public API exposes `GridRef.row_id`, the
-adapter must be named and isolated as public-compatibility code. It must not be
-used as the internal resize, cursor, viewport, or kitty placement tracking
-model.
+The previous `GridRef.row_id` adapter is explicitly out of scope for the
+remaining implementation. `GridRef`, row-id lookup helpers, and incremental
+scrollback row-id watermarks must be removed instead of kept as compatibility.
 
 ## Source Of Truth
 
@@ -328,12 +328,21 @@ Translate:
 - kitty placement pin ownership
 - placement removal untracking
 
-### Phase 7: Public API Compatibility
+### Phase 7: Remove Row-ID Compatibility
 
-Rebuild public `GridRef` behavior on top of internal pins/page storage.
+Remove the MoonBit-only row-id compatibility surface:
 
-Review `pkg.generated.mbti` and keep new public surface out of the package
-unless there is an explicit external consumer.
+- `GridRef`
+- `StreamTerminal::grid_ref`
+- `StreamTerminal::point_from_grid_ref`
+- row-id-backed `grid_ref_*` lookup helpers
+- `StreamTerminal::format_scrollback_rows_since`
+- `PageListCompatRows`
+
+Formatter and kitty placement rectangle APIs must use screen coordinates or
+pin-derived coordinates directly. Review `pkg.generated.mbti` and keep new
+public surface out of the package unless there is an explicit external
+consumer.
 
 ## Validation Commands
 
@@ -569,12 +578,65 @@ Result: checks passed. `moon coverage analyze` completed and reported existing
 uncovered lines; it did not fail. The strict forbidden-symbol grep returned no
 matches.
 
+### 2026-05-14: Row-ID Compatibility Removal Decision
+
+Local investigation found no tun-poc server usage of Ghostty row IDs:
+
+- no source references to `row_id`, `GridRef`, `grid_ref`, or
+  `format_scrollback_rows_since` outside `vendor/ghostty`;
+- server rendering uses `StreamTerminal`, `RenderState`, complete framebuffer
+  formatting, and scrollback row counts instead of row-id watermarks.
+
+User decision: delete row-id compatibility instead of preserving it as a public
+adapter. Phase 7 is changed from rebuilding `GridRef` compatibility to removing
+that surface and updating tests/tools to use coordinates directly.
+
+### 2026-05-14: Row-ID Compatibility Removal Checkpoint
+
+Implemented in canonical first:
+
+- Deleted `GridRef` and removed all public `StreamTerminal::grid_ref*`,
+  `StreamTerminal::point_from_grid_ref`, and
+  `StreamTerminal::format_scrollback_rows_since` APIs.
+- Removed `PageListCompatRows` and all row-id production/lookup paths from
+  `PageList`.
+- Replaced formatter selection and kitty placement rectangles with
+  `Selection[Coordinate]`.
+- Kept render viewport dirty detection row-id-free by tracking the screen
+  coordinate of the viewport origin.
+- Updated the playground, Rabbita demo, surface registry, tests, and generated
+  package interface for the coordinate API.
+- Deleted the obsolete `stream_terminal_grid_ref_test.mbt`.
+
+Validation run in canonical:
+
+- `moon check`
+- `moon test src/terminal/formatter_test.mbt`
+- `moon test src/terminal/formatter_wbtest.mbt`
+- `moon test src/terminal/stream_terminal_resize_wbtest.mbt`
+- `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`
+- `moon test src/terminal/terminal_screen_state_wbtest.mbt`
+- `moon test src/terminal/kitty_graphics_test.mbt`
+- `moon test src/terminal/kitty_graphics_wbtest.mbt`
+- `moon test src/terminal/render_state_test.mbt`
+- `moon test src/terminal/terminal_package_smoke_test.mbt`
+- `moon test src/terminal/terminal_surface_registry_test.mbt`
+- `moon test src/terminal`
+- `moon test`
+- `moon fmt`
+- `moon info`
+- `rg -n "GridRef|grid_ref|point_from_grid_ref|format_scrollback_rows_since|compat_rows|compat_|row_id_value|\\brow_id\\b" src/terminal tools/terminal_playground_core demo/rabbita_asciinema -g '*.mbt' -g '*.mbti'`
+
+Result: checks passed. `moon check` still reports existing deprecated
+`assert_eq` warnings in unrelated tests. The row-id compatibility grep returned
+no matches in source and generated terminal interfaces.
+
 ## Stop Conditions
 
 Stop and ask before implementation if any of these happens:
 
 - MoonBit storage cannot represent upstream page/node pin identity directly.
-- Public `GridRef.row_id` semantics conflict with upstream pin semantics.
+- A new external consumer for public row-id semantics is found.
 - A proposed helper or data field has no upstream equivalent.
 - A step requires keeping `flatten_rows`/`rebuild_from_rows`.
 - A test expectation requires product behavior not present in upstream.
@@ -583,11 +645,12 @@ Stop and ask before implementation if any of these happens:
 
 - Internal cursor, saved cursor, viewport, and kitty placement tracking use
   PageList pins, not row IDs.
+- Public row-id compatibility APIs and `GridRef` are removed.
 - `trim_leading_blank_pinned_rows` and equivalent local-only trim helpers are
   gone.
 - Reflow is driven by a `ReflowCursor` equivalent, not post-hoc array splitting.
 - Resize dispatch follows upstream ordering.
-- Incremental scrollback watermarks remain monotonic after column reflow.
+- Full scrollback/render formatting remains correct after column reflow.
 - Cursor and saved cursor survive row shrink, column resize, blank tracked rows,
   and alternate-screen resize according to upstream semantics.
 - `vendor/ghostty` and canonical `~/Workspace/moonbit/feihaoxiang/ghostty`

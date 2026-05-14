@@ -117,7 +117,7 @@ test "terminal screen state/zero max scrollback trim and resets" {
 }
 
 ///|
-test "terminal screen state/grid ref helpers cover row id mappings" {
+test "terminal screen state/point helpers cover source mappings" {
   let grid = ScreenGridState::new(2, 3)
   fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
   fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
@@ -125,53 +125,42 @@ test "terminal screen state/grid ref helpers cover row id mappings" {
   let scrollback = PageList::new(2, 3, 2)
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
 
-  guard !scrollback.row_by_id(grid, 0UL).unwrap().hyperlink() &&
-    scrollback.row_by_id(grid, 999UL) == None else {
-    fail("expected row id lookup to cover history and missing rows")
-  }
-  guard scrollback.cell_by_id(grid, 0UL, 0).unwrap().codepoint() ==
-    b'a'.to_uint() &&
-    scrollback.cell_by_id(grid, 0UL, 9) == None &&
-    scrollback.cell_by_id(grid, 999UL, 0) == None else {
-    fail("expected cell id lookup bounds and missing-row guards")
+  let history_cell = scrollback
+    .cell_at_point(grid, Point::History(Coordinate::new(0, 0U)))
+    .unwrap()
+  let out_of_col = scrollback.cell_at_point(
+    grid,
+    Point::History(Coordinate::new(9, 0U)),
+  )
+  let out_of_row = scrollback.cell_at_point(
+    grid,
+    Point::Screen(Coordinate::new(0, 9U)),
+  )
+  guard history_cell.codepoint() == b'a'.to_uint() &&
+    out_of_col == None &&
+    out_of_row == None else {
+    fail("expected point cell lookup bounds and missing-row guards")
   }
 
-  guard scrollback.point_from_row_id(grid, 0UL, 9, Tag::History) == None &&
-    scrollback.point_from_row_id(grid, 2UL, 0, Tag::Screen) ==
-    Some(Coordinate::new(0, 2U)) &&
-    scrollback.point_from_row_id(grid, 999UL, 0, Tag::Screen) == None else {
+  let history_as_screen = scrollback.point_from_point(
+    grid,
+    Point::History(Coordinate::new(0, 0U)),
+    Tag::Screen,
+  )
+  let screen_as_active = scrollback.point_from_point(
+    grid,
+    Point::Screen(Coordinate::new(0, 2U)),
+    Tag::Active,
+  )
+  let out_of_active = scrollback.point_from_point(
+    grid,
+    Point::Active(Coordinate::new(0, 9U)),
+    Tag::Screen,
+  )
+  guard history_as_screen == Some(Coordinate::new(0, 0U)) &&
+    screen_as_active == Some(Coordinate::new(0, 1U)) &&
+    out_of_active == None else {
     fail("expected point reconstruction guards and screen coordinates")
-  }
-
-  let history_ref = scrollback
-    .grid_ref(
-      TerminalScreen::Primary,
-      grid,
-      Point::History(Coordinate::new(0, 0U)),
-    )
-    .unwrap()
-  let screen_ref = scrollback
-    .grid_ref(
-      TerminalScreen::Primary,
-      grid,
-      Point::Screen(Coordinate::new(0, 2U)),
-    )
-    .unwrap()
-  guard history_ref.row_id_value() == 0UL &&
-    screen_ref.row_id_value() == 2UL &&
-    scrollback.grid_ref(
-      TerminalScreen::Primary,
-      grid,
-      Point::Active(Coordinate::new(0, 9U)),
-    ) ==
-    None &&
-    scrollback.grid_ref(
-      TerminalScreen::Primary,
-      grid,
-      Point::Screen(Coordinate::new(0, 9U)),
-    ) ==
-    None else {
-    fail("expected point-to-row-id mapping to stay bounded")
   }
 
   guard scrollback.screen_row_source(grid, -1) is None &&
@@ -180,12 +169,21 @@ test "terminal screen state/grid ref helpers cover row id mappings" {
     fail("expected screen/history source guards")
   }
 
-  guard scrollback.viewport_index_of_row_id(grid, 0UL) == None &&
-    scrollback.viewport_index_of_row_id(grid, 999UL) == None else {
+  let history_as_viewport_bottom = scrollback.point_from_point(
+    grid,
+    Point::History(Coordinate::new(0, 0U)),
+    Tag::Viewport,
+  )
+  guard history_as_viewport_bottom == None else {
     fail("expected viewport lookup miss cases at viewport bottom")
   }
   scrollback.scroll_top()
-  guard scrollback.viewport_index_of_row_id(grid, 0UL) == Some(0) else {
+  let history_as_viewport_top = scrollback.point_from_point(
+    grid,
+    Point::History(Coordinate::new(0, 0U)),
+    Tag::Viewport,
+  )
+  guard history_as_viewport_top == Some(Coordinate::new(0, 0U)) else {
     fail("expected viewport lookup hit after scrolling to top")
   }
 }

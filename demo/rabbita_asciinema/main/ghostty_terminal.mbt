@@ -318,19 +318,9 @@ fn GhosttyTerminal::cell_text(
   if !cell.has_text() {
     return " "
   }
-  if cell.has_grapheme() {
-    let point = @terminal.Point::Viewport(
-      @terminal.Coordinate::new(col.to_uint16(), row.reinterpret_as_uint()),
-    )
-    match self.terminal.grid_ref(point) {
-      Some(grid_ref) =>
-        match self.terminal.grid_ref_graphemes(grid_ref) {
-          Some(codepoints) => return codepoints_to_string(codepoints)
-          None => ()
-        }
-      None => ()
-    }
-  }
+  ignore(self)
+  ignore(row)
+  ignore(col)
   codepoints_to_string([cell.codepoint()])
 }
 

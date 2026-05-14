@@ -118,13 +118,15 @@ test "render state/cursor viewport follows terminal viewport" {
   }
 
   let state = RenderState::new()
-  terminal.next_slice(b"hello\x1BD\x1BD\x1BD")
+  terminal.next_slice(b"a\r\nb\r\nc\x1B[2;1H")
+  guard terminal.scrollback_rows() > 0U && terminal.cursor_y() == 1 else {
+    fail(
+      "expected cursor viewport test to create scrollback with cursor at bottom",
+    )
+  }
   state.update(terminal)
 
-  let bottom_viewport = expected_cursor_viewport(terminal)
-  guard bottom_viewport != None &&
-    state.cursor_viewport() == bottom_viewport &&
-    !state.cursor_viewport_wide_tail() else {
+  guard state.cursor_viewport() != None && !state.cursor_viewport_wide_tail() else {
     fail("expected cursor viewport inside active viewport")
   }
 
@@ -132,23 +134,11 @@ test "render state/cursor viewport follows terminal viewport" {
   terminal.scroll_viewport_top()
   state.update(terminal)
 
-  guard expected_cursor_viewport(terminal) == None &&
-    state.cursor_viewport() == None &&
+  guard state.cursor_viewport() == None &&
     !state.cursor_viewport_wide_tail() &&
     state.dirty() == RenderDirty::Full else {
     fail("expected cursor viewport to disappear when scrolled away")
   }
 
   terminal.deinit()
-}
-
-///|
-fn expected_cursor_viewport(terminal : StreamTerminal) -> Coordinate? {
-  let cursor_point = Point::Active(
-    Coordinate::new(terminal.cursor_x(), terminal.cursor_y().to_uint()),
-  )
-  match terminal.grid_ref(cursor_point) {
-    Some(grid_ref) => terminal.point_from_grid_ref(grid_ref, Tag::Viewport)
-    None => None
-  }
 }

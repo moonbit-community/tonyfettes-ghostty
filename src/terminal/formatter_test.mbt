@@ -73,13 +73,11 @@ test "formatter/plain selection restricts output" {
   let terminal = StreamTerminal::new()
   terminal.next_slice(b"Hello World")
 
-  let start_ref = terminal
-    .grid_ref(Point::Active(Coordinate::new(6, 0U)))
-    .unwrap()
-  let end_ref = terminal
-    .grid_ref(Point::Active(Coordinate::new(10, 0U)))
-    .unwrap()
-  let selection = Selection::new(start_ref, end_ref, false)
+  let selection = Selection::new(
+    Coordinate::new(6, 0U),
+    Coordinate::new(10, 0U),
+    false,
+  )
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
@@ -97,7 +95,7 @@ test "formatter/plain selection restricts output" {
 }
 
 ///|
-test "formatter/plain styles constructor stays text-only and stale selection is empty" {
+test "formatter/plain styles constructor stays text-only and blank selection is empty" {
   let terminal = StreamTerminal::new()
   terminal.next_slice(b"abc")
 
@@ -109,21 +107,20 @@ test "formatter/plain styles constructor stays text-only and stale selection is 
     fail("expected plain formatter to ignore style-only extras")
   }
 
-  let primary_ref = terminal
-    .grid_ref(Point::Active(Coordinate::new(0, 0U)))
-    .unwrap()
   terminal.mode_set(Mode::AltScreenLegacy, true)
 
   let stale_formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
       Format::Plain,
-      selection=Some(Selection::new(primary_ref, primary_ref, false)),
+      selection=Some(
+        Selection::new(Coordinate::new(0, 0U), Coordinate::new(0, 0U), false),
+      ),
       extra=FormatterTerminalExtra::none(),
     ),
   )
   guard stale_formatter.format() == b"" else {
-    fail("expected inactive-screen selection to format as empty")
+    fail("expected blank active-screen selection to format as empty")
   }
 
   terminal.deinit()
@@ -137,17 +134,13 @@ test "formatter/plain orders reversed and rectangle selections" {
   }
   terminal.next_slice(b"abcd\r\nwxyz")
 
-  let row0_x1 = terminal
-    .grid_ref(Point::Active(Coordinate::new(1, 0U)))
-    .unwrap()
-  let row0_x0 = terminal
-    .grid_ref(Point::Active(Coordinate::new(0, 0U)))
-    .unwrap()
   let reversed = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
       Format::Plain,
-      selection=Some(Selection::new(row0_x1, row0_x0, false)),
+      selection=Some(
+        Selection::new(Coordinate::new(1, 0U), Coordinate::new(0, 0U), false),
+      ),
       extra=FormatterTerminalExtra::none(),
     ),
   )
@@ -155,17 +148,13 @@ test "formatter/plain orders reversed and rectangle selections" {
     fail("expected reversed linear selection to normalize order")
   }
 
-  let lower_right = terminal
-    .grid_ref(Point::Active(Coordinate::new(2, 1U)))
-    .unwrap()
-  let upper_left = terminal
-    .grid_ref(Point::Active(Coordinate::new(1, 0U)))
-    .unwrap()
   let rectangle = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
       Format::Plain,
-      selection=Some(Selection::new(lower_right, upper_left, true)),
+      selection=Some(
+        Selection::new(Coordinate::new(2, 1U), Coordinate::new(1, 0U), true),
+      ),
       extra=FormatterTerminalExtra::none(),
     ),
   )
@@ -190,14 +179,13 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
     fail("expected resize before wide-tail selection test")
   }
   wide_tail.next_slice(@utf8.encode("你"))
-  let tail_ref = wide_tail
-    .grid_ref(Point::Active(Coordinate::new(1, 0U)))
-    .unwrap()
   let tail_formatter = Formatter::new_terminal(
     wide_tail,
     FormatterOptions::new(
       Format::Plain,
-      selection=Some(Selection::new(tail_ref, tail_ref, false)),
+      selection=Some(
+        Selection::new(Coordinate::new(1, 0U), Coordinate::new(1, 0U), false),
+      ),
       extra=FormatterTerminalExtra::none(),
     ),
   )
@@ -211,14 +199,13 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
     fail("expected resize before spacer-head selection test")
   }
   wide_head.next_slice(@utf8.encode("你"))
-  let head_ref = wide_head
-    .grid_ref(Point::Active(Coordinate::new(0, 1U)))
-    .unwrap()
   let head_formatter = Formatter::new_terminal(
     wide_head,
     FormatterOptions::new(
       Format::Plain,
-      selection=Some(Selection::new(head_ref, head_ref, false)),
+      selection=Some(
+        Selection::new(Coordinate::new(0, 1U), Coordinate::new(0, 1U), false),
+      ),
       extra=FormatterTerminalExtra::none(),
     ),
   )

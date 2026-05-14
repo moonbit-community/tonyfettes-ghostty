@@ -328,63 +328,6 @@ pub fn StreamTerminal::screen_row_snapshot(
 }
 
 ///|
-pub fn StreamTerminal::grid_ref(
-  self : StreamTerminal,
-  point : Point,
-) -> GridRef? {
-  self.bridge().grid_ref(point)
-}
-
-///|
-pub fn StreamTerminal::point_from_grid_ref(
-  self : StreamTerminal,
-  grid_ref : GridRef,
-  tag : Tag,
-) -> Coordinate? {
-  self.bridge().point_from_grid_ref(grid_ref, tag)
-}
-
-///|
-pub fn StreamTerminal::grid_ref_row(
-  self : StreamTerminal,
-  grid_ref : GridRef,
-) -> PageRowState? {
-  self.bridge().grid_ref_row(grid_ref)
-}
-
-///|
-pub fn StreamTerminal::grid_ref_cell(
-  self : StreamTerminal,
-  grid_ref : GridRef,
-) -> PageCellState? {
-  self.bridge().grid_ref_cell(grid_ref)
-}
-
-///|
-pub fn StreamTerminal::grid_ref_style(
-  self : StreamTerminal,
-  grid_ref : GridRef,
-) -> CellStyle? {
-  self.bridge().grid_ref_style(grid_ref)
-}
-
-///|
-pub fn StreamTerminal::grid_ref_graphemes(
-  self : StreamTerminal,
-  grid_ref : GridRef,
-) -> Array[UInt]? {
-  self.bridge().grid_ref_graphemes(grid_ref)
-}
-
-///|
-pub fn StreamTerminal::grid_ref_hyperlink_uri(
-  self : StreamTerminal,
-  grid_ref : GridRef,
-) -> String? {
-  self.bridge().grid_ref_hyperlink_uri(grid_ref)
-}
-
-///|
 pub fn StreamTerminal::set_write_pty(
   self : StreamTerminal,
   callback : (Bytes) -> Unit,

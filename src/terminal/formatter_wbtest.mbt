@@ -56,23 +56,6 @@ test "formatter helpers/cover guard branches and ordering helpers" {
   }
 
   state.grid = ScreenGridState::new(24, 80)
-  let bogus = GridRef::new(state.active_screen, 999999UL, 0)
-  let invalid = Formatter::new_terminal(
-    terminal,
-    FormatterOptions::new(
-      Format::Plain,
-      selection=Some(Selection::new(bogus, bogus, false)),
-      extra=FormatterTerminalExtra::none(),
-    ),
-  )
-  guard formatter_selection_bounds(
-      invalid,
-      state,
-      state.scrollback.total_rows(state.grid.rows),
-    )
-    is None else {
-    fail("expected bogus grid refs to stay unresolvable")
-  }
 
   guard min_cell_count(1, 2) == 1 &&
     min_cell_count(2, 1) == 1 &&

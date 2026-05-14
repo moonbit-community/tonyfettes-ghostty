@@ -46,22 +46,20 @@ test "resize preserves scrollback contents" {
   assert_eq(term.scrollback_rows(), 1U)
   ignore(term.resize(10, 3, 0U, 0U))
   assert_eq(term.scrollback_rows(), 1U)
-  let (history, _) = term.format_scrollback_rows_since(None)
-  assert_eq(history, b"1\r\n")
+  term.scroll_viewport_top()
+  assert_eq(cell_codepoint(term, 0, 0), b'1'.to_uint())
 }
 
 ///|
-test "resize reflow narrow scrollback keeps row id watermark monotonic" {
+test "resize reflow narrow scrollback stays visible" {
   let term = new_terminal(8, 3)
   term.next_slice(b"abcdefgh\r\nzz\r\n333\r\n444\r\n555")
   ignore(term.resize(4, 3, 0U, 0U))
-  let (first, last) = term.format_scrollback_rows_since(None)
-  guard first.length() > 0 else {
+  guard term.scrollback_rows() > 0U else {
     fail("expected scrollback rows after resize")
   }
-  let (second, next) = term.format_scrollback_rows_since(last)
-  assert_eq(second, b"")
-  assert_eq(next, last)
+  term.scroll_viewport_top()
+  assert_eq(cell_codepoint(term, 0, 0), b'a'.to_uint())
 }
 
 ///|

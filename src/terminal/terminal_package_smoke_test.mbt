@@ -59,7 +59,7 @@ test "terminal package smoke/metadata registry and system hooks" {
   }
 
   let entries = terminal_surface_types()
-  guard entries.length() == 22 else {
+  guard entries.length() == 21 else {
     fail("expected the translated types.zig registry to stay complete")
   }
 
@@ -94,20 +94,16 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
 
   terminal.next_slice(b"AB\r\nCD")
 
-  let upper_right = terminal
-    .grid_ref(Point::Active(Coordinate::new(1, 0U)))
-    .unwrap()
-  let lower_right = terminal
-    .grid_ref(Point::Active(Coordinate::new(1, 1U)))
-    .unwrap()
-  let selection = Selection::new(upper_right, lower_right, true)
+  let selection = Selection::new(
+    Coordinate::new(1, 0U),
+    Coordinate::new(1, 1U),
+    true,
+  )
 
-  guard terminal.grid_ref_cell(upper_right).unwrap().codepoint() ==
+  guard terminal.screen_cell_snapshot(0, 1).unwrap().codepoint() ==
     b'B'.to_uint() &&
-    terminal.grid_ref_style(upper_right).unwrap().is_default() &&
-    terminal.point_from_grid_ref(upper_right, Tag::Viewport) ==
-    Some(Coordinate::new(1, 0U)) else {
-    fail("expected terminal grid-ref query surface")
+    terminal.screen_cell_snapshot(0, 1).unwrap().style().is_default() else {
+    fail("expected terminal cell query surface")
   }
 
   let formatter = Formatter::new_terminal(

@@ -253,7 +253,7 @@ pub fn KittyPlacement::z(self : KittyPlacement) -> Int {
 }
 
 ///|
-pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[GridRef]? {
+pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[Coordinate]? {
   let pin_id = match self.placement.location {
     Pin(id) => id
     Virtual => return None
@@ -265,46 +265,32 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[GridRef]? {
     return None
   }
 
-  let top_left = match scrollback.grid_ref_from_pin(self.screen, pin_id) {
+  let top_left = match scrollback.point_from_pin(grid, pin_id, Tag::Screen) {
     Some(value) => value
     None => return None
   }
-  let start = scrollback.point_from_pin(grid, pin_id, Tag::Screen)
   let pin_x = match scrollback.pin_x(pin_id) {
     Some(value) => value
     None => return None
   }
-  match start {
-    None => None
-    Some(start_coord) => {
-      let total_rows = scrollback.total_rows(grid.rows).reinterpret_as_int()
-      if total_rows <= 0 {
-        return None
-      }
-
-      let end_y = kitty_min_int(
-        start_coord.y().reinterpret_as_int() +
-        size.rows().reinterpret_as_int() -
-        1,
-        total_rows - 1,
-      )
-      let end_x = kitty_min_int(
-        pin_x.to_int() + size.cols().reinterpret_as_int() - 1,
-        grid.cols.to_int() - 1,
-      )
-      match
-        scrollback.grid_ref(
-          self.screen,
-          grid,
-          Point::Screen(
-            Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint()),
-          ),
-        ) {
-        None => None
-        Some(bottom_right) => Some(Selection::new(top_left, bottom_right, true))
-      }
-    }
+  let total_rows = scrollback.total_rows(grid.rows).reinterpret_as_int()
+  if total_rows <= 0 {
+    return None
   }
+
+  let end_y = kitty_min_int(
+    top_left.y().reinterpret_as_int() + size.rows().reinterpret_as_int() - 1,
+    total_rows - 1,
+  )
+  let end_x = kitty_min_int(
+    pin_x.to_int() + size.cols().reinterpret_as_int() - 1,
+    grid.cols.to_int() - 1,
+  )
+  let bottom_right = Coordinate::new(
+    end_x.to_uint16(),
+    end_y.reinterpret_as_uint(),
+  )
+  Some(Selection::new(top_left, bottom_right, true))
 }
 
 ///|

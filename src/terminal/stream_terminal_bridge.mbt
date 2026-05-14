@@ -473,119 +473,20 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
 }
 
 ///|
-fn StreamTerminalBridgeState::grid_ref(
+fn StreamTerminalBridgeState::point_from_point(
   self : StreamTerminalBridgeState,
   point : Point,
-) -> GridRef? {
-  self.scrollback.grid_ref(self.active_screen, self.grid, point)
-}
-
-///|
-fn StreamTerminalBridgeState::point_from_grid_ref(
-  self : StreamTerminalBridgeState,
-  grid_ref : GridRef,
   tag : Tag,
 ) -> Coordinate? {
-  if grid_ref.screen_key() != self.active_screen {
-    return None
-  }
-  self.scrollback.point_from_row_id(
-    self.grid,
-    grid_ref.row_id_value(),
-    grid_ref.x_coord(),
-    tag,
-  )
+  self.scrollback.point_from_point(self.grid, point, tag)
 }
 
 ///|
-fn StreamTerminalBridgeState::grid_ref_row(
+fn StreamTerminalBridgeState::cell_at_point(
   self : StreamTerminalBridgeState,
-  grid_ref : GridRef,
-) -> PageRowState? {
-  if grid_ref.screen_key() == self.active_screen {
-    return self.scrollback.row_by_id(self.grid, grid_ref.row_id_value())
-  }
-
-  match grid_ref.screen_key() {
-    TerminalScreen::Primary =>
-      self.primary_storage.scrollback.row_by_id(
-        self.primary_storage.grid,
-        grid_ref.row_id_value(),
-      )
-    TerminalScreen::Alternate =>
-      self.alternate_storage.scrollback.row_by_id(
-        self.alternate_storage.grid,
-        grid_ref.row_id_value(),
-      )
-  }
-}
-
-///|
-fn StreamTerminalBridgeState::grid_ref_cell(
-  self : StreamTerminalBridgeState,
-  grid_ref : GridRef,
+  point : Point,
 ) -> PageCellState? {
-  if grid_ref.screen_key() == self.active_screen {
-    return self.scrollback.cell_by_id(
-      self.grid,
-      grid_ref.row_id_value(),
-      grid_ref.x_coord(),
-    )
-  }
-
-  match grid_ref.screen_key() {
-    TerminalScreen::Primary =>
-      self.primary_storage.scrollback.cell_by_id(
-        self.primary_storage.grid,
-        grid_ref.row_id_value(),
-        grid_ref.x_coord(),
-      )
-    TerminalScreen::Alternate =>
-      self.alternate_storage.scrollback.cell_by_id(
-        self.alternate_storage.grid,
-        grid_ref.row_id_value(),
-        grid_ref.x_coord(),
-      )
-  }
-}
-
-///|
-fn StreamTerminalBridgeState::grid_ref_style(
-  self : StreamTerminalBridgeState,
-  grid_ref : GridRef,
-) -> CellStyle? {
-  self.grid_ref_cell(grid_ref).map(fn(cell) { cell.style() })
-}
-
-///|
-fn StreamTerminalBridgeState::grid_ref_graphemes(
-  self : StreamTerminalBridgeState,
-  grid_ref : GridRef,
-) -> Array[UInt]? {
-  self
-  .grid_ref_cell(grid_ref)
-  .map(fn(cell) {
-    let graphemes : Array[UInt] = []
-    if cell.has_text() {
-      graphemes.push(cell.codepoint())
-    }
-    graphemes
-  })
-}
-
-///|
-fn StreamTerminalBridgeState::grid_ref_hyperlink_uri(
-  self : StreamTerminalBridgeState,
-  grid_ref : GridRef,
-) -> String? {
-  match self.grid_ref_cell(grid_ref) {
-    Some(cell) =>
-      match cell.hyperlink() {
-        Some(link) => Some(link.uri())
-        None => None
-      }
-    None => None
-  }
+  self.scrollback.cell_at_point(self.grid, point)
 }
 
 ///|

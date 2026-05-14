@@ -104,7 +104,7 @@ struct FormatterOptions {
   emit : Format
   unwrap : Bool
   trim : Bool
-  selection : Selection[GridRef]?
+  selection : Selection[Coordinate]?
   extra : FormatterTerminalExtra
 } derive(Eq, Debug)
 
@@ -113,7 +113,7 @@ pub fn FormatterOptions::new(
   emit : Format,
   unwrap? : Bool = false,
   trim? : Bool = true,
-  selection? : Selection[GridRef]? = None,
+  selection? : Selection[Coordinate]? = None,
   extra? : FormatterTerminalExtra = FormatterTerminalExtra::styles(),
 ) -> FormatterOptions {
   { emit, unwrap, trim, selection, extra }
@@ -151,41 +151,6 @@ pub fn Formatter::format(self : Formatter) -> Bytes {
     }
     None => b""
   }
-}
-
-///|
-/// Format primary-screen history rows whose row ids are newer than
-/// `last_row_id`. The returned row id is the last emitted history row.
-pub fn StreamTerminal::format_scrollback_rows_since(
-  self : StreamTerminal,
-  last_row_id : UInt64?,
-) -> (Bytes, UInt64?) {
-  let state = self.bridge()
-  let len = state.scrollback.compat_history_length()
-  if len == 0 {
-    return (b"", last_row_id)
-  }
-
-  let mut start = 0
-  match last_row_id {
-    None => ()
-    Some(last) =>
-      while start < len && state.scrollback.compat_history_row_id(start) <= last {
-        start += 1
-      }
-  }
-  if start >= len {
-    return (b"", last_row_id)
-  }
-
-  let buffer = @buffer.new()
-  for index = start; index < len; index = index + 1 {
-    formatter_write_history_row(
-      state.scrollback.compat_history_row(index),
-      buffer,
-    )
-  }
-  (buffer.contents(), Some(state.scrollback.compat_history_row_id(len - 1)))
 }
 
 ///|
@@ -367,37 +332,24 @@ fn formatter_selection_bounds(
         rectangle: false,
       })
     Some(selection) => {
-      let start_ref = selection.start()
-      let end_ref = selection.end()
-      if start_ref.screen_key() != state.active_screen ||
-        end_ref.screen_key() != state.active_screen {
-        return None
-      }
-
-      match
-        (
-          state.point_from_grid_ref(start_ref, Tag::Screen),
-          state.point_from_grid_ref(end_ref, Tag::Screen),
-        ) {
-        (Some(start), Some(end_)) =>
-          if selection.rectangle() {
-            Some({
-              start: Coordinate::new(
-                min_cell_count(start.x(), end_.x()),
-                min_uint(start.y(), end_.y()),
-              ),
-              end_: Coordinate::new(
-                max_cell_count(start.x(), end_.x()),
-                formatter_max_uint(start.y(), end_.y()),
-              ),
-              rectangle: true,
-            })
-          } else if formatter_coord_before(end_, start) {
-            Some({ start: end_, end_: start, rectangle: false })
-          } else {
-            Some({ start, end_, rectangle: false })
-          }
-        _ => None
+      let start = selection.start()
+      let end_ = selection.end()
+      if selection.rectangle() {
+        Some({
+          start: Coordinate::new(
+            min_cell_count(start.x(), end_.x()),
+            min_uint(start.y(), end_.y()),
+          ),
+          end_: Coordinate::new(
+            max_cell_count(start.x(), end_.x()),
+            formatter_max_uint(start.y(), end_.y()),
+          ),
+          rectangle: true,
+        })
+      } else if formatter_coord_before(end_, start) {
+        Some({ start: end_, end_: start, rectangle: false })
+      } else {
+        Some({ start, end_, rectangle: false })
       }
     }
   }
@@ -616,51 +568,6 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
     return true
   }
   cell.codepoint() == b' '.to_uint()
-}
-
-///|
-fn formatter_write_history_row(
-  row : PageListRow,
-  buffer : @buffer.Buffer,
-) -> Unit {
-  let output = FormatterOutputState::new()
-  let mut last = row.cells.length() - 1
-  while last >= 0 && formatter_history_cell_is_blank(row.cells[last]) {
-    last -= 1
-  }
-
-  if last >= 0 {
-    let mut blank_cells = 0
-    let mut x = 0
-    while x <= last {
-      let cell = row.cells[x]
-      match cell.wide() {
-        PageCellWide::SpacerHead | PageCellWide::SpacerTail => {
-          x += 1
-          continue
-        }
-        PageCellWide::Narrow | PageCellWide::Wide => ()
-      }
-
-      if formatter_history_cell_is_blank(cell) {
-        blank_cells += 1
-        x += 1
-        continue
-      }
-
-      if blank_cells > 0 {
-        formatter_write_spaces(buffer, blank_cells)
-        blank_cells = 0
-      }
-
-      output.sync_vt_style(formatter_cell_style(cell), buffer)
-      formatter_write_cell_text(Format::Vt, cell, buffer)
-      x += 1
-    }
-  }
-
-  output.close(Format::Vt, buffer)
-  buffer.write_bytes(NewlineVt)
 }
 
 ///|

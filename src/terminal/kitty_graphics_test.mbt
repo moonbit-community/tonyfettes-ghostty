@@ -110,10 +110,8 @@ test "kitty graphics/image lookup and placement geometry match transmitted state
     placement.rows() == 1U &&
     placement.z() == 0 &&
     rect.rectangle() &&
-    terminal.point_from_grid_ref(rect.start(), Tag::Screen) ==
-    Some(Coordinate::new(0, 0U)) &&
-    terminal.point_from_grid_ref(rect.end(), Tag::Screen) ==
-    Some(Coordinate::new(9, 0U)) &&
+    rect.start() == Coordinate::new(0, 0U) &&
+    rect.end() == Coordinate::new(9, 0U) &&
     pixel_size.width() == 100U &&
     pixel_size.height() == 20U &&
     grid_size.cols() == 10U &&
@@ -157,8 +155,7 @@ test "kitty graphics/placement pin survives column resize reflow" {
   }
   let rect = placement.rect().unwrap()
   let viewport = placement.viewport_position().unwrap()
-  guard terminal.point_from_grid_ref(rect.start(), Tag::Screen) ==
-    Some(Coordinate::new(0, 0U)) &&
+  guard rect.start() == Coordinate::new(0, 0U) &&
     viewport.col() == 0 &&
     viewport.row() == 0 else {
     fail("expected kitty placement pin to remap across column reflow")

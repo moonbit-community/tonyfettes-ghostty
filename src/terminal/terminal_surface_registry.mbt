@@ -101,7 +101,7 @@ let terminal_surface_type_entries : ReadOnlyArray[TerminalSurfaceTypeInfo] = [
   terminal_surface_type_info(
     "GhosttySelection",
     TerminalSurfaceTypeMapping::Direct,
-    "Selection[GridRef]",
+    "Selection[Coordinate]",
   ),
   terminal_surface_type_info(
     "GhosttyFormatterTerminalExtra",
@@ -112,11 +112,6 @@ let terminal_surface_type_entries : ReadOnlyArray[TerminalSurfaceTypeInfo] = [
     "GhosttyFormatterScreenExtra",
     TerminalSurfaceTypeMapping::Direct,
     "FormatterScreenExtra",
-  ),
-  terminal_surface_type_info(
-    "GhosttyGridRef",
-    TerminalSurfaceTypeMapping::Direct,
-    "GridRef",
   ),
   terminal_surface_type_info(
     "GhosttyMouseEncoderSize",

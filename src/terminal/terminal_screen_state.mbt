@@ -56,13 +56,6 @@ priv struct PageListPin {
 }
 
 ///|
-priv struct PageListCompatRows {
-  mut history_ids : Array[UInt64]
-  mut active_ids : Array[UInt64]
-  mut next_row_id : UInt64
-}
-
-///|
 priv enum PageListViewport {
   Active
   Top
@@ -78,7 +71,6 @@ priv struct PageList {
   mut last : PageListNode?
   mut active_node : PageListNode
   mut history : Array[PageListRow]
-  compat_rows : PageListCompatRows
   mut viewport : PageListViewport
   mut tracked_pins : Array[PageListPin]
   mut next_pin_id : UInt64
@@ -141,49 +133,6 @@ fn PageListNode::new(page : PageListPage) -> PageListNode {
 }
 
 ///|
-fn PageListCompatRows::new(active_rows : Int) -> PageListCompatRows {
-  let compat = { history_ids: [], active_ids: [], next_row_id: 0UL }
-  compat.reset_active(active_rows)
-  compat
-}
-
-///|
-fn PageListCompatRows::allocate_row_id(self : PageListCompatRows) -> UInt64 {
-  let row_id = self.next_row_id
-  self.next_row_id += 1UL
-  row_id
-}
-
-///|
-fn PageListCompatRows::reset_active(
-  self : PageListCompatRows,
-  row_count : Int,
-) -> Unit {
-  let ids : Array[UInt64] = []
-  for _ in 0..<row_count {
-    ids.push(self.allocate_row_id())
-  }
-  self.active_ids = ids
-}
-
-///|
-fn PageListCompatRows::clear_history(self : PageListCompatRows) -> Unit {
-  self.history_ids = []
-}
-
-///|
-fn PageListCompatRows::trim_history_front(
-  self : PageListCompatRows,
-  count : Int,
-) -> Unit {
-  let trimmed : Array[UInt64] = []
-  for index in count..<self.history_ids.length() {
-    trimmed.push(self.history_ids[index])
-  }
-  self.history_ids = trimmed
-}
-
-///|
 fn PageList::new(
   rows : CellCountInt,
   cols : CellCountInt,
@@ -198,7 +147,6 @@ fn PageList::new(
     last: Some(active_node),
     active_node,
     history: [],
-    compat_rows: PageListCompatRows::new(active_node.page.rows.to_int()),
     viewport: PageListViewport::Active,
     tracked_pins: [],
     next_pin_id: 0UL,
@@ -351,7 +299,6 @@ fn PageList::capture_top_scroll_region_up(
         row.y,
       )
       self.history.push(row)
-      self.compat_rows.history_ids.push(self.compat_rows.active_ids[row_idx])
       row_idx += 1
     }
 
@@ -361,7 +308,7 @@ fn PageList::capture_top_scroll_region_up(
     self.viewport_pin_row_offset = None
   }
 
-  self.shift_compat_active_row_ids_top_region_up(bottom, count)
+  self.shift_active_pins_top_region_up(bottom, count)
 }
 
 ///|
@@ -375,16 +322,14 @@ fn PageList::capture_full_screen_scroll_down(
     return
   }
 
-  self.shift_compat_active_row_ids_down(count)
+  self.shift_active_pins_down(count)
 }
 
 ///|
-fn PageList::full_reset(self : PageList, rows : CellCountInt) -> Unit {
+fn PageList::full_reset(self : PageList, _rows : CellCountInt) -> Unit {
   self.history = []
-  self.compat_rows.clear_history()
   self.viewport = PageListViewport::Active
   self.viewport_pin_row_offset = None
-  self.compat_rows.reset_active(rows.to_int())
   self.relink_nodes()
   for index in 0..<self.tracked_pins.length() {
     self.mark_pin_garbage(index)
@@ -395,7 +340,6 @@ fn PageList::full_reset(self : PageList, rows : CellCountInt) -> Unit {
 fn PageList::clear_history(self : PageList) -> Unit {
   self.mark_pins_for_rows_garbage(self.history)
   self.history = []
-  self.compat_rows.clear_history()
   self.viewport = PageListViewport::Active
   self.viewport_pin_row_offset = None
   self.relink_nodes()
@@ -474,27 +418,6 @@ fn PageList::point_from_pin(
 }
 
 ///|
-fn PageList::grid_ref_from_pin(
-  self : PageList,
-  screen : TerminalScreen,
-  id : UInt64,
-) -> GridRef? {
-  match self.tracked_pin_index(id) {
-    Some(index) => {
-      let pin = self.tracked_pins[index]
-      if pin.garbage {
-        None
-      } else {
-        self
-        .compat_row_id_for_pin(pin)
-        .map(fn(row_id) { GridRef::new(screen, row_id, pin.x.to_uint16()) })
-      }
-    }
-    None => None
-  }
-}
-
-///|
 fn PageList::pin_x(self : PageList, id : UInt64) -> CellCountInt? {
   match self.tracked_pin_index(id) {
     Some(index) =>
@@ -516,22 +439,36 @@ fn PageList::point_from_pin_node(
 ) -> Coordinate? {
   let x = pin.x.to_uint16()
   match self.row_source_for_pin(pin) {
-    Some(PageListRowSource::History(index)) =>
+    Some(source) => self.point_from_source(grid, source, x, tag)
+    None => None
+  }
+}
+
+///|
+fn PageList::point_from_source(
+  self : PageList,
+  grid : ScreenGridState,
+  source : PageListRowSource,
+  x : CellCountInt,
+  tag : Tag,
+) -> Coordinate? {
+  match source {
+    PageListRowSource::History(index) =>
       match tag {
         Tag::Active => None
         Tag::Viewport =>
           self
-          .viewport_index_for_source(grid, PageListRowSource::History(index))
+          .viewport_index_for_source(grid, source)
           .map(fn(row) { Coordinate::new(x, row.reinterpret_as_uint()) })
         Tag::Screen => Some(Coordinate::new(x, index.reinterpret_as_uint()))
         Tag::History => Some(Coordinate::new(x, index.reinterpret_as_uint()))
       }
-    Some(PageListRowSource::Screen(index)) =>
+    PageListRowSource::Screen(index) =>
       match tag {
         Tag::Active => Some(Coordinate::new(x, index.reinterpret_as_uint()))
         Tag::Viewport =>
           self
-          .viewport_index_for_source(grid, PageListRowSource::Screen(index))
+          .viewport_index_for_source(grid, source)
           .map(fn(row) { Coordinate::new(x, row.reinterpret_as_uint()) })
         Tag::Screen =>
           Some(
@@ -542,21 +479,6 @@ fn PageList::point_from_pin_node(
           )
         Tag::History => None
       }
-    None => None
-  }
-}
-
-///|
-fn PageList::compat_row_id_for_pin(
-  self : PageList,
-  pin : PageListPin,
-) -> UInt64? {
-  match self.row_source_for_pin(pin) {
-    Some(PageListRowSource::History(index)) =>
-      Some(self.compat_rows.history_ids[index])
-    Some(PageListRowSource::Screen(index)) =>
-      Some(self.compat_rows.active_ids[index])
-    None => None
   }
 }
 
@@ -567,7 +489,7 @@ fn PageList::row_source_for_pin(
 ) -> PageListRowSource? {
   if physical_equal(pin.node, self.active_node) {
     let index = pin.y.to_int()
-    if index >= 0 && index < self.compat_rows.active_ids.length() {
+    if index >= 0 && index < self.rows.to_int() {
       return Some(PageListRowSource::Screen(index))
     }
     return None
@@ -985,7 +907,6 @@ fn PageList::resize_without_reflow(
   let target_rows = rows.to_int()
   let current_rows = active_rows.length()
   let grid_rows : Array[PageListRow] = []
-  let active_ids : Array[UInt64] = []
 
   if target_rows < current_rows {
     let max_trim = current_rows - target_rows
@@ -1011,7 +932,6 @@ fn PageList::resize_without_reflow(
           history_row.y,
         )
         self.history.push(history_row)
-        self.compat_rows.history_ids.push(self.compat_rows.active_ids[index])
       } else {
         self.mark_pins_for_row_garbage(source)
       }
@@ -1020,7 +940,6 @@ fn PageList::resize_without_reflow(
     for index in history_count..<remaining {
       let row = copy_pinned_row(active_rows[index], cols)
       grid_rows.push(row)
-      active_ids.push(self.compat_rows.active_ids[index])
     }
   } else if target_rows > current_rows {
     let grow_count = target_rows - current_rows
@@ -1032,29 +951,22 @@ fn PageList::resize_without_reflow(
     }
     let history_keep = self.history.length() - pull_count
     let pulled_rows : Array[PageListRow] = []
-    let pulled_ids : Array[UInt64] = []
     for index in history_keep..<self.history.length() {
       pulled_rows.push(copy_pinned_row(self.history[index], cols))
-      pulled_ids.push(self.compat_rows.history_ids[index])
     }
     if pull_count > 0 {
       let history_rows : Array[PageListRow] = []
-      let history_ids : Array[UInt64] = []
       for index in 0..<history_keep {
         history_rows.push(self.history[index])
-        history_ids.push(self.compat_rows.history_ids[index])
       }
       self.history = history_rows
-      self.compat_rows.history_ids = history_ids
     }
 
     for index in 0..<pulled_rows.length() {
       grid_rows.push(pulled_rows[index])
-      active_ids.push(pulled_ids[index])
     }
     for index in 0..<active_rows.length() {
       grid_rows.push(copy_pinned_row(active_rows[index], cols))
-      active_ids.push(self.compat_rows.active_ids[index])
     }
     for _ in 0..<(grow_count - pull_count) {
       let row = make_pinned_row(
@@ -1065,17 +977,14 @@ fn PageList::resize_without_reflow(
         false,
         false,
       )
-      active_ids.push(self.compat_rows.allocate_row_id())
       grid_rows.push(row)
     }
   } else {
     for index in 0..<active_rows.length() {
       grid_rows.push(copy_pinned_row(active_rows[index], cols))
-      active_ids.push(self.compat_rows.active_ids[index])
     }
   }
 
-  self.compat_rows.active_ids = active_ids
   self.trim_history()
 
   let resized_grid = screen_grid_from_rows(rows, cols, grid_rows)
@@ -1141,11 +1050,6 @@ fn PageList::resize_cols(
     )
     cursor.total_rows += 1
   }
-  let reflowed_ids : Array[UInt64] = []
-  for _ in 0..<reflowed.length() {
-    reflowed_ids.push(self.compat_rows.allocate_row_id())
-  }
-
   let active_rows = self.rows.to_int()
   let bottom_start = max_int(0, reflowed.length() - active_rows)
   let active_start = match preserved_cursor {
@@ -1184,25 +1088,19 @@ fn PageList::resize_cols(
   let active_end = min_int(reflowed.length(), active_start + active_rows)
 
   let history_rows : Array[PageListRow] = []
-  let history_ids : Array[UInt64] = []
   for index in 0..<active_start {
     history_rows.push(reflowed[index])
-    history_ids.push(reflowed_ids[index])
   }
   for index in active_end..<reflowed.length() {
     self.mark_pins_for_row_garbage(reflowed[index])
   }
   self.history = history_rows
-  self.compat_rows.history_ids = history_ids
   self.trim_history()
 
   let grid_rows : Array[PageListRow] = []
-  let active_ids : Array[UInt64] = []
   for index in active_start..<active_end {
     grid_rows.push(reflowed[index])
-    active_ids.push(reflowed_ids[index])
   }
-  self.compat_rows.active_ids = active_ids
 
   let resized_grid = screen_grid_from_rows(self.rows, cols, grid_rows)
   let active_node = PageListNode::new({
@@ -1538,12 +1436,12 @@ fn PageList::page_point_from_pin_rows(
 }
 
 ///|
-fn PageList::grid_ref(
+fn PageList::point_from_point(
   self : PageList,
-  screen : TerminalScreen,
   grid : ScreenGridState,
   point : Point,
-) -> GridRef? {
+  tag : Tag,
+) -> Coordinate? {
   let x = point.coord().x()
   let x_idx = x.to_int()
   if x_idx < 0 || x_idx >= grid.cols.to_int() {
@@ -1551,104 +1449,28 @@ fn PageList::grid_ref(
   }
 
   match self.row_source_for_point(grid, point) {
-    Some(PageListRowSource::History(index)) =>
-      Some(GridRef::new(screen, self.compat_rows.history_ids[index], x))
-    Some(PageListRowSource::Screen(index)) =>
-      Some(GridRef::new(screen, self.compat_rows.active_ids[index], x))
+    Some(source) => self.point_from_source(grid, source, x, tag)
     None => None
   }
 }
 
 ///|
-fn PageList::compat_history_length(self : PageList) -> Int {
-  self.history.length()
-}
-
-///|
-fn PageList::compat_history_row_id(self : PageList, index : Int) -> UInt64 {
-  self.compat_rows.history_ids[index]
-}
-
-///|
-fn PageList::compat_history_row(self : PageList, index : Int) -> PageListRow {
-  self.history[index]
-}
-
-///|
-fn PageList::row_by_id(
+fn PageList::cell_at_point(
   self : PageList,
   grid : ScreenGridState,
-  row_id : UInt64,
-) -> PageRowState? {
-  match self.row_source_by_id(row_id) {
-    Some(PageListRowSource::History(index)) =>
-      Some(copy_scrollback_row(self.history[index].row))
-    Some(PageListRowSource::Screen(index)) =>
-      Some(copy_scrollback_row(grid.row_states[index]))
-    None => None
-  }
-}
-
-///|
-fn PageList::cell_by_id(
-  self : PageList,
-  grid : ScreenGridState,
-  row_id : UInt64,
-  col : CellCountInt,
+  point : Point,
 ) -> PageCellState? {
-  let col_idx = col.to_int()
+  let col_idx = point.coord().x().to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
   }
 
-  match self.row_source_by_id(row_id) {
+  match self.row_source_for_point(grid, point) {
     Some(PageListRowSource::History(index)) =>
       Some(copy_scrollback_cell(self.history[index].cells[col_idx]))
     Some(PageListRowSource::Screen(index)) =>
       Some(copy_scrollback_cell(grid.cells[grid.cell_index(index, col_idx)]))
     None => None
-  }
-}
-
-///|
-fn PageList::point_from_row_id(
-  self : PageList,
-  grid : ScreenGridState,
-  row_id : UInt64,
-  x : CellCountInt,
-  tag : Tag,
-) -> Coordinate? {
-  let x_idx = x.to_int()
-  if x_idx < 0 || x_idx >= grid.cols.to_int() {
-    return None
-  }
-
-  match tag {
-    Tag::Active =>
-      self
-      .screen_index_of_row_id(row_id)
-      .map(fn(index) { Coordinate::new(x, index.reinterpret_as_uint()) })
-    Tag::Viewport =>
-      self
-      .viewport_index_of_row_id(grid, row_id)
-      .map(fn(index) { Coordinate::new(x, index.reinterpret_as_uint()) })
-    Tag::Screen =>
-      match self.row_source_by_id(row_id) {
-        Some(PageListRowSource::History(index)) =>
-          Some(Coordinate::new(x, index.reinterpret_as_uint()))
-        Some(PageListRowSource::Screen(index)) =>
-          Some(
-            Coordinate::new(
-              x,
-              (self.history.length() + index).reinterpret_as_uint(),
-            ),
-          )
-        None => None
-      }
-    Tag::History =>
-      self
-      .history_index_of_row_id(row_id)
-      .map(fn(index) { Coordinate::new(x, index.reinterpret_as_uint()) })
   }
 }
 
@@ -1730,65 +1552,6 @@ fn PageList::history_row_source(self : PageList, y : Int) -> PageListRowSource? 
 }
 
 ///|
-fn PageList::row_source_by_id(
-  self : PageList,
-  row_id : UInt64,
-) -> PageListRowSource? {
-  match self.history_index_of_row_id(row_id) {
-    Some(index) => Some(PageListRowSource::History(index))
-    None =>
-      self
-      .screen_index_of_row_id(row_id)
-      .map(fn(index) { PageListRowSource::Screen(index) })
-  }
-}
-
-///|
-fn PageList::history_index_of_row_id(self : PageList, row_id : UInt64) -> Int? {
-  let mut index = 0
-  while index < self.compat_rows.history_ids.length() {
-    if self.compat_rows.history_ids[index] == row_id {
-      return Some(index)
-    }
-    index += 1
-  }
-  None
-}
-
-///|
-fn PageList::screen_index_of_row_id(self : PageList, row_id : UInt64) -> Int? {
-  let mut index = 0
-  while index < self.compat_rows.active_ids.length() {
-    if self.compat_rows.active_ids[index] == row_id {
-      return Some(index)
-    }
-    index += 1
-  }
-  None
-}
-
-///|
-fn PageList::viewport_index_of_row_id(
-  self : PageList,
-  grid : ScreenGridState,
-  row_id : UInt64,
-) -> Int? {
-  let display_row = match self.row_source_by_id(row_id) {
-    Some(PageListRowSource::History(index)) => index
-    Some(PageListRowSource::Screen(index)) => self.history.length() + index
-    None => return None
-  }
-
-  let top = self.viewport_row_offset()
-  let bottom = top + grid.rows.to_int()
-  if display_row < top || display_row >= bottom {
-    None
-  } else {
-    Some(display_row - top)
-  }
-}
-
-///|
 fn PageList::viewport_row_offset(self : PageList) -> Int {
   match self.viewport {
     PageListViewport::Top => 0
@@ -1833,7 +1596,6 @@ fn PageList::trim_history(self : PageList) -> Unit {
   if self.max_rows <= 0 {
     self.mark_pins_for_rows_garbage(self.history)
     self.history = []
-    self.compat_rows.clear_history()
     self.viewport = PageListViewport::Active
     self.viewport_pin_row_offset = None
     self.relink_nodes()
@@ -1861,34 +1623,18 @@ fn PageList::trim_history(self : PageList) -> Unit {
     _ => ()
   }
   self.history = trimmed
-  self.compat_rows.trim_history_front(excess)
   self.relink_nodes()
   self.fixup_viewport(excess)
   self.mark_pins_for_rows_garbage(removed)
 }
 
 ///|
-fn PageList::shift_compat_active_row_ids_top_region_up(
+fn PageList::shift_active_pins_top_region_up(
   self : PageList,
   bottom : Int,
   count : Int,
 ) -> Unit {
-  let row_count = self.compat_rows.active_ids.length()
   let removed_count = min_int(count, bottom + 1)
-  let shifted : Array[UInt64] = []
-  for index in 0..<row_count {
-    if index <= bottom {
-      let source = index + count
-      if source <= bottom {
-        shifted.push(self.compat_rows.active_ids[source])
-      } else {
-        shifted.push(self.compat_rows.allocate_row_id())
-      }
-    } else {
-      shifted.push(self.compat_rows.active_ids[index])
-    }
-  }
-  self.compat_rows.active_ids = shifted
   for index in 0..<self.tracked_pins.length() {
     if physical_equal(self.tracked_pins[index].node, self.active_node) &&
       !self.tracked_pins[index].garbage {
@@ -1905,20 +1651,9 @@ fn PageList::shift_compat_active_row_ids_top_region_up(
 }
 
 ///|
-fn PageList::shift_compat_active_row_ids_down(
-  self : PageList,
-  count : Int,
-) -> Unit {
-  let row_count = self.compat_rows.active_ids.length()
+fn PageList::shift_active_pins_down(self : PageList, count : Int) -> Unit {
+  let row_count = self.rows.to_int()
   let keep = row_count - count
-  let shifted : Array[UInt64] = []
-  for _ in 0..<count {
-    shifted.push(self.compat_rows.allocate_row_id())
-  }
-  for index in 0..<keep {
-    shifted.push(self.compat_rows.active_ids[index])
-  }
-  self.compat_rows.active_ids = shifted
   for index in 0..<self.tracked_pins.length() {
     if physical_equal(self.tracked_pins[index].node, self.active_node) &&
       !self.tracked_pins[index].garbage {

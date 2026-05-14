@@ -4,10 +4,9 @@ test "surface registry/covers upstream type list in order" {
     "GhosttyColorRgb", "GhosttyDeviceAttributes", "GhosttyDeviceAttributesPrimary",
     "GhosttyDeviceAttributesSecondary", "GhosttyDeviceAttributesTertiary", "GhosttyFormatterTerminalOptions",
     "GhosttySelection", "GhosttyFormatterTerminalExtra", "GhosttyFormatterScreenExtra",
-    "GhosttyGridRef", "GhosttyMouseEncoderSize", "GhosttyMousePosition", "GhosttyPoint",
-    "GhosttyPointCoordinate", "GhosttyRenderStateColors", "GhosttySizeReportSize",
-    "GhosttyString", "GhosttyStyle", "GhosttyStyleColor", "GhosttyTerminalOptions",
-    "GhosttyTerminalScrollbar", "GhosttyTerminalScrollViewport",
+    "GhosttyMouseEncoderSize", "GhosttyMousePosition", "GhosttyPoint", "GhosttyPointCoordinate",
+    "GhosttyRenderStateColors", "GhosttySizeReportSize", "GhosttyString", "GhosttyStyle",
+    "GhosttyStyleColor", "GhosttyTerminalOptions", "GhosttyTerminalScrollbar", "GhosttyTerminalScrollViewport",
   ]
   let entries = terminal_surface_types()
   guard entries.length() == expected.length() else {
@@ -37,8 +36,8 @@ test "surface registry/returns direct mappings" {
   guard selection.mapping() == TerminalSurfaceTypeMapping::Direct else {
     fail("expected GhosttySelection to stay direct")
   }
-  guard selection.moonbit_surface() == "Selection[GridRef]" else {
-    fail("expected selection to specialize on GridRef")
+  guard selection.moonbit_surface() == "Selection[Coordinate]" else {
+    fail("expected selection to specialize on Coordinate")
   }
 }
 
