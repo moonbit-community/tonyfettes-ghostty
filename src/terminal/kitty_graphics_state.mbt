@@ -28,7 +28,7 @@ fn kitty_graphics_error_message(error : KittyGraphicsValidationError) -> Bytes {
 
 ///|
 priv enum KittyGraphicsPlacementLocation {
-  Grid(GridRef)
+  Pin(UInt64)
   Virtual
 }
 
@@ -128,7 +128,7 @@ priv struct KittyGraphicsGridSize {
 ///|
 fn KittyGraphicsPlacement::is_virtual(self : KittyGraphicsPlacement) -> Bool {
   match self.location {
-    Grid(_) => false
+    Pin(_) => false
     Virtual => true
   }
 }

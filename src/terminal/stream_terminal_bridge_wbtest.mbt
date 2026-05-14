@@ -72,7 +72,10 @@ fn StreamTerminalBridgeState::charset_single_shift(
 fn StreamTerminalBridgeState::has_saved_cursor(
   self : StreamTerminalBridgeState,
 ) -> Bool {
-  self.saved_cursor.has_saved()
+  match self.active_screen {
+    TerminalScreen::Primary => self.primary_storage.saved_cursor.has_saved()
+    TerminalScreen::Alternate => self.alternate_storage.saved_cursor.has_saved()
+  }
 }
 
 ///|

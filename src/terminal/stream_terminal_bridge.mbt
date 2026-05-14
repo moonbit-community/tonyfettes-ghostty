@@ -186,7 +186,6 @@ priv struct StreamTerminalBridgeState {
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
   mut tabstops : TerminalTabstopsState
-  saved_cursor : ScreenSavedCursorState
   hyperlink : ScreenHyperlinkState
   semantic : ScreenSemanticState
   metadata : TerminalMetadataState
@@ -232,7 +231,6 @@ fn StreamTerminalBridgeState::with_effects(
     input_flags: TerminalInputFlags::new(),
     kitty_keyboard: KittyKeyboardState::new(),
     tabstops: TerminalTabstopsState::new(DefaultColumns),
-    saved_cursor: ScreenSavedCursorState::new(),
     hyperlink: ScreenHyperlinkState::new(),
     semantic: ScreenSemanticState::new(),
     metadata: TerminalMetadataState::new(),
@@ -856,39 +854,10 @@ fn StreamTerminalBridgeState::resize(
     return TerminalResultCode::InvalidValue
   }
 
-  let active_screen = self.active_screen
-  let saved_cursor = if self.saved_cursor.has_saved() {
-    Some(self.saved_cursor.restore())
-  } else {
-    None
-  }
-  let saved_owner = self.saved_cursor.owner
   self.store_active_screen()
-  let primary_resize = self.primary_storage.resize(
-    rows,
-    columns,
-    if saved_owner == Some(TerminalScreen::Primary) {
-      saved_cursor
-    } else {
-      None
-    },
-  )
-  let alternate_resize = self.alternate_storage.resize(
-    rows,
-    columns,
-    if saved_owner == Some(TerminalScreen::Alternate) {
-      saved_cursor
-    } else {
-      None
-    },
-  )
-  match saved_owner {
-    None => ()
-    Some(TerminalScreen::Primary) =>
-      self.saved_cursor.resize(primary_resize.saved_cursor, columns)
-    Some(TerminalScreen::Alternate) =>
-      self.saved_cursor.resize(alternate_resize.saved_cursor, columns)
-  }
+  let active_screen = self.active_screen
+  ignore(self.primary_storage.resize(rows, columns))
+  ignore(self.alternate_storage.resize(rows, columns))
   self.load_active_screen(active_screen)
   self.tabstops = TerminalTabstopsState::new(columns)
   self.width_px = saturated_dimension(columns, cell_width_px)
@@ -1404,21 +1373,34 @@ fn StreamTerminalBridgeState::apply(
 fn StreamTerminalBridgeState::save_cursor(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  self.saved_cursor.save(
-    self.cursor,
-    self.current_style,
-    self.protected_state.cursor_protected(),
-    self.modes.get(Mode::Origin),
-    self.charset,
-  )
-  self.saved_cursor.owner = Some(self.active_screen)
+  match self.active_screen {
+    TerminalScreen::Primary =>
+      self.primary_storage.saved_cursor.save(
+        self.cursor,
+        self.current_style,
+        self.protected_state.cursor_protected(),
+        self.modes.get(Mode::Origin),
+        self.charset,
+      )
+    TerminalScreen::Alternate =>
+      self.alternate_storage.saved_cursor.save(
+        self.cursor,
+        self.current_style,
+        self.protected_state.cursor_protected(),
+        self.modes.get(Mode::Origin),
+        self.charset,
+      )
+  }
 }
 
 ///|
 fn StreamTerminalBridgeState::restore_cursor(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  let saved = self.saved_cursor.restore()
+  let saved = match self.active_screen {
+    TerminalScreen::Primary => self.primary_storage.saved_cursor.restore()
+    TerminalScreen::Alternate => self.alternate_storage.saved_cursor.restore()
+  }
   self.current_style = saved.style()
   self.charset = saved.charset()
   self.modes.set(Mode::Origin, saved.origin())
@@ -1602,7 +1584,6 @@ fn StreamTerminalBridgeState::full_reset(
   self.input_flags.full_reset()
   self.kitty_keyboard.reset()
   self.tabstops = TerminalTabstopsState::new(cols)
-  self.saved_cursor.reset()
   self.hyperlink.full_reset()
   self.semantic.full_reset()
   self.metadata.full_reset()
@@ -2194,7 +2175,7 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_display(
     KittyGraphicsPlacementLocation::Virtual
   } else {
     match self.kitty_graphics_cursor_pin() {
-      Some(pin) => KittyGraphicsPlacementLocation::Grid(pin)
+      Some(pin) => KittyGraphicsPlacementLocation::Pin(pin)
       None => {
         result.message = b"EINVAL: failed to prepare terminal state"
         return result
@@ -2202,6 +2183,9 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_display(
     }
   }
 
+  if display.placement_id != 0U {
+    self.untrack_kitty_pins_by_id(image.id, display.placement_id)
+  }
   let placement = self.kitty_graphics.add_placement(
     image.id,
     display.placement_id,
@@ -2218,19 +2202,26 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
   delete : KittyGraphicsDelete,
 ) -> Unit {
   match delete {
-    All(delete_images) => self.kitty_graphics.delete_all(delete_images)
-    Id(value) =>
+    All(delete_images) => {
+      self.untrack_all_kitty_pins()
+      self.kitty_graphics.delete_all(delete_images)
+    }
+    Id(value) => {
+      self.untrack_kitty_pins_by_id(value.image_id, value.placement_id)
       self.kitty_graphics.delete_by_id(
         value.image_id,
         value.placement_id,
         value.delete,
       )
-    Newest(value) =>
+    }
+    Newest(value) => {
+      self.untrack_kitty_pins_newest(value.image_number, value.placement_id)
       self.kitty_graphics.delete_newest(
         value.image_number,
         value.placement_id,
         value.delete,
       )
+    }
     IntersectCursor(delete) => ignore(delete)
     AnimationFrames(delete) => ignore(delete)
     IntersectCell(value) => {
@@ -2267,10 +2258,63 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
 ///|
 fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
   self : StreamTerminalBridgeState,
-) -> GridRef? {
-  self.grid_ref(
+) -> UInt64? {
+  self.scrollback.track_pin_at_point(
+    self.grid,
     Point::Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
   )
+}
+
+///|
+fn StreamTerminalBridgeState::untrack_all_kitty_pins(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  for placement in self.kitty_graphics.placements() {
+    self.untrack_kitty_placement_pin(placement)
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::untrack_kitty_pins_by_id(
+  self : StreamTerminalBridgeState,
+  image_id : UInt,
+  placement_id : UInt,
+) -> Unit {
+  for placement in self.kitty_graphics.placements() {
+    let matches = if placement_id == 0U {
+      placement.image_id == image_id
+    } else {
+      placement.image_id == image_id &&
+      placement.external &&
+      placement.placement_id == placement_id
+    }
+    if matches {
+      self.untrack_kitty_placement_pin(placement)
+    }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::untrack_kitty_pins_newest(
+  self : StreamTerminalBridgeState,
+  image_number : UInt,
+  placement_id : UInt,
+) -> Unit {
+  match self.kitty_graphics.image_by_number(image_number) {
+    Some(image) => self.untrack_kitty_pins_by_id(image.id, placement_id)
+    None => ()
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::untrack_kitty_placement_pin(
+  self : StreamTerminalBridgeState,
+  placement : KittyGraphicsPlacement,
+) -> Unit {
+  match placement.location {
+    Pin(id) => self.scrollback.untrack_pin(id)
+    Virtual => ()
+  }
 }
 
 ///|
@@ -2299,12 +2343,14 @@ fn StreamTerminalBridgeState::apply_kitty_graphics_cursor_movement(
   }
 
   match placement.location {
-    Grid(pin) => {
-      let target_col = (pin.x_coord().to_int() +
-      size.cols.reinterpret_as_int() +
-      1).to_uint16()
-      self.cursor.set_cursor_pos(self.cursor.y() + 1, target_col, false)
-    }
+    Pin(id) =>
+      match self.scrollback.pin_x(id) {
+        Some(x) => {
+          let target_col = (x.to_int() + size.cols.reinterpret_as_int() + 1).to_uint16()
+          self.cursor.set_cursor_pos(self.cursor.y() + 1, target_col, false)
+        }
+        None => ()
+      }
     Virtual => ()
   }
 }
@@ -2406,6 +2452,7 @@ fn StreamTerminalBridgeState::copy_cursor_between_screens(
 fn StreamTerminalBridgeState::clear_active_screen(
   self : StreamTerminalBridgeState,
 ) -> Unit {
+  self.untrack_all_kitty_pins()
   self.grid.full_reset()
   self.scrollback.full_reset(self.grid.rows)
   self.kitty_graphics.full_reset()

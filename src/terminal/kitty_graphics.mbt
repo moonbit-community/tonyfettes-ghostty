@@ -254,8 +254,8 @@ pub fn KittyPlacement::z(self : KittyPlacement) -> Int {
 
 ///|
 pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[GridRef]? {
-  let pin = match self.placement.location {
-    Grid(pin) => pin
+  let pin_id = match self.placement.location {
+    Pin(id) => id
     Virtual => return None
   }
   let grid = kitty_placement_grid(self)
@@ -265,13 +265,15 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[GridRef]? {
     return None
   }
 
-  let top_left = GridRef::new(self.screen, pin.row_id_value(), pin.x_coord())
-  let start = scrollback.point_from_row_id(
-    grid,
-    pin.row_id_value(),
-    pin.x_coord(),
-    Tag::Screen,
-  )
+  let top_left = match scrollback.grid_ref_from_pin(self.screen, pin_id) {
+    Some(value) => value
+    None => return None
+  }
+  let start = scrollback.point_from_pin(grid, pin_id, Tag::Screen)
+  let pin_x = match scrollback.pin_x(pin_id) {
+    Some(value) => value
+    None => return None
+  }
   match start {
     None => None
     Some(start_coord) => {
@@ -287,7 +289,7 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[GridRef]? {
         total_rows - 1,
       )
       let end_x = kitty_min_int(
-        pin.x_coord().to_int() + size.cols().reinterpret_as_int() - 1,
+        pin_x.to_int() + size.cols().reinterpret_as_int() - 1,
         grid.cols.to_int() - 1,
       )
       match
@@ -339,18 +341,17 @@ pub fn KittyPlacement::grid_size(
 pub fn KittyPlacement::viewport_position(
   self : KittyPlacement,
 ) -> KittyPlacementViewportPosition? {
-  let pin = match self.placement.location {
-    Grid(pin) => pin
+  let pin_id = match self.placement.location {
+    Pin(id) => id
     Virtual => return None
   }
   let grid = kitty_placement_grid(self)
   let scrollback = kitty_placement_scrollback(self)
-  let screen = scrollback.point_from_row_id(
-    grid,
-    pin.row_id_value(),
-    pin.x_coord(),
-    Tag::Screen,
-  )
+  let screen = scrollback.point_from_pin(grid, pin_id, Tag::Screen)
+  let pin_x = match scrollback.pin_x(pin_id) {
+    Some(value) => value
+    None => return None
+  }
   match screen {
     None => None
     Some(screen_coord) => {
@@ -361,7 +362,7 @@ pub fn KittyPlacement::viewport_position(
       if bottom <= 0 || row >= grid.rows.to_int() {
         None
       } else {
-        Some({ col: pin.x_coord().to_int(), row })
+        Some({ col: pin_x.to_int(), row })
       }
     }
   }

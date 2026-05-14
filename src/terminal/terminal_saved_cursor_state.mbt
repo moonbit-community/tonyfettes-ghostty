@@ -153,12 +153,11 @@ pub fn ScreenSavedCursor::charset(
 ///|
 struct ScreenSavedCursorState {
   mut saved : ScreenSavedCursor?
-  mut owner : TerminalScreen?
 } derive(Eq, Debug)
 
 ///|
 pub fn ScreenSavedCursorState::new() -> ScreenSavedCursorState {
-  { saved: None, owner: None }
+  { saved: None }
 }
 
 ///|
@@ -199,7 +198,6 @@ pub fn ScreenSavedCursorState::restore(
 ///|
 pub fn ScreenSavedCursorState::reset(self : ScreenSavedCursorState) -> Unit {
   self.saved = None
-  self.owner = None
 }
 
 ///|

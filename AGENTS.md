@@ -35,6 +35,34 @@
 - Prefer line-by-line translation over stylistic rewrites. Refactor only when
   needed to express the same semantics safely in MoonBit.
 
+## Plan execution contract
+
+- Before editing implementation files, identify the active plan file, exact
+  phase/step, upstream source section, MoonBit target files, and validation
+  command for the next change. State this to the user and wait for confirmation
+  when the task changes architecture, storage model, public API, or workflow.
+
+- Every implementation edit must map to a named upstream symbol or to an
+  explicitly approved compatibility adapter recorded in the active plan.
+
+- Do not introduce helper types, helper functions, or intermediate models that
+  are not present in upstream or the active plan. If such a helper appears
+  necessary, stop before editing and send a deviation report.
+
+- A deviation report must include:
+  - the active plan step
+  - the upstream symbol or behavior being translated
+  - the exact missing MoonBit capability or existing API conflict
+  - the proposed adapter name and code shape
+  - why continuing without approval would diverge from the plan
+
+- After each completed phase, update the active plan with validation results
+  before starting the next phase.
+
+- If RED/GREEN/VERIFY produces an unexpected failure, stop and report the exact
+  command, failing test, failing file/line, and current hypothesis before
+  expanding scope.
+
 ## Delegation First
 
 - Before deep reading or editing, decide whether the task should be split into

@@ -83,17 +83,13 @@ test "kitty graphics state/internal and external placements" {
   let first = state.add_placement(
     1U,
     0U,
-    KittyGraphicsPlacementLocation::Grid(
-      GridRef::new(TerminalScreen::Primary, 5UL, 3),
-    ),
+    KittyGraphicsPlacementLocation::Pin(5UL),
     sample_display(),
   )
   let second = state.add_placement(
     1U,
     0U,
-    KittyGraphicsPlacementLocation::Grid(
-      GridRef::new(TerminalScreen::Primary, 6UL, 4),
-    ),
+    KittyGraphicsPlacementLocation::Pin(6UL),
     sample_display(),
   )
   let replaced = state.add_placement(
@@ -106,9 +102,7 @@ test "kitty graphics state/internal and external placements" {
     state.add_placement(
       1U,
       9U,
-      KittyGraphicsPlacementLocation::Grid(
-        GridRef::new(TerminalScreen::Primary, 8UL, 1),
-      ),
+      KittyGraphicsPlacementLocation::Pin(8UL),
       sample_display(placement_id=9U, columns=2U, rows=1U),
     ),
   )
@@ -137,9 +131,7 @@ test "kitty graphics state/delete helpers" {
     state.add_placement(
       1U,
       4U,
-      KittyGraphicsPlacementLocation::Grid(
-        GridRef::new(TerminalScreen::Primary, 1UL, 0),
-      ),
+      KittyGraphicsPlacementLocation::Pin(1UL),
       sample_display(image_id=1U, placement_id=4U),
     ),
   )
@@ -147,9 +139,7 @@ test "kitty graphics state/delete helpers" {
     state.add_placement(
       2U,
       5U,
-      KittyGraphicsPlacementLocation::Grid(
-        GridRef::new(TerminalScreen::Primary, 2UL, 0),
-      ),
+      KittyGraphicsPlacementLocation::Pin(2UL),
       sample_display(image_id=2U, placement_id=5U),
     ),
   )
@@ -264,9 +254,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     image_id: 1U,
     placement_id: 0U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Grid(
-      GridRef::new(TerminalScreen::Primary, 9UL, 2),
-    ),
+    location: KittyGraphicsPlacementLocation::Pin(9UL),
     x_offset: 5U,
     y_offset: 3U,
     source_x: 1U,
@@ -411,9 +399,7 @@ test "kitty graphics state/reset and edge helper branches" {
     state.add_placement(
       5U,
       0U,
-      KittyGraphicsPlacementLocation::Grid(
-        GridRef::new(TerminalScreen::Primary, 7UL, 1),
-      ),
+      KittyGraphicsPlacementLocation::Pin(7UL),
       sample_display(image_id=5U),
     ),
   )
@@ -515,9 +501,7 @@ test "kitty graphics state/reset and edge helper branches" {
     image_id: 1U,
     placement_id: 1U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Grid(
-      GridRef::new(TerminalScreen::Primary, 1UL, 0),
-    ),
+    location: KittyGraphicsPlacementLocation::Pin(1UL),
     x_offset: 1U,
     y_offset: 2U,
     source_x: 0U,

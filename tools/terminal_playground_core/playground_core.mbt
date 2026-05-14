@@ -73,8 +73,8 @@ fn PlaygroundSession::new() -> PlaygroundSession {
   terminal.set_size(fn() {
     Some(
       @terminal.Size::new(
-        terminal.columns(),
         terminal.rows(),
+        terminal.columns(),
         DefaultCellWidthPx,
         DefaultCellHeightPx,
       ),

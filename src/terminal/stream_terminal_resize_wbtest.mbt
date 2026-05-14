@@ -76,6 +76,18 @@ test "resize preserves cursor on tracked blank trailing row" {
 }
 
 ///|
+test "resize row shrink keeps tracked blank cursor row visible" {
+  let term = new_terminal(5, 5)
+  term.next_slice(b"abc\r\n")
+  assert_eq(term.cursor_x(), 0)
+  assert_eq(term.cursor_y(), 1)
+  ignore(term.resize(5, 2, 0U, 0U))
+  assert_eq(term.cursor_x(), 0)
+  assert_eq(term.cursor_y(), 1)
+  assert_eq(plain_format(term), b"abc")
+}
+
+///|
 test "resize alternate screen keeps 1049 saved primary cursor" {
   let term = new_terminal(5, 3)
   term.next_slice(b"\x1B[2;5H")

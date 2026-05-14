@@ -141,6 +141,33 @@ test "kitty graphics/image lookup and placement geometry match transmitted state
 }
 
 ///|
+test "kitty graphics/placement pin survives column resize reflow" {
+  let terminal = StreamTerminal::new()
+  guard terminal.resize(8, 3, 10U, 20U) == TerminalResultCode::Success else {
+    fail("expected resize before kitty graphics reflow-pin test")
+  }
+
+  terminal.next_slice(
+    b"\x1B_Ga=T,t=d,f=24,i=1,p=1,s=1,v=2,c=2,r=1;////////\x1B\\",
+  )
+
+  let placement = next_placement(terminal.kitty_graphics())
+  guard terminal.resize(4, 3, 10U, 20U) == TerminalResultCode::Success else {
+    fail("expected resize after kitty graphics placement")
+  }
+  let rect = placement.rect().unwrap()
+  let viewport = placement.viewport_position().unwrap()
+  guard terminal.point_from_grid_ref(rect.start(), Tag::Screen) ==
+    Some(Coordinate::new(0, 0U)) &&
+    viewport.col() == 0 &&
+    viewport.row() == 0 else {
+    fail("expected kitty placement pin to remap across column reflow")
+  }
+
+  terminal.deinit()
+}
+
+///|
 test "kitty graphics/source rect and virtual placement stay typed" {
   let terminal = StreamTerminal::new()
   guard terminal.resize(80, 24, 10U, 20U) == TerminalResultCode::Success else {
