@@ -28,7 +28,7 @@ fn kitty_graphics_error_message(error : KittyGraphicsValidationError) -> Bytes {
 
 ///|
 priv enum KittyGraphicsPlacementLocation {
-  Pin(UInt64)
+  Pin(PageListPin)
   Virtual
 }
 
@@ -139,7 +139,7 @@ fn KittyGraphicsPlacement::deinit(
   scrollback : PageList,
 ) -> Unit {
   match self.location {
-    Pin(id) => scrollback.untrack_pin(id)
+    Pin(pin) => scrollback.untrack_pin(pin)
     Virtual => ()
   }
 }

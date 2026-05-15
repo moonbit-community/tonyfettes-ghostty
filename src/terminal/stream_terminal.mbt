@@ -328,6 +328,54 @@ pub fn StreamTerminal::screen_row_snapshot(
 }
 
 ///|
+pub fn StreamTerminal::pin(self : StreamTerminal, point : Point) -> Pin? {
+  self.bridge().pin(point)
+}
+
+///|
+pub fn StreamTerminal::untrack_pin(self : StreamTerminal, pin : Pin) -> Unit {
+  self.bridge().untrack_pin(pin)
+}
+
+///|
+pub fn StreamTerminal::point_from_pin(
+  self : StreamTerminal,
+  pin : Pin,
+  tag : Tag,
+) -> Coordinate? {
+  self.bridge().point_from_pin(pin, tag)
+}
+
+///|
+pub fn StreamTerminal::selection(
+  self : StreamTerminal,
+  start : Point,
+  end_ : Point,
+  rectangle : Bool,
+) -> Selection? {
+  match self.pin(start) {
+    None => None
+    Some(start_pin) =>
+      match self.pin(end_) {
+        Some(end_pin) => Some(Selection::new(start_pin, end_pin, rectangle))
+        None => {
+          self.untrack_pin(start_pin)
+          None
+        }
+      }
+  }
+}
+
+///|
+pub fn StreamTerminal::untrack_selection(
+  self : StreamTerminal,
+  selection : Selection,
+) -> Unit {
+  self.untrack_pin(selection.start())
+  self.untrack_pin(selection.end())
+}
+
+///|
 pub fn StreamTerminal::set_write_pty(
   self : StreamTerminal,
   callback : (Bytes) -> Unit,

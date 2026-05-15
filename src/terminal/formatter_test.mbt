@@ -73,11 +73,13 @@ test "formatter/plain selection restricts output" {
   let terminal = StreamTerminal::new()
   terminal.next_slice(b"Hello World")
 
-  let selection = Selection::new(
-    Coordinate::new(6, 0U),
-    Coordinate::new(10, 0U),
-    false,
-  )
+  let selection = terminal
+    .selection(
+      Point::Active(Coordinate::new(6, 0U)),
+      Point::Active(Coordinate::new(10, 0U)),
+      false,
+    )
+    .unwrap()
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
@@ -91,6 +93,39 @@ test "formatter/plain selection restricts output" {
     fail("expected formatter selection to stay inclusive")
   }
 
+  terminal.deinit()
+}
+
+///|
+test "formatter/plain tracked selection follows active row into scrollback" {
+  let terminal = StreamTerminal::new()
+  guard terminal.resize(3, 2, 0U, 0U) == TerminalResultCode::Success else {
+    fail("expected resize before tracked selection test")
+  }
+  terminal.next_slice(b"abc\r\ndef")
+  let selection = terminal
+    .selection(
+      Point::Active(Coordinate::new(0, 0U)),
+      Point::Active(Coordinate::new(2, 0U)),
+      false,
+    )
+    .unwrap()
+
+  terminal.next_slice(b"\r\nghi")
+  let formatter = Formatter::new_terminal(
+    terminal,
+    FormatterOptions::new(
+      Format::Plain,
+      selection=Some(selection),
+      extra=FormatterTerminalExtra::none(),
+    ),
+  )
+
+  guard formatter.format() == b"abc" else {
+    fail("expected tracked selection to keep pointing at scrolled row")
+  }
+
+  terminal.untrack_selection(selection)
   terminal.deinit()
 }
 
@@ -114,13 +149,47 @@ test "formatter/plain styles constructor stays text-only and blank selection is 
     FormatterOptions::new(
       Format::Plain,
       selection=Some(
-        Selection::new(Coordinate::new(0, 0U), Coordinate::new(0, 0U), false),
+        terminal
+        .selection(
+          Point::Active(Coordinate::new(0, 0U)),
+          Point::Active(Coordinate::new(0, 0U)),
+          false,
+        )
+        .unwrap(),
       ),
       extra=FormatterTerminalExtra::none(),
     ),
   )
   guard stale_formatter.format() == b"" else {
     fail("expected blank active-screen selection to format as empty")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "formatter/plain stale pin selection formats empty" {
+  let terminal = StreamTerminal::new()
+  terminal.next_slice(b"abc")
+  let selection = terminal
+    .selection(
+      Point::Active(Coordinate::new(0, 0U)),
+      Point::Active(Coordinate::new(2, 0U)),
+      false,
+    )
+    .unwrap()
+  terminal.reset()
+
+  let formatter = Formatter::new_terminal(
+    terminal,
+    FormatterOptions::new(
+      Format::Plain,
+      selection=Some(selection),
+      extra=FormatterTerminalExtra::none(),
+    ),
+  )
+  guard formatter.format() == b"" else {
+    fail("expected stale pin selection to format as empty")
   }
 
   terminal.deinit()
@@ -139,7 +208,13 @@ test "formatter/plain orders reversed and rectangle selections" {
     FormatterOptions::new(
       Format::Plain,
       selection=Some(
-        Selection::new(Coordinate::new(1, 0U), Coordinate::new(0, 0U), false),
+        terminal
+        .selection(
+          Point::Active(Coordinate::new(1, 0U)),
+          Point::Active(Coordinate::new(0, 0U)),
+          false,
+        )
+        .unwrap(),
       ),
       extra=FormatterTerminalExtra::none(),
     ),
@@ -153,7 +228,13 @@ test "formatter/plain orders reversed and rectangle selections" {
     FormatterOptions::new(
       Format::Plain,
       selection=Some(
-        Selection::new(Coordinate::new(2, 1U), Coordinate::new(1, 0U), true),
+        terminal
+        .selection(
+          Point::Active(Coordinate::new(2, 1U)),
+          Point::Active(Coordinate::new(1, 0U)),
+          true,
+        )
+        .unwrap(),
       ),
       extra=FormatterTerminalExtra::none(),
     ),
@@ -184,7 +265,13 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
     FormatterOptions::new(
       Format::Plain,
       selection=Some(
-        Selection::new(Coordinate::new(1, 0U), Coordinate::new(1, 0U), false),
+        wide_tail
+        .selection(
+          Point::Active(Coordinate::new(1, 0U)),
+          Point::Active(Coordinate::new(1, 0U)),
+          false,
+        )
+        .unwrap(),
       ),
       extra=FormatterTerminalExtra::none(),
     ),
@@ -204,7 +291,13 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
     FormatterOptions::new(
       Format::Plain,
       selection=Some(
-        Selection::new(Coordinate::new(0, 1U), Coordinate::new(0, 1U), false),
+        wide_head
+        .selection(
+          Point::Active(Coordinate::new(0, 1U)),
+          Point::Active(Coordinate::new(0, 1U)),
+          false,
+        )
+        .unwrap(),
       ),
       extra=FormatterTerminalExtra::none(),
     ),

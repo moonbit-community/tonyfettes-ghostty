@@ -59,7 +59,7 @@ test "terminal package smoke/metadata registry and system hooks" {
   }
 
   let entries = terminal_surface_types()
-  guard entries.length() == 21 else {
+  guard entries.length() == 22 else {
     fail("expected the translated types.zig registry to stay complete")
   }
 
@@ -94,11 +94,13 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
 
   terminal.next_slice(b"AB\r\nCD")
 
-  let selection = Selection::new(
-    Coordinate::new(1, 0U),
-    Coordinate::new(1, 1U),
-    true,
-  )
+  let selection = terminal
+    .selection(
+      Point::Active(Coordinate::new(1, 0U)),
+      Point::Active(Coordinate::new(1, 1U)),
+      true,
+    )
+    .unwrap()
 
   guard terminal.screen_cell_snapshot(0, 1).unwrap().codepoint() ==
     b'B'.to_uint() &&

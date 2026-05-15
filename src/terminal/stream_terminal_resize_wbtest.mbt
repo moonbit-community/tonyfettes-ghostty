@@ -74,6 +74,33 @@ test "resize preserves cursor on tracked blank trailing row" {
 }
 
 ///|
+test "resize clamps deferred blank row cursor to resized row width" {
+  let term = new_terminal(5, 3)
+  term.next_slice(b"abc\r\n\x1B[3;5H")
+  assert_eq(term.cursor_x(), 4)
+  assert_eq(term.cursor_y(), 2)
+  ignore(term.resize(3, 3, 0U, 0U))
+  assert_eq(term.cursor_x(), 2)
+  assert_eq(term.cursor_y(), 2)
+}
+
+///|
+test "resize reflow marks prompt continuations" {
+  let term = new_terminal(6, 3)
+  term.next_slice(b"\x1B]133;A\x07abcdef")
+  ignore(term.resize(3, 3, 0U, 0U))
+  let prompt = term.screen_row_snapshot(0).unwrap()
+  let continuation = term.screen_row_snapshot(1).unwrap()
+  guard prompt.wrap() && prompt.semantic_prompt() == RowSemanticPrompt::Prompt else {
+    fail("expected first reflowed row to remain the primary prompt")
+  }
+  guard continuation.wrap_continuation() &&
+    continuation.semantic_prompt() == RowSemanticPrompt::PromptContinuation else {
+    fail("expected reflowed row to become a prompt continuation")
+  }
+}
+
+///|
 test "resize row shrink keeps tracked blank cursor row visible" {
   let term = new_terminal(5, 5)
   term.next_slice(b"abc\r\n")
@@ -113,6 +140,21 @@ test "resize row grow above bottom preserves active y without pulling scrollback
 }
 
 ///|
+test "resize reflow grow columns pads below preserved cursor" {
+  let term = new_terminal(3, 3)
+  term.next_slice(b"1\r\n2\r\n3\r\n4")
+  assert_eq(term.scrollback_rows(), 1U)
+  term.next_slice(b"\x1B[2J\x1B[Habc")
+  assert_eq(term.cursor_x(), 2)
+  assert_eq(term.cursor_y(), 0)
+  assert_eq(term.scrollback_rows(), 1U)
+  ignore(term.resize(6, 3, 0U, 0U))
+  assert_eq(term.cursor_x(), 2)
+  assert_eq(term.cursor_y(), 0)
+  assert_eq(term.scrollback_rows(), 1U)
+}
+
+///|
 test "resize alternate screen keeps 1049 saved primary cursor" {
   let term = new_terminal(5, 3)
   term.next_slice(b"\x1B[2;5H")
@@ -124,7 +166,7 @@ test "resize alternate screen keeps 1049 saved primary cursor" {
   ignore(term.resize(3, 3, 0U, 0U))
   term.next_slice(b"\x1B[?1049l")
   assert_true(term.active_screen() == TerminalScreen::Primary)
-  assert_eq(term.cursor_x(), 1)
+  assert_eq(term.cursor_x(), 2)
   assert_eq(term.cursor_y(), 1)
 }
 
@@ -215,4 +257,14 @@ test "resize reflow wraps wide character with spacer head" {
   assert_true(cell_wide(term, 1, 0) == PageCellWide::Wide)
   assert_eq(cell_codepoint(term, 1, 1), 0U)
   assert_true(cell_wide(term, 1, 1) == PageCellWide::SpacerTail)
+}
+
+///|
+test "resize reflow wide retry preserves saved cursor on wide cell" {
+  let term = new_terminal(3, 2)
+  term.next_slice(b"x\x1B7\xF0\x9F\x98\x80")
+  ignore(term.resize(2, 2, 0U, 0U))
+  term.next_slice(b"\x1B[H\x1B8")
+  assert_eq(term.cursor_x(), 0)
+  assert_eq(term.cursor_y(), 1)
 }

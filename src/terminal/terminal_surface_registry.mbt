@@ -101,7 +101,12 @@ let terminal_surface_type_entries : ReadOnlyArray[TerminalSurfaceTypeInfo] = [
   terminal_surface_type_info(
     "GhosttySelection",
     TerminalSurfaceTypeMapping::Direct,
-    "Selection[Coordinate]",
+    "Selection",
+  ),
+  terminal_surface_type_info(
+    "GhosttyGridRef",
+    TerminalSurfaceTypeMapping::Direct,
+    "Pin",
   ),
   terminal_surface_type_info(
     "GhosttyFormatterTerminalExtra",

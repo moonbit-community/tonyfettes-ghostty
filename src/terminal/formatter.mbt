@@ -104,16 +104,16 @@ struct FormatterOptions {
   emit : Format
   unwrap : Bool
   trim : Bool
-  selection : Selection[Coordinate]?
+  selection : Selection?
   extra : FormatterTerminalExtra
-} derive(Eq, Debug)
+}
 
 ///|
 pub fn FormatterOptions::new(
   emit : Format,
   unwrap? : Bool = false,
   trim? : Bool = true,
-  selection? : Selection[Coordinate]? = None,
+  selection? : Selection? = None,
   extra? : FormatterTerminalExtra = FormatterTerminalExtra::styles(),
 ) -> FormatterOptions {
   { emit, unwrap, trim, selection, extra }
@@ -332,8 +332,14 @@ fn formatter_selection_bounds(
         rectangle: false,
       })
     Some(selection) => {
-      let start = selection.start()
-      let end_ = selection.end()
+      let start = match state.point_from_pin(selection.start(), Tag::Screen) {
+        Some(value) => value
+        None => return None
+      }
+      let end_ = match state.point_from_pin(selection.end(), Tag::Screen) {
+        Some(value) => value
+        None => return None
+      }
       if selection.rectangle() {
         Some({
           start: Coordinate::new(
@@ -398,7 +404,7 @@ fn formatter_write_content(
   let mut y = bounds.start.y().reinterpret_as_int()
   let end_y = bounds.end_.y().reinterpret_as_int()
   while y <= end_y {
-    match state.scrollback.row(state.grid, y.to_uint16()) {
+    match state.scrollback.screen_row(state.grid, y.to_uint16()) {
       None => y += 1
       Some(row) =>
         match formatter_row_bounds(state, bounds, y) {
@@ -426,7 +432,11 @@ fn formatter_write_content(
             let mut x = row_bounds.start_x
             while x <= row_bounds.end_x {
               match
-                state.scrollback.cell(state.grid, y.to_uint16(), x.to_uint16()) {
+                state.scrollback.screen_cell(
+                  state.grid,
+                  y.to_uint16(),
+                  x.to_uint16(),
+                ) {
                 None => x += 1
                 Some(cell) => {
                   match cell.wide() {
@@ -516,7 +526,11 @@ fn formatter_row_bounds(
 
   if start_x > 0 {
     match
-      state.scrollback.cell(state.grid, row.to_uint16(), start_x.to_uint16()) {
+      state.scrollback.screen_cell(
+        state.grid,
+        row.to_uint16(),
+        start_x.to_uint16(),
+      ) {
       Some(cell) =>
         match cell.wide() {
           PageCellWide::SpacerTail => start_x -= 1
@@ -538,7 +552,8 @@ fn formatter_row_is_blank(
 ) -> Bool {
   let mut x = bounds.start_x
   while x <= bounds.end_x {
-    match state.scrollback.cell(state.grid, row.to_uint16(), x.to_uint16()) {
+    match
+      state.scrollback.screen_cell(state.grid, row.to_uint16(), x.to_uint16()) {
       Some(cell) => if cell.has_text() { return false }
       None => ()
     }

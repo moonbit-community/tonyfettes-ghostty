@@ -3,7 +3,7 @@ test "surface registry/covers upstream type list in order" {
   let expected : Array[String] = [
     "GhosttyColorRgb", "GhosttyDeviceAttributes", "GhosttyDeviceAttributesPrimary",
     "GhosttyDeviceAttributesSecondary", "GhosttyDeviceAttributesTertiary", "GhosttyFormatterTerminalOptions",
-    "GhosttySelection", "GhosttyFormatterTerminalExtra", "GhosttyFormatterScreenExtra",
+    "GhosttySelection", "GhosttyGridRef", "GhosttyFormatterTerminalExtra", "GhosttyFormatterScreenExtra",
     "GhosttyMouseEncoderSize", "GhosttyMousePosition", "GhosttyPoint", "GhosttyPointCoordinate",
     "GhosttyRenderStateColors", "GhosttySizeReportSize", "GhosttyString", "GhosttyStyle",
     "GhosttyStyleColor", "GhosttyTerminalOptions", "GhosttyTerminalScrollbar", "GhosttyTerminalScrollViewport",
@@ -36,8 +36,14 @@ test "surface registry/returns direct mappings" {
   guard selection.mapping() == TerminalSurfaceTypeMapping::Direct else {
     fail("expected GhosttySelection to stay direct")
   }
-  guard selection.moonbit_surface() == "Selection[Coordinate]" else {
-    fail("expected selection to specialize on Coordinate")
+  guard selection.moonbit_surface() == "Selection" else {
+    fail("expected selection to use pin-backed carrier")
+  }
+
+  let pin = terminal_surface_type("GhosttyGridRef").unwrap()
+  guard pin.mapping() == TerminalSurfaceTypeMapping::Direct &&
+    pin.moonbit_surface() == "Pin" else {
+    fail("expected GhosttyGridRef to map to Pin")
   }
 }
 

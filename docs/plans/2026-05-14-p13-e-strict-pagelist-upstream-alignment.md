@@ -631,6 +631,270 @@ Result: checks passed. `moon check` still reports existing deprecated
 `assert_eq` warnings in unrelated tests. The row-id compatibility grep returned
 no matches in source and generated terminal interfaces.
 
+### 2026-05-14: Vendor Demo Removal Checkpoint
+
+Implemented in the `tun-poc` vendored copy only:
+
+- Removed browser demo directories:
+  - `demo/terminal_playground`
+  - `demo/rabbita_asciinema`
+- Removed the demo-only MoonBit adapter package:
+  - `tools/terminal_playground_core`
+- Removed the GitHub Pages demo workflow:
+  - `.github/workflows/pages.yml`
+- Removed `demo/rabbita_asciinema` from `moon.work`.
+- Marked the demo plan records as canonical project history only.
+
+Reason: `tun-poc` does not consume the Ghostty browser demos, and keeping them
+in the vendor copy creates review noise such as demo artifact path issues that
+are unrelated to the terminal package used by the server.
+
+### 2026-05-15: Wide-Cell Saved Cursor Retry Fix
+
+Implemented in the `tun-poc` vendored copy after review triage:
+
+- Added a focused resize regression test for a saved cursor pinned to a wide
+  cell whose first reflow attempt writes a spacer-head placeholder and returns
+  `Repeat`.
+- Changed `PageListReflowCursor::reflow_row` so source-cell pins move only
+  after `write_cell` confirms the source cell was consumed by returning
+  `Success` or `SkipNext`.
+- Left pins unmoved on `PageListReflowWriteResult::Repeat`, so the same source
+  wide-cell pin is remapped on the next row when the real wide cell is written.
+
+Review triage status:
+
+- The styled-blank C reproduction did not reproduce a terminal-visible failure
+  in the current Ghostty terminal.
+- The wide-cell saved-cursor C reproduction reproduced the failure and is fixed
+  by this checkpoint.
+- The prompt-continuation metadata concern remains a metadata/navigation issue
+  to evaluate separately; it is not changed by this checkpoint.
+
+Validation:
+
+- RED: `moon test src/terminal/stream_terminal_resize_wbtest.mbt --filter "resize reflow wide retry preserves saved cursor on wide cell"` failed with `1 != 0`.
+- GREEN: the same focused command passed after moving pins after successful
+  source-cell consumption.
+- VERIFY: `moon test src/terminal/stream_terminal_resize_wbtest.mbt`,
+  `moon fmt`, `moon check`, and `git diff --check` passed. `moon check`
+  still reports existing deprecated `assert_eq` warnings in unrelated tests.
+
+### 2026-05-15: Prompt Continuation Reflow Fix
+
+Implemented in the `tun-poc` vendored copy after review confirmation:
+
+- Added a focused resize regression test that marks a row as an OSC 133 primary
+  prompt, shrinks columns so PageList reflow splits the row, and asserts the
+  emitted continuation row is `RowSemanticPrompt::PromptContinuation`.
+- Changed the `PageListReflowCursor::reflow_row` pending-wrap continuation
+  branch to convert copied `RowSemanticPrompt::Prompt` metadata into
+  `RowSemanticPrompt::PromptContinuation`, matching the normal print-wrap path.
+
+Validation:
+
+- RED: `moon test src/terminal/stream_terminal_resize_wbtest.mbt --filter "resize reflow marks prompt continuations"` failed with `expected reflowed row to become a prompt continuation`.
+- GREEN: the same focused command passed after the prompt-continuation
+  conversion.
+- VERIFY: `moon test src/terminal/stream_terminal_resize_wbtest.mbt`,
+  `moon check`, `moon fmt`, `moon info`, and `git diff --check` passed.
+  `moon check` still reports existing deprecated `assert_eq` warnings in
+  unrelated tests.
+
+### 2026-05-15: Preserved Cursor Padding Fix
+
+Implemented in the `tun-poc` vendored copy after review confirmation:
+
+- Added a focused resize regression test for a terminal with existing
+  scrollback, a cleared active grid, and a cursor with blank rows below it
+  before a column-grow reflow.
+- Changed the PageList column-reflow active-row selection so `desired` values
+  beyond the current bottom slice append blank rows below the preserved cursor,
+  matching upstream `resizeCols` growth behavior instead of clamping to
+  `bottom_start` and pulling old scrollback into active rows.
+
+Validation:
+
+- RED: `moon test src/terminal/stream_terminal_resize_wbtest.mbt --filter "resize reflow grow columns pads below preserved cursor"` failed with `1 != 0` for the post-resize cursor row.
+- GREEN: the same focused command passed after appending blank rows for the
+  preserved-cursor padding case.
+- VERIFY: `moon test src/terminal/stream_terminal_resize_wbtest.mbt`,
+  `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`,
+  `moon test src/terminal/terminal_screen_state_wbtest.mbt`, `moon check`,
+  `moon fmt`, `moon info`, and `git diff --check` passed. `moon check` still
+  reports existing deprecated `assert_eq` warnings in unrelated tests.
+
+### 2026-05-15: Deferred Blank-Row Pin Clamp Fix
+
+Implemented in the `tun-poc` vendored copy after review confirmation:
+
+- Added a focused resize regression test for a cursor tracked on a deferred
+  blank row after a non-full source row. Shrinking from 5 columns to 3 now
+  restores the cursor at column 2 instead of column 0.
+- Changed the PageList reflow pin clamp to use target-row start column 0 when
+  deferred blank rows are waiting to be flushed. This avoids using the previous
+  destination row's `self.x` for a pin that belongs to the next blank row.
+- Updated the `?1049` saved-primary-cursor resize expectation from x=1 to x=2.
+  That saved cursor is also a blank-row pin; with target-row-width clamping it
+  should clamp to the last column of the resized 3-column primary screen.
+
+Validation:
+
+- RED: `moon test src/terminal/stream_terminal_resize_wbtest.mbt --filter "resize clamps deferred blank row cursor to resized row width"` failed with `0 != 2`.
+- GREEN: the same focused command passed after the clamp fix.
+- VERIFY: `moon test src/terminal/stream_terminal_resize_wbtest.mbt`,
+  `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`,
+  `moon test src/terminal/terminal_screen_state_wbtest.mbt`, `moon check`,
+  `moon fmt`, `moon info`, and `git diff --check` passed. `moon check` still
+  reports existing deprecated `assert_eq` warnings in unrelated tests.
+
+### 2026-05-15: Pin-Backed Public Selection API Correction
+
+Review found that the coordinate-based formatter selection API introduced
+during row-id compatibility removal could accept stale or out-of-range row
+coordinates. This differs from upstream, where `GhosttySelection` carries
+`GhosttyGridRef` values that convert to `PageList.Pin`, not raw screen
+coordinates.
+
+User confirmed reverting the formatter/selection surface to upstream-shaped
+pins instead of preserving `Selection[Coordinate]` compatibility.
+
+Implemented in the `tun-poc` vendored copy:
+
+- Replaced generic `Selection[Ref]` with opaque, pin-backed `Selection`.
+- Added opaque public `Pin`, plus `StreamTerminal::pin`,
+  `StreamTerminal::point_from_pin`, and `StreamTerminal::selection` as the
+  MoonBit equivalents of upstream `grid_ref` / `point_from_grid_ref` and
+  `Selection.init`.
+- Changed `FormatterOptions::selection` from `Selection[Coordinate]?` to
+  `Selection?`; formatter now resolves pins to screen coordinates before
+  building bounds and returns empty output when either pin is stale.
+- Changed `KittyPlacement::rect` to return pin-backed `Selection?`, matching
+  upstream placement rects that return `PageList.Pin` endpoints.
+- Updated the terminal surface registry so `GhosttySelection` maps to
+  `Selection` and `GhosttyGridRef` maps to `Pin`.
+- Added coverage that rejects out-of-range selection points and confirms stale
+  pin selections format as empty.
+
+Validation:
+
+- RED/API trace: `rg -n "Selection\\[Coordinate\\]|Selection\\[Ref\\]|selection\\? : Selection\\[" src/terminal -g '*.mbt' -g '*.mbti'` found the old formatter and generated-interface coordinate surface.
+- GREEN: `moon check`, `moon test src/terminal/formatter_test.mbt`,
+  `moon test src/terminal/selection_test.mbt`,
+  `moon test src/terminal/kitty_graphics_test.mbt`,
+  `moon test src/terminal/kitty_graphics_wbtest.mbt`,
+  `moon test src/terminal/formatter_wbtest.mbt`,
+  `moon test src/terminal/terminal_package_smoke_test.mbt`, and
+  `moon test src/terminal/terminal_surface_registry_test.mbt` passed.
+- VERIFY: `moon fmt`, `moon info`, `moon test src/terminal`, and
+  `git diff --check` passed. `moon check` and package tests still report
+  existing deprecated `assert_eq` warnings in unrelated tests.
+
+### 2026-05-15: Upstream-Carried Reflow Queued-Break Behavior
+
+Review noted that `PageListReflowCursor::reflow_row` flushes queued hard breaks
+before processing a source row marked `wrap_continuation`.
+
+This is upstream-carried behavior, not a MoonBit-only regression. Upstream
+`PageList.zig` has the same structure: blank non-continuation rows increment
+`new_rows`, and the next nonblank row unconditionally flushes `new_rows` before
+copying row metadata or checking `wrap_continuation`.
+
+If this behavior is changed locally, treat it as an intentional upstream bug fix
+or deliberate divergence from strict translation, not as ordinary alignment
+cleanup.
+
+### 2026-05-15: Public Pin Tracking Fix
+
+Review noted that public `Pin` and `Selection` handles created from active rows
+were untracked snapshots. If terminal output later scrolled the active row into
+history, the handle still resolved through the active node and formatted the new
+row contents.
+
+Upstream comparison:
+
+- `Selection.init` creates untracked bounds in Zig, and upstream documents that
+  untracked bounds are unsafe after the screen changes.
+- Long-lived upstream selections go through `Screen.select`, which converts
+  untracked bounds to tracked pins via `Selection.track` and later releases them
+  via `Selection.deinit`.
+- The MoonBit public `StreamTerminal::selection` API had no corresponding
+  tracked lifecycle, so delayed formatter/copy usage was a MoonBit API bug, not
+  a normal upstream terminal path bug.
+
+Implemented in the `tun-poc` vendored copy:
+
+- Made public `Pin` an opaque tracked-pin handle instead of a node/y/x snapshot.
+- Changed `StreamTerminal::pin` and `StreamTerminal::selection` to allocate
+  tracked PageList pins and resolve them through `point_from_pin`.
+- Added `StreamTerminal::untrack_pin` and
+  `StreamTerminal::untrack_selection`, mirroring upstream `untrackPin`
+  lifecycle responsibilities.
+- Added a regression test where a formatter selection created on active row 0
+  continues to format the original row after that row scrolls into history.
+
+Validation:
+
+- RED: `moon test src/terminal/formatter_test.mbt --filter "formatter/plain tracked selection follows active row into scrollback"` failed with `expected tracked selection to keep pointing at scrolled row`.
+- GREEN: the same focused command passed after public pins became tracked
+  handles.
+- VERIFY: `moon test src/terminal/selection_test.mbt`,
+  `moon test src/terminal/formatter_test.mbt`,
+  `moon test src/terminal/kitty_graphics_test.mbt`, and
+  `moon test src/terminal/kitty_graphics_wbtest.mbt` passed. `moon fmt`,
+  `moon info`, `moon check`, `moon test src/terminal`, `moon test`, and
+  `git diff --check` passed. Existing deprecated `assert_eq` warnings remain in
+  unrelated tests. `moon coverage analyze` is blocked by the MoonBit coverage
+  reporter raising `Line 1314 out of bounds (total lines: 1309)` even after
+  `moon coverage clean`.
+
+### 2026-05-15: Public Pin Owner And Object Identity Fix
+
+Review noted that the public pin-backed API still used per-PageList numeric pin
+IDs. Primary and alternate PageLists both start allocating IDs from zero, so a
+stored primary pin could resolve or untrack an unrelated alternate pin after a
+screen switch.
+
+Implemented in the `tun-poc` vendored copy:
+
+- Replaced the public `Pin` handle's numeric ID with the owning
+  `TerminalScreen` plus the tracked `PageListPin` object.
+- Removed numeric IDs from `PageListPin`, `PageList::track_pin`,
+  `PageList::untrack_pin`, preserved resize pins, viewport pins, and kitty
+  placement pins.
+- Changed untracking to remove the exact `PageListPin` object using
+  `physical_equal`, matching upstream `untrackPin(self, p: *Pin)` pointer
+  identity semantics.
+- Made `StreamTerminalBridgeState::point_from_pin` reject pins whose owner
+  screen is not currently active, matching the old `GridRef.screen_key()` guard
+  instead of resolving them through the wrong screen.
+- Routed `StreamTerminalBridgeState::untrack_pin` to the owning screen storage,
+  so inactive-screen pins can still be released without deleting active-screen
+  pins.
+- Added a regression test that creates a primary selection, switches to
+  alternate, creates another selection with colliding allocation order, and
+  verifies that the primary selection does not resolve on alternate and does
+  not delete alternate pins when untracked.
+
+Validation:
+
+- RED: `moon test src/terminal/selection_test.mbt --filter "selection/pin handles keep their screen owner across alt screen"` failed with `expected primary pin to stop resolving while alternate is active`.
+- GREEN: the same focused command passed after switching public/internal tracked
+  pin handles to owner-screen plus object identity.
+- VERIFY: `moon test src/terminal/selection_test.mbt`,
+  `moon test src/terminal/formatter_test.mbt`,
+  `moon test src/terminal/kitty_graphics_test.mbt`,
+  `moon test src/terminal/kitty_graphics_wbtest.mbt`,
+  `moon test src/terminal/kitty_graphics_state_wbtest.mbt`,
+  `moon test src/terminal/stream_terminal_resize_wbtest.mbt`,
+  `moon test src/terminal/terminal_screen_state_wbtest.mbt`,
+  `moon test src/terminal/stream_terminal_scrollback_wbtest.mbt`, and
+  `moon check`, `moon fmt`, `moon info`, `moon test src/terminal`,
+  `moon test`, and `git diff --check` passed. Existing deprecated `assert_eq`
+  warnings remain in unrelated tests. `moon coverage analyze` remains blocked by
+  the MoonBit coverage reporter raising `Line 1314 out of bounds (total lines:
+  1309)` after `moon coverage clean`.
+
 ## Stop Conditions
 
 Stop and ask before implementation if any of these happens:

@@ -599,16 +599,22 @@ fn json_coordinate(value : @terminal.Coordinate?) -> Json {
 
 ///|
 fn json_selection_rect(
-  _terminal : @terminal.StreamTerminal,
-  value : @terminal.Selection[@terminal.Coordinate]?,
+  terminal : @terminal.StreamTerminal,
+  value : @terminal.Selection?,
 ) -> Json {
   match value {
-    Some(selection) =>
+    Some(selection) => {
+      let start = terminal.point_from_pin(
+        selection.start(),
+        @terminal.Tag::Screen,
+      )
+      let end_ = terminal.point_from_pin(selection.end(), @terminal.Tag::Screen)
       {
         "rectangle": selection.rectangle(),
-        "start": json_coordinate(Some(selection.start())),
-        "end": json_coordinate(Some(selection.end())),
+        "start": json_coordinate(start),
+        "end": json_coordinate(end_),
       }
+    }
     None => Json::null()
   }
 }

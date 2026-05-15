@@ -450,8 +450,8 @@ type Formatter
 pub fn Formatter::format(Self) -> Bytes
 pub fn Formatter::new_terminal(StreamTerminal, FormatterOptions) -> Self
 
-type FormatterOptions derive(Eq, @debug.Debug)
-pub fn FormatterOptions::new(Format, unwrap? : Bool, trim? : Bool, selection? : Selection[Coordinate]?, extra? : FormatterTerminalExtra) -> Self
+type FormatterOptions
+pub fn FormatterOptions::new(Format, unwrap? : Bool, trim? : Bool, selection? : Selection?, extra? : FormatterTerminalExtra) -> Self
 
 type FormatterScreenExtra derive(Eq, @debug.Debug)
 pub fn FormatterScreenExtra::all() -> Self
@@ -847,7 +847,7 @@ pub fn KittyPlacement::image_id(Self) -> UInt
 pub fn KittyPlacement::is_virtual(Self) -> Bool
 pub fn KittyPlacement::pixel_size(Self) -> KittyPlacementPixelSize
 pub fn KittyPlacement::placement_id(Self) -> UInt
-pub fn KittyPlacement::rect(Self) -> Selection[Coordinate]?
+pub fn KittyPlacement::rect(Self) -> Selection?
 pub fn KittyPlacement::render_info(Self) -> KittyPlacementRenderInfo
 pub fn KittyPlacement::rows(Self) -> UInt
 pub fn KittyPlacement::source_height(Self) -> UInt
@@ -1223,6 +1223,8 @@ type PasteOptions derive(Eq, @debug.Debug)
 pub fn PasteOptions::encode(Self, Bytes) -> Bytes
 pub fn PasteOptions::new(Bool) -> Self
 
+type Pin
+
 pub(all) enum Point {
   Active(Coordinate)
   Viewport(Coordinate)
@@ -1408,11 +1410,11 @@ pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
 pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
 pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
 
-type Selection[Ref] derive(Eq, @debug.Debug)
-pub fn[Ref] Selection::end(Self[Ref]) -> Ref
-pub fn[Ref] Selection::new(Ref, Ref, Bool) -> Self[Ref]
-pub fn[Ref] Selection::rectangle(Self[Ref]) -> Bool
-pub fn[Ref] Selection::start(Self[Ref]) -> Ref
+type Selection
+pub fn Selection::end(Self) -> Pin
+pub fn Selection::new(Pin, Pin, Bool) -> Self
+pub fn Selection::rectangle(Self) -> Bool
+pub fn Selection::start(Self) -> Pin
 
 pub(all) enum SemanticClickMode {
   None
@@ -1710,6 +1712,8 @@ pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette(Self) -> Array[RGB]
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
+pub fn StreamTerminal::pin(Self, Point) -> Pin?
+pub fn StreamTerminal::point_from_pin(Self, Pin, Tag) -> Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> TerminalResultCode
@@ -1721,6 +1725,7 @@ pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
 pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
 pub fn StreamTerminal::scrollback_rows(Self) -> UInt
 pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
+pub fn StreamTerminal::selection(Self, Point, Point, Bool) -> Selection?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
 pub fn StreamTerminal::set_default_background_color(Self, RGB?) -> Unit
@@ -1738,6 +1743,8 @@ pub fn StreamTerminal::set_xtversion(Self, () -> String) -> Unit
 pub fn StreamTerminal::take_scrollback_cleared(Self) -> Bool
 pub fn StreamTerminal::title(Self) -> String?
 pub fn StreamTerminal::total_rows(Self) -> UInt
+pub fn StreamTerminal::untrack_pin(Self, Pin) -> Unit
+pub fn StreamTerminal::untrack_selection(Self, Selection) -> Unit
 pub fn StreamTerminal::width_px(Self) -> UInt
 
 pub(all) enum Style {

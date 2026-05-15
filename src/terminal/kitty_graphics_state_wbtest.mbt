@@ -20,6 +20,11 @@ fn sample_kitty_image(
 }
 
 ///|
+fn sample_kitty_pin(scrollback : PageList) -> PageListPin {
+  scrollback.track_pin(scrollback.active_node, 0, 0)
+}
+
+///|
 fn KittyGraphicsState::dirty(self : KittyGraphicsState) -> Bool {
   self._dirty
 }
@@ -85,14 +90,14 @@ test "kitty graphics state/internal and external placements" {
     scrollback,
     1U,
     0U,
-    KittyGraphicsPlacementLocation::Pin(5UL),
+    KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
     sample_display(),
   )
   let second = state.add_placement(
     scrollback,
     1U,
     0U,
-    KittyGraphicsPlacementLocation::Pin(6UL),
+    KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
     sample_display(),
   )
   let replaced = state.add_placement(
@@ -107,7 +112,7 @@ test "kitty graphics state/internal and external placements" {
       scrollback,
       1U,
       9U,
-      KittyGraphicsPlacementLocation::Pin(8UL),
+      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
       sample_display(placement_id=9U, columns=2U, rows=1U),
     ),
   )
@@ -138,7 +143,7 @@ test "kitty graphics state/delete helpers" {
       scrollback,
       1U,
       4U,
-      KittyGraphicsPlacementLocation::Pin(1UL),
+      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
       sample_display(image_id=1U, placement_id=4U),
     ),
   )
@@ -147,7 +152,7 @@ test "kitty graphics state/delete helpers" {
       scrollback,
       2U,
       5U,
-      KittyGraphicsPlacementLocation::Pin(2UL),
+      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
       sample_display(image_id=2U, placement_id=5U),
     ),
   )
@@ -258,11 +263,12 @@ test "kitty graphics state/loading validation and geometry helpers" {
     fail("expected compressed direct medium to stay unsupported")
   }
 
+  let scrollback = PageList::new(3, 10, 10)
   let placement = KittyGraphicsPlacement::{
     image_id: 1U,
     placement_id: 0U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Pin(9UL),
+    location: KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
     x_offset: 5U,
     y_offset: 3U,
     source_x: 1U,
@@ -411,7 +417,7 @@ test "kitty graphics state/reset and edge helper branches" {
       scrollback,
       5U,
       0U,
-      KittyGraphicsPlacementLocation::Pin(7UL),
+      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
       sample_display(image_id=5U),
     ),
   )
@@ -513,7 +519,7 @@ test "kitty graphics state/reset and edge helper branches" {
     image_id: 1U,
     placement_id: 1U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Pin(1UL),
+    location: KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
     x_offset: 1U,
     y_offset: 2U,
     source_x: 0U,

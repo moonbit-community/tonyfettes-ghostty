@@ -110,8 +110,10 @@ test "kitty graphics/image lookup and placement geometry match transmitted state
     placement.rows() == 1U &&
     placement.z() == 0 &&
     rect.rectangle() &&
-    rect.start() == Coordinate::new(0, 0U) &&
-    rect.end() == Coordinate::new(9, 0U) &&
+    terminal.point_from_pin(rect.start(), Tag::Screen) ==
+    Some(Coordinate::new(0, 0U)) &&
+    terminal.point_from_pin(rect.end(), Tag::Screen) ==
+    Some(Coordinate::new(9, 0U)) &&
     pixel_size.width() == 100U &&
     pixel_size.height() == 20U &&
     grid_size.cols() == 10U &&
@@ -135,6 +137,7 @@ test "kitty graphics/image lookup and placement geometry match transmitted state
     fail("expected exactly one placement")
   }
 
+  terminal.untrack_selection(rect)
   terminal.deinit()
 }
 
@@ -155,12 +158,14 @@ test "kitty graphics/placement pin survives column resize reflow" {
   }
   let rect = placement.rect().unwrap()
   let viewport = placement.viewport_position().unwrap()
-  guard rect.start() == Coordinate::new(0, 0U) &&
+  guard terminal.point_from_pin(rect.start(), Tag::Screen) ==
+    Some(Coordinate::new(0, 0U)) &&
     viewport.col() == 0 &&
     viewport.row() == 0 else {
     fail("expected kitty placement pin to remap across column reflow")
   }
 
+  terminal.untrack_selection(rect)
   terminal.deinit()
 }
 
@@ -182,13 +187,17 @@ test "kitty graphics/source rect and virtual placement stay typed" {
   let virtual_placement = virtual_iter.next().unwrap()
 
   let explicit_source = explicit.source_rect()
+  let virtual_rect_missing = match virtual_placement.rect() {
+    None => true
+    Some(_) => false
+  }
   guard explicit_source.x() == 0U &&
     explicit_source.y() == 1U &&
     explicit_source.width() == 1U &&
     explicit_source.height() == 1U &&
     explicit.render_info().source_rect() == explicit.source_rect() &&
     virtual_placement.is_virtual() &&
-    virtual_placement.rect() == None &&
+    virtual_rect_missing &&
     virtual_placement.viewport_position() == None else {
     fail("expected explicit source rect and virtual placement behavior")
   }
@@ -208,11 +217,15 @@ test "kitty graphics/zero cell metrics keep geometry absent" {
   let placement = next_placement(terminal.kitty_graphics())
   let pixel_size = placement.pixel_size()
   let grid_size = placement.grid_size()
+  let rect_missing = match placement.rect() {
+    None => true
+    Some(_) => false
+  }
   guard pixel_size.width() == 1U &&
     pixel_size.height() == 2U &&
     grid_size.cols() == 0U &&
     grid_size.rows() == 0U &&
-    placement.rect() == None &&
+    rect_missing &&
     placement.viewport_position() == None &&
     placement.render_info().viewport_position() == None else {
     fail("expected zero pixel cell metrics to suppress grid geometry")
@@ -235,7 +248,11 @@ test "kitty graphics/stale placements drop coordinate queries after reset" {
 
   let placement = next_placement(terminal.kitty_graphics())
   terminal.reset()
-  guard placement.rect() == None && placement.viewport_position() == None else {
+  let rect_missing = match placement.rect() {
+    None => true
+    Some(_) => false
+  }
+  guard rect_missing && placement.viewport_position() == None else {
     fail("expected reset to invalidate stale placement row-id queries")
   }
 

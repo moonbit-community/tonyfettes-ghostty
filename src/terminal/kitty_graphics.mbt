@@ -253,9 +253,9 @@ pub fn KittyPlacement::z(self : KittyPlacement) -> Int {
 }
 
 ///|
-pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[Coordinate]? {
-  let pin_id = match self.placement.location {
-    Pin(id) => id
+pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
+  let placement_pin = match self.placement.location {
+    Pin(pin) => pin
     Virtual => return None
   }
   let grid = kitty_placement_grid(self)
@@ -265,11 +265,12 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[Coordinate]? {
     return None
   }
 
-  let top_left = match scrollback.point_from_pin(grid, pin_id, Tag::Screen) {
+  let top_left_point = match
+    scrollback.point_from_pin(grid, placement_pin, Tag::Screen) {
     Some(value) => value
     None => return None
   }
-  let pin_x = match scrollback.pin_x(pin_id) {
+  let pin_x = match scrollback.pin_x(placement_pin) {
     Some(value) => value
     None => return None
   }
@@ -279,18 +280,39 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection[Coordinate]? {
   }
 
   let end_y = kitty_min_int(
-    top_left.y().reinterpret_as_int() + size.rows().reinterpret_as_int() - 1,
+    top_left_point.y().reinterpret_as_int() +
+    size.rows().reinterpret_as_int() -
+    1,
     total_rows - 1,
   )
   let end_x = kitty_min_int(
     pin_x.to_int() + size.cols().reinterpret_as_int() - 1,
     grid.cols.to_int() - 1,
   )
-  let bottom_right = Coordinate::new(
-    end_x.to_uint16(),
-    end_y.reinterpret_as_uint(),
+  let bottom_right = match
+    scrollback.pin(
+      grid,
+      Point::Screen(
+        Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint()),
+      ),
+    ) {
+    Some(value) => value
+    None => return None
+  }
+  let top_left = match scrollback.pin_from_tracked_pin(placement_pin) {
+    Some(value) => value
+    None => {
+      scrollback.untrack_pin(bottom_right)
+      return None
+    }
+  }
+  Some(
+    Selection::new(
+      { screen: self.screen, pin: top_left },
+      { screen: self.screen, pin: bottom_right },
+      true,
+    ),
   )
-  Some(Selection::new(top_left, bottom_right, true))
 }
 
 ///|
@@ -327,14 +349,14 @@ pub fn KittyPlacement::grid_size(
 pub fn KittyPlacement::viewport_position(
   self : KittyPlacement,
 ) -> KittyPlacementViewportPosition? {
-  let pin_id = match self.placement.location {
-    Pin(id) => id
+  let placement_pin = match self.placement.location {
+    Pin(pin) => pin
     Virtual => return None
   }
   let grid = kitty_placement_grid(self)
   let scrollback = kitty_placement_scrollback(self)
-  let screen = scrollback.point_from_pin(grid, pin_id, Tag::Screen)
-  let pin_x = match scrollback.pin_x(pin_id) {
+  let screen = scrollback.point_from_pin(grid, placement_pin, Tag::Screen)
+  let pin_x = match scrollback.pin_x(placement_pin) {
     Some(value) => value
     None => return None
   }

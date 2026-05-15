@@ -1,30 +1,32 @@
 ///|
-struct Selection[Ref] {
-  start : Ref
-  end : Ref
-  rectangle : Bool
-} derive(Eq, Debug)
+struct Pin {
+  screen : TerminalScreen
+  pin : PageListPin
+}
 
 ///|
-pub fn[Ref] Selection::new(
-  start : Ref,
-  end_ : Ref,
-  rectangle : Bool,
-) -> Selection[Ref] {
+struct Selection {
+  start : Pin
+  end : Pin
+  rectangle : Bool
+}
+
+///|
+pub fn Selection::new(start : Pin, end_ : Pin, rectangle : Bool) -> Selection {
   { start, end: end_, rectangle }
 }
 
 ///|
-pub fn[Ref] Selection::start(self : Selection[Ref]) -> Ref {
+pub fn Selection::start(self : Selection) -> Pin {
   self.start
 }
 
 ///|
-pub fn[Ref] Selection::end(self : Selection[Ref]) -> Ref {
+pub fn Selection::end(self : Selection) -> Pin {
   self.end
 }
 
 ///|
-pub fn[Ref] Selection::rectangle(self : Selection[Ref]) -> Bool {
+pub fn Selection::rectangle(self : Selection) -> Bool {
   self.rectangle
 }

@@ -8,7 +8,7 @@ test "kitty graphics wb/skips placements whose backing image is missing" {
       image_id: 9U,
       placement_id: 1U,
       external: true,
-      location: Pin(0UL),
+      location: Pin(sample_kitty_pin(bridge.scrollback)),
       x_offset: 0U,
       y_offset: 0U,
       source_x: 0U,
@@ -85,7 +85,7 @@ test "kitty graphics wb/rect guards impossible zero-row state" {
       image_id: 1U,
       placement_id: 1U,
       external: true,
-      location: Pin(0UL),
+      location: Pin(sample_kitty_pin(bridge.scrollback)),
       x_offset: 0U,
       y_offset: 0U,
       source_x: 0U,
@@ -98,7 +98,10 @@ test "kitty graphics wb/rect guards impossible zero-row state" {
     },
   }
 
-  guard placement.rect() == None else {
+  guard (match placement.rect() {
+    None => true
+    Some(_) => false
+  }) else {
     fail("expected zero-row synthetic state to trip the total-row guard")
   }
 }

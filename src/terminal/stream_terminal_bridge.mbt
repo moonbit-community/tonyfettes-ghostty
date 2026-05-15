@@ -482,6 +482,50 @@ fn StreamTerminalBridgeState::point_from_point(
 }
 
 ///|
+fn StreamTerminalBridgeState::pin(
+  self : StreamTerminalBridgeState,
+  point : Point,
+) -> Pin? {
+  match self.scrollback.pin(self.grid, point) {
+    Some(pin) => Some({ screen: self.active_screen, pin })
+    None => None
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::untrack_pin(
+  self : StreamTerminalBridgeState,
+  pin : Pin,
+) -> Unit {
+  match pin.screen {
+    TerminalScreen::Primary =>
+      if self.active_screen == TerminalScreen::Primary {
+        self.scrollback.untrack_pin_ref(pin)
+      } else {
+        self.primary_storage.scrollback.untrack_pin_ref(pin)
+      }
+    TerminalScreen::Alternate =>
+      if self.active_screen == TerminalScreen::Alternate {
+        self.scrollback.untrack_pin_ref(pin)
+      } else {
+        self.alternate_storage.scrollback.untrack_pin_ref(pin)
+      }
+  }
+}
+
+///|
+fn StreamTerminalBridgeState::point_from_pin(
+  self : StreamTerminalBridgeState,
+  pin : Pin,
+  tag : Tag,
+) -> Coordinate? {
+  if pin.screen != self.active_screen {
+    return None
+  }
+  self.scrollback.point_from_pin_ref(self.grid, pin, tag)
+}
+
+///|
 fn StreamTerminalBridgeState::cell_at_point(
   self : StreamTerminalBridgeState,
   point : Point,
@@ -2153,7 +2197,7 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
 ///|
 fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
   self : StreamTerminalBridgeState,
-) -> UInt64? {
+) -> PageListPin? {
   self.scrollback.track_pin_at_point(
     self.grid,
     Point::Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
@@ -2186,8 +2230,8 @@ fn StreamTerminalBridgeState::apply_kitty_graphics_cursor_movement(
   }
 
   match placement.location {
-    Pin(id) =>
-      match self.scrollback.pin_x(id) {
+    Pin(pin) =>
+      match self.scrollback.pin_x(pin) {
         Some(x) => {
           let target_col = (x.to_int() + size.cols.reinterpret_as_int() + 1).to_uint16()
           self.cursor.set_cursor_pos(self.cursor.y() + 1, target_col, false)
