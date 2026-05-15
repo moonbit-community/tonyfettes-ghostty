@@ -1017,6 +1017,9 @@ fn PageList::resize_without_reflow(
     let max_trim = current_rows - target_rows
     let trimmed = self.trim_trailing_blank_rows(active_rows, max_trim)
     let remaining = current_rows - trimmed
+    // Match upstream PageList.resizeWithoutReflow: row shrink keeps the bottom
+    // active rows after trailing blank trim. Cursor pins moved into history
+    // stop resolving as active and reload to active top-left.
     let history_count = max_int(0, remaining - target_rows)
 
     for index in 0..<history_count {

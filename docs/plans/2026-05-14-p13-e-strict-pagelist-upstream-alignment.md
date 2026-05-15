@@ -164,6 +164,10 @@ MoonBit resize dispatch must follow upstream order:
 - same columns: `resizeWithoutReflow`
 - grow columns: `resizeCols`, then `resizeWithoutReflow`
 - shrink columns: `resizeWithoutReflow` with old columns, then `resizeCols`
+- same-column row shrink keeps the bottom active rows after
+  `trimTrailingBlankRows`; cursor or saved-cursor pins that move into history
+  intentionally stop resolving as active and reload to active top-left, matching
+  upstream `Screen.cursorReload`
 
 Do not implement resize by flattening all rows into an array, reflowing them,
 then rebuilding history and active grid.
