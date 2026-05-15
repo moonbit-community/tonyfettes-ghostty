@@ -195,6 +195,13 @@ The implementation must preserve upstream behavior in:
 - prompt continuation update
 - grow/new-page behavior or the exact MoonBit equivalent approved in advance
 
+Known upstream bug retained for strict alignment:
+
+- `ReflowCursor.copyRowMetadata` unconditionally copies `semantic_prompt`.
+  During column-grow reflow, a `Prompt` row merged with a
+  `PromptContinuation` row can lose the prompt-start marker because the later
+  continuation metadata overwrites the destination row.
+
 ### Preserved Cursor
 
 Translate upstream `resizeCols` preserved cursor logic directly:

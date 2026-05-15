@@ -87,6 +87,21 @@ test "terminal screen state/viewport top survives future scrollback" {
 }
 
 ///|
+test "terminal screen state/empty scrollback delta stays active" {
+  let grid = ScreenGridState::new(2, 3)
+  fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
+  fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
+
+  let scrollback = PageList::new(2, 3, 2)
+  scrollback.scroll_delta(-1)
+  scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
+
+  guard scrollback.viewport_row_offset() == 1 else {
+    fail("expected no-op delta scroll to keep viewport active")
+  }
+}
+
+///|
 test "terminal screen state/zero max scrollback trim and resets" {
   let grid = ScreenGridState::new(2, 3)
   fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)

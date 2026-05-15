@@ -782,11 +782,11 @@ fn PageList::set_viewport_row_offset(self : PageList, row : Int) -> Unit {
     return
   }
   let top = scrollback_clamp_int(row, 0, self.history.length())
-  if top == 0 {
-    self.viewport = PageListViewport::Top
-    self.viewport_pin_row_offset = None
-  } else if top >= self.history.length() {
+  if top >= self.history.length() {
     self.viewport = PageListViewport::Active
+    self.viewport_pin_row_offset = None
+  } else if top == 0 {
+    self.viewport = PageListViewport::Top
     self.viewport_pin_row_offset = None
   } else {
     let row = self.history[top]
@@ -1462,6 +1462,10 @@ fn PageListReflowCursor::copy_row_metadata(
   self : PageListReflowCursor,
   row : PageRowState,
 ) -> Unit {
+  // Known upstream bug: PageList.ReflowCursor.copyRowMetadata overwrites
+  // semantic_prompt unconditionally. This keeps strict alignment, including
+  // prompt-start loss when column-grow reflow merges Prompt and
+  // PromptContinuation source rows into one destination row.
   self.node.page.row_states[0].set_semantic_prompt(row.semantic_prompt())
 }
 
