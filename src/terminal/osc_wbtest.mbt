@@ -1354,7 +1354,7 @@ test "osc/osc3008 context signal parsing" {
       ("session", ContextSignalSession),
     ] {
     let (name, expected) = entry
-    let bytes = @buffer.new()
+    let bytes = Buffer()
     bytes.write_string_utf8("3008;start=id;type=")
     bytes.write_string_utf8(name)
     guard expect_osc_command(bytes.contents(), Some(0x1B))
@@ -1372,7 +1372,7 @@ test "osc/osc3008 context signal parsing" {
       ("interrupt", ContextSignalExitInterrupt),
     ] {
     let (name, expected) = entry
-    let bytes = @buffer.new()
+    let bytes = Buffer()
     bytes.write_string_utf8("3008;end=id;exit=")
     bytes.write_string_utf8(name)
     guard expect_osc_command(bytes.contents(), Some(0x1B))
@@ -1394,7 +1394,7 @@ test "osc/osc3008 context signal parsing" {
     fail("expected OSC 3008 missing id rejection")
   }
 
-  let max_id = @buffer.new()
+  let max_id = Buffer()
   max_id.write_string_utf8("3008;start=")
   for _ in 0..<64 {
     max_id.write_byte(b'a')

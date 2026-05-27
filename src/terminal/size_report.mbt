@@ -56,7 +56,7 @@ fn height_pixels(size : Size) -> UInt64 {
 
 ///|
 pub fn encode(style : Style, size : Size) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
   match style {
     Mode2048 => {

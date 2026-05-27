@@ -155,7 +155,7 @@ pub fn PrimaryDeviceAttributes::default() -> PrimaryDeviceAttributes {
 
 ///|
 pub fn PrimaryDeviceAttributes::encode(self : PrimaryDeviceAttributes) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[?")
   write_uint_ascii(buffer, self.conformance_level.code().to_uint64())
   for feature in self.features {
@@ -212,7 +212,7 @@ pub fn SecondaryDeviceAttributes::default() -> SecondaryDeviceAttributes {
 pub fn SecondaryDeviceAttributes::encode(
   self : SecondaryDeviceAttributes,
 ) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[>")
   write_uint_ascii(buffer, self.device_type.code().to_uint64())
   buffer.write_byte(b';')
@@ -251,7 +251,7 @@ pub fn TertiaryDeviceAttributes::default() -> TertiaryDeviceAttributes {
 pub fn TertiaryDeviceAttributes::encode(
   self : TertiaryDeviceAttributes,
 ) -> Bytes {
-  let buffer = @buffer.new(size_hint=15)
+  let buffer = Buffer(size_hint=15)
   buffer.write_bytes(b"\x1BP!|")
   write_hex8(buffer, self.unit_id)
   buffer.write_bytes(b"\x1B\\")

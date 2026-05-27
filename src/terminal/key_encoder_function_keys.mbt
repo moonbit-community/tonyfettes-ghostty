@@ -222,7 +222,7 @@ fn backspace_key(
     }
   }
 
-  let buffer = @buffer.new(size_hint=2)
+  let buffer = Buffer(size_hint=2)
   if binding.alt() {
     buffer.write_byte(0x1B)
   }
@@ -296,7 +296,7 @@ fn escape_key(binding : KeyMods) -> Bytes? {
 
 ///|
 fn csi_plain(final_byte : Byte) -> Bytes {
-  let buffer = @buffer.new(size_hint=3)
+  let buffer = Buffer(size_hint=3)
   buffer.write_bytes(b"\x1B[")
   buffer.write_byte(final_byte)
   buffer.contents()
@@ -304,7 +304,7 @@ fn csi_plain(final_byte : Byte) -> Bytes {
 
 ///|
 fn ss3_plain(final_byte : Byte) -> Bytes {
-  let buffer = @buffer.new(size_hint=3)
+  let buffer = Buffer(size_hint=3)
   buffer.write_bytes(b"\x1BO")
   buffer.write_byte(final_byte)
   buffer.contents()
@@ -312,7 +312,7 @@ fn ss3_plain(final_byte : Byte) -> Bytes {
 
 ///|
 fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
-  let buffer = @buffer.new(size_hint=8)
+  let buffer = Buffer(size_hint=8)
   buffer.write_bytes(b"\x1B[1;")
   write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(final_byte)
@@ -321,7 +321,7 @@ fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
 
 ///|
 fn csi_tilde_plain(number : Int) -> Bytes {
-  let buffer = @buffer.new(size_hint=6)
+  let buffer = Buffer(size_hint=6)
   buffer.write_bytes(b"\x1B[")
   write_uint_ascii(buffer, number.to_uint64())
   buffer.write_byte(b'~')
@@ -330,7 +330,7 @@ fn csi_tilde_plain(number : Int) -> Bytes {
 
 ///|
 fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
-  let buffer = @buffer.new(size_hint=10)
+  let buffer = Buffer(size_hint=10)
   buffer.write_bytes(b"\x1B[")
   write_uint_ascii(buffer, number.to_uint64())
   buffer.write_byte(b';')
@@ -341,7 +341,7 @@ fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
 
 ///|
 fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
-  let buffer = @buffer.new(size_hint=7)
+  let buffer = Buffer(size_hint=7)
   buffer.write_bytes(b"\x1BO")
   write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(suffix)
@@ -350,7 +350,7 @@ fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
 
 ///|
 fn modify_other_keys_sequence(code : Int, codepoint : UInt) -> Bytes {
-  let buffer = @buffer.new(size_hint=16)
+  let buffer = Buffer(size_hint=16)
   buffer.write_bytes(b"\x1B[27;")
   write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(b';')

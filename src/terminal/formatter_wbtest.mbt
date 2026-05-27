@@ -87,7 +87,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   guard formatter_row_bounds(state, descending_bounds, 0) is None else {
     fail("expected descending row bounds to stay empty")
   }
-  let descending_buffer = @buffer.new()
+  let descending_buffer = Buffer()
   formatter_write_content(
     formatter, state, descending_bounds, descending_buffer,
   )
@@ -129,7 +129,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
     end_: Coordinate::new(0, 9U),
     rectangle: false,
   }
-  let missing_buffer = @buffer.new()
+  let missing_buffer = Buffer()
   formatter_write_content(
     formatter, sparse_state, missing_row_bounds, missing_buffer,
   )
@@ -171,7 +171,7 @@ test "formatter helpers/cover style and palette encoders" {
   style.apply_attribute(Color256Bg(4))
   style.apply_attribute(UnderlineColor(RGB::new(5, 6, 7)))
 
-  let vt = @buffer.new()
+  let vt = Buffer()
   formatter_write_vt_style_open(vt, style)
   let vt_bytes = vt.contents()
   guard wb_bytes_contains(vt_bytes, b"\x1B[1m") &&
@@ -189,7 +189,7 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected VT helper to encode all style branches")
   }
 
-  let html = @buffer.new()
+  let html = Buffer()
   formatter_write_html_style(html, style)
   let html_bytes = html.contents()
   guard wb_bytes_contains(
@@ -211,18 +211,18 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected background-palette cell helper")
   }
 
-  let plain_palette = @buffer.new()
+  let plain_palette = Buffer()
   formatter_write_palette(Format::Plain, default_palette(), plain_palette)
   guard plain_palette.contents() == b"" else {
     fail("expected plain palette helper to stay silent")
   }
 
-  let vt_newline = @buffer.new()
+  let vt_newline = Buffer()
   formatter_write_newlines(Format::Vt, vt_newline, 1)
   guard vt_newline.contents() == b"\r\n" else {
     fail("expected VT newline helper")
   }
-  let html_newline = @buffer.new()
+  let html_newline = Buffer()
   formatter_write_newlines(Format::Html, html_newline, 2)
   guard html_newline.contents() == b"\n\n" else {
     fail("expected HTML newline helper")
@@ -230,12 +230,12 @@ test "formatter helpers/cover style and palette encoders" {
 
   let double_style = CellStyle::new()
   double_style.apply_attribute(Underline(SgrUnderline::Double))
-  let vt_double = @buffer.new()
+  let vt_double = Buffer()
   formatter_write_vt_style_open(vt_double, double_style)
   guard wb_bytes_contains(vt_double.contents(), b"\x1B[4:2m") else {
     fail("expected VT helper to encode double underline")
   }
-  let html_double = @buffer.new()
+  let html_double = Buffer()
   formatter_write_html_style(html_double, double_style)
   guard wb_bytes_contains(
     html_double.contents(),
@@ -246,12 +246,12 @@ test "formatter helpers/cover style and palette encoders" {
 
   let curly_style = CellStyle::new()
   curly_style.apply_attribute(Underline(SgrUnderline::Curly))
-  let vt_curly = @buffer.new()
+  let vt_curly = Buffer()
   formatter_write_vt_style_open(vt_curly, curly_style)
   guard wb_bytes_contains(vt_curly.contents(), b"\x1B[4:3m") else {
     fail("expected VT helper to encode curly underline")
   }
-  let html_curly = @buffer.new()
+  let html_curly = Buffer()
   formatter_write_html_style(html_curly, curly_style)
   guard wb_bytes_contains(
     html_curly.contents(),
@@ -262,12 +262,12 @@ test "formatter helpers/cover style and palette encoders" {
 
   let dotted_style = CellStyle::new()
   dotted_style.apply_attribute(Underline(SgrUnderline::Dotted))
-  let vt_dotted = @buffer.new()
+  let vt_dotted = Buffer()
   formatter_write_vt_style_open(vt_dotted, dotted_style)
   guard wb_bytes_contains(vt_dotted.contents(), b"\x1B[4:4m") else {
     fail("expected VT helper to encode dotted underline")
   }
-  let html_dotted = @buffer.new()
+  let html_dotted = Buffer()
   formatter_write_html_style(html_dotted, dotted_style)
   guard wb_bytes_contains(
     html_dotted.contents(),
@@ -278,7 +278,7 @@ test "formatter helpers/cover style and palette encoders" {
 
   let dashed_style = CellStyle::new()
   dashed_style.apply_attribute(Underline(SgrUnderline::Dashed))
-  let html_dashed = @buffer.new()
+  let html_dashed = Buffer()
   formatter_write_html_style(html_dashed, dashed_style)
   guard wb_bytes_contains(
     html_dashed.contents(),
@@ -319,7 +319,7 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
       ),
     ),
   )
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   formatter_write_terminal_extras(formatter, state, buffer)
   let bytes = buffer.contents()
 
@@ -335,7 +335,7 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
     fail("expected terminal extra helper to stay on explicit branches only")
   }
 
-  let screen_buffer = @buffer.new()
+  let screen_buffer = Buffer()
   formatter_write_screen_extras(
     FormatterScreenExtra::new(hyperlink=true),
     state,
@@ -346,7 +346,7 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
   }
 
   state.charset.invoke(ActiveSlot::Gr, Slots::G0, false)
-  let gr_zero_buffer = @buffer.new()
+  let gr_zero_buffer = Buffer()
   formatter_write_screen_extras(
     FormatterScreenExtra::new(charsets=true),
     state,

@@ -5,12 +5,12 @@ struct Recorder {
 }
 
 ///|
-impl StreamHandler for Recorder with vt(self, action) {
+impl StreamHandler for Recorder with fn vt(self, action) {
   self.actions.push(action)
 }
 
 ///|
-impl StreamHandler for Recorder with deinit(self) {
+impl StreamHandler for Recorder with fn deinit(self) {
   self.deinitialized.push(true)
 }
 

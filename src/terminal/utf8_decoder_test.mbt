@@ -22,7 +22,9 @@ test "utf8 decoder/ascii" {
   for byte in b"Hello, World!" {
     expected.push(byte.to_uint())
   }
-  assert_eq(decoded, expected)
+  guard decoded == expected else {
+    fail("expected ASCII input to decode one codepoint per byte")
+  }
 }
 
 ///|
@@ -30,7 +32,9 @@ test "utf8 decoder/well formed utf8" {
   let decoded = decode_sequence([
     0xF0, 0x9F, 0x98, 0x84, 0xE2, 0x9C, 0xA4, 0xC3, 0x81, 0x41,
   ])
-  assert_eq(decoded, [0x1F604, 0x2724, 0xC1, 0x41])
+  guard decoded == [0x1F604, 0x2724, 0xC1, 0x41] else {
+    fail("expected well-formed UTF-8 to decode to Unicode codepoints")
+  }
 }
 
 ///|
@@ -50,7 +54,9 @@ test "utf8 decoder/partially invalid utf8" {
   let decoded = decode_sequence([
     0xF0, 0x9F, 0xF0, 0x9F, 0x98, 0x84, 0xED, 0xA0, 0x80,
   ])
-  assert_eq(decoded, [0xFFFD, 0x1F604, 0xFFFD, 0xFFFD, 0xFFFD])
+  guard decoded == [0xFFFD, 0x1F604, 0xFFFD, 0xFFFD, 0xFFFD] else {
+    fail("expected invalid UTF-8 segments to emit replacement codepoints")
+  }
 }
 
 ///|

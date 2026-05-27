@@ -4,12 +4,12 @@ struct WhiteboxRecorder {
 }
 
 ///|
-impl StreamHandler for WhiteboxRecorder with vt(self, action) {
+impl StreamHandler for WhiteboxRecorder with fn vt(self, action) {
   self.actions.push(action)
 }
 
 ///|
-impl StreamHandler for WhiteboxRecorder with deinit(_self) {
+impl StreamHandler for WhiteboxRecorder with fn deinit(_self) {
   ()
 }
 

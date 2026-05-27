@@ -143,7 +143,7 @@ pub fn Formatter::format(self : Formatter) -> Bytes {
 
   match formatter_selection_bounds(self, state, total_rows) {
     Some(bounds) => {
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       formatter_write_prefix(self, state, buffer)
       formatter_write_content(self, state, bounds, buffer)
       formatter_write_suffix(self, state, buffer)
@@ -160,7 +160,7 @@ pub fn Formatter::format(self : Formatter) -> Bytes {
 /// CR/LF for layout, so the host terminal's pending-wrap state cannot shift the
 /// following rows.
 pub fn RenderState::format_vt_framebuffer(self : RenderState) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   let columns = self.columns().to_int()
   let rows = self.row_iterator()
   while rows.next() {

@@ -1,7 +1,6 @@
 import {
-  "moonbitlang/core/buffer" @buffer,
-  "moonbitlang/core/env" @env,
-  "tonyfettes/ghostty/src/terminal" @terminal,
+  "moonbitlang/core/env",
+  "tonyfettes/ghostty/src/terminal",
 }
 
 options(

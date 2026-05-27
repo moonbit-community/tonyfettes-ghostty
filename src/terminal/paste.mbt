@@ -25,7 +25,7 @@ pub fn PasteOptions::new(bracketed : Bool) -> PasteOptions {
 
 ///|
 pub fn PasteOptions::encode(self : PasteOptions, data : Bytes) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   if self.bracketed {
     buffer.write_bytes(BracketedPasteStart)
   }

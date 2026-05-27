@@ -28,7 +28,7 @@ fn SystemLogRecorder::record(
 
 ///|
 fn repeated_bytes(byte : Byte, count : Int) -> Bytes {
-  let buffer = @buffer.new(size_hint=count)
+  let buffer = Buffer(size_hint=count)
   for _ in 0..<count {
     buffer.write_byte(byte)
   }

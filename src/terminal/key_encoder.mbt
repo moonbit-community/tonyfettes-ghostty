@@ -396,7 +396,7 @@ fn KeyEncoder::encode_legacy(self : KeyEncoder, event : KeyEvent) -> Bytes {
       all_mods,
     ) {
     Some(char) => {
-      let buffer = @buffer.new(size_hint=2)
+      let buffer = Buffer(size_hint=2)
       if binding_mods.alt() {
         buffer.write_byte(0x1B)
       }
@@ -409,7 +409,7 @@ fn KeyEncoder::encode_legacy(self : KeyEncoder, event : KeyEvent) -> Bytes {
   if event.utf8().length() == 0 {
     match self.legacy_alt_prefix(event, binding_mods, all_mods) {
       Some(byte) => {
-        let buffer = @buffer.new(size_hint=2)
+        let buffer = Buffer(size_hint=2)
         buffer.write_byte(0x1B)
         buffer.write_byte(byte)
         return buffer.contents()
@@ -434,7 +434,7 @@ fn KeyEncoder::encode_legacy(self : KeyEncoder, event : KeyEvent) -> Bytes {
 
   match self.legacy_alt_prefix(event, binding_mods, all_mods) {
     Some(byte) => {
-      let buffer = @buffer.new(size_hint=2)
+      let buffer = Buffer(size_hint=2)
       buffer.write_byte(0x1B)
       buffer.write_byte(byte)
       return buffer.contents()
@@ -547,7 +547,7 @@ fn csi_u_sequence(event : KeyEvent) -> Bytes? {
     value
   }
 
-  let buffer = @buffer.new(size_hint=16)
+  let buffer = Buffer(size_hint=16)
   buffer.write_bytes(b"\x1B[")
   write_uint_ascii(buffer, char.to_uint64())
   buffer.write_byte(b';')
@@ -739,7 +739,7 @@ fn KittySequence::encode(self : KittySequence) -> Bytes {
 
 ///|
 fn KittySequence::encode_full(self : KittySequence) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
   write_uint_ascii(buffer, self.key.to_uint64())
   match self.alternate_shifted {
@@ -806,7 +806,7 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
 
 ///|
 fn KittySequence::encode_special(self : KittySequence) -> Bytes {
-  let buffer = @buffer.new(size_hint=12)
+  let buffer = Buffer(size_hint=12)
   let mods = self.mods.seq_int()
   if self.event != KittySequenceEvent::None {
     buffer.write_bytes(b"\x1B[1;")

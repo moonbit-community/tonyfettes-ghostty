@@ -363,7 +363,7 @@ pub fn Report::state(self : Report) -> ReportState {
 
 ///|
 pub fn Report::encode(self : Report) -> Bytes {
-  let buffer = @buffer.new(size_hint=report_max_size)
+  let buffer = Buffer(size_hint=report_max_size)
   buffer.write_bytes(b"\x1B[")
   if !self.tag.ansi() {
     buffer.write_byte(b'?')

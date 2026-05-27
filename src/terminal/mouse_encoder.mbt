@@ -329,7 +329,7 @@ fn encode_mouse_x10(button_code : Int, cell : Coordinate) -> Bytes {
 
 ///|
 fn encode_mouse_utf8(button_code : Int, cell : Coordinate) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[M")
   buffer.write_byte((32 + button_code).to_byte())
   write_codepoint_utf8(buffer, 33 + cell.x().to_int())
@@ -343,7 +343,7 @@ fn encode_mouse_sgr(
   cell : Coordinate,
   action : MouseAction,
 ) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[<")
   write_uint_ascii(buffer, button_code.to_uint64())
   buffer.write_byte(b';')
@@ -356,7 +356,7 @@ fn encode_mouse_sgr(
 
 ///|
 fn encode_mouse_urxvt(button_code : Int, cell : Coordinate) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
   write_uint_ascii(buffer, (32 + button_code).to_uint64())
   buffer.write_byte(b';')
@@ -373,7 +373,7 @@ fn encode_mouse_sgr_pixels(
   pixels : MousePixelPoint,
   action : MouseAction,
 ) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[<")
   write_uint_ascii(buffer, button_code.to_uint64())
   buffer.write_byte(b';')

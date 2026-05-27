@@ -211,12 +211,12 @@ struct BridgeStreamRecorder {
 }
 
 ///|
-impl StreamHandler for BridgeStreamRecorder with vt(self, action) {
+impl StreamHandler for BridgeStreamRecorder with fn vt(self, action) {
   self.actions.push(action)
 }
 
 ///|
-impl StreamHandler for BridgeStreamRecorder with deinit(_self) {
+impl StreamHandler for BridgeStreamRecorder with fn deinit(_self) {
   ()
 }
 
@@ -263,7 +263,7 @@ fn expect_effect_write(
 
 ///|
 fn ascii_string(byte : Byte, count : Int) -> String {
-  let buffer = @buffer.new(size_hint=count)
+  let buffer = Buffer(size_hint=count)
   for _ in 0..<count {
     buffer.write_byte(byte)
   }

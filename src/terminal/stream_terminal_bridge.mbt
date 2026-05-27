@@ -1703,7 +1703,7 @@ fn StreamTerminalBridgeState::device_status(
       } else {
         self.cursor.y().to_int()
       }
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       buffer.write_bytes(b"\x1B[")
       write_uint_ascii(buffer, (y + 1).to_uint64())
       buffer.write_byte(b';')
@@ -1745,7 +1745,7 @@ fn StreamTerminalBridgeState::report_xtversion(
     return
   }
 
-  let buffer = @buffer.new(size_hint=reported.length() + 5)
+  let buffer = Buffer(size_hint=reported.length() + 5)
   buffer.write_bytes(b"\x1BP>|")
   buffer.write_bytes(reported)
   buffer.write_bytes(b"\x1B\\")
@@ -1774,7 +1774,7 @@ fn StreamTerminalBridgeState::report_size(
         None => ()
       }
     Csi21t => {
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       buffer.write_bytes(b"\x1B]l")
       match self.metadata.title() {
         Some(title) => buffer.write_string_utf8(title)
@@ -1823,7 +1823,7 @@ fn StreamTerminalBridgeState::send_mode_report(
 fn StreamTerminalBridgeState::query_kitty_keyboard(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_bytes(b"\x1B[?")
   write_uint_ascii(buffer, self.kitty_keyboard.current().0.to_uint64())
   buffer.write_byte(b'u')
@@ -2726,7 +2726,7 @@ fn StreamTerminalBridgeState::apply_color_query(
 ) -> Unit {
   match target {
     Palette(index) => {
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       buffer.write_bytes(b"\x1B]4;")
       write_uint_ascii(buffer, index.to_uint64())
       buffer.write_byte(b';')
@@ -2737,7 +2737,7 @@ fn StreamTerminalBridgeState::apply_color_query(
     Dynamic(dynamic) =>
       match self.dynamic_color_query(dynamic) {
         Some(color) => {
-          let buffer = @buffer.new()
+          let buffer = Buffer()
           buffer.write_bytes(b"\x1B]")
           write_uint_ascii(buffer, dynamic.code().to_uint64())
           buffer.write_byte(b';')
@@ -3401,7 +3401,7 @@ fn saturated_dimension(count : CellCountInt, unit : UInt) -> UInt {
 
 ///|
 fn utf8_bytes(value : String) -> Bytes {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   buffer.write_string_utf8(value)
   buffer.contents()
 }
@@ -3413,9 +3413,9 @@ fn truncate_utf8(value : String, max_bytes : Int) -> String {
     return value
   }
 
-  let buffer = @buffer.new(size_hint=max_bytes)
+  let buffer = Buffer(size_hint=max_bytes)
   for char in value {
-    let encoded = @buffer.new()
+    let encoded = Buffer()
     encoded.write_char_utf8(char)
     let bytes = encoded.contents()
     if buffer.length() + bytes.length() > max_bytes {

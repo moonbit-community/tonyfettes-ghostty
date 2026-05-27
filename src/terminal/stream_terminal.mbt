@@ -4,12 +4,12 @@ priv struct StreamTerminalHandler {
 }
 
 ///|
-impl StreamHandler for StreamTerminalHandler with vt(self, action) {
+impl StreamHandler for StreamTerminalHandler with fn vt(self, action) {
   ignore(self.bridge.apply(action))
 }
 
 ///|
-impl StreamHandler for StreamTerminalHandler with deinit(_self) {
+impl StreamHandler for StreamTerminalHandler with fn deinit(_self) {
   ()
 }
 

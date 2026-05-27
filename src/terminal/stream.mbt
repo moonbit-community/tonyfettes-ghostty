@@ -159,8 +159,8 @@ pub(all) enum StreamAction {
 
 ///|
 pub(open) trait StreamHandler {
-  vt(Self, StreamAction) -> Unit
-  deinit(Self) -> Unit
+  fn vt(Self, StreamAction) -> Unit
+  fn deinit(Self) -> Unit
 }
 
 ///|

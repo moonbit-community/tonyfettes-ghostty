@@ -127,7 +127,7 @@ pub fn terminal_system_emit_log(
   scope : Bytes,
   message : Bytes,
 ) -> Unit {
-  let buffer = @buffer.new(size_hint=SystemLogChunkBytes)
+  let buffer = Buffer(size_hint=SystemLogChunkBytes)
   for byte in message {
     if buffer.length() == SystemLogChunkBytes {
       current_terminal_system.emit_log(level, scope, buffer.contents())

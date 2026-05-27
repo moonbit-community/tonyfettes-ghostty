@@ -245,7 +245,7 @@ fn KittyGraphicsResponse::encode(self : KittyGraphicsResponse) -> Bytes {
     return b""
   }
 
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   let mut prior = false
   buffer.write_bytes(b"\x1B_G")
   if self.id > 0U {

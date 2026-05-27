@@ -24,7 +24,7 @@ fn PerfStats::bytes_per_ms(self : PerfStats) -> UInt64 {
 
 ///|
 fn repeated_bytes(chunk : Bytes, repeats : Int) -> Bytes {
-  let buffer = @buffer.new(size_hint=chunk.length() * repeats)
+  let buffer = Buffer(size_hint=chunk.length() * repeats)
   for _ in 0..<repeats {
     buffer.write_bytes(chunk)
   }
