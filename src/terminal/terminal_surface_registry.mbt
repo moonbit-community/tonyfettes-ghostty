@@ -68,110 +68,74 @@ fn terminal_surface_type_info(
 
 ///|
 let terminal_surface_type_entries : ReadOnlyArray[TerminalSurfaceTypeInfo] = [
-  terminal_surface_type_info(
-    "GhosttyColorRgb",
-    TerminalSurfaceTypeMapping::Direct,
-    "RGB",
-  ),
+  terminal_surface_type_info("GhosttyColorRgb", Direct, "RGB"),
   terminal_surface_type_info(
     "GhosttyDeviceAttributes",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "DeviceAttributes",
   ),
   terminal_surface_type_info(
     "GhosttyDeviceAttributesPrimary",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "PrimaryDeviceAttributes",
   ),
   terminal_surface_type_info(
     "GhosttyDeviceAttributesSecondary",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "SecondaryDeviceAttributes",
   ),
   terminal_surface_type_info(
     "GhosttyDeviceAttributesTertiary",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "TertiaryDeviceAttributes",
   ),
   terminal_surface_type_info(
     "GhosttyFormatterTerminalOptions",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "FormatterOptions",
   ),
-  terminal_surface_type_info(
-    "GhosttySelection",
-    TerminalSurfaceTypeMapping::Direct,
-    "Selection",
-  ),
-  terminal_surface_type_info(
-    "GhosttyGridRef",
-    TerminalSurfaceTypeMapping::Direct,
-    "Pin",
-  ),
+  terminal_surface_type_info("GhosttySelection", Direct, "Selection"),
+  terminal_surface_type_info("GhosttyGridRef", Direct, "Pin"),
   terminal_surface_type_info(
     "GhosttyFormatterTerminalExtra",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "FormatterTerminalExtra",
   ),
   terminal_surface_type_info(
     "GhosttyFormatterScreenExtra",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "FormatterScreenExtra",
   ),
   terminal_surface_type_info(
     "GhosttyMouseEncoderSize",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "MouseEncoderSize",
   ),
-  terminal_surface_type_info(
-    "GhosttyMousePosition",
-    TerminalSurfaceTypeMapping::Direct,
-    "MousePosition",
-  ),
-  terminal_surface_type_info(
-    "GhosttyPoint",
-    TerminalSurfaceTypeMapping::Direct,
-    "Point",
-  ),
-  terminal_surface_type_info(
-    "GhosttyPointCoordinate",
-    TerminalSurfaceTypeMapping::Direct,
-    "Coordinate",
-  ),
+  terminal_surface_type_info("GhosttyMousePosition", Direct, "MousePosition"),
+  terminal_surface_type_info("GhosttyPoint", Direct, "Point"),
+  terminal_surface_type_info("GhosttyPointCoordinate", Direct, "Coordinate"),
   terminal_surface_type_info(
     "GhosttyRenderStateColors",
-    TerminalSurfaceTypeMapping::Absorbed,
+    Absorbed,
     "RenderState",
     note=Some(
       "RenderState exposes background, foreground, cursor, and palette colors with getters instead of a standalone Colors wrapper.",
     ),
   ),
-  terminal_surface_type_info(
-    "GhosttySizeReportSize",
-    TerminalSurfaceTypeMapping::Direct,
-    "Size",
-  ),
+  terminal_surface_type_info("GhosttySizeReportSize", Direct, "Size"),
   terminal_surface_type_info(
     "GhosttyString",
-    TerminalSurfaceTypeMapping::Native,
+    Native,
     "String / Bytes",
     note=Some(
       "Native MoonBit text and byte results replace the C ABI string wrapper.",
     ),
   ),
-  terminal_surface_type_info(
-    "GhosttyStyle",
-    TerminalSurfaceTypeMapping::Direct,
-    "CellStyle",
-  ),
-  terminal_surface_type_info(
-    "GhosttyStyleColor",
-    TerminalSurfaceTypeMapping::Direct,
-    "StyleColor",
-  ),
+  terminal_surface_type_info("GhosttyStyle", Direct, "CellStyle"),
+  terminal_surface_type_info("GhosttyStyleColor", Direct, "StyleColor"),
   terminal_surface_type_info(
     "GhosttyTerminalOptions",
-    TerminalSurfaceTypeMapping::Absorbed,
+    Absorbed,
     "StreamTerminal",
     note=Some(
       "Construction, resize, and dimension/color query methods absorb the C terminal options wrapper.",
@@ -179,12 +143,12 @@ let terminal_surface_type_entries : ReadOnlyArray[TerminalSurfaceTypeInfo] = [
   ),
   terminal_surface_type_info(
     "GhosttyTerminalScrollbar",
-    TerminalSurfaceTypeMapping::Direct,
+    Direct,
     "TerminalScrollbar",
   ),
   terminal_surface_type_info(
     "GhosttyTerminalScrollViewport",
-    TerminalSurfaceTypeMapping::Absorbed,
+    Absorbed,
     "StreamTerminal",
     note=Some(
       "scroll_viewport_top, scroll_viewport_bottom, and scroll_viewport_delta replace the viewport command struct.",

@@ -41,7 +41,7 @@ pub fn KeyEncoder::new() -> KeyEncoder {
     modify_other_keys_state_2: false,
     kitty_flags: KittyKeyboardFlags(0),
     host_is_macos: false,
-    macos_option_as_alt: OptionAsAlt::False,
+    macos_option_as_alt: False,
     backarrow_key_mode: false,
   }
 }
@@ -163,16 +163,14 @@ pub fn KeyEncoder::sync_from_terminal(
   terminal : StreamTerminal,
 ) -> Unit {
   let bridge = terminal.bridge()
-  self.cursor_key_application = bridge.mode_get(Mode::CursorKeys)
-  self.keypad_key_application = bridge.mode_get(Mode::KeypadKeys)
-  self.ignore_keypad_with_numlock = bridge.mode_get(
-    Mode::IgnoreKeypadWithNumlock,
-  )
-  self.alt_esc_prefix = bridge.mode_get(Mode::AltEscPrefix)
+  self.cursor_key_application = bridge.mode_get(CursorKeys)
+  self.keypad_key_application = bridge.mode_get(KeypadKeys)
+  self.ignore_keypad_with_numlock = bridge.mode_get(IgnoreKeypadWithNumlock)
+  self.alt_esc_prefix = bridge.mode_get(AltEscPrefix)
   self.modify_other_keys_state_2 = bridge.modify_other_keys_2()
   self.kitty_flags = bridge.kitty_keyboard_flags()
-  self.macos_option_as_alt = OptionAsAlt::False
-  self.backarrow_key_mode = bridge.mode_get(Mode::BackarrowKeyMode)
+  self.macos_option_as_alt = False
+  self.backarrow_key_mode = bridge.mode_get(BackarrowKeyMode)
 }
 
 ///|
@@ -219,13 +217,13 @@ fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
     return self.encode_legacy(event)
   }
 
-  if event.action() == KeyAction::Release {
+  if event.action() == Release {
     if !kitty_flag_enabled(self.kitty_flags, KittyFlagReportEvents) {
       return b""
     }
     if !kitty_flag_enabled(self.kitty_flags, KittyFlagReportAll) {
       match event.key() {
-        Key::Enter | Key::Backspace | Key::Tab => return b""
+        Enter | Backspace | Tab => return b""
         _ => ()
       }
     }
@@ -259,10 +257,10 @@ fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
 
   if event.utf8().length() > 0 {
     match event.key() {
-      Key::Enter | Key::Backspace =>
+      Enter | Backspace =>
         if is_control_utf8(event.utf8()) {
           ()
-        } else if event.key() == Key::Backspace {
+        } else if event.key() == Backspace {
           return b""
         } else {
           return event.utf8()
@@ -274,16 +272,16 @@ fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
   if !kitty_flag_enabled(self.kitty_flags, KittyFlagReportAll) {
     if binding_mods.empty() {
       match event.key() {
-        Key::Enter => return b"\r"
-        Key::Tab => return b"\t"
-        Key::Backspace => return b"\x7F"
+        Enter => return b"\r"
+        Tab => return b"\t"
+        Backspace => return b"\x7F"
         _ => ()
       }
     }
 
     if event.utf8().length() > 0 &&
       binding_mods.empty() &&
-      event.action() != KeyAction::Release {
+      event.action() != Release {
       match utf8_codepoints(event.utf8()) {
         Some(codepoints) => {
           let mut printable = true
@@ -317,7 +315,7 @@ fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
     key: found.code,
     final_byte: found.final_byte,
     mods: KittyMods::from_input(event.action(), event.key(), all_mods),
-    event: KittySequenceEvent::None,
+    event: None,
     alternate_shifted: None,
     alternate_base: None,
     text: b"",
@@ -325,9 +323,9 @@ fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
 
   if kitty_flag_enabled(self.kitty_flags, KittyFlagReportEvents) {
     sequence.event = match event.action() {
-      KeyAction::Press => KittySequenceEvent::Press
-      KeyAction::Release => KittySequenceEvent::Release
-      KeyAction::Repeat => KittySequenceEvent::Repeat
+      Press => Press
+      Release => Release
+      Repeat => Repeat
     }
   }
 
@@ -337,7 +335,7 @@ fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
   }
 
   if kitty_flag_enabled(self.kitty_flags, KittyFlagReportAssociated) &&
-    sequence.event != KittySequenceEvent::Release &&
+    sequence.event != Release &&
     !sequence.mods.prevents_text(self.alt_prevents_text(all_mods)) {
     sequence.text = event.utf8()
   }
@@ -351,7 +349,7 @@ fn KeyEncoder::encode_legacy(self : KeyEncoder, event : KeyEvent) -> Bytes {
   let effective_mods = event.effective_mods()
   let binding_mods = effective_mods.binding()
 
-  if event.action() != KeyAction::Press && event.action() != KeyAction::Repeat {
+  if event.action() != Press && event.action() != Repeat {
     return b""
   }
 
@@ -372,9 +370,9 @@ fn KeyEncoder::encode_legacy(self : KeyEncoder, event : KeyEvent) -> Bytes {
     Some(sequence) =>
       if event.utf8().length() > 0 {
         match event.key() {
-          Key::Backspace | Key::Enter | Key::Escape =>
+          Backspace | Enter | Escape =>
             if !is_control_utf8(event.utf8()) {
-              if event.key() == Key::Backspace {
+              if event.key() == Backspace {
                 return b""
               }
             } else {
@@ -493,14 +491,14 @@ fn KeyEncoder::modify_other_keys_sequence_for_event(
     let mut binding = event.mods().binding()
     if self.host_is_macos {
       match self.macos_option_as_alt {
-        OptionAsAlt::False => binding = binding.with_alt(false)
-        OptionAsAlt::True => ()
-        OptionAsAlt::Left =>
-          if event.mods().alt_side() != KeyModSide::Left {
+        False => binding = binding.with_alt(false)
+        True => ()
+        Left =>
+          if event.mods().alt_side() != Left {
             binding = binding.with_alt(false)
           }
-        OptionAsAlt::Right =>
-          if event.mods().alt_side() != KeyModSide::Right {
+        Right =>
+          if event.mods().alt_side() != Right {
             binding = binding.with_alt(false)
           }
       }
@@ -569,16 +567,10 @@ fn KeyEncoder::legacy_alt_prefix(
 
   if self.host_is_macos {
     match self.macos_option_as_alt {
-      OptionAsAlt::False => return None
-      OptionAsAlt::Left =>
-        if mods.alt_side() == KeyModSide::Right {
-          return None
-        }
-      OptionAsAlt::Right =>
-        if mods.alt_side() == KeyModSide::Left {
-          return None
-        }
-      OptionAsAlt::True => ()
+      False => return None
+      Left => if mods.alt_side() == Right { return None }
+      Right => if mods.alt_side() == Left { return None }
+      True => ()
     }
   }
 
@@ -696,10 +688,10 @@ fn KeyEncoder::alt_prevents_text(self : KeyEncoder, mods : KeyMods) -> Bool {
   }
 
   match self.macos_option_as_alt {
-    OptionAsAlt::Left => mods.alt_side() == KeyModSide::Left
-    OptionAsAlt::Right => mods.alt_side() == KeyModSide::Right
-    OptionAsAlt::True => true
-    OptionAsAlt::False => false
+    Left => mods.alt_side() == Left
+    Right => mods.alt_side() == Right
+    True => true
+    False => false
   }
 }
 
@@ -720,8 +712,11 @@ fn is_control_utf8(bytes : Bytes) -> Bool {
 
 ///|
 fn utf8_codepoints(bytes : Bytes) -> Array[Int]? {
-  let decoded : Result[String, @utf8.Malformed] = try? @utf8.decode(bytes[:])
-  guard decoded is Ok(text) else { return None }
+  let text = try @utf8.decode(bytes[:]) catch {
+    _ => return None
+  } noraise {
+    text => text
+  }
   let result : Array[Int] = []
   for char in text {
     result.push(char.to_int())
@@ -761,8 +756,7 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
   }
 
   let mods = self.mods.seq_int()
-  let emitted_mods = if self.event != KittySequenceEvent::None &&
-    self.event != KittySequenceEvent::Press {
+  let emitted_mods = if self.event != None && self.event != Press {
     buffer.write_byte(b';')
     write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(b':')
@@ -808,7 +802,7 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
 fn KittySequence::encode_special(self : KittySequence) -> Bytes {
   let buffer = Buffer(size_hint=12)
   let mods = self.mods.seq_int()
-  if self.event != KittySequenceEvent::None {
+  if self.event != None {
     buffer.write_bytes(b"\x1B[1;")
     write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(b':')
@@ -832,10 +826,10 @@ fn KittySequence::encode_special(self : KittySequence) -> Bytes {
 ///|
 fn kitty_sequence_event_code(event : KittySequenceEvent) -> UInt {
   match event {
-    KittySequenceEvent::None => 0U
-    KittySequenceEvent::Press => 1U
-    KittySequenceEvent::Repeat => 2U
-    KittySequenceEvent::Release => 3U
+    None => 0U
+    Press => 1U
+    Repeat => 2U
+    Release => 3U
   }
 }
 

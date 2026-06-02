@@ -73,7 +73,7 @@ test "stream terminal/applies bytes across split escape writes" {
   guard terminal.title() == None &&
     terminal.cursor_x() == 0 &&
     terminal.cursor_y() == 0 &&
-    terminal.cursor_visual_style() == CursorVisualStyle::Block &&
+    terminal.cursor_visual_style() == Block &&
     !terminal.palette_dirty() &&
     terminal.screen_row_snapshot(24) == None &&
     terminal.screen_cell_snapshot(0, 80) == None else {
@@ -101,17 +101,14 @@ test "stream terminal/applies bytes across split escape writes" {
 test "stream terminal/routes query replies and callbacks" {
   let recorder = StreamTerminalEffectsRecorder::new()
   let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(ConformanceLevel::Vt420, [
-      PrimaryDeviceAttributeFeature::AnsiColor,
-      PrimaryDeviceAttributeFeature::Clipboard,
-    ]),
-    SecondaryDeviceAttributes::new(DeviceType::Vt420, 100, 7),
+    PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
+    SecondaryDeviceAttributes::new(Vt420, 100, 7),
     TertiaryDeviceAttributes::new(9U),
   )
   let terminal = StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     bell=fn() { recorder.bell() },
-    color_scheme=fn() { Some(ColorScheme::Light) },
+    color_scheme=fn() { Some(Light) },
     device_attributes=fn() { Some(attributes) },
     enquiry=fn() { b"ghostty" },
     size=fn() { Some(Size::new(24, 80, 9, 18)) },
@@ -180,10 +177,10 @@ test "stream terminal/resize updates dimensions and reports size" {
     recorder.write_pty(data)
   })
 
-  terminal.mode_set(Mode::SynchronizedOutput, true)
-  terminal.mode_set(Mode::InBandSizeReports, true)
+  terminal.mode_set(SynchronizedOutput, true)
+  terminal.mode_set(InBandSizeReports, true)
 
-  guard terminal.resize(100, 40, 9U, 18U) == TerminalResultCode::Success else {
+  guard terminal.resize(100, 40, 9U, 18U) == Success else {
     fail("expected resize success")
   }
   guard terminal.columns() == 100 &&
@@ -192,7 +189,7 @@ test "stream terminal/resize updates dimensions and reports size" {
     terminal.height_px() == 720U else {
     fail("expected resize dimensions")
   }
-  guard !terminal.mode_get(Mode::SynchronizedOutput) else {
+  guard !terminal.mode_get(SynchronizedOutput) else {
     fail("expected resize to disable synchronized output")
   }
   guard recorder.writes.length() == 1 else {
@@ -207,12 +204,11 @@ test "stream terminal/resize updates dimensions and reports size" {
 test "stream terminal/resize rejects zero dimensions and saturates pixels" {
   let terminal = StreamTerminal::new()
 
-  guard terminal.resize(0, 24, 9U, 18U) == TerminalResultCode::InvalidValue &&
-    terminal.resize(80, 0, 9U, 18U) == TerminalResultCode::InvalidValue else {
+  guard terminal.resize(0, 24, 9U, 18U) == InvalidValue &&
+    terminal.resize(80, 0, 9U, 18U) == InvalidValue else {
     fail("expected resize invalid-value guards")
   }
-  guard terminal.resize(100, 40, 0xFFFFFFFF, 0xFFFFFFFF) ==
-    TerminalResultCode::Success else {
+  guard terminal.resize(100, 40, 0xFFFFFFFF, 0xFFFFFFFF) == Success else {
     fail("expected resize saturation success")
   }
   guard terminal.width_px() == 0xFFFFFFFF && terminal.height_px() == 0xFFFFFFFF else {
@@ -226,12 +222,12 @@ test "stream terminal/resize rejects zero dimensions and saturates pixels" {
 test "stream terminal/scrollback viewport tracks active screen rows" {
   let terminal = StreamTerminal::new()
 
-  guard terminal.resize(5, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before scrollback viewport test")
   }
   terminal.next_slice(b"hello\x1BD\x1BD\x1BD")
 
-  guard terminal.active_screen() == TerminalScreen::Primary else {
+  guard terminal.active_screen() == Primary else {
     fail("expected primary screen by default")
   }
   guard terminal.total_rows() == 4U && terminal.scrollback_rows() == 2U else {

@@ -1,11 +1,11 @@
 ///|
 test "terminal_result_code/code values match upstream" {
   let cases : Array[(TerminalResultCode, Int)] = [
-    (TerminalResultCode::Success, 0),
-    (TerminalResultCode::OutOfMemory, -1),
-    (TerminalResultCode::InvalidValue, -2),
-    (TerminalResultCode::OutOfSpace, -3),
-    (TerminalResultCode::NoValue, -4),
+    (Success, 0),
+    (OutOfMemory, -1),
+    (InvalidValue, -2),
+    (OutOfSpace, -3),
+    (NoValue, -4),
   ]
 
   for entry in cases {

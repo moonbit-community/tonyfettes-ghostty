@@ -66,7 +66,7 @@ pub fn PageRowState::new() -> PageRowState {
     grapheme: false,
     styled: false,
     hyperlink: false,
-    semantic_prompt: RowSemanticPrompt::None,
+    semantic_prompt: None,
     kitty_virtual_placeholder: false,
     dirty: false,
   }
@@ -173,7 +173,7 @@ pub fn PageRowState::full_reset(self : PageRowState) -> Unit {
   self.grapheme = false
   self.styled = false
   self.hyperlink = false
-  self.semantic_prompt = RowSemanticPrompt::None
+  self.semantic_prompt = None
   self.kitty_virtual_placeholder = false
   self.dirty = false
 }
@@ -194,15 +194,15 @@ struct PageCellState {
 ///|
 pub fn PageCellState::new() -> PageCellState {
   {
-    content_tag: PageCellContentTag::Codepoint,
+    content_tag: Codepoint,
     codepoint: 0U,
     palette_index: 0,
     bg_rgb: RGB::new(0, 0, 0),
     style: CellStyle::new(),
-    wide: PageCellWide::Narrow,
+    wide: Narrow,
     protected_flag: false,
     hyperlink: None,
-    semantic_content: SemanticContent::Output,
+    semantic_content: Output,
   }
 }
 
@@ -224,11 +224,7 @@ pub fn PageCellState::set_codepoint(
   codepoint : UInt,
   grapheme : Bool,
 ) -> Unit {
-  self.content_tag = if grapheme {
-    PageCellContentTag::CodepointGrapheme
-  } else {
-    PageCellContentTag::Codepoint
-  }
+  self.content_tag = if grapheme { CodepointGrapheme } else { Codepoint }
   self.codepoint = codepoint
 }
 
@@ -237,7 +233,7 @@ pub fn PageCellState::set_background_palette(
   self : PageCellState,
   index : Byte,
 ) -> Unit {
-  self.content_tag = PageCellContentTag::BackgroundPalette
+  self.content_tag = BackgroundPalette
   self.palette_index = index
 }
 
@@ -246,37 +242,31 @@ pub fn PageCellState::set_background_rgb(
   self : PageCellState,
   rgb : RGB,
 ) -> Unit {
-  self.content_tag = PageCellContentTag::BackgroundRgb
+  self.content_tag = BackgroundRgb
   self.bg_rgb = rgb
 }
 
 ///|
 pub fn PageCellState::codepoint(self : PageCellState) -> UInt {
   match self.content_tag {
-    PageCellContentTag::Codepoint | PageCellContentTag::CodepointGrapheme =>
-      self.codepoint
-    PageCellContentTag::BackgroundPalette | PageCellContentTag::BackgroundRgb =>
-      0U
+    Codepoint | CodepointGrapheme => self.codepoint
+    BackgroundPalette | BackgroundRgb => 0U
   }
 }
 
 ///|
 pub fn PageCellState::palette_index(self : PageCellState) -> Byte? {
   match self.content_tag {
-    PageCellContentTag::BackgroundPalette => Some(self.palette_index)
-    PageCellContentTag::Codepoint
-    | PageCellContentTag::CodepointGrapheme
-    | PageCellContentTag::BackgroundRgb => None
+    BackgroundPalette => Some(self.palette_index)
+    Codepoint | CodepointGrapheme | BackgroundRgb => None
   }
 }
 
 ///|
 pub fn PageCellState::background_rgb(self : PageCellState) -> RGB? {
   match self.content_tag {
-    PageCellContentTag::BackgroundRgb => Some(self.bg_rgb)
-    PageCellContentTag::Codepoint
-    | PageCellContentTag::CodepointGrapheme
-    | PageCellContentTag::BackgroundPalette => None
+    BackgroundRgb => Some(self.bg_rgb)
+    Codepoint | CodepointGrapheme | BackgroundPalette => None
   }
 }
 
@@ -350,20 +340,16 @@ pub fn PageCellState::is_zero(self : PageCellState) -> Bool {
 ///|
 pub fn PageCellState::has_text(self : PageCellState) -> Bool {
   match self.content_tag {
-    PageCellContentTag::Codepoint | PageCellContentTag::CodepointGrapheme =>
-      self.codepoint != 0U
-    PageCellContentTag::BackgroundPalette | PageCellContentTag::BackgroundRgb =>
-      false
+    Codepoint | CodepointGrapheme => self.codepoint != 0U
+    BackgroundPalette | BackgroundRgb => false
   }
 }
 
 ///|
 pub fn PageCellState::grid_width(self : PageCellState) -> Int {
   match self.wide {
-    PageCellWide::Narrow
-    | PageCellWide::SpacerHead
-    | PageCellWide::SpacerTail => 1
-    PageCellWide::Wide => 2
+    Narrow | SpacerHead | SpacerTail => 1
+    Wide => 2
   }
 }
 
@@ -375,29 +361,27 @@ pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
 ///|
 pub fn PageCellState::is_empty(self : PageCellState) -> Bool {
   match self.content_tag {
-    PageCellContentTag::Codepoint | PageCellContentTag::CodepointGrapheme =>
-      !self.has_text() && self.wide == PageCellWide::Narrow
-    PageCellContentTag::BackgroundPalette | PageCellContentTag::BackgroundRgb =>
-      false
+    Codepoint | CodepointGrapheme => !self.has_text() && self.wide == Narrow
+    BackgroundPalette | BackgroundRgb => false
   }
 }
 
 ///|
 pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
-  self.content_tag == PageCellContentTag::CodepointGrapheme
+  self.content_tag == CodepointGrapheme
 }
 
 ///|
 pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
-  self.content_tag = PageCellContentTag::Codepoint
+  self.content_tag = Codepoint
   self.codepoint = 0U
   self.palette_index = 0
   self.bg_rgb = RGB::new(0, 0, 0)
   self.style.reset()
-  self.wide = PageCellWide::Narrow
+  self.wide = Narrow
   self.protected_flag = false
   self.hyperlink = None
-  self.semantic_content = SemanticContent::Output
+  self.semantic_content = Output
 }
 
 ///|

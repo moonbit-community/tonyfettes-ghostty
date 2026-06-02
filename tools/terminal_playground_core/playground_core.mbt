@@ -25,7 +25,7 @@ priv struct PlaygroundLog {
 
 ///|
 fn PlaygroundLog::new() -> PlaygroundLog {
-  { bell_count: 0, title_change_count: 0, pty: @buffer.new() }
+  { bell_count: 0, title_change_count: 0, pty: Buffer() }
 }
 
 ///|
@@ -170,21 +170,21 @@ pub fn playground_scroll_delta(handle : Int, delta : Int) -> Unit {
 ///|
 pub fn playground_render_html(handle : Int) -> String {
   with_session_string(handle, fn(session) {
-    formatted_terminal(session.terminal, @terminal.Format::Html)
+    formatted_terminal(session.terminal, Html)
   })
 }
 
 ///|
 pub fn playground_render_plain(handle : Int) -> String {
   with_session_string(handle, fn(session) {
-    formatted_terminal(session.terminal, @terminal.Format::Plain)
+    formatted_terminal(session.terminal, Plain)
   })
 }
 
 ///|
 pub fn playground_render_vt(handle : Int) -> String {
   with_session_string(handle, fn(session) {
-    formatted_terminal(session.terminal, @terminal.Format::Vt)
+    formatted_terminal(session.terminal, Vt)
   })
 }
 
@@ -384,7 +384,7 @@ fn formatted_terminal(
 
 ///|
 fn bytes_from_string(value : String) -> Bytes {
-  let buffer = @buffer.new(size_hint=value.length())
+  let buffer = Buffer(size_hint=value.length())
   buffer.write_string_utf8(value)
   buffer.contents()
 }
@@ -604,11 +604,8 @@ fn json_selection_rect(
 ) -> Json {
   match value {
     Some(selection) => {
-      let start = terminal.point_from_pin(
-        selection.start(),
-        @terminal.Tag::Screen,
-      )
-      let end_ = terminal.point_from_pin(selection.end(), @terminal.Tag::Screen)
+      let start = terminal.point_from_pin(selection.start(), Screen)
+      let end_ = terminal.point_from_pin(selection.end(), Screen)
       {
         "rectangle": selection.rectangle(),
         "start": json_coordinate(start),

@@ -9,7 +9,7 @@ fn new_terminal(cols : CellCountInt, rows : CellCountInt) -> StreamTerminal {
 
 ///|
 fn plain_format(term : StreamTerminal) -> Bytes {
-  Formatter::new_terminal(term, FormatterOptions::new(Format::Plain, trim=true)).format()
+  Formatter::new_terminal(term, FormatterOptions::new(Plain, trim=true)).format()
 }
 
 ///|
@@ -91,11 +91,11 @@ test "resize reflow marks prompt continuations" {
   ignore(term.resize(3, 3, 0U, 0U))
   let prompt = term.screen_row_snapshot(0).unwrap()
   let continuation = term.screen_row_snapshot(1).unwrap()
-  guard prompt.wrap() && prompt.semantic_prompt() == RowSemanticPrompt::Prompt else {
+  guard prompt.wrap() && prompt.semantic_prompt() == Prompt else {
     fail("expected first reflowed row to remain the primary prompt")
   }
   guard continuation.wrap_continuation() &&
-    continuation.semantic_prompt() == RowSemanticPrompt::PromptContinuation else {
+    continuation.semantic_prompt() == PromptContinuation else {
     fail("expected reflowed row to become a prompt continuation")
   }
 }
@@ -161,11 +161,11 @@ test "resize alternate screen keeps 1049 saved primary cursor" {
   assert_eq(term.cursor_x(), 4)
   assert_eq(term.cursor_y(), 1)
   term.next_slice(b"\x1B[?1049h")
-  assert_true(term.active_screen() == TerminalScreen::Alternate)
+  assert_true(term.active_screen() == Alternate)
   term.next_slice(b"\x1B[Halt")
   ignore(term.resize(3, 3, 0U, 0U))
   term.next_slice(b"\x1B[?1049l")
-  assert_true(term.active_screen() == TerminalScreen::Primary)
+  assert_true(term.active_screen() == Primary)
   assert_eq(term.cursor_x(), 2)
   assert_eq(term.cursor_y(), 1)
 }
@@ -175,13 +175,13 @@ test "resize preserves primary and alternate screen contents" {
   let term = new_terminal(5, 3)
   term.next_slice(b"pri")
   term.next_slice(b"\x1B[?1049h")
-  assert_true(term.active_screen() == TerminalScreen::Alternate)
+  assert_true(term.active_screen() == Alternate)
   term.next_slice(b"\x1B[Halt")
   ignore(term.resize(10, 3, 0U, 0U))
-  assert_true(term.active_screen() == TerminalScreen::Alternate)
+  assert_true(term.active_screen() == Alternate)
   assert_eq(plain_format(term), b"alt")
   term.next_slice(b"\x1B[?1049l")
-  assert_true(term.active_screen() == TerminalScreen::Primary)
+  assert_true(term.active_screen() == Primary)
   assert_eq(plain_format(term), b"pri")
 }
 
@@ -241,7 +241,7 @@ test "resize reflow to one column eliminates wide character" {
   term.next_slice(b"\xF0\x9F\x98\x80")
   ignore(term.resize(1, 1, 0U, 0U))
   assert_eq(cell_codepoint(term, 0, 0), 0U)
-  assert_true(cell_wide(term, 0, 0) == PageCellWide::Narrow)
+  assert_true(cell_wide(term, 0, 0) == Narrow)
 }
 
 ///|
@@ -250,13 +250,13 @@ test "resize reflow wraps wide character with spacer head" {
   term.next_slice(b"x\xF0\x9F\x98\x80")
   ignore(term.resize(2, 2, 0U, 0U))
   assert_eq(cell_codepoint(term, 0, 0), 0x78U)
-  assert_true(cell_wide(term, 0, 0) == PageCellWide::Narrow)
+  assert_true(cell_wide(term, 0, 0) == Narrow)
   assert_eq(cell_codepoint(term, 0, 1), 0U)
-  assert_true(cell_wide(term, 0, 1) == PageCellWide::SpacerHead)
+  assert_true(cell_wide(term, 0, 1) == SpacerHead)
   assert_eq(cell_codepoint(term, 1, 0), 0x1F600U)
-  assert_true(cell_wide(term, 1, 0) == PageCellWide::Wide)
+  assert_true(cell_wide(term, 1, 0) == Wide)
   assert_eq(cell_codepoint(term, 1, 1), 0U)
-  assert_true(cell_wide(term, 1, 1) == PageCellWide::SpacerTail)
+  assert_true(cell_wide(term, 1, 1) == SpacerTail)
 }
 
 ///|

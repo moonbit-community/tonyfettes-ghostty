@@ -11,15 +11,7 @@ struct ScreenCharsetState {
 
 ///|
 pub fn ScreenCharsetState::new() -> ScreenCharsetState {
-  {
-    g0: Charset::Utf8,
-    g1: Charset::Utf8,
-    g2: Charset::Utf8,
-    g3: Charset::Utf8,
-    gl: Slots::G0,
-    gr: Slots::G2,
-    single_shift: None,
-  }
+  { g0: Utf8, g1: Utf8, g2: Utf8, g3: Utf8, gl: G0, gr: G2, single_shift: None }
 }
 
 ///|
@@ -93,12 +85,12 @@ pub fn ScreenCharsetState::consume_single_shift(
 
 ///|
 pub fn ScreenCharsetState::reset(self : ScreenCharsetState) -> Unit {
-  self.g0 = Charset::Utf8
-  self.g1 = Charset::Utf8
-  self.g2 = Charset::Utf8
-  self.g3 = Charset::Utf8
-  self.gl = Slots::G0
-  self.gr = Slots::G2
+  self.g0 = Utf8
+  self.g1 = Utf8
+  self.g2 = Utf8
+  self.g3 = Utf8
+  self.gl = G0
+  self.gr = G2
   self.single_shift = None
 }
 

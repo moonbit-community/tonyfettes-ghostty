@@ -21,7 +21,7 @@ test "kitty graphics wb/skips placements whose backing image is missing" {
     },
   ]
 
-  let graphics : KittyGraphics = { bridge, screen: TerminalScreen::Primary }
+  let graphics : KittyGraphics = { bridge, screen: Primary }
   guard !(graphics.placement_iterator().next() is Some(_)) else {
     fail("expected missing-image placements to be skipped")
   }
@@ -34,8 +34,8 @@ test "kitty graphics wb/format and compression helpers stay total" {
     number: 2U,
     width: 1U,
     height: 1U,
-    format_: KittyGraphicsFormat::Rgba,
-    compression_: KittyGraphicsCompression::ZlibDeflate,
+    format_: Rgba,
+    compression_: ZlibDeflate,
     data: b"\x00\x00\x00\x00",
   }
   let rgba_private = kitty_private_image(rgba_image)
@@ -45,19 +45,19 @@ test "kitty graphics wb/format and compression helpers stay total" {
     number: 4U,
     width: 1U,
     height: 1U,
-    format_: KittyGraphicsFormat::Png,
-    compression_: KittyGraphicsCompression::None,
+    format_: Png,
+    compression_: None,
     data: b"\x89PNG",
   }
   let png_private = kitty_private_image(png_image)
   let png_round_trip = kitty_public_image(png_private)
 
-  guard rgba_private.format == KittyImageFormat::Rgba &&
-    rgba_private.compression == KittyImageCompression::ZlibDeflate &&
-    rgba_round_trip.format() == KittyGraphicsFormat::Rgba &&
-    rgba_round_trip.compression() == KittyGraphicsCompression::ZlibDeflate &&
-    png_private.format == KittyImageFormat::Png &&
-    png_round_trip.format() == KittyGraphicsFormat::Png else {
+  guard rgba_private.format == Rgba &&
+    rgba_private.compression == ZlibDeflate &&
+    rgba_round_trip.format() == Rgba &&
+    rgba_round_trip.compression() == ZlibDeflate &&
+    png_private.format == Png &&
+    png_round_trip.format() == Png else {
     fail("expected kitty image helper conversions to stay exhaustive")
   }
 }
@@ -71,14 +71,14 @@ test "kitty graphics wb/rect guards impossible zero-row state" {
 
   let placement : KittyPlacement = {
     bridge,
-    screen: TerminalScreen::Primary,
+    screen: Primary,
     image_snapshot: {
       id: 1U,
       number: 0U,
       width: 1U,
       height: 1U,
-      format_: KittyGraphicsFormat::Rgb,
-      compression_: KittyGraphicsCompression::None,
+      format_: Rgb,
+      compression_: None,
       data: b"\x00\x00\x00",
     },
     placement: {

@@ -1,31 +1,30 @@
 ///|
 test "terminal saved cursor state/charset defaults and reset" {
   let state = ScreenCharsetState::new()
-  guard state.charset(G0) == Charset::Utf8 &&
-    state.charset(G1) == Charset::Utf8 &&
-    state.charset(G2) == Charset::Utf8 &&
-    state.charset(G3) == Charset::Utf8 &&
+  guard state.charset(G0) == Utf8 &&
+    state.charset(G1) == Utf8 &&
+    state.charset(G2) == Utf8 &&
+    state.charset(G3) == Utf8 &&
     state.gl() == G0 &&
     state.gr() == G2 &&
     state.single_shift() == None else {
     fail("expected charset state defaults")
   }
 
-  state.configure(G0, Charset::Ascii)
-  state.configure(G1, Charset::DecSpecial)
-  state.configure(G2, Charset::British)
+  state.configure(G0, Ascii)
+  state.configure(G1, DecSpecial)
+  state.configure(G2, British)
   state.invoke(Gl, G1, false)
   state.invoke(Gl, G2, true)
-  guard state.charset(G0) == Charset::Ascii &&
-    state.charset(G2) == Charset::British else {
+  guard state.charset(G0) == Ascii && state.charset(G2) == British else {
     fail("expected charset reset setup to cover non-default slot updates")
   }
 
   state.reset()
-  guard state.charset(G0) == Charset::Utf8 &&
-    state.charset(G1) == Charset::Utf8 &&
-    state.charset(G2) == Charset::Utf8 &&
-    state.charset(G3) == Charset::Utf8 &&
+  guard state.charset(G0) == Utf8 &&
+    state.charset(G1) == Utf8 &&
+    state.charset(G2) == Utf8 &&
+    state.charset(G3) == Utf8 &&
     state.gl() == G0 &&
     state.gr() == G2 &&
     state.single_shift() == None else {
@@ -36,10 +35,9 @@ test "terminal saved cursor state/charset defaults and reset" {
 ///|
 test "terminal saved cursor state/charset configure invoke and single shift" {
   let state = ScreenCharsetState::new()
-  state.configure(G1, Charset::DecSpecial)
-  state.configure(G3, Charset::British)
-  guard state.charset(G1) == Charset::DecSpecial &&
-    state.charset(G3) == Charset::British else {
+  state.configure(G1, DecSpecial)
+  state.configure(G3, British)
+  guard state.charset(G1) == DecSpecial && state.charset(G3) == British else {
     fail("expected charset slot configuration")
   }
 
@@ -76,10 +74,10 @@ test "terminal saved cursor state/restore defaults when empty" {
     !saved.cursor_protected() &&
     !saved.pending_wrap() &&
     !saved.origin() &&
-    saved_charset.charset(G0) == Charset::Utf8 &&
-    saved_charset.charset(G1) == Charset::Utf8 &&
-    saved_charset.charset(G2) == Charset::Utf8 &&
-    saved_charset.charset(G3) == Charset::Utf8 &&
+    saved_charset.charset(G0) == Utf8 &&
+    saved_charset.charset(G1) == Utf8 &&
+    saved_charset.charset(G2) == Utf8 &&
+    saved_charset.charset(G3) == Utf8 &&
     saved_charset.gl() == G0 &&
     saved_charset.gr() == G2 &&
     saved_charset.single_shift() == None else {
@@ -98,7 +96,7 @@ test "terminal saved cursor state/save captures snapshot values" {
   style.apply_attribute(Color256Fg(9))
 
   let charset = ScreenCharsetState::new()
-  charset.configure(G1, Charset::DecSpecial)
+  charset.configure(G1, DecSpecial)
   charset.invoke(Gl, G1, false)
   charset.invoke(Gl, G2, true)
 
@@ -128,7 +126,7 @@ test "terminal saved cursor state/save captures snapshot values" {
     fail("expected saved cursor style snapshot")
   }
 
-  guard saved_charset.charset(G1) == Charset::DecSpecial &&
+  guard saved_charset.charset(G1) == DecSpecial &&
     saved_charset.gl() == G1 &&
     saved_charset.single_shift() == Some(G2) else {
     fail("expected saved cursor charset snapshot")
@@ -143,7 +141,7 @@ test "terminal saved cursor state/latest save wins and reset clears state" {
   let first_style = CellStyle::new()
   first_style.apply_attribute(Bold)
   let first_charset = ScreenCharsetState::new()
-  first_charset.configure(G1, Charset::DecSpecial)
+  first_charset.configure(G1, DecSpecial)
   state.save(first_cursor, first_style, false, false, first_charset)
 
   let second_cursor = TerminalCursorState::new(24, 80)
@@ -151,7 +149,7 @@ test "terminal saved cursor state/latest save wins and reset clears state" {
   let second_style = CellStyle::new()
   second_style.apply_attribute(Italic)
   let second_charset = ScreenCharsetState::new()
-  second_charset.configure(G3, Charset::British)
+  second_charset.configure(G3, British)
   second_charset.invoke(Gr, G3, false)
   state.save(second_cursor, second_style, false, true, second_charset)
 
@@ -170,8 +168,7 @@ test "terminal saved cursor state/latest save wins and reset clears state" {
     fail("expected most recent saved style")
   }
 
-  guard restored_charset.charset(G3) == Charset::British &&
-    restored_charset.gr() == G3 else {
+  guard restored_charset.charset(G3) == British && restored_charset.gr() == G3 else {
     fail("expected most recent saved charset state")
   }
 
@@ -181,7 +178,7 @@ test "terminal saved cursor state/latest save wins and reset clears state" {
   let restored_again_style = restored_again.style()
   let restored_again_charset = restored_again.charset()
   guard restored_again_style.italic() &&
-    restored_again_charset.charset(G3) == Charset::British &&
+    restored_again_charset.charset(G3) == British &&
     restored_again_charset.gr() == G3 else {
     fail("expected restore to return deep copies")
   }

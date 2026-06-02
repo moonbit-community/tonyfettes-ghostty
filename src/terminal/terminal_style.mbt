@@ -71,7 +71,7 @@ pub fn CellStyle::new() -> CellStyle {
     invisible: false,
     strikethrough: false,
     overline: false,
-    underline: SgrUnderline::None,
+    underline: None,
   }
 }
 
@@ -88,7 +88,7 @@ pub fn CellStyle::reset(self : CellStyle) -> Unit {
   self.invisible = false
   self.strikethrough = false
   self.overline = false
-  self.underline = SgrUnderline::None
+  self.underline = None
 }
 
 ///|

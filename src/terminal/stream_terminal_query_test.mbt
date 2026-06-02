@@ -21,7 +21,7 @@ test "stream terminal query/exposes cursor and scrollbar state" {
     fail("expected default scrollbar snapshot")
   }
 
-  guard terminal.resize(4, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(4, 2, 0U, 0U) == Success else {
     fail("expected resize before cursor wrap query")
   }
   terminal.next_slice(b"abcd")
@@ -29,7 +29,7 @@ test "stream terminal query/exposes cursor and scrollbar state" {
     fail("expected pending wrap query after right-edge write")
   }
 
-  guard terminal.resize(5, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before scrollbar query")
   }
   terminal.next_slice(b"hello\x1BD\x1BD\x1BD")
@@ -50,7 +50,7 @@ test "stream terminal query/exposes cursor and scrollbar state" {
     fail("expected viewport-bottom scrollbar offset")
   }
 
-  terminal.mode_set(Mode::AltScreenLegacy, true)
+  terminal.mode_set(AltScreenLegacy, true)
   let alternate = terminal.scrollbar()
   guard alternate.total() == 2U &&
     alternate.offset() == 0U &&
@@ -71,16 +71,16 @@ test "stream terminal query/exposes visibility mouse and kitty keyboard state" {
     fail("expected default visibility and input query state")
   }
 
-  terminal.mode_set(Mode::CursorVisible, false)
+  terminal.mode_set(CursorVisible, false)
   guard !terminal.cursor_visible() else {
     fail("expected cursor visibility query to follow DEC mode 25")
   }
 
-  terminal.mode_set(Mode::MouseEventAny, true)
+  terminal.mode_set(MouseEventAny, true)
   guard terminal.mouse_tracking() else {
     fail("expected mouse tracking aggregate query")
   }
-  terminal.mode_set(Mode::MouseEventAny, false)
+  terminal.mode_set(MouseEventAny, false)
   guard !terminal.mouse_tracking() else {
     fail("expected mouse tracking aggregate clear")
   }
@@ -153,8 +153,7 @@ test "stream terminal query/exposes current and default palette snapshots" {
   let custom = default_palette()
   custom[0] = RGB::new(0x12, 0x34, 0x56)
 
-  guard terminal.set_default_palette(Some(custom)) ==
-    TerminalResultCode::Success else {
+  guard terminal.set_default_palette(Some(custom)) == Success else {
     fail("expected default palette update")
   }
   guard terminal.palette_dirty() else {
@@ -173,15 +172,14 @@ test "stream terminal query/exposes current and default palette snapshots" {
     fail("expected current palette override without losing defaults")
   }
 
-  guard terminal.set_default_palette(Some([RGB::new(1, 2, 3)])) ==
-    TerminalResultCode::InvalidValue else {
+  guard terminal.set_default_palette(Some([RGB::new(1, 2, 3)])) == InvalidValue else {
     fail("expected invalid palette length to be rejected")
   }
   guard terminal.default_palette()[0] == RGB::new(0x12, 0x34, 0x56) else {
     fail("expected invalid palette update to leave defaults untouched")
   }
 
-  guard terminal.set_default_palette(None) == TerminalResultCode::Success else {
+  guard terminal.set_default_palette(None) == Success else {
     fail("expected palette reset to builtin defaults")
   }
   guard terminal.default_palette()[0] == default_palette()[0] else {

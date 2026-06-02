@@ -3,7 +3,7 @@ test "terminal cursor state/defaults and full reset" {
   let state = TerminalCursorState::new(24, 80)
   guard state.x() == 0 &&
     state.y() == 0 &&
-    state.visual_style() == CursorVisualStyle::Block &&
+    state.visual_style() == Block &&
     !state.pending_wrap() &&
     state.top_margin() == 0 &&
     state.bottom_margin() == 23 &&
@@ -19,7 +19,7 @@ test "terminal cursor state/defaults and full reset" {
   state.full_reset()
   guard state.x() == 0 &&
     state.y() == 0 &&
-    state.visual_style() == CursorVisualStyle::Block &&
+    state.visual_style() == Block &&
     !state.pending_wrap() &&
     state.top_margin() == 0 &&
     state.bottom_margin() == 23 &&
@@ -46,33 +46,29 @@ test "terminal cursor state/zero dimensions clamp to one cell" {
 test "terminal cursor state/applies csi cursor style mapping" {
   let state = TerminalCursorState::new(24, 80)
 
-  guard !state.apply_cursor_style(Default) &&
-    state.visual_style() == CursorVisualStyle::Block else {
+  guard !state.apply_cursor_style(Default) && state.visual_style() == Block else {
     fail("expected default cursor style mapping")
   }
 
-  guard state.apply_cursor_style(BlinkingBlock) &&
-    state.visual_style() == CursorVisualStyle::Block else {
+  guard state.apply_cursor_style(BlinkingBlock) && state.visual_style() == Block else {
     fail("expected blinking block mapping")
   }
 
-  guard !state.apply_cursor_style(SteadyBlock) &&
-    state.visual_style() == CursorVisualStyle::Block else {
+  guard !state.apply_cursor_style(SteadyBlock) && state.visual_style() == Block else {
     fail("expected steady block mapping")
   }
 
   guard state.apply_cursor_style(BlinkingUnderline) &&
-    state.visual_style() == CursorVisualStyle::Underline else {
+    state.visual_style() == Underline else {
     fail("expected blinking underline mapping")
   }
 
   guard !state.apply_cursor_style(SteadyUnderline) &&
-    state.visual_style() == CursorVisualStyle::Underline else {
+    state.visual_style() == Underline else {
     fail("expected steady underline mapping")
   }
 
-  guard !state.apply_cursor_style(SteadyBar) &&
-    state.visual_style() == CursorVisualStyle::Bar else {
+  guard !state.apply_cursor_style(SteadyBar) && state.visual_style() == Bar else {
     fail("expected steady bar mapping")
   }
 }

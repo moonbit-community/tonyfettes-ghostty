@@ -103,8 +103,8 @@ fn DcsHandler::unhook(self : DcsHandler) -> DcsCommand? {
   let command = match self.state {
     Inactive | Ignore => no_dcs_command()
     XtGetTCap(buffer) =>
-      Some(DcsCommand::XtGetTCap({ data: uppercased_ascii(buffer), index: 0 }))
-    Decrqss(buffer) => Some(DcsCommand::Decrqss(classify_decrqss(buffer)))
+      Some(XtGetTCap({ data: uppercased_ascii(buffer), index: 0 }))
+    Decrqss(buffer) => Some(Decrqss(classify_decrqss(buffer)))
   }
   self.state = Inactive
   command

@@ -246,10 +246,8 @@ test "stream terminal parity/replaces and clears callbacks on the same terminal"
 test "stream terminal parity/replaces callbacks with default fallback paths" {
   let recorder = StreamTerminalParityRecorder::new()
   let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(ConformanceLevel::Vt220, [
-      PrimaryDeviceAttributeFeature::AnsiColor,
-    ]),
-    SecondaryDeviceAttributes::new(DeviceType::Vt220, 10, 0),
+    PrimaryDeviceAttributes::new(Vt220, [AnsiColor]),
+    SecondaryDeviceAttributes::new(Vt220, 10, 0),
     TertiaryDeviceAttributes::new(0U),
   )
   let terminal = StreamTerminal::new(write_pty=fn(data) {
@@ -259,7 +257,7 @@ test "stream terminal parity/replaces callbacks with default fallback paths" {
   terminal.set_enquiry(fn() { b"OK" })
   terminal.set_xtversion(fn() { "myterm 1.0" })
   terminal.set_size(fn() { Some(Size::new(24, 80, 8, 16)) })
-  terminal.set_color_scheme(fn() { Some(ColorScheme::Light) })
+  terminal.set_color_scheme(fn() { Some(Light) })
   terminal.set_device_attributes(fn() { Some(attributes) })
   terminal.next_slice(b"\x05\x1B[>q\x1B[18t\x1B[?996n\x1B[c")
 
@@ -317,14 +315,14 @@ test "stream terminal parity/metadata mode and reset controls" {
     fail("expected empty pwd to clear state")
   }
   terminal.set_pwd("/workspace")
-  terminal.mode_set(Mode::CursorVisible, false)
-  terminal.mode_set(Mode::BracketedPaste, true)
+  terminal.mode_set(CursorVisible, false)
+  terminal.mode_set(BracketedPaste, true)
   terminal.next_slice(b"Hello")
 
   guard terminal.title() == Some("Hello") &&
     terminal.pwd() == Some("/workspace") &&
-    !terminal.mode_get(Mode::CursorVisible) &&
-    terminal.mode_get(Mode::BracketedPaste) &&
+    !terminal.mode_get(CursorVisible) &&
+    terminal.mode_get(BracketedPaste) &&
     terminal.cursor_x() == 5 else {
     fail("expected metadata and mode controls before reset")
   }
@@ -332,10 +330,10 @@ test "stream terminal parity/metadata mode and reset controls" {
   terminal.reset()
   guard terminal.title() == None else { fail("expected reset title default") }
   guard terminal.pwd() == None else { fail("expected reset pwd default") }
-  guard terminal.mode_get(Mode::CursorVisible) else {
+  guard terminal.mode_get(CursorVisible) else {
     fail("expected reset cursor-visible mode default")
   }
-  guard !terminal.mode_get(Mode::BracketedPaste) else {
+  guard !terminal.mode_get(BracketedPaste) else {
     fail("expected reset bracketed-paste mode default")
   }
   guard terminal.cursor_x() == 0 else { fail("expected reset cursor x") }
@@ -348,11 +346,8 @@ test "stream terminal parity/metadata mode and reset controls" {
 test "stream terminal parity/set device_attributes callback primary" {
   let recorder = StreamTerminalParityRecorder::new()
   let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(ConformanceLevel::Vt420, [
-      PrimaryDeviceAttributeFeature::AnsiColor,
-      PrimaryDeviceAttributeFeature::Clipboard,
-    ]),
-    SecondaryDeviceAttributes::new(DeviceType::Vt220, 10, 0),
+    PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
+    SecondaryDeviceAttributes::new(Vt220, 10, 0),
     TertiaryDeviceAttributes::new(0U),
   )
   let terminal = StreamTerminal::new(
@@ -374,10 +369,8 @@ test "stream terminal parity/set device_attributes callback primary" {
 test "stream terminal parity/set device_attributes callback secondary" {
   let recorder = StreamTerminalParityRecorder::new()
   let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(ConformanceLevel::Vt220, [
-      PrimaryDeviceAttributeFeature::AnsiColor,
-    ]),
-    SecondaryDeviceAttributes::new(DeviceType::Vt220, 10, 0),
+    PrimaryDeviceAttributes::new(Vt220, [AnsiColor]),
+    SecondaryDeviceAttributes::new(Vt220, 10, 0),
     TertiaryDeviceAttributes::new(0U),
   )
   let terminal = StreamTerminal::new(
@@ -399,8 +392,8 @@ test "stream terminal parity/set device_attributes callback secondary" {
 test "stream terminal parity/set device_attributes callback tertiary" {
   let recorder = StreamTerminalParityRecorder::new()
   let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(ConformanceLevel::Vt220, []),
-    SecondaryDeviceAttributes::new(DeviceType::Vt220, 0, 0),
+    PrimaryDeviceAttributes::new(Vt220, []),
+    SecondaryDeviceAttributes::new(Vt220, 0, 0),
     TertiaryDeviceAttributes::new(0xAABBCCDDU),
   )
   let terminal = StreamTerminal::new(

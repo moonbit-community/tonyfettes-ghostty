@@ -41,6 +41,17 @@ fn expect_semantic_prompt(
 }
 
 ///|
+fn decoded_command_line_result(
+  prompt : SemanticPrompt,
+) -> Result[String?, SemanticPromptDecodeError] {
+  try prompt.decoded_command_line() catch {
+    err => Err(err)
+  } noraise {
+    command_line => Ok(command_line)
+  }
+}
+
+///|
 fn expect_clipboard_contents(
   bytes : Bytes,
   terminator : Byte?,
@@ -1688,7 +1699,7 @@ test "osc/semantic prompt decoding and malformed options" {
   guard printf_q.cmdline() == Some("echo\\ bobr\\nkurwa") else {
     fail("expected raw cmdline option")
   }
-  let printf_q_result : Result[String?, SemanticPromptDecodeError] = try? printf_q.decoded_command_line()
+  let printf_q_result = decoded_command_line_result(printf_q)
   guard printf_q_result is Ok(Some(decoded)) && decoded == "echo bobr\nkurwa" else {
     fail("expected decoded printf-q command line")
   }
@@ -1697,7 +1708,7 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline=$'echo bobr kurwa'",
     Some(0x07),
   )
-  let quoted_result : Result[String?, SemanticPromptDecodeError] = try? quoted.decoded_command_line()
+  let quoted_result = decoded_command_line_result(quoted)
   guard quoted_result is Ok(Some(decoded)) && decoded == "echo bobr kurwa" else {
     fail("expected decoded quoted command line")
   }
@@ -1706,7 +1717,7 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline='echo bobr kurwa'",
     Some(0x07),
   )
-  let single_quoted_result : Result[String?, SemanticPromptDecodeError] = try? single_quoted.decoded_command_line()
+  let single_quoted_result = decoded_command_line_result(single_quoted)
   guard single_quoted_result is Ok(Some(decoded)) &&
     decoded == "echo bobr kurwa" else {
     fail("expected decoded single-quoted command line")
@@ -1716,7 +1727,7 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline=one\\etwo\\rthree\\tfour\\vfive",
     Some(0x07),
   )
-  let escape_variants_result : Result[String?, SemanticPromptDecodeError] = try? escape_variants.decoded_command_line()
+  let escape_variants_result = decoded_command_line_result(escape_variants)
   let expected_escape_variants = @utf8.decode_lossy(
     b"one\x1Btwo\rthree\tfour\x0Bfive",
   )
@@ -1732,7 +1743,7 @@ test "osc/semantic prompt decoding and malformed options" {
   guard url.cmdline_url() == Some("echo%20bobr%3Bkurwa") else {
     fail("expected raw cmdline_url option")
   }
-  let url_result : Result[String?, SemanticPromptDecodeError] = try? url.decoded_command_line()
+  let url_result = decoded_command_line_result(url)
   guard url_result is Ok(Some(decoded)) && decoded == "echo bobr;kurwa" else {
     fail("expected decoded url command line")
   }
@@ -1741,7 +1752,7 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline_url=echo%3bkurwa",
     Some(0x07),
   )
-  let lowercase_hex_result : Result[String?, SemanticPromptDecodeError] = try? lowercase_hex.decoded_command_line()
+  let lowercase_hex_result = decoded_command_line_result(lowercase_hex)
   guard lowercase_hex_result is Ok(Some(decoded)) && decoded == "echo;kurwa" else {
     fail("expected decoded lowercase-hex command line")
   }
@@ -1776,7 +1787,7 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline='echo bobr kurwa",
     Some(0x07),
   )
-  let invalid_printf_q_result : Result[String?, SemanticPromptDecodeError] = try? invalid_printf_q.decoded_command_line()
+  let invalid_printf_q_result = decoded_command_line_result(invalid_printf_q)
   guard invalid_printf_q_result is Err(DecodeError) else {
     fail("expected malformed printf-q command line to fail")
   }
@@ -1785,10 +1796,9 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline=echo\\",
     Some(0x07),
   )
-  let invalid_printf_q_escape_result : Result[
-    String?,
-    SemanticPromptDecodeError,
-  ] = try? invalid_printf_q_escape.decoded_command_line()
+  let invalid_printf_q_escape_result = decoded_command_line_result(
+    invalid_printf_q_escape,
+  )
   guard invalid_printf_q_escape_result is Err(DecodeError) else {
     fail("expected trailing backslash decode failure")
   }
@@ -1797,10 +1807,9 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline=echo\\d",
     Some(0x07),
   )
-  let invalid_printf_q_escape_kind_result : Result[
-    String?,
-    SemanticPromptDecodeError,
-  ] = try? invalid_printf_q_escape_kind.decoded_command_line()
+  let invalid_printf_q_escape_kind_result = decoded_command_line_result(
+    invalid_printf_q_escape_kind,
+  )
   guard invalid_printf_q_escape_kind_result is Err(DecodeError) else {
     fail("expected unsupported printf-q escape decode failure")
   }
@@ -1809,10 +1818,9 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline=$'echo bobr kurwa",
     Some(0x07),
   )
-  let invalid_printf_q_dollar_result : Result[
-    String?,
-    SemanticPromptDecodeError,
-  ] = try? invalid_printf_q_dollar.decoded_command_line()
+  let invalid_printf_q_dollar_result = decoded_command_line_result(
+    invalid_printf_q_dollar,
+  )
   guard invalid_printf_q_dollar_result is Err(DecodeError) else {
     fail("expected malformed dollar-quoted decode failure")
   }
@@ -1821,7 +1829,7 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline_url=echo%2",
     Some(0x07),
   )
-  let invalid_url_result : Result[String?, SemanticPromptDecodeError] = try? invalid_url.decoded_command_line()
+  let invalid_url_result = decoded_command_line_result(invalid_url)
   guard invalid_url_result is Err(DecodeError) else {
     fail("expected malformed url command line to fail")
   }
@@ -1830,7 +1838,7 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline_url=echo%G0",
     Some(0x07),
   )
-  let invalid_url_hex_result : Result[String?, SemanticPromptDecodeError] = try? invalid_url_hex.decoded_command_line()
+  let invalid_url_hex_result = decoded_command_line_result(invalid_url_hex)
   guard invalid_url_hex_result is Err(DecodeError) else {
     fail("expected invalid hex url command line to fail")
   }
@@ -1839,7 +1847,9 @@ test "osc/semantic prompt decoding and malformed options" {
     b"133;C;cmdline_url=echo%2G",
     Some(0x07),
   )
-  let invalid_url_low_hex_result : Result[String?, SemanticPromptDecodeError] = try? invalid_url_low_hex.decoded_command_line()
+  let invalid_url_low_hex_result = decoded_command_line_result(
+    invalid_url_low_hex,
+  )
   guard invalid_url_low_hex_result is Err(DecodeError) else {
     fail("expected invalid low-nibble hex url command line to fail")
   }

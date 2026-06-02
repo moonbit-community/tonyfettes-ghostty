@@ -50,22 +50,22 @@ test "kitty graphics command/response and access helpers" {
 
   let query : KittyGraphicsCommand = {
     control: Query(transmission),
-    quiet: KittyGraphicsQuiet::No,
+    quiet: No,
     data: b"",
   }
   let transmit_display : KittyGraphicsCommand = {
     control: TransmitAndDisplay({ transmission, display }),
-    quiet: KittyGraphicsQuiet::No,
+    quiet: No,
     data: b"",
   }
   let transmit : KittyGraphicsCommand = {
     control: Transmit(transmission),
-    quiet: KittyGraphicsQuiet::No,
+    quiet: No,
     data: b"",
   }
   let delete_command : KittyGraphicsCommand = {
     control: Delete(All(false)),
-    quiet: KittyGraphicsQuiet::No,
+    quiet: No,
     data: b"",
   }
 
@@ -87,7 +87,7 @@ test "kitty graphics command/response and access helpers" {
   }
   let display_only : KittyGraphicsCommand = {
     control: Display(display),
-    quiet: KittyGraphicsQuiet::No,
+    quiet: No,
     data: b"",
   }
   guard display_only.display() is Some(display_value) &&
@@ -132,9 +132,7 @@ test "kitty graphics command/parses transmission display and delete controls" {
     is Some(query) else {
     fail("expected kitty query parse")
   }
-  guard query.quiet == KittyGraphicsQuiet::No else {
-    fail("expected default quiet mode")
-  }
+  guard query.quiet == No else { fail("expected default quiet mode") }
   guard query.control is Query(value) &&
     value.format == Png &&
     value.medium == SharedMemory &&
@@ -167,7 +165,7 @@ test "kitty graphics command/parses transmission display and delete controls" {
     display.y_offset == 9U &&
     display.columns == 10U &&
     display.rows == 11U &&
-    display.cursor_movement == KittyImageCursorMovement::None &&
+    display.cursor_movement == None &&
     display.virtual_placement &&
     display.parent_id == 12U &&
     display.parent_placement_id == 13U &&
@@ -415,13 +413,11 @@ test "kitty graphics command/helper parsers cover invalid inputs" {
     fail("expected option helper fallbacks")
   }
 
-  guard build_kitty_graphics_quiet([]) == Some(KittyGraphicsQuiet::No) &&
-    build_kitty_graphics_quiet([kitty_graphics_pair(b'q', b"0")]) ==
-    Some(KittyGraphicsQuiet::No) &&
-    build_kitty_graphics_quiet([kitty_graphics_pair(b'q', b"1")]) ==
-    Some(KittyGraphicsQuiet::Ok) &&
+  guard build_kitty_graphics_quiet([]) == Some(No) &&
+    build_kitty_graphics_quiet([kitty_graphics_pair(b'q', b"0")]) == Some(No) &&
+    build_kitty_graphics_quiet([kitty_graphics_pair(b'q', b"1")]) == Some(Ok) &&
     build_kitty_graphics_quiet([kitty_graphics_pair(b'q', b"2")]) ==
-    Some(KittyGraphicsQuiet::Failures) &&
+    Some(Failures) &&
     build_kitty_graphics_quiet([kitty_graphics_pair(b'q', b"9")]) == None else {
     fail("expected quiet parser branches")
   }

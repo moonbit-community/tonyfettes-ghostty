@@ -6,7 +6,7 @@ struct ScreenProtectedState {
 
 ///|
 pub fn ScreenProtectedState::new() -> ScreenProtectedState {
-  { mode: ProtectedMode::Off, cursor_protected: false }
+  { mode: Off, cursor_protected: false }
 }
 
 ///|
@@ -30,18 +30,18 @@ pub fn ScreenProtectedState::set(
     Off => self.cursor_protected = false
     Iso => {
       self.cursor_protected = true
-      self.mode = ProtectedMode::Iso
+      self.mode = Iso
     }
     Dec => {
       self.cursor_protected = true
-      self.mode = ProtectedMode::Dec
+      self.mode = Dec
     }
   }
 }
 
 ///|
 pub fn ScreenProtectedState::reset(self : ScreenProtectedState) -> Unit {
-  self.mode = ProtectedMode::Off
+  self.mode = Off
   self.cursor_protected = false
 }
 

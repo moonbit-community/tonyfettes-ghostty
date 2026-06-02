@@ -31,7 +31,7 @@ pub fn TerminalCursorState::new(
     columns: actual_columns,
     x: 0,
     y: 0,
-    visual_style: CursorVisualStyle::Block,
+    visual_style: Block,
     pending_wrap: false,
     top_margin: 0,
     bottom_margin: actual_rows - 1,
@@ -105,31 +105,31 @@ pub fn TerminalCursorState::apply_cursor_style(
 ) -> Bool {
   match style {
     Default => {
-      self.visual_style = CursorVisualStyle::Block
+      self.visual_style = Block
       false
     }
     BlinkingBlock => {
-      self.visual_style = CursorVisualStyle::Block
+      self.visual_style = Block
       true
     }
     SteadyBlock => {
-      self.visual_style = CursorVisualStyle::Block
+      self.visual_style = Block
       false
     }
     BlinkingUnderline => {
-      self.visual_style = CursorVisualStyle::Underline
+      self.visual_style = Underline
       true
     }
     SteadyUnderline => {
-      self.visual_style = CursorVisualStyle::Underline
+      self.visual_style = Underline
       false
     }
     BlinkingBar => {
-      self.visual_style = CursorVisualStyle::Bar
+      self.visual_style = Bar
       true
     }
     SteadyBar => {
-      self.visual_style = CursorVisualStyle::Bar
+      self.visual_style = Bar
       false
     }
   }
@@ -207,7 +207,7 @@ pub fn TerminalCursorState::set_left_and_right_margin(
 pub fn TerminalCursorState::full_reset(self : TerminalCursorState) -> Unit {
   self.x = 0
   self.y = 0
-  self.visual_style = CursorVisualStyle::Block
+  self.visual_style = Block
   self.pending_wrap = false
   self.top_margin = 0
   self.bottom_margin = self.rows - 1

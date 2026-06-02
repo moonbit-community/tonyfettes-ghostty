@@ -90,8 +90,8 @@ struct MouseEncoder {
 ///|
 pub fn MouseEncoder::new() -> MouseEncoder {
   {
-    event: MouseEvent::None,
-    format: MouseFormat::X10,
+    event: None,
+    format: X10,
     size: default_mouse_encoder_size(),
     any_button_pressed: false,
     track_last_cell: false,
@@ -195,7 +195,7 @@ pub fn MouseEncoder::encode(
     return b""
   }
 
-  if event.action() != MouseAction::Release &&
+  if event.action() != Release &&
     mouse_position_out_of_viewport(event.position(), self.size) {
     if !mouse_event_sends_motion(self.event) || !self.any_button_pressed {
       return b""
@@ -203,8 +203,8 @@ pub fn MouseEncoder::encode(
   }
 
   let cell = mouse_position_to_cell(event.position(), self.size)
-  if event.action() == MouseAction::Motion &&
-    self.format != MouseFormat::SgrPixels &&
+  if event.action() == Motion &&
+    self.format != SgrPixels &&
     self.track_last_cell {
     if self.last_cell == Some(cell) {
       return b""
@@ -252,12 +252,11 @@ fn mouse_should_report(event : MouseInputEvent, mode : MouseEvent) -> Bool {
     None => false
     X10 =>
       match (event.action(), event.button()) {
-        (MouseAction::Press, Some(MouseButton::Left))
-        | (MouseAction::Press, Some(MouseButton::Middle))
-        | (MouseAction::Press, Some(MouseButton::Right)) => true
+        (Press, Some(Left)) | (Press, Some(Middle)) | (Press, Some(Right)) =>
+          true
         _ => false
       }
-    Normal => event.action() != MouseAction::Motion
+    Normal => event.action() != Motion
     Button => event.button() != None
     Any => true
   }
@@ -272,9 +271,7 @@ fn mouse_button_code(
   let mut code = match event.button() {
     None => 3
     Some(button) =>
-      if event.action() == MouseAction::Release &&
-        format != MouseFormat::Sgr &&
-        format != MouseFormat::SgrPixels {
+      if event.action() == Release && format != Sgr && format != SgrPixels {
         3
       } else {
         match button {
@@ -292,7 +289,7 @@ fn mouse_button_code(
       }
   }
 
-  if mode != MouseEvent::X10 {
+  if mode != X10 {
     if event.mods().shift() {
       code += 4
     }
@@ -304,7 +301,7 @@ fn mouse_button_code(
     }
   }
 
-  if event.action() == MouseAction::Motion {
+  if event.action() == Motion {
     code += 32
   }
 

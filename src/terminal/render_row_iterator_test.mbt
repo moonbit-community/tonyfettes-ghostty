@@ -20,7 +20,7 @@ test "render row iterator/empty state is inert" {
 ///|
 test "render row iterator/update tracks partial dirty rows" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(5, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before row iterator dirty test")
   }
 
@@ -33,12 +33,12 @@ test "render row iterator/update tracks partial dirty rows" {
       fail("expected row dirty reset after full snapshot")
     }
   }
-  state.set_dirty(RenderDirty::False)
+  state.set_dirty(False)
 
   terminal.next_slice(b"A")
   state.update(terminal)
 
-  guard state.dirty() == RenderDirty::Partial else {
+  guard state.dirty() == Partial else {
     fail("expected partial render dirty after row-local mutation")
   }
 
@@ -70,7 +70,7 @@ test "render row iterator/update tracks partial dirty rows" {
 ///|
 test "render row cells/select and next resolve style and content colors" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(3, 1, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(3, 1, 0U, 0U) == Success else {
     fail("expected resize before row cell color test")
   }
 
@@ -116,7 +116,7 @@ test "render row cells/select and next resolve style and content colors" {
   }
   let third = cells.cell().unwrap()
   guard !third.has_text() &&
-    third.content_tag() == PageCellContentTag::BackgroundPalette &&
+    third.content_tag() == BackgroundPalette &&
     cells.foreground_color() == None &&
     cells.background_color() == Some(Name::Blue.default_rgb()) else {
     fail("expected content-tag background resolution on blank cell")
@@ -132,7 +132,7 @@ test "render row cells/select and next resolve style and content colors" {
 ///|
 test "render row cells/resolve direct rgb colors" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(5, 1, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(5, 1, 0U, 0U) == Success else {
     fail("expected resize before rgb color test")
   }
 
@@ -154,7 +154,7 @@ test "render row cells/resolve direct rgb colors" {
   }
 
   guard cells.select(1) &&
-    cells.cell().unwrap().content_tag() == PageCellContentTag::BackgroundRgb &&
+    cells.cell().unwrap().content_tag() == BackgroundRgb &&
     cells.foreground_color() == None &&
     cells.background_color() == Some(RGB::new(4, 5, 6)) else {
     fail("expected background-rgb content resolution")
@@ -166,7 +166,7 @@ test "render row cells/resolve direct rgb colors" {
 ///|
 test "render state/viewport movement without cursor change still forces full" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(5, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before viewport-origin dirty test")
   }
 
@@ -175,7 +175,7 @@ test "render state/viewport movement without cursor change still forces full" {
 
   let state = RenderState::new()
   state.update(terminal)
-  state.set_dirty(RenderDirty::False)
+  state.set_dirty(False)
 
   let clear = state.row_iterator()
   while clear.next() {
@@ -185,7 +185,7 @@ test "render state/viewport movement without cursor change still forces full" {
   terminal.scroll_viewport_delta(1)
   state.update(terminal)
 
-  guard state.cursor_viewport() == None && state.dirty() == RenderDirty::Full else {
+  guard state.cursor_viewport() == None && state.dirty() == Full else {
     fail("expected viewport-origin change to require full redraw")
   }
 

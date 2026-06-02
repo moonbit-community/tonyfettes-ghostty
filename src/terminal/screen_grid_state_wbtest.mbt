@@ -37,10 +37,10 @@ fn fill_ascii(grid : ScreenGridState, row : Int, chars : Array[Byte]) -> Unit {
       row,
       i,
       chars[i].to_uint(),
-      PageCellWide::Narrow,
+      Narrow,
       CellStyle::new(),
       false,
-      SemanticContent::Output,
+      Output,
       None,
     )
   }
@@ -55,14 +55,12 @@ test "screen grid/new clamps zero dimensions and accessors" {
   }
 
   let row = expect_row(grid, 0)
-  guard !row.wrap() && row.semantic_prompt() == RowSemanticPrompt::None else {
+  guard !row.wrap() && row.semantic_prompt() == None else {
     fail("expected default row")
   }
 
   let cell = expect_cell(grid, 0, 0)
-  guard cell.codepoint() == 0U &&
-    cell.wide() == PageCellWide::Narrow &&
-    cell.is_empty() else {
+  guard cell.codepoint() == 0U && cell.wide() == Narrow && cell.is_empty() else {
     fail("expected default cell")
   }
 
@@ -86,8 +84,8 @@ test "screen grid/print stores metadata and repeat clamps zero count" {
     1,
     style,
     true,
-    SemanticContent::Prompt,
-    RowSemanticPrompt::Prompt,
+    Prompt,
+    Prompt,
     Some(hyperlink),
     true,
     false,
@@ -98,12 +96,12 @@ test "screen grid/print stores metadata and repeat clamps zero count" {
     cell.style().bold() &&
     cell.is_protected() &&
     cell.hyperlink() == Some(hyperlink) &&
-    cell.semantic_content() == SemanticContent::Prompt else {
+    cell.semantic_content() == Prompt else {
     fail("expected printed cell metadata")
   }
 
   let row = expect_row(grid, 0)
-  guard row.semantic_prompt() == RowSemanticPrompt::Prompt &&
+  guard row.semantic_prompt() == Prompt &&
     row.styled() &&
     row.hyperlink() &&
     row.dirty() else {
@@ -116,8 +114,8 @@ test "screen grid/print stores metadata and repeat clamps zero count" {
     1,
     style,
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     false,
@@ -143,8 +141,8 @@ test "screen grid/print wide wrap and one-column fallback" {
     2,
     CellStyle::new(),
     false,
-    SemanticContent::Prompt,
-    RowSemanticPrompt::Prompt,
+    Prompt,
+    Prompt,
     None,
     true,
     false,
@@ -153,9 +151,9 @@ test "screen grid/print wide wrap and one-column fallback" {
   guard expect_row(grid, 0).wrap() && expect_row(grid, 1).wrap_continuation() else {
     fail("expected wide print to mark wrap and continuation")
   }
-  guard expect_cell(grid, 0, 3).wide() == PageCellWide::SpacerHead &&
-    expect_cell(grid, 1, 0).wide() == PageCellWide::Wide &&
-    expect_cell(grid, 1, 1).wide() == PageCellWide::SpacerTail &&
+  guard expect_cell(grid, 0, 3).wide() == SpacerHead &&
+    expect_cell(grid, 1, 0).wide() == Wide &&
+    expect_cell(grid, 1, 1).wide() == SpacerTail &&
     cursor.x() == 2 &&
     cursor.y() == 1 else {
     fail("expected wrapped wide cell layout")
@@ -169,14 +167,14 @@ test "screen grid/print wide wrap and one-column fallback" {
     2,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     false,
   )
 
-  guard expect_cell(skinny, 0, 0).wide() == PageCellWide::Narrow &&
+  guard expect_cell(skinny, 0, 0).wide() == Narrow &&
     expect_cell(skinny, 0, 0).codepoint() == 0U &&
     skinny_cursor.pending_wrap() else {
     fail("expected one-column fallback to write a narrow spacer")
@@ -193,8 +191,8 @@ test "screen grid/print edge branches and insert mode" {
     0,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     false,
@@ -213,8 +211,8 @@ test "screen grid/print edge branches and insert mode" {
     1,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     false,
@@ -234,8 +232,8 @@ test "screen grid/print edge branches and insert mode" {
     1,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     false,
@@ -256,8 +254,8 @@ test "screen grid/print edge branches and insert mode" {
     1,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     true,
@@ -277,8 +275,8 @@ test "screen grid/print edge branches and insert mode" {
     2,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     false,
     false,
@@ -297,15 +295,15 @@ test "screen grid/print edge branches and insert mode" {
     2,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     false,
   )
-  guard expect_cell(partial_grid, 0, 1).wide() == PageCellWide::Narrow &&
+  guard expect_cell(partial_grid, 0, 1).wide() == Narrow &&
     expect_cell(partial_grid, 0, 1).codepoint() == 0U &&
-    expect_cell(partial_grid, 1, 0).wide() == PageCellWide::Wide else {
+    expect_cell(partial_grid, 1, 0).wide() == Wide else {
     fail(
       "expected partial-margin wrap to use a narrow clear instead of spacer head",
     )
@@ -319,8 +317,8 @@ test "screen grid/print edge branches and insert mode" {
     3,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
-    RowSemanticPrompt::None,
+    Output,
+    None,
     None,
     true,
     false,
@@ -341,8 +339,7 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   cursor.x = 1
   grid.insert_blanks(cursor, bg_style, 1)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() &&
-    expect_cell(grid, 0, 1).content_tag() ==
-    PageCellContentTag::BackgroundPalette &&
+    expect_cell(grid, 0, 1).content_tag() == BackgroundPalette &&
     expect_cell(grid, 0, 1).palette_index() == Some(3) &&
     expect_cell(grid, 0, 2).codepoint() == b'B'.to_uint() &&
     expect_cell(grid, 0, 4).codepoint() == b'D'.to_uint() &&
@@ -367,10 +364,9 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D', b'E'])
   expect_cell(grid, 0, 1).set_protected(true)
   cursor.x = 1
-  grid.erase_chars(cursor, bg_style, ProtectedMode::Iso, 2)
+  grid.erase_chars(cursor, bg_style, Iso, 2)
   guard expect_cell(grid, 0, 1).codepoint() == b'B'.to_uint() &&
-    expect_cell(grid, 0, 2).content_tag() ==
-    PageCellContentTag::BackgroundPalette &&
+    expect_cell(grid, 0, 2).content_tag() == BackgroundPalette &&
     expect_cell(grid, 0, 2).palette_index() == Some(3) else {
     fail("expected erase chars to respect iso protection")
   }
@@ -402,42 +398,24 @@ test "screen grid/char editing edge branches and helper math" {
     0,
     0,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
-  grid.write_cell(
-    0,
-    1,
-    0U,
-    PageCellWide::SpacerTail,
-    CellStyle::new(),
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.write_cell(0, 1, 0U, SpacerTail, CellStyle::new(), false, Output, None)
   grid.write_cell(
     0,
     3,
     b'Z'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
-  grid.write_cell(
-    0,
-    4,
-    0U,
-    PageCellWide::SpacerTail,
-    CellStyle::new(),
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.write_cell(0, 4, 0U, SpacerTail, CellStyle::new(), false, Output, None)
   cursor.x = 1
   cursor.left_margin = 0
   cursor.right_margin = 3
@@ -457,20 +435,20 @@ test "screen grid/char editing edge branches and helper math" {
     0,
     3,
     b'Q'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   end_grid.write_cell(
     0,
     4,
     0U,
-    PageCellWide::SpacerTail,
+    SpacerTail,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   end_cursor.x = 1
@@ -498,14 +476,14 @@ test "screen grid/char editing edge branches and helper math" {
     0,
     1,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   erase_cursor.x = 1
-  erase_grid.erase_chars(erase_cursor, style, ProtectedMode::Off, 0)
+  erase_grid.erase_chars(erase_cursor, style, Off, 0)
   guard expect_cell(erase_grid, 0, 1).palette_index() == Some(5) &&
     expect_cell(erase_grid, 0, 2).palette_index() == Some(5) else {
     fail("expected erase chars to extend over wide tails")
@@ -518,10 +496,10 @@ test "screen grid/char editing edge branches and helper math" {
     0,
     3,
     0U,
-    PageCellWide::SpacerHead,
+    SpacerHead,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   wrap_grid.cursor_reset_wrap(wrap_cursor, style)
@@ -554,41 +532,35 @@ test "screen grid/erase line and display modes" {
     0,
     0,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   right_grid.write_cell(
     0,
     1,
     0U,
-    PageCellWide::SpacerTail,
+    SpacerTail,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   right_grid.write_cell(
     0,
     2,
     b'X'.to_uint(),
-    PageCellWide::Narrow,
+    Narrow,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   right_grid.recompute_row_flags(0)
   right_cursor.x = 1
-  right_grid.erase_line(
-    right_cursor,
-    bg_style,
-    ScreenEraseLineMode::Right,
-    ProtectedMode::Off,
-    false,
-  )
+  right_grid.erase_line(right_cursor, bg_style, Right, Off, false)
   guard expect_cell(right_grid, 0, 0).palette_index() == Some(4) &&
     expect_cell(right_grid, 0, 1).palette_index() == Some(4) &&
     expect_cell(right_grid, 0, 2).palette_index() == Some(4) else {
@@ -602,30 +574,24 @@ test "screen grid/erase line and display modes" {
     0,
     1,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   left_grid.write_cell(
     0,
     2,
     0U,
-    PageCellWide::SpacerTail,
+    SpacerTail,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   left_cursor.x = 1
-  left_grid.erase_line(
-    left_cursor,
-    CellStyle::new(),
-    ScreenEraseLineMode::Left,
-    ProtectedMode::Off,
-    false,
-  )
+  left_grid.erase_line(left_cursor, CellStyle::new(), Left, Off, false)
   guard expect_cell(left_grid, 0, 0).is_empty() &&
     expect_cell(left_grid, 0, 1).is_empty() &&
     expect_cell(left_grid, 0, 2).is_empty() &&
@@ -637,17 +603,17 @@ test "screen grid/erase line and display modes" {
   let complete_cursor = TerminalCursorState::new(2, 3)
   fill_ascii(complete_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(complete_grid, 1, [b'D', b'E', b'F'])
-  expect_row(complete_grid, 1).set_semantic_prompt(RowSemanticPrompt::Prompt)
+  expect_row(complete_grid, 1).set_semantic_prompt(Prompt)
   complete_grid.erase_display(
     complete_cursor,
     CellStyle::new(),
-    ScreenEraseDisplayMode::Complete,
-    ProtectedMode::Off,
+    Complete,
+    Off,
     false,
   )
   guard expect_cell(complete_grid, 0, 0).is_empty() &&
     expect_cell(complete_grid, 1, 2).is_empty() &&
-    expect_row(complete_grid, 1).semantic_prompt() == RowSemanticPrompt::None else {
+    expect_row(complete_grid, 1).semantic_prompt() == None else {
     fail("expected erase display complete to reset full rows")
   }
 
@@ -659,13 +625,7 @@ test "screen grid/erase line and display modes" {
   expect_cell(above_grid, 0, 0).set_protected(true)
   above_cursor.y = 1
   above_cursor.x = 1
-  above_grid.erase_display(
-    above_cursor,
-    bg_style,
-    ScreenEraseDisplayMode::Above,
-    ProtectedMode::Iso,
-    false,
-  )
+  above_grid.erase_display(above_cursor, bg_style, Above, Iso, false)
   guard expect_cell(above_grid, 0, 0).codepoint() == b'A'.to_uint() &&
     expect_cell(above_grid, 0, 1).palette_index() == Some(4) &&
     expect_cell(above_grid, 1, 0).palette_index() == Some(4) else {
@@ -678,8 +638,8 @@ test "screen grid/erase line and display modes" {
   scroll_grid.erase_display(
     scroll_cursor,
     CellStyle::new(),
-    ScreenEraseDisplayMode::ScrollComplete,
-    ProtectedMode::Off,
+    ScrollComplete,
+    Off,
     false,
   )
   guard expect_cell(scroll_grid, 0, 0).is_empty() else {
@@ -692,8 +652,8 @@ test "screen grid/erase line and display modes" {
   line_complete_grid.erase_line(
     line_complete_cursor,
     CellStyle::new(),
-    ScreenEraseLineMode::Complete,
-    ProtectedMode::Off,
+    Complete,
+    Off,
     false,
   )
   guard expect_cell(line_complete_grid, 0, 0).is_empty() &&
@@ -706,13 +666,7 @@ test "screen grid/erase line and display modes" {
   fill_ascii(below_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(below_grid, 1, [b'D', b'E', b'F'])
   below_cursor.x = 1
-  below_grid.erase_display(
-    below_cursor,
-    bg_style,
-    ScreenEraseDisplayMode::Below,
-    ProtectedMode::Off,
-    false,
-  )
+  below_grid.erase_display(below_cursor, bg_style, Below, Off, false)
   guard expect_cell(below_grid, 0, 1).palette_index() == Some(4) &&
     expect_cell(below_grid, 1, 0).palette_index() == Some(4) else {
     fail("expected erase display below to clear current-right and rows below")
@@ -788,10 +742,10 @@ test "screen grid/line shifts scroll and helper boundaries" {
     0,
     3,
     0U,
-    PageCellWide::SpacerHead,
+    SpacerHead,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   expect_row(boundary_grid, 0).set_wrap(true)
@@ -804,20 +758,20 @@ test "screen grid/line shifts scroll and helper boundaries" {
     0,
     3,
     0U,
-    PageCellWide::SpacerHead,
+    SpacerHead,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   boundary_grid.write_cell(
     1,
     0,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   expect_row(boundary_grid, 1).set_wrap_continuation(true)
@@ -830,20 +784,20 @@ test "screen grid/line shifts scroll and helper boundaries" {
     1,
     0,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   boundary_grid.write_cell(
     1,
     1,
     0U,
-    PageCellWide::SpacerTail,
+    SpacerTail,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   boundary_grid.split_cell_boundary(1, 1, style)
@@ -856,40 +810,40 @@ test "screen grid/line shifts scroll and helper boundaries" {
     0,
     0,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   boundary_grid.write_cell(
     0,
     1,
     0U,
-    PageCellWide::SpacerTail,
+    SpacerTail,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   boundary_grid.write_cell(
     0,
     2,
     b'Z'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   boundary_grid.write_cell(
     0,
     3,
     0U,
-    PageCellWide::SpacerHead,
+    SpacerHead,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
   boundary_grid.row_will_be_shifted(0, 1, 2, style)
@@ -989,47 +943,21 @@ test "screen grid/print cell clears prior wide and spacer forms" {
   let style = CellStyle::new()
   style.apply_attribute(Color256Bg(8))
 
-  grid.write_cell(
-    0,
-    3,
-    0U,
-    PageCellWide::SpacerHead,
-    CellStyle::new(),
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.write_cell(0, 3, 0U, SpacerHead, CellStyle::new(), false, Output, None)
   cursor.y = 1
   cursor.x = 1
   grid.write_cell(
     1,
     1,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
-  grid.write_cell(
-    1,
-    2,
-    0U,
-    PageCellWide::SpacerTail,
-    CellStyle::new(),
-    false,
-    SemanticContent::Output,
-    None,
-  )
-  grid.print_cell(
-    cursor,
-    b'N'.to_uint(),
-    PageCellWide::Narrow,
-    style,
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.write_cell(1, 2, 0U, SpacerTail, CellStyle::new(), false, Output, None)
+  grid.print_cell(cursor, b'N'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 1).codepoint() == b'N'.to_uint() &&
     expect_cell(grid, 1, 2).palette_index() == Some(8) &&
     expect_cell(grid, 0, 3).palette_index() == Some(8) else {
@@ -1038,46 +966,20 @@ test "screen grid/print cell clears prior wide and spacer forms" {
     )
   }
 
-  grid.write_cell(
-    0,
-    3,
-    0U,
-    PageCellWide::SpacerHead,
-    CellStyle::new(),
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.write_cell(0, 3, 0U, SpacerHead, CellStyle::new(), false, Output, None)
   grid.write_cell(
     1,
     0,
     b'W'.to_uint(),
-    PageCellWide::Wide,
+    Wide,
     CellStyle::new(),
     false,
-    SemanticContent::Output,
+    Output,
     None,
   )
-  grid.write_cell(
-    1,
-    1,
-    0U,
-    PageCellWide::SpacerTail,
-    CellStyle::new(),
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.write_cell(1, 1, 0U, SpacerTail, CellStyle::new(), false, Output, None)
   cursor.x = 1
-  grid.print_cell(
-    cursor,
-    b'S'.to_uint(),
-    PageCellWide::Narrow,
-    style,
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.print_cell(cursor, b'S'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 0).palette_index() == Some(8) &&
     expect_cell(grid, 1, 1).codepoint() == b'S'.to_uint() &&
     expect_cell(grid, 0, 3).palette_index() == Some(8) else {
@@ -1086,25 +988,8 @@ test "screen grid/print cell clears prior wide and spacer forms" {
     )
   }
 
-  grid.write_cell(
-    1,
-    1,
-    0U,
-    PageCellWide::SpacerHead,
-    CellStyle::new(),
-    false,
-    SemanticContent::Output,
-    None,
-  )
-  grid.print_cell(
-    cursor,
-    b'H'.to_uint(),
-    PageCellWide::Narrow,
-    style,
-    false,
-    SemanticContent::Output,
-    None,
-  )
+  grid.write_cell(1, 1, 0U, SpacerHead, CellStyle::new(), false, Output, None)
+  grid.print_cell(cursor, b'H'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 1).codepoint() == b'H'.to_uint() else {
     fail("expected print cell to overwrite prior spacer heads")
   }
@@ -1114,7 +999,7 @@ test "screen grid/print cell clears prior wide and spacer forms" {
 test "screen grid/decaln and full reset" {
   let grid = ScreenGridState::new(2, 3)
   let fill_style = CellStyle::new()
-  fill_style.apply_attribute(Color8Fg(Name::Red))
+  fill_style.apply_attribute(Color8Fg(Red))
   fill_style.apply_attribute(Color256Bg(2))
 
   grid.decaln(fill_style)

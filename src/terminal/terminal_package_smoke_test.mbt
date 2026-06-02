@@ -64,7 +64,7 @@ test "terminal package smoke/metadata registry and system hooks" {
   }
 
   let string_info = terminal_surface_type("GhosttyString").unwrap()
-  guard string_info.mapping() == TerminalSurfaceTypeMapping::Native &&
+  guard string_info.mapping() == Native &&
     string_info.moonbit_surface() == "String / Bytes" &&
     string_info.note() != None else {
     fail("expected GhosttyString native replacement metadata")
@@ -75,11 +75,11 @@ test "terminal package smoke/metadata registry and system hooks" {
   terminal_system_set_log(fn(level, _scope, message) {
     recorder.record(level, message)
   })
-  terminal_system_emit_log(SystemLogLevel::Info, b"pkg", b"surface smoke")
+  terminal_system_emit_log(Info, b"pkg", b"surface smoke")
   terminal_system_clear_log()
 
   guard recorder.call_count == 1 &&
-    recorder.levels == [SystemLogLevel::Info] &&
+    recorder.levels == [Info] &&
     recorder.messages == [b"surface smoke"] else {
     fail("expected package log hook smoke path")
   }
@@ -88,7 +88,7 @@ test "terminal package smoke/metadata registry and system hooks" {
 ///|
 test "terminal package smoke/terminal render formatter and graphics surface" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(4, 2, 8U, 16U) == TerminalResultCode::Success else {
+  guard terminal.resize(4, 2, 8U, 16U) == Success else {
     fail("expected resize before package smoke terminal snapshot")
   }
 
@@ -96,8 +96,8 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
 
   let selection = terminal
     .selection(
-      Point::Active(Coordinate::new(1, 0U)),
-      Point::Active(Coordinate::new(1, 1U)),
+      Active(Coordinate::new(1, 0U)),
+      Active(Coordinate::new(1, 1U)),
       true,
     )
     .unwrap()
@@ -111,7 +111,7 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(selection),
       extra=FormatterTerminalExtra::none(),
     ),
@@ -163,14 +163,14 @@ test "terminal package smoke/input helpers and encoders" {
   }
 
   let terminal = StreamTerminal::new()
-  terminal.mode_set(Mode::CursorKeys, true)
-  terminal.mode_set(Mode::MouseEventAny, true)
-  terminal.mode_set(Mode::MouseFormatSgr, true)
+  terminal.mode_set(CursorKeys, true)
+  terminal.mode_set(MouseEventAny, true)
+  terminal.mode_set(MouseFormatSgr, true)
 
   let key_encoder = KeyEncoder::new()
   key_encoder.sync_from_terminal(terminal)
   guard key_encoder.cursor_key_application() &&
-    key_encoder.encode(package_smoke_key_event(Key::KeyC, utf8=b"c")) == b"c" else {
+    key_encoder.encode(package_smoke_key_event(KeyC, utf8=b"c")) == b"c" else {
     fail("expected key encoder package smoke path")
   }
 
@@ -178,15 +178,10 @@ test "terminal package smoke/input helpers and encoders" {
   mouse_encoder.sync_from_terminal(terminal)
   mouse_encoder.set_size(MouseEncoderSize::new(80U, 24U, 8U, 16U).unwrap())
   let mouse_bytes = mouse_encoder.encode(
-    package_smoke_mouse_event(
-      MouseAction::Press,
-      Some(MouseButton::Left),
-      0.0F,
-      0.0F,
-    ),
+    package_smoke_mouse_event(Press, Some(Left), 0.0F, 0.0F),
   )
-  guard mouse_encoder.event() == MouseEvent::Any &&
-    mouse_encoder.format() == MouseFormat::Sgr &&
+  guard mouse_encoder.event() == Any &&
+    mouse_encoder.format() == Sgr &&
     mouse_bytes == b"\x1B[<0;1;1M" else {
     fail("expected mouse encoder package smoke path")
   }

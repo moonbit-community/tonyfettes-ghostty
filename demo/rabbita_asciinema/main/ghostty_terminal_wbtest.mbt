@@ -85,19 +85,15 @@ test "ghostty terminal adapter direct cell style branches" {
 
   let styled = @terminal.PageCellState::init(b'X'.to_uint())
   let style = @terminal.CellStyle::new()
-  style.apply_attribute(@terminal.SgrAttribute::Bold)
-  style.apply_attribute(@terminal.SgrAttribute::Italic)
-  style.apply_attribute(@terminal.SgrAttribute::Faint)
-  style.apply_attribute(@terminal.SgrAttribute::Invisible)
-  style.apply_attribute(@terminal.SgrAttribute::Inverse)
-  style.apply_attribute(@terminal.SgrAttribute::Strikethrough)
-  style.apply_attribute(@terminal.SgrAttribute::Overline)
-  style.apply_attribute(
-    @terminal.SgrAttribute::DirectColorFg(@terminal.RGB::new(1, 2, 3)),
-  )
-  style.apply_attribute(
-    @terminal.SgrAttribute::DirectColorBg(@terminal.RGB::new(4, 5, 6)),
-  )
+  style.apply_attribute(Bold)
+  style.apply_attribute(Italic)
+  style.apply_attribute(Faint)
+  style.apply_attribute(Invisible)
+  style.apply_attribute(Inverse)
+  style.apply_attribute(Strikethrough)
+  style.apply_attribute(Overline)
+  style.apply_attribute(DirectColorFg(@terminal.RGB::new(1, 2, 3)))
+  style.apply_attribute(DirectColorBg(@terminal.RGB::new(4, 5, 6)))
   styled.set_style(style)
   let css = terminal.cell_style(0, 0, styled).join(";")
   guard css.contains("font-weight") &&
@@ -125,7 +121,7 @@ test "ghostty terminal adapter direct cell style branches" {
   }
 
   let spacer = @terminal.PageCellState::init(b'Z'.to_uint())
-  spacer.set_wide(@terminal.PageCellWide::SpacerHead)
+  spacer.set_wide(SpacerHead)
   assert_eq(terminal.cell_text(0, 0, spacer), " ")
   let grapheme = @terminal.PageCellState::new()
   grapheme.set_codepoint(b'e'.to_uint(), true)
@@ -137,15 +133,9 @@ test "ghostty terminal adapter direct cell style branches" {
 
 ///|
 test "ghostty terminal adapter underline style variants" {
-  for
-    underline in [
-      @terminal.SgrUnderline::Double,
-      @terminal.SgrUnderline::Curly,
-      @terminal.SgrUnderline::Dotted,
-      @terminal.SgrUnderline::Dashed,
-    ] {
+  for underline in [@terminal.SgrUnderline::Double, Curly, Dotted, Dashed] {
     let style = @terminal.CellStyle::new()
-    style.apply_attribute(@terminal.SgrAttribute::Underline(underline))
+    style.apply_attribute(Underline(underline))
     guard text_decoration(style) is Some(_) else {
       fail("expected text decoration")
     }

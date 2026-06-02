@@ -91,7 +91,7 @@ fn ScreenGridState::print(
       self.print_cell(
         cursor,
         codepoint,
-        PageCellWide::Narrow,
+        Narrow,
         style,
         protected_flag,
         semantic_content,
@@ -111,7 +111,7 @@ fn ScreenGridState::print(
             self.print_cell(
               cursor,
               0U,
-              PageCellWide::SpacerHead,
+              SpacerHead,
               style,
               protected_flag,
               semantic_content,
@@ -121,7 +121,7 @@ fn ScreenGridState::print(
             self.print_cell(
               cursor,
               0U,
-              PageCellWide::Narrow,
+              Narrow,
               style,
               protected_flag,
               semantic_content,
@@ -136,7 +136,7 @@ fn ScreenGridState::print(
         self.print_cell(
           cursor,
           codepoint,
-          PageCellWide::Wide,
+          Wide,
           style,
           protected_flag,
           semantic_content,
@@ -146,7 +146,7 @@ fn ScreenGridState::print(
         self.print_cell(
           cursor,
           0U,
-          PageCellWide::SpacerTail,
+          SpacerTail,
           style,
           protected_flag,
           semantic_content,
@@ -158,7 +158,7 @@ fn ScreenGridState::print(
         self.print_cell(
           cursor,
           0U,
-          PageCellWide::Narrow,
+          Narrow,
           style,
           protected_flag,
           semantic_content,
@@ -222,13 +222,13 @@ fn ScreenGridState::insert_blanks(
   let row_idx = cursor.y.to_int()
   let blank_style = style
   let cell = self.cells[self.cell_index(row_idx, x)]
-  if cell.wide() == PageCellWide::SpacerTail && x > 0 {
+  if cell.wide() == SpacerTail && x > 0 {
     self.clear_row_range(row_idx, x - 1, x + 1, blank_style, false)
   }
 
   let rem = right - x + 1
   let right_cell = self.cells[self.cell_index(row_idx, right)]
-  if right_cell.wide() == PageCellWide::Wide && right + 1 < self.cols.to_int() {
+  if right_cell.wide() == Wide && right + 1 < self.cols.to_int() {
     self.clear_row_range(row_idx, right, right + 2, blank_style, false)
   }
 
@@ -237,7 +237,7 @@ fn ScreenGridState::insert_blanks(
   if scroll_amount > 0 {
     let end_col = x + scroll_amount - 1
     let end_cell = self.cells[self.cell_index(row_idx, end_col)]
-    if end_cell.wide() == PageCellWide::Wide && end_col + 1 < self.cols.to_int() {
+    if end_cell.wide() == Wide && end_col + 1 < self.cols.to_int() {
       self.clear_row_range(row_idx, end_col, end_col + 2, blank_style, false)
     }
 
@@ -318,7 +318,7 @@ fn ScreenGridState::erase_chars(
   if count != remaining {
     let last_col = x + count - 1
     let last = self.cells[self.cell_index(cursor.y.to_int(), last_col)]
-    if last.wide() == PageCellWide::Wide {
+    if last.wide() == Wide {
       count += 1
     }
   }
@@ -328,7 +328,7 @@ fn ScreenGridState::erase_chars(
   self.cursor_reset_wrap(cursor, style)
   self.cursor_mark_dirty(cursor)
 
-  let respect_protected = protected_mode == ProtectedMode::Iso
+  let respect_protected = protected_mode == Iso
   self.clear_row_range(
     cursor.y.to_int(),
     x,
@@ -352,12 +352,10 @@ fn ScreenGridState::erase_line(
   let start = 0
   let end_ = self.cols.to_int()
   let (actual_start, actual_end) = match mode {
-    ScreenEraseLineMode::Right => {
+    Right => {
       self.cursor_reset_wrap(cursor, style)
       (
-        if x > 0 &&
-          self.cells[self.cell_index(row_idx, x)].wide() ==
-          PageCellWide::SpacerTail {
+        if x > 0 && self.cells[self.cell_index(row_idx, x)].wide() == SpacerTail {
           x - 1
         } else {
           x
@@ -365,21 +363,21 @@ fn ScreenGridState::erase_line(
         end_,
       )
     }
-    ScreenEraseLineMode::Left =>
+    Left =>
       (
         start,
-        if self.cells[self.cell_index(row_idx, x)].wide() == PageCellWide::Wide {
+        if self.cells[self.cell_index(row_idx, x)].wide() == Wide {
           x + 2
         } else {
           x + 1
         },
       )
-    ScreenEraseLineMode::Complete => (start, end_)
+    Complete => (start, end_)
   }
 
   cursor.pending_wrap = false
   self.cursor_mark_dirty(cursor)
-  let respect_protected = protected_mode == ProtectedMode::Iso || protected_req
+  let respect_protected = protected_mode == Iso || protected_req
   self.clear_row_range(
     row_idx, actual_start, actual_end, style, respect_protected,
   )
@@ -394,28 +392,16 @@ fn ScreenGridState::erase_display(
   protected_mode : ProtectedMode,
   protected_req : Bool,
 ) -> Unit {
-  let respect_protected = protected_mode == ProtectedMode::Iso || protected_req
+  let respect_protected = protected_mode == Iso || protected_req
   match mode {
-    ScreenEraseDisplayMode::ScrollComplete =>
-      self.erase_display(
-        cursor,
-        style,
-        ScreenEraseDisplayMode::Complete,
-        protected_mode,
-        protected_req,
-      )
-    ScreenEraseDisplayMode::Complete => {
+    ScrollComplete =>
+      self.erase_display(cursor, style, Complete, protected_mode, protected_req)
+    Complete => {
       self.clear_rows(0, self.rows.to_int(), style, respect_protected)
       cursor.pending_wrap = false
     }
-    ScreenEraseDisplayMode::Below => {
-      self.erase_line(
-        cursor,
-        style,
-        ScreenEraseLineMode::Right,
-        protected_mode,
-        protected_req,
-      )
+    Below => {
+      self.erase_line(cursor, style, Right, protected_mode, protected_req)
       if cursor.y.to_int() + 1 < self.rows.to_int() {
         self.clear_rows(
           cursor.y.to_int() + 1,
@@ -425,14 +411,8 @@ fn ScreenGridState::erase_display(
         )
       }
     }
-    ScreenEraseDisplayMode::Above => {
-      self.erase_line(
-        cursor,
-        style,
-        ScreenEraseLineMode::Left,
-        protected_mode,
-        protected_req,
-      )
+    Above => {
+      self.erase_line(cursor, style, Left, protected_mode, protected_req)
       if cursor.y.to_int() > 0 {
         self.clear_rows(0, cursor.y.to_int(), style, respect_protected)
       }
@@ -541,10 +521,10 @@ fn ScreenGridState::decaln(self : ScreenGridState, style : CellStyle) -> Unit {
         row_idx,
         col_idx,
         0x45U,
-        PageCellWide::Narrow,
+        Narrow,
         style,
         false,
-        SemanticContent::Output,
+        Output,
         None,
       )
       col_idx += 1
@@ -589,8 +569,8 @@ fn ScreenGridState::print_cell(
   let current = self.cells[self.cell_index(row_idx, col_idx)]
   if current.wide() != wide {
     match current.wide() {
-      PageCellWide::Narrow => ()
-      PageCellWide::Wide => {
+      Narrow => ()
+      Wide => {
         if col_idx < self.cols.to_int() - 1 {
           self.clear_row_range(row_idx, col_idx, col_idx + 2, style, false)
         }
@@ -598,7 +578,7 @@ fn ScreenGridState::print_cell(
           self.clear_prev_row_spacer_head(row_idx, style)
         }
       }
-      PageCellWide::SpacerTail => {
+      SpacerTail => {
         if col_idx > 0 {
           self.clear_row_range(row_idx, col_idx - 1, col_idx + 1, style, false)
         }
@@ -606,7 +586,7 @@ fn ScreenGridState::print_cell(
           self.clear_prev_row_spacer_head(row_idx, style)
         }
       }
-      PageCellWide::SpacerHead => ()
+      SpacerHead => ()
     }
   }
 
@@ -632,10 +612,8 @@ fn ScreenGridState::print_wrap(
   cursor.pending_wrap = false
   self.index(cursor, style)
   cursor.x = cursor.left_margin
-  if semantic_content == SemanticContent::Prompt {
-    self.row_states[cursor.y.to_int()].set_semantic_prompt(
-      RowSemanticPrompt::PromptContinuation,
-    )
+  if semantic_content == Prompt {
+    self.row_states[cursor.y.to_int()].set_semantic_prompt(PromptContinuation)
   }
   if mark_wrap {
     self.row_states[cursor.y.to_int()].set_wrap_continuation(true)
@@ -750,7 +728,7 @@ fn ScreenGridState::row_will_be_shifted(
   let mut changed = false
   if right == self.cols.to_int() - 1 || left < 2 {
     let end_cell = self.cells[self.cell_index(row_idx, self.cols.to_int() - 1)]
-    if end_cell.wide() == PageCellWide::SpacerHead {
+    if end_cell.wide() == SpacerHead {
       self.clear_row_range(
         row_idx,
         self.cols.to_int() - 1,
@@ -763,13 +741,13 @@ fn ScreenGridState::row_will_be_shifted(
   }
 
   let left_cell = self.cells[self.cell_index(row_idx, left)]
-  if left > 0 && left_cell.wide() == PageCellWide::SpacerTail {
+  if left > 0 && left_cell.wide() == SpacerTail {
     self.clear_row_range(row_idx, left - 1, left + 1, style, false)
     changed = true
   }
 
   let right_cell = self.cells[self.cell_index(row_idx, right)]
-  if right + 1 < self.cols.to_int() && right_cell.wide() == PageCellWide::Wide {
+  if right + 1 < self.cols.to_int() && right_cell.wide() == Wide {
     self.clear_row_range(row_idx, right, right + 2, style, false)
     changed = true
   }
@@ -792,7 +770,7 @@ fn ScreenGridState::split_cell_boundary(
     }
 
     let end_cell = self.cells[self.cell_index(row_idx, self.cols.to_int() - 1)]
-    if end_cell.wide() == PageCellWide::SpacerHead {
+    if end_cell.wide() == SpacerHead {
       self.clear_row_range(
         row_idx,
         self.cols.to_int() - 1,
@@ -808,7 +786,7 @@ fn ScreenGridState::split_cell_boundary(
     self.row_states[row_idx].wrap_continuation() &&
     row_idx > 0 {
     let first = self.cells[self.cell_index(row_idx, 0)]
-    if first.wide() == PageCellWide::Wide {
+    if first.wide() == Wide {
       self.clear_prev_row_spacer_head(row_idx, style)
     }
   }
@@ -818,7 +796,7 @@ fn ScreenGridState::split_cell_boundary(
   }
 
   let left_cell = self.cells[self.cell_index(row_idx, x - 1)]
-  if left_cell.wide() == PageCellWide::Wide {
+  if left_cell.wide() == Wide {
     self.clear_row_range(row_idx, x - 1, x + 1, style, false)
   }
 }
@@ -836,7 +814,7 @@ fn ScreenGridState::cursor_reset_wrap(
     self.row_states[row_idx + 1].set_wrap_continuation(false)
   }
   let end_cell = self.cells[self.cell_index(row_idx, self.cols.to_int() - 1)]
-  if end_cell.wide() == PageCellWide::SpacerHead {
+  if end_cell.wide() == SpacerHead {
     self.clear_row_range(
       row_idx,
       self.cols.to_int() - 1,
@@ -861,7 +839,7 @@ fn ScreenGridState::apply_row_prompt(
   row_idx : Int,
   row_prompt : RowSemanticPrompt,
 ) -> Unit {
-  if row_prompt != RowSemanticPrompt::None {
+  if row_prompt != None {
     self.row_states[row_idx].set_semantic_prompt(row_prompt)
   }
 }
@@ -971,7 +949,7 @@ fn ScreenGridState::clear_prev_row_spacer_head(
   let prev_row = row_idx - 1
   let last_col = self.cols.to_int() - 1
   let head = self.cells[self.cell_index(prev_row, last_col)]
-  if head.wide() == PageCellWide::SpacerHead {
+  if head.wide() == SpacerHead {
     self.clear_row_range(prev_row, last_col, self.cols.to_int(), style, false)
   }
 }

@@ -32,7 +32,7 @@ fn bytes_contains(haystack : Bytes, needle : Bytes) -> Bool {
 fn plain_formatter(terminal : StreamTerminal) -> Formatter {
   Formatter::new_terminal(
     terminal,
-    FormatterOptions::new(Format::Plain, extra=FormatterTerminalExtra::none()),
+    FormatterOptions::new(Plain, extra=FormatterTerminalExtra::none()),
   )
 }
 
@@ -75,15 +75,15 @@ test "formatter/plain selection restricts output" {
 
   let selection = terminal
     .selection(
-      Point::Active(Coordinate::new(6, 0U)),
-      Point::Active(Coordinate::new(10, 0U)),
+      Active(Coordinate::new(6, 0U)),
+      Active(Coordinate::new(10, 0U)),
       false,
     )
     .unwrap()
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(selection),
       extra=FormatterTerminalExtra::none(),
     ),
@@ -99,14 +99,14 @@ test "formatter/plain selection restricts output" {
 ///|
 test "formatter/plain tracked selection follows active row into scrollback" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(3, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(3, 2, 0U, 0U) == Success else {
     fail("expected resize before tracked selection test")
   }
   terminal.next_slice(b"abc\r\ndef")
   let selection = terminal
     .selection(
-      Point::Active(Coordinate::new(0, 0U)),
-      Point::Active(Coordinate::new(2, 0U)),
+      Active(Coordinate::new(0, 0U)),
+      Active(Coordinate::new(2, 0U)),
       false,
     )
     .unwrap()
@@ -115,7 +115,7 @@ test "formatter/plain tracked selection follows active row into scrollback" {
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(selection),
       extra=FormatterTerminalExtra::none(),
     ),
@@ -136,23 +136,23 @@ test "formatter/plain styles constructor stays text-only and blank selection is 
 
   let styled_plain = Formatter::new_terminal(
     terminal,
-    FormatterOptions::new(Format::Plain, extra=FormatterTerminalExtra::styles()),
+    FormatterOptions::new(Plain, extra=FormatterTerminalExtra::styles()),
   )
   guard styled_plain.format() == b"abc" else {
     fail("expected plain formatter to ignore style-only extras")
   }
 
-  terminal.mode_set(Mode::AltScreenLegacy, true)
+  terminal.mode_set(AltScreenLegacy, true)
 
   let stale_formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(
         terminal
         .selection(
-          Point::Active(Coordinate::new(0, 0U)),
-          Point::Active(Coordinate::new(0, 0U)),
+          Active(Coordinate::new(0, 0U)),
+          Active(Coordinate::new(0, 0U)),
           false,
         )
         .unwrap(),
@@ -173,8 +173,8 @@ test "formatter/plain stale pin selection formats empty" {
   terminal.next_slice(b"abc")
   let selection = terminal
     .selection(
-      Point::Active(Coordinate::new(0, 0U)),
-      Point::Active(Coordinate::new(2, 0U)),
+      Active(Coordinate::new(0, 0U)),
+      Active(Coordinate::new(2, 0U)),
       false,
     )
     .unwrap()
@@ -183,7 +183,7 @@ test "formatter/plain stale pin selection formats empty" {
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(selection),
       extra=FormatterTerminalExtra::none(),
     ),
@@ -198,7 +198,7 @@ test "formatter/plain stale pin selection formats empty" {
 ///|
 test "formatter/plain orders reversed and rectangle selections" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(4, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(4, 2, 0U, 0U) == Success else {
     fail("expected resize before selection ordering test")
   }
   terminal.next_slice(b"abcd\r\nwxyz")
@@ -206,12 +206,12 @@ test "formatter/plain orders reversed and rectangle selections" {
   let reversed = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(
         terminal
         .selection(
-          Point::Active(Coordinate::new(1, 0U)),
-          Point::Active(Coordinate::new(0, 0U)),
+          Active(Coordinate::new(1, 0U)),
+          Active(Coordinate::new(0, 0U)),
           false,
         )
         .unwrap(),
@@ -226,12 +226,12 @@ test "formatter/plain orders reversed and rectangle selections" {
   let rectangle = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(
         terminal
         .selection(
-          Point::Active(Coordinate::new(2, 1U)),
-          Point::Active(Coordinate::new(1, 0U)),
+          Active(Coordinate::new(2, 1U)),
+          Active(Coordinate::new(1, 0U)),
           true,
         )
         .unwrap(),
@@ -256,19 +256,19 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
   spaced.deinit()
 
   let wide_tail = StreamTerminal::new()
-  guard wide_tail.resize(2, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard wide_tail.resize(2, 2, 0U, 0U) == Success else {
     fail("expected resize before wide-tail selection test")
   }
   wide_tail.next_slice(@utf8.encode("你"))
   let tail_formatter = Formatter::new_terminal(
     wide_tail,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(
         wide_tail
         .selection(
-          Point::Active(Coordinate::new(1, 0U)),
-          Point::Active(Coordinate::new(1, 0U)),
+          Active(Coordinate::new(1, 0U)),
+          Active(Coordinate::new(1, 0U)),
           false,
         )
         .unwrap(),
@@ -282,19 +282,19 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
   wide_tail.deinit()
 
   let wide_head = StreamTerminal::new()
-  guard wide_head.resize(1, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard wide_head.resize(1, 2, 0U, 0U) == Success else {
     fail("expected resize before spacer-head selection test")
   }
   wide_head.next_slice(@utf8.encode("你"))
   let head_formatter = Formatter::new_terminal(
     wide_head,
     FormatterOptions::new(
-      Format::Plain,
+      Plain,
       selection=Some(
         wide_head
         .selection(
-          Point::Active(Coordinate::new(0, 1U)),
-          Point::Active(Coordinate::new(0, 1U)),
+          Active(Coordinate::new(0, 1U)),
+          Active(Coordinate::new(0, 1U)),
           false,
         )
         .unwrap(),
@@ -311,12 +311,12 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
 ///|
 test "formatter/vt emits terminal and screen extras" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(4, 3, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(4, 3, 0U, 0U) == Success else {
     fail("expected resize before vt formatter test")
   }
 
   terminal.set_pwd("file:///tmp")
-  terminal.mode_set(Mode::BracketedPaste, true)
+  terminal.mode_set(BracketedPaste, true)
   terminal.next_slice(b"\x1B[>4;2m")
   terminal.next_slice(b"\x1B[>3u")
   terminal.next_slice(b"\x1B)A\x0E")
@@ -327,7 +327,7 @@ test "formatter/vt emits terminal and screen extras" {
 
   let formatter = Formatter::new_terminal(
     terminal,
-    FormatterOptions::new(Format::Vt, extra=FormatterTerminalExtra::all()),
+    FormatterOptions::new(Vt, extra=FormatterTerminalExtra::all()),
   )
   let output = formatter.format()
 
@@ -354,7 +354,7 @@ test "formatter/vt emits terminal and screen extras" {
 ///|
 test "formatter/vt emits style transitions background cells and implicit screen state" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(2, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(2, 2, 0U, 0U) == Success else {
     fail("expected resize before vt style test")
   }
 
@@ -363,7 +363,7 @@ test "formatter/vt emits style transitions background cells and implicit screen 
   )
   let vt_formatter = Formatter::new_terminal(
     terminal,
-    FormatterOptions::new(Format::Vt, extra=FormatterTerminalExtra::none()),
+    FormatterOptions::new(Vt, extra=FormatterTerminalExtra::none()),
   )
   let vt_output = vt_formatter.format()
   guard bytes_contains(vt_output, b"\x1B[2m") &&
@@ -382,13 +382,13 @@ test "formatter/vt emits style transitions background cells and implicit screen 
   }
 
   let background = StreamTerminal::new()
-  guard background.resize(2, 1, 0U, 0U) == TerminalResultCode::Success else {
+  guard background.resize(2, 1, 0U, 0U) == Success else {
     fail("expected resize before background-cell test")
   }
   background.next_slice(b"\x1B[48;2;7;8;9m\x1B[X\x1B[CX")
   let html_formatter = Formatter::new_terminal(
     background,
-    FormatterOptions::new(Format::Html, extra=FormatterTerminalExtra::none()),
+    FormatterOptions::new(Html, extra=FormatterTerminalExtra::none()),
   )
   let html_output = html_formatter.format()
   guard bytes_contains(html_output, b"background-color: rgb(7, 8, 9);") &&
@@ -410,7 +410,7 @@ test "formatter/vt emits implicit hyperlink and alternate charset invocations" {
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Vt,
+      Vt,
       extra=FormatterTerminalExtra::new(
         screen=FormatterScreenExtra::new(hyperlink=true, charsets=true),
       ),
@@ -442,10 +442,7 @@ test "formatter/html escapes text styles and hyperlinks" {
 
   let formatter = Formatter::new_terminal(
     terminal,
-    FormatterOptions::new(
-      Format::Html,
-      extra=FormatterTerminalExtra::new(palette=true),
-    ),
+    FormatterOptions::new(Html, extra=FormatterTerminalExtra::new(palette=true)),
   )
   let output = formatter.format()
 

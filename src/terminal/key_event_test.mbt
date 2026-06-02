@@ -7,10 +7,10 @@ test "key mods/builders and helpers preserve the upstream bit semantics" {
     .with_super_(true)
     .with_caps_lock(true)
     .with_num_lock(true)
-    .with_shift_side(KeyModSide::Right)
-    .with_ctrl_side(KeyModSide::Right)
-    .with_alt_side(KeyModSide::Right)
-    .with_super_side(KeyModSide::Right)
+    .with_shift_side(Right)
+    .with_ctrl_side(Right)
+    .with_alt_side(Right)
+    .with_super_side(Right)
 
   guard mods.shift() && mods.ctrl() && mods.alt() && mods.super_() else {
     fail("expected primary modifier bits to be set")
@@ -18,18 +18,10 @@ test "key mods/builders and helpers preserve the upstream bit semantics" {
   guard mods.caps_lock() && mods.num_lock() else {
     fail("expected lock modifiers to be set")
   }
-  guard mods.shift_side() == KeyModSide::Right else {
-    fail("expected right shift side")
-  }
-  guard mods.ctrl_side() == KeyModSide::Right else {
-    fail("expected right ctrl side")
-  }
-  guard mods.alt_side() == KeyModSide::Right else {
-    fail("expected right alt side")
-  }
-  guard mods.super_side() == KeyModSide::Right else {
-    fail("expected right super side")
-  }
+  guard mods.shift_side() == Right else { fail("expected right shift side") }
+  guard mods.ctrl_side() == Right else { fail("expected right ctrl side") }
+  guard mods.alt_side() == Right else { fail("expected right alt side") }
+  guard mods.super_side() == Right else { fail("expected right super side") }
   guard !mods.empty() else { fail("expected non-empty modifier set") }
 
   let binding = mods.binding()
@@ -39,7 +31,7 @@ test "key mods/builders and helpers preserve the upstream bit semantics" {
   guard !binding.caps_lock() && !binding.num_lock() else {
     fail("binding modifiers should drop lock bits")
   }
-  guard binding.shift_side() == KeyModSide::Left else {
+  guard binding.shift_side() == Left else {
     fail("binding modifiers should clear side metadata")
   }
 
@@ -126,10 +118,10 @@ test "key/codepoint covers printable and non-printable keys" {
 ///|
 test "key event/defaults and setters roundtrip" {
   let event = KeyEvent::new()
-  guard event.action() == KeyAction::Press else {
+  guard event.action() == Press else {
     fail("new key events should default to press")
   }
-  guard event.key() == Key::Unidentified else {
+  guard event.key() == Unidentified else {
     fail("new key events should default to unidentified")
   }
   guard event.mods() == KeyMods::new() else {
@@ -144,18 +136,16 @@ test "key event/defaults and setters roundtrip" {
 
   let mods = KeyMods::new().with_alt(true).with_super_(true)
   let consumed = KeyMods::new().with_alt(true)
-  event.set_action(KeyAction::Repeat)
-  event.set_key(Key::KeyZ)
+  event.set_action(Repeat)
+  event.set_key(KeyZ)
   event.set_mods(mods)
   event.set_consumed_mods(consumed)
   event.set_composing(true)
   event.set_utf8(b"test")
   event.set_unshifted_codepoint(b'z'.to_uint())
 
-  guard event.action() == KeyAction::Repeat else {
-    fail("expected repeat action")
-  }
-  guard event.key() == Key::KeyZ else { fail("expected key z") }
+  guard event.action() == Repeat else { fail("expected repeat action") }
+  guard event.key() == KeyZ else { fail("expected key z") }
   guard event.mods() == mods else { fail("expected stored modifier set") }
   guard event.consumed_mods() == consumed else {
     fail("expected stored consumed modifier set")

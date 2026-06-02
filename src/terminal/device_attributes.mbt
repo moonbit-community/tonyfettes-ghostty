@@ -147,10 +147,7 @@ pub fn PrimaryDeviceAttributes::features(
 
 ///|
 pub fn PrimaryDeviceAttributes::default() -> PrimaryDeviceAttributes {
-  {
-    conformance_level: ConformanceLevel::Vt220,
-    features: [PrimaryDeviceAttributeFeature::AnsiColor],
-  }
+  { conformance_level: Vt220, features: [AnsiColor] }
 }
 
 ///|
@@ -205,7 +202,7 @@ pub fn SecondaryDeviceAttributes::rom_cartridge(
 
 ///|
 pub fn SecondaryDeviceAttributes::default() -> SecondaryDeviceAttributes {
-  { device_type: DeviceType::Vt220, firmware_version: 0, rom_cartridge: 0 }
+  { device_type: Vt220, firmware_version: 0, rom_cartridge: 0 }
 }
 
 ///|

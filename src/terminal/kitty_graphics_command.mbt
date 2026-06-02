@@ -62,7 +62,7 @@ fn KittyImageTransmission::new() -> KittyImageTransmission {
     image_id: 0U,
     image_number: 0U,
     placement_id: 0U,
-    compression: KittyImageCompression::None,
+    compression: None,
     more_chunks: false,
   }
 }
@@ -473,10 +473,10 @@ fn build_kitty_graphics_quiet(
   pairs : Array[KittyGraphicsPair],
 ) -> KittyGraphicsQuiet? {
   match kitty_graphics_pair_u32(pairs, b'q') {
-    None => Some(KittyGraphicsQuiet::No)
-    Some(0U) => Some(KittyGraphicsQuiet::No)
-    Some(1U) => Some(KittyGraphicsQuiet::Ok)
-    Some(2U) => Some(KittyGraphicsQuiet::Failures)
+    None => Some(No)
+    Some(0U) => Some(No)
+    Some(1U) => Some(Ok)
+    Some(2U) => Some(Failures)
     Some(_) => None
   }
 }
@@ -601,7 +601,7 @@ fn parse_kitty_graphics_display(
   }
   match kitty_graphics_pair_u32(pairs, b'C') {
     Some(0U) => result.cursor_movement = After
-    Some(1U) => result.cursor_movement = KittyImageCursorMovement::None
+    Some(1U) => result.cursor_movement = None
     Some(_) => return None
     None => ()
   }

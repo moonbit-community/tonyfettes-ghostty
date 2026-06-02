@@ -11,10 +11,10 @@ fn fill_terminal_screen_row(
       row,
       index,
       chars[index].to_uint(),
-      PageCellWide::Narrow,
+      Narrow,
       style,
       false,
-      SemanticContent::Prompt,
+      Prompt,
       hyperlink,
     )
   }
@@ -141,15 +141,15 @@ test "terminal screen state/point helpers cover source mappings" {
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
 
   let history_cell = scrollback
-    .cell_at_point(grid, Point::History(Coordinate::new(0, 0U)))
+    .cell_at_point(grid, History(Coordinate::new(0, 0U)))
     .unwrap()
   let out_of_col = scrollback.cell_at_point(
     grid,
-    Point::History(Coordinate::new(9, 0U)),
+    History(Coordinate::new(9, 0U)),
   )
   let out_of_row = scrollback.cell_at_point(
     grid,
-    Point::Screen(Coordinate::new(0, 9U)),
+    Screen(Coordinate::new(0, 9U)),
   )
   guard history_cell.codepoint() == b'a'.to_uint() &&
     out_of_col == None &&
@@ -159,18 +159,18 @@ test "terminal screen state/point helpers cover source mappings" {
 
   let history_as_screen = scrollback.point_from_point(
     grid,
-    Point::History(Coordinate::new(0, 0U)),
-    Tag::Screen,
+    History(Coordinate::new(0, 0U)),
+    Screen,
   )
   let screen_as_active = scrollback.point_from_point(
     grid,
-    Point::Screen(Coordinate::new(0, 2U)),
-    Tag::Active,
+    Screen(Coordinate::new(0, 2U)),
+    Active,
   )
   let out_of_active = scrollback.point_from_point(
     grid,
-    Point::Active(Coordinate::new(0, 9U)),
-    Tag::Screen,
+    Active(Coordinate::new(0, 9U)),
+    Screen,
   )
   guard history_as_screen == Some(Coordinate::new(0, 0U)) &&
     screen_as_active == Some(Coordinate::new(0, 1U)) &&
@@ -180,14 +180,14 @@ test "terminal screen state/point helpers cover source mappings" {
 
   guard scrollback.screen_row_source(grid, -1) is None &&
     scrollback.history_row_source(-1) is None &&
-    scrollback.history_row_source(0) is Some(PageListRowSource::History(_)) else {
+    scrollback.history_row_source(0) is Some(History(_)) else {
     fail("expected screen/history source guards")
   }
 
   let history_as_viewport_bottom = scrollback.point_from_point(
     grid,
-    Point::History(Coordinate::new(0, 0U)),
-    Tag::Viewport,
+    History(Coordinate::new(0, 0U)),
+    Viewport,
   )
   guard history_as_viewport_bottom == None else {
     fail("expected viewport lookup miss cases at viewport bottom")
@@ -195,8 +195,8 @@ test "terminal screen state/point helpers cover source mappings" {
   scrollback.scroll_top()
   let history_as_viewport_top = scrollback.point_from_point(
     grid,
-    Point::History(Coordinate::new(0, 0U)),
-    Tag::Viewport,
+    History(Coordinate::new(0, 0U)),
+    Viewport,
   )
   guard history_as_viewport_top == Some(Coordinate::new(0, 0U)) else {
     fail("expected viewport lookup hit after scrolling to top")

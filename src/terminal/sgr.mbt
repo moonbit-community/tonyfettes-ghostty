@@ -154,28 +154,28 @@ pub fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
           Some(
             Underline(
               match self.params[current + 1] {
-                0 => SgrUnderline::None
-                1 => SgrUnderline::Single
-                2 => SgrUnderline::Double
-                3 => SgrUnderline::Curly
-                4 => SgrUnderline::Dotted
-                5 => SgrUnderline::Dashed
-                _ => SgrUnderline::Single
+                0 => None
+                1 => Single
+                2 => Double
+                3 => Curly
+                4 => Dotted
+                5 => Dashed
+                _ => Single
               },
             ),
           )
         }
       } else {
-        Some(Underline(SgrUnderline::Single))
+        Some(Underline(Single))
       }
     5 | 6 => Some(Blink)
     7 => Some(Inverse)
     8 => Some(Invisible)
     9 => Some(Strikethrough)
-    21 => Some(Underline(SgrUnderline::Double))
+    21 => Some(Underline(Double))
     22 => Some(ResetBold)
     23 => Some(ResetItalic)
-    24 => Some(Underline(SgrUnderline::None))
+    24 => Some(Underline(None))
     25 => Some(ResetBlink)
     27 => Some(ResetInverse)
     28 => Some(ResetInvisible)
@@ -362,21 +362,21 @@ fn remaining_len(parser : SgrParser, current : Int) -> Int {
 ///|
 fn name_from_code(code : Byte) -> Name {
   match code {
-    0 => Name::Black
-    1 => Name::Red
-    2 => Name::Green
-    3 => Name::Yellow
-    4 => Name::Blue
-    5 => Name::Magenta
-    6 => Name::Cyan
-    7 => Name::White
-    8 => Name::BrightBlack
-    9 => Name::BrightRed
-    10 => Name::BrightGreen
-    11 => Name::BrightYellow
-    12 => Name::BrightBlue
-    13 => Name::BrightMagenta
-    14 => Name::BrightCyan
-    _ => Name::BrightWhite
+    0 => Black
+    1 => Red
+    2 => Green
+    3 => Yellow
+    4 => Blue
+    5 => Magenta
+    6 => Cyan
+    7 => White
+    8 => BrightBlack
+    9 => BrightRed
+    10 => BrightGreen
+    11 => BrightYellow
+    12 => BrightBlue
+    13 => BrightMagenta
+    14 => BrightCyan
+    _ => BrightWhite
   }
 }

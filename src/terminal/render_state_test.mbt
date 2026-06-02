@@ -4,11 +4,11 @@ test "render state/new defaults and manual dirty setter" {
 
   guard state.rows() == 0 &&
     state.columns() == 0 &&
-    state.dirty() == RenderDirty::False &&
+    state.dirty() == False &&
     state.background_color() == RGB::new(0, 0, 0) &&
     state.foreground_color() == RGB::new(0xFF, 0xFF, 0xFF) &&
     state.cursor_color() == None &&
-    state.cursor_visual_style() == CursorVisualStyle::Block &&
+    state.cursor_visual_style() == Block &&
     state.cursor_visible() &&
     !state.cursor_blinking() &&
     !state.cursor_password_input() &&
@@ -17,15 +17,13 @@ test "render state/new defaults and manual dirty setter" {
     fail("expected render state defaults")
   }
 
-  state.set_dirty(RenderDirty::Partial)
-  guard state.dirty() == RenderDirty::Partial else {
+  state.set_dirty(Partial)
+  guard state.dirty() == Partial else {
     fail("expected partial dirty override")
   }
 
-  state.set_dirty(RenderDirty::Full)
-  guard state.dirty() == RenderDirty::Full else {
-    fail("expected full dirty override")
-  }
+  state.set_dirty(Full)
+  guard state.dirty() == Full else { fail("expected full dirty override") }
 }
 
 ///|
@@ -38,19 +36,19 @@ test "render state/update captures terminal snapshot and reverse colors" {
   terminal.set_default_background_color(Some(background))
   terminal.set_default_foreground_color(Some(foreground))
   terminal.set_default_cursor_color(Some(cursor))
-  terminal.mode_set(Mode::ReverseColors, true)
+  terminal.mode_set(ReverseColors, true)
   terminal.next_slice(b"\x1B[5 q")
 
   let state = RenderState::new()
   state.update(terminal)
 
-  guard state.dirty() == RenderDirty::Full &&
+  guard state.dirty() == Full &&
     state.rows() == terminal.rows() &&
     state.columns() == terminal.columns() &&
     state.background_color() == foreground &&
     state.foreground_color() == background &&
     state.cursor_color() == Some(cursor) &&
-    state.cursor_visual_style() == CursorVisualStyle::Bar &&
+    state.cursor_visual_style() == Bar &&
     state.cursor_visible() &&
     state.cursor_blinking() &&
     !state.cursor_password_input() else {
@@ -83,10 +81,10 @@ test "render state/update is false when snapshot is stable" {
   let state = RenderState::new()
 
   state.update(terminal)
-  state.set_dirty(RenderDirty::False)
+  state.set_dirty(False)
   state.update(terminal)
 
-  guard state.dirty() == RenderDirty::False else {
+  guard state.dirty() == False else {
     fail("expected stable render snapshot to stay clean")
   }
 
@@ -99,11 +97,11 @@ test "render state/update becomes partial after terminal mutation" {
   let state = RenderState::new()
 
   state.update(terminal)
-  state.set_dirty(RenderDirty::False)
+  state.set_dirty(False)
   terminal.next_slice(b"A")
   state.update(terminal)
 
-  guard state.dirty() == RenderDirty::Partial else {
+  guard state.dirty() == Partial else {
     fail("expected terminal mutation to dirty render state partially")
   }
 
@@ -113,7 +111,7 @@ test "render state/update becomes partial after terminal mutation" {
 ///|
 test "render state/cursor viewport follows terminal viewport" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(5, 2, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before cursor viewport test")
   }
 
@@ -130,13 +128,13 @@ test "render state/cursor viewport follows terminal viewport" {
     fail("expected cursor viewport inside active viewport")
   }
 
-  state.set_dirty(RenderDirty::False)
+  state.set_dirty(False)
   terminal.scroll_viewport_top()
   state.update(terminal)
 
   guard state.cursor_viewport() == None &&
     !state.cursor_viewport_wide_tail() &&
-    state.dirty() == RenderDirty::Full else {
+    state.dirty() == Full else {
     fail("expected cursor viewport to disappear when scrolled away")
   }
 

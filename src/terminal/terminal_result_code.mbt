@@ -21,11 +21,11 @@ pub fn TerminalResultCode::code(self : TerminalResultCode) -> Int {
 ///|
 pub fn terminal_result_code_from_int(value : Int) -> TerminalResultCode? {
   match value {
-    0 => Some(TerminalResultCode::Success)
-    -1 => Some(TerminalResultCode::OutOfMemory)
-    -2 => Some(TerminalResultCode::InvalidValue)
-    -3 => Some(TerminalResultCode::OutOfSpace)
-    -4 => Some(TerminalResultCode::NoValue)
+    0 => Some(Success)
+    -1 => Some(OutOfMemory)
+    -2 => Some(InvalidValue)
+    -3 => Some(OutOfSpace)
+    -4 => Some(NoValue)
     _ => None
   }
 }

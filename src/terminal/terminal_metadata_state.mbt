@@ -7,11 +7,7 @@ struct TerminalMetadataState {
 
 ///|
 pub fn TerminalMetadataState::new() -> TerminalMetadataState {
-  {
-    title: None,
-    pwd: None,
-    shell_redraws_prompt: SemanticPromptRedraw::Enabled,
-  }
+  { title: None, pwd: None, shell_redraws_prompt: Enabled }
 }
 
 ///|
@@ -67,5 +63,5 @@ pub fn TerminalMetadataState::set_shell_redraws_prompt(
 pub fn TerminalMetadataState::full_reset(self : TerminalMetadataState) -> Unit {
   self.title = None
   self.pwd = None
-  self.shell_redraws_prompt = SemanticPromptRedraw::Enabled
+  self.shell_redraws_prompt = Enabled
 }

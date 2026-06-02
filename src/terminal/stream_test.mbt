@@ -75,16 +75,8 @@ test "stream/c0 controls map to base actions" {
       StreamHorizontalTab(1),
       StreamLinefeed,
       StreamCarriageReturn,
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gl,
-        charset: Slots::G1,
-        locking: false,
-      }),
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gl,
-        charset: Slots::G0,
-        locking: false,
-      }),
+      StreamInvokeCharset({ bank: Gl, charset: G1, locking: false }),
+      StreamInvokeCharset({ bank: Gl, charset: G0, locking: false }),
     ] else {
     fail("expected C0 controls to map to stream actions")
   }
@@ -96,7 +88,7 @@ test "stream/ignored escape sequence does not block later text" {
   stream.next_slice(b"\x1B(Bz")
   guard actions ==
     [
-      StreamConfigureCharset({ slot: Slots::G0, charset: Charset::Ascii }),
+      StreamConfigureCharset({ slot: G0, charset: Ascii }),
       StreamPrint(b'z'.to_uint()),
     ] else {
     fail("expected configured charset before later text")
@@ -110,8 +102,7 @@ test "stream/next handles escape state incrementally" {
   stream.next(b'[')
   stream.next(b'm')
   stream.next(b'z')
-  guard actions ==
-    [StreamSetAttribute(SgrAttribute::Unset), StreamPrint(b'z'.to_uint())] else {
+  guard actions == [StreamSetAttribute(Unset), StreamPrint(b'z'.to_uint())] else {
     fail("expected printable text after incremental CSI")
   }
 }
@@ -194,10 +185,8 @@ test "stream/osc report pwd mouse shape and color operation subset" {
   guard actions ==
     [
       StreamReportPwd("file:///tmp"),
-      StreamMouseShape(MouseShape::Pointer),
-      StreamColorOperation(
-        ColorCommand::new(Osc4, [Query(Palette(1))], Terminator::St),
-      ),
+      StreamMouseShape(Pointer),
+      StreamColorOperation(ColorCommand::new(Osc4, [Query(Palette(1))], St)),
     ] else {
     fail("expected report-pwd, mouse-shape, and color-operation actions")
   }
@@ -400,7 +389,7 @@ test "stream/slice walker handles in-flight escape after printable prefix" {
   guard actions ==
     [
       StreamPrint(b'a'.to_uint()),
-      StreamConfigureCharset({ slot: Slots::G0, charset: Charset::Ascii }),
+      StreamConfigureCharset({ slot: G0, charset: Ascii }),
     ] else {
     fail("expected slice walker to finish escape after printable prefix")
   }
@@ -500,10 +489,10 @@ test "stream/esc configure charset subset" {
   stream.next_slice(b"\x1B(B\x1B)A\x1B*0\x1B+B\x1B-B")
   guard actions ==
     [
-      StreamConfigureCharset({ slot: Slots::G0, charset: Charset::Ascii }),
-      StreamConfigureCharset({ slot: Slots::G1, charset: Charset::British }),
-      StreamConfigureCharset({ slot: Slots::G2, charset: Charset::DecSpecial }),
-      StreamConfigureCharset({ slot: Slots::G3, charset: Charset::Ascii }),
+      StreamConfigureCharset({ slot: G0, charset: Ascii }),
+      StreamConfigureCharset({ slot: G1, charset: British }),
+      StreamConfigureCharset({ slot: G2, charset: DecSpecial }),
+      StreamConfigureCharset({ slot: G3, charset: Ascii }),
     ] else {
     fail("expected charset configuration subset")
   }
@@ -517,8 +506,8 @@ test "stream/esc save restore and keypad mode" {
     [
       StreamSaveCursor,
       StreamRestoreCursor,
-      StreamSetMode(Mode::KeypadKeys),
-      StreamResetMode(Mode::KeypadKeys),
+      StreamSetMode(KeypadKeys),
+      StreamResetMode(KeypadKeys),
     ] else {
     fail("expected save/restore cursor and keypad mode actions")
   }
@@ -530,41 +519,13 @@ test "stream/esc invoke charset subset" {
   stream.next_slice(b"\x1BN\x1BO\x1Bn\x1Bo\x1B~\x1B}\x1B|")
   guard actions ==
     [
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gl,
-        charset: Slots::G2,
-        locking: true,
-      }),
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gl,
-        charset: Slots::G3,
-        locking: true,
-      }),
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gl,
-        charset: Slots::G2,
-        locking: false,
-      }),
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gl,
-        charset: Slots::G3,
-        locking: false,
-      }),
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gr,
-        charset: Slots::G1,
-        locking: false,
-      }),
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gr,
-        charset: Slots::G2,
-        locking: false,
-      }),
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gr,
-        charset: Slots::G3,
-        locking: false,
-      }),
+      StreamInvokeCharset({ bank: Gl, charset: G2, locking: true }),
+      StreamInvokeCharset({ bank: Gl, charset: G3, locking: true }),
+      StreamInvokeCharset({ bank: Gl, charset: G2, locking: false }),
+      StreamInvokeCharset({ bank: Gl, charset: G3, locking: false }),
+      StreamInvokeCharset({ bank: Gr, charset: G1, locking: false }),
+      StreamInvokeCharset({ bank: Gr, charset: G2, locking: false }),
+      StreamInvokeCharset({ bank: Gr, charset: G3, locking: false }),
     ] else {
     fail("expected ESC invoke-charset subset")
   }
@@ -575,13 +536,7 @@ test "stream/c1 execute delegates through esc dispatch" {
   let (stream, actions, _) = new_stream()
   stream.next_slice([0x8E])
   guard actions ==
-    [
-      StreamInvokeCharset({
-        bank: ActiveSlot::Gl,
-        charset: Slots::G2,
-        locking: true,
-      }),
-    ] else {
+    [StreamInvokeCharset({ bank: Gl, charset: G2, locking: true })] else {
     fail("expected C1 byte to route through ESC dispatch")
   }
 }
@@ -611,10 +566,10 @@ test "stream/csi set and reset mode subset" {
   stream.next_slice(b"\x1B[?6h\x1B[?6l\x1B[4h\x1B[4l\x1B[>5h")
   guard actions ==
     [
-      StreamSetMode(Mode::Origin),
-      StreamResetMode(Mode::Origin),
-      StreamSetMode(Mode::Insert),
-      StreamResetMode(Mode::Insert),
+      StreamSetMode(Origin),
+      StreamResetMode(Origin),
+      StreamSetMode(Insert),
+      StreamResetMode(Insert),
     ] else {
     fail("expected SM/RM subset")
   }
@@ -662,10 +617,7 @@ test "stream/csi cursor style subset" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[ q\x1B[1 q\x1B[?0 q\x1B[q\x1B[1;2 q")
   guard actions ==
-    [
-      StreamCursorStyle(CursorStyle::Default),
-      StreamCursorStyle(CursorStyle::BlinkingBlock),
-    ] else {
+    [StreamCursorStyle(Default), StreamCursorStyle(BlinkingBlock)] else {
     fail("expected cursor-style subset")
   }
 }
@@ -848,12 +800,12 @@ test "stream/csi save and restore mode subset" {
   )
   guard actions ==
     [
-      StreamSaveMode(Mode::Origin),
-      StreamSaveMode(Mode::EnableLeftAndRightMargin),
-      StreamSaveMode(Mode::Wraparound),
-      StreamRestoreMode(Mode::Origin),
-      StreamRestoreMode(Mode::EnableLeftAndRightMargin),
-      StreamRestoreMode(Mode::Wraparound),
+      StreamSaveMode(Origin),
+      StreamSaveMode(EnableLeftAndRightMargin),
+      StreamSaveMode(Wraparound),
+      StreamRestoreMode(Origin),
+      StreamRestoreMode(EnableLeftAndRightMargin),
+      StreamRestoreMode(Wraparound),
     ] else {
     fail("expected save/restore mode subset")
   }
@@ -883,7 +835,7 @@ test "stream/esc control and reset subset" {
       StreamReverseIndex,
       StreamProtectedModeIso,
       StreamProtectedModeOff,
-      StreamDeviceAttributes(DeviceAttributeRequest::Primary),
+      StreamDeviceAttributes(Primary),
       StreamFullReset,
       StreamDecaln,
     ] else {
@@ -899,20 +851,20 @@ test "stream/csi device and protected subset" {
   )
   guard actions ==
     [
-      StreamDeviceAttributes(DeviceAttributeRequest::Primary),
-      StreamDeviceAttributes(DeviceAttributeRequest::Secondary),
-      StreamDeviceAttributes(DeviceAttributeRequest::Tertiary),
-      StreamDeviceStatus(DeviceStatusRequest::OperatingStatus),
-      StreamDeviceStatus(DeviceStatusRequest::ColorScheme),
-      StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNumericExcept),
-      StreamRequestMode(Mode::Insert),
+      StreamDeviceAttributes(Primary),
+      StreamDeviceAttributes(Secondary),
+      StreamDeviceAttributes(Tertiary),
+      StreamDeviceStatus(OperatingStatus),
+      StreamDeviceStatus(ColorScheme),
+      StreamModifyKeyFormat(OtherKeysNumericExcept),
+      StreamRequestMode(Insert),
       StreamRequestModeUnknown(mode_tag(9999, false)),
       StreamProtectedModeOff,
       StreamProtectedModeDec,
       StreamProtectedModeOff,
       StreamXtversion,
-      StreamActiveStatusDisplay(StatusDisplay::Main),
-      StreamActiveStatusDisplay(StatusDisplay::StatusLine),
+      StreamActiveStatusDisplay(Main),
+      StreamActiveStatusDisplay(StatusLine),
     ] else {
     fail("expected CSI device and protected subset")
   }
@@ -938,14 +890,12 @@ test "stream/csi sgr subset" {
   )
   guard actions ==
     [
-      StreamSetAttribute(SgrAttribute::Unset),
-      StreamSetAttribute(SgrAttribute::Bold),
-      StreamSetAttribute(SgrAttribute::Underline(SgrUnderline::Curly)),
-      StreamSetAttribute(SgrAttribute::DirectColorFg(RGB::new(1, 2, 3))),
-      StreamSetAttribute(
-        SgrAttribute::Unknown({ full: [1, 2], partial: [1, 2] }),
-      ),
-      StreamSetAttribute(SgrAttribute::Color256Underline(9)),
+      StreamSetAttribute(Unset),
+      StreamSetAttribute(Bold),
+      StreamSetAttribute(Underline(Curly)),
+      StreamSetAttribute(DirectColorFg(RGB::new(1, 2, 3))),
+      StreamSetAttribute(Unknown({ full: [1, 2], partial: [1, 2] })),
+      StreamSetAttribute(Color256Underline(9)),
     ] else {
     fail("expected CSI m SGR subset")
   }
@@ -959,15 +909,15 @@ test "stream/csi modify key format subset" {
   )
   guard actions ==
     [
-      StreamModifyKeyFormat(ModifyKeyFormat::Legacy),
-      StreamModifyKeyFormat(ModifyKeyFormat::Legacy),
-      StreamModifyKeyFormat(ModifyKeyFormat::CursorKeys),
-      StreamModifyKeyFormat(ModifyKeyFormat::FunctionKeys),
-      StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNone),
-      StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNumeric),
-      StreamModifyKeyFormat(ModifyKeyFormat::Legacy),
-      StreamModifyKeyFormat(ModifyKeyFormat::CursorKeys),
-      StreamModifyKeyFormat(ModifyKeyFormat::FunctionKeys),
+      StreamModifyKeyFormat(Legacy),
+      StreamModifyKeyFormat(Legacy),
+      StreamModifyKeyFormat(CursorKeys),
+      StreamModifyKeyFormat(FunctionKeys),
+      StreamModifyKeyFormat(OtherKeysNone),
+      StreamModifyKeyFormat(OtherKeysNumeric),
+      StreamModifyKeyFormat(Legacy),
+      StreamModifyKeyFormat(CursorKeys),
+      StreamModifyKeyFormat(FunctionKeys),
     ] else {
     fail("expected CSI > m modify-key-format subset")
   }
@@ -1038,10 +988,10 @@ test "stream/csi size report subset" {
   stream.next_slice(b"\x1B[14t\x1B[16t\x1B[18t\x1B[21t")
   guard actions ==
     [
-      StreamSizeReport(SizeReportStyle::Csi14t),
-      StreamSizeReport(SizeReportStyle::Csi16t),
-      StreamSizeReport(SizeReportStyle::Csi18t),
-      StreamSizeReport(SizeReportStyle::Csi21t),
+      StreamSizeReport(Csi14t),
+      StreamSizeReport(Csi16t),
+      StreamSizeReport(Csi18t),
+      StreamSizeReport(Csi21t),
     ] else {
     fail("expected XTWINOPS size-report subset")
   }

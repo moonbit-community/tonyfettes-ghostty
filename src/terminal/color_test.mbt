@@ -13,22 +13,22 @@ test "color/name defaults and codes" {
 ///|
 test "color/all named colors roundtrip through default palette data" {
   let names : Array[(Name, Byte, RGB)] = [
-    (Name::Black, 0, RGB::new(0x1D, 0x1F, 0x21)),
-    (Name::Red, 1, RGB::new(0xCC, 0x66, 0x66)),
-    (Name::Green, 2, RGB::new(0xB5, 0xBD, 0x68)),
-    (Name::Yellow, 3, RGB::new(0xF0, 0xC6, 0x74)),
-    (Name::Blue, 4, RGB::new(0x81, 0xA2, 0xBE)),
-    (Name::Magenta, 5, RGB::new(0xB2, 0x94, 0xBB)),
-    (Name::Cyan, 6, RGB::new(0x8A, 0xBE, 0xB7)),
-    (Name::White, 7, RGB::new(0xC5, 0xC8, 0xC6)),
-    (Name::BrightBlack, 8, RGB::new(0x66, 0x66, 0x66)),
-    (Name::BrightRed, 9, RGB::new(0xD5, 0x4E, 0x53)),
-    (Name::BrightGreen, 10, RGB::new(0xB9, 0xCA, 0x4A)),
-    (Name::BrightYellow, 11, RGB::new(0xE7, 0xC5, 0x47)),
-    (Name::BrightBlue, 12, RGB::new(0x7A, 0xA6, 0xDA)),
-    (Name::BrightMagenta, 13, RGB::new(0xC3, 0x97, 0xD8)),
-    (Name::BrightCyan, 14, RGB::new(0x70, 0xC0, 0xB1)),
-    (Name::BrightWhite, 15, RGB::new(0xEA, 0xEA, 0xEA)),
+    (Black, 0, RGB::new(0x1D, 0x1F, 0x21)),
+    (Red, 1, RGB::new(0xCC, 0x66, 0x66)),
+    (Green, 2, RGB::new(0xB5, 0xBD, 0x68)),
+    (Yellow, 3, RGB::new(0xF0, 0xC6, 0x74)),
+    (Blue, 4, RGB::new(0x81, 0xA2, 0xBE)),
+    (Magenta, 5, RGB::new(0xB2, 0x94, 0xBB)),
+    (Cyan, 6, RGB::new(0x8A, 0xBE, 0xB7)),
+    (White, 7, RGB::new(0xC5, 0xC8, 0xC6)),
+    (BrightBlack, 8, RGB::new(0x66, 0x66, 0x66)),
+    (BrightRed, 9, RGB::new(0xD5, 0x4E, 0x53)),
+    (BrightGreen, 10, RGB::new(0xB9, 0xCA, 0x4A)),
+    (BrightYellow, 11, RGB::new(0xE7, 0xC5, 0x47)),
+    (BrightBlue, 12, RGB::new(0x7A, 0xA6, 0xDA)),
+    (BrightMagenta, 13, RGB::new(0xC3, 0x97, 0xD8)),
+    (BrightCyan, 14, RGB::new(0x70, 0xC0, 0xB1)),
+    (BrightWhite, 15, RGB::new(0xEA, 0xEA, 0xEA)),
   ]
 
   for entry in names {
@@ -51,13 +51,13 @@ test "color/special osc4" {
 ///|
 test "color/dynamic next" {
   assert_eq(Dynamic::Foreground.code(), 10)
-  guard Dynamic::Foreground.next() == Some(Dynamic::Background) else {
+  guard Dynamic::Foreground.next() == Some(Background) else {
     fail("unexpected foreground successor")
   }
-  guard Dynamic::Cursor.next() == Some(Dynamic::PointerForeground) else {
+  guard Dynamic::Cursor.next() == Some(PointerForeground) else {
     fail("unexpected cursor successor")
   }
-  guard Dynamic::TektronixCursor.next() == Some(Dynamic::HighlightForeground) else {
+  guard Dynamic::TektronixCursor.next() == Some(HighlightForeground) else {
     fail("unexpected tektronix cursor successor")
   }
   guard Dynamic::HighlightForeground.next() == None else {
@@ -68,16 +68,16 @@ test "color/dynamic next" {
 ///|
 test "color/dynamic codes cover every osc dynamic slot" {
   let entries : Array[(Dynamic, UInt16)] = [
-    (Dynamic::Foreground, 10),
-    (Dynamic::Background, 11),
-    (Dynamic::Cursor, 12),
-    (Dynamic::PointerForeground, 13),
-    (Dynamic::PointerBackground, 14),
-    (Dynamic::TektronixForeground, 15),
-    (Dynamic::TektronixBackground, 16),
-    (Dynamic::HighlightBackground, 17),
-    (Dynamic::TektronixCursor, 18),
-    (Dynamic::HighlightForeground, 19),
+    (Foreground, 10),
+    (Background, 11),
+    (Cursor, 12),
+    (PointerForeground, 13),
+    (PointerBackground, 14),
+    (TektronixForeground, 15),
+    (TektronixBackground, 16),
+    (HighlightBackground, 17),
+    (TektronixCursor, 18),
+    (HighlightForeground, 19),
   ]
   for entry in entries {
     assert_eq(entry.0.code(), entry.1)
@@ -124,8 +124,12 @@ test "color/rgb parse rejects invalid formats" {
   ]
 
   for value in invalid {
-    let result : Result[RGB, ColorParseError] = try? RGB::parse(value)
-    guard result is Err(ColorParseError::InvalidFormat) else {
+    let result : Result[RGB, ColorParseError] = try RGB::parse(value) catch {
+      err => Err(err)
+    } noraise {
+      color => Ok(color)
+    }
+    guard result is Err(InvalidFormat) else {
       fail("expected invalid format for \{value}")
     }
   }
@@ -156,8 +160,12 @@ test "color/rgb parse rejects malformed public edge cases" {
     "rgb:1/2/3/",
   ]
   for value in invalid {
-    let result : Result[RGB, ColorParseError] = try? RGB::parse(value)
-    guard result is Err(ColorParseError::InvalidFormat) else {
+    let result : Result[RGB, ColorParseError] = try RGB::parse(value) catch {
+      err => Err(err)
+    } noraise {
+      color => Ok(color)
+    }
+    guard result is Err(InvalidFormat) else {
       fail("expected invalid public parse input for \{value}")
     }
   }

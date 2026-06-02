@@ -36,10 +36,10 @@ test "point/coord handles every point variant" {
     Coordinate::new(9, 10),
   ]
   let points : Array[Point] = [
-    Point::Active(coords[0]),
-    Point::Viewport(coords[1]),
-    Point::Screen(coords[2]),
-    Point::History(coords[3]),
+    Active(coords[0]),
+    Viewport(coords[1]),
+    Screen(coords[2]),
+    History(coords[3]),
   ]
 
   for i in 0..<points.length() {

@@ -32,7 +32,7 @@ fn wb_bytes_contains(haystack : Bytes, needle : Bytes) -> Bool {
 fn plain_formatter(terminal : StreamTerminal) -> Formatter {
   Formatter::new_terminal(
     terminal,
-    FormatterOptions::new(Format::Plain, extra=FormatterTerminalExtra::none()),
+    FormatterOptions::new(Plain, extra=FormatterTerminalExtra::none()),
   )
 }
 
@@ -65,8 +65,8 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     formatter_max_uint(1U, 2U) == 2U else {
     fail("expected helper min/max ordering")
   }
-  guard formatter_charset_final(Charset::Utf8) == b'B' &&
-    formatter_charset_designator(Slots::G0) == b'(' else {
+  guard formatter_charset_final(Utf8) == b'B' &&
+    formatter_charset_designator(G0) == b'(' else {
     fail("expected charset helper defaults")
   }
 
@@ -109,7 +109,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   }
   state.grid = ScreenGridState::new(2, 2)
   state.scrollback = PageList::new(2, 2, 0)
-  state.grid.cells[3].set_wide(PageCellWide::SpacerHead)
+  state.grid.cells[3].set_wide(SpacerHead)
   let spacer_head_bounds : FormatterSelectionBounds = {
     start: Coordinate::new(1, 1U),
     end_: Coordinate::new(1, 1U),
@@ -120,7 +120,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   }
 
   let sparse = StreamTerminal::new()
-  guard sparse.resize(1, 1, 0U, 0U) == TerminalResultCode::Success else {
+  guard sparse.resize(1, 1, 0U, 0U) == Success else {
     fail("expected resize before sparse helper test")
   }
   let sparse_state = sparse.bridge()
@@ -166,7 +166,7 @@ test "formatter helpers/cover style and palette encoders" {
   style.apply_attribute(Invisible)
   style.apply_attribute(Strikethrough)
   style.apply_attribute(Overline)
-  style.apply_attribute(Underline(SgrUnderline::Single))
+  style.apply_attribute(Underline(Single))
   style.apply_attribute(DirectColorFg(RGB::new(1, 2, 3)))
   style.apply_attribute(Color256Bg(4))
   style.apply_attribute(UnderlineColor(RGB::new(5, 6, 7)))
@@ -212,24 +212,24 @@ test "formatter helpers/cover style and palette encoders" {
   }
 
   let plain_palette = Buffer()
-  formatter_write_palette(Format::Plain, default_palette(), plain_palette)
+  formatter_write_palette(Plain, default_palette(), plain_palette)
   guard plain_palette.contents() == b"" else {
     fail("expected plain palette helper to stay silent")
   }
 
   let vt_newline = Buffer()
-  formatter_write_newlines(Format::Vt, vt_newline, 1)
+  formatter_write_newlines(Vt, vt_newline, 1)
   guard vt_newline.contents() == b"\r\n" else {
     fail("expected VT newline helper")
   }
   let html_newline = Buffer()
-  formatter_write_newlines(Format::Html, html_newline, 2)
+  formatter_write_newlines(Html, html_newline, 2)
   guard html_newline.contents() == b"\n\n" else {
     fail("expected HTML newline helper")
   }
 
   let double_style = CellStyle::new()
-  double_style.apply_attribute(Underline(SgrUnderline::Double))
+  double_style.apply_attribute(Underline(Double))
   let vt_double = Buffer()
   formatter_write_vt_style_open(vt_double, double_style)
   guard wb_bytes_contains(vt_double.contents(), b"\x1B[4:2m") else {
@@ -245,7 +245,7 @@ test "formatter helpers/cover style and palette encoders" {
   }
 
   let curly_style = CellStyle::new()
-  curly_style.apply_attribute(Underline(SgrUnderline::Curly))
+  curly_style.apply_attribute(Underline(Curly))
   let vt_curly = Buffer()
   formatter_write_vt_style_open(vt_curly, curly_style)
   guard wb_bytes_contains(vt_curly.contents(), b"\x1B[4:3m") else {
@@ -261,7 +261,7 @@ test "formatter helpers/cover style and palette encoders" {
   }
 
   let dotted_style = CellStyle::new()
-  dotted_style.apply_attribute(Underline(SgrUnderline::Dotted))
+  dotted_style.apply_attribute(Underline(Dotted))
   let vt_dotted = Buffer()
   formatter_write_vt_style_open(vt_dotted, dotted_style)
   guard wb_bytes_contains(vt_dotted.contents(), b"\x1B[4:4m") else {
@@ -277,7 +277,7 @@ test "formatter helpers/cover style and palette encoders" {
   }
 
   let dashed_style = CellStyle::new()
-  dashed_style.apply_attribute(Underline(SgrUnderline::Dashed))
+  dashed_style.apply_attribute(Underline(Dashed))
   let html_dashed = Buffer()
   formatter_write_html_style(html_dashed, dashed_style)
   guard wb_bytes_contains(
@@ -291,7 +291,7 @@ test "formatter helpers/cover style and palette encoders" {
 ///|
 test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
   let terminal = StreamTerminal::new()
-  guard terminal.resize(10, 3, 0U, 0U) == TerminalResultCode::Success else {
+  guard terminal.resize(10, 3, 0U, 0U) == Success else {
     fail("expected resize before extra helper test")
   }
   let state = terminal.bridge()
@@ -301,14 +301,14 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
   state.cursor.right_margin = 8
   state.input_flags.modify_other_keys_2 = true
   state.tabstops.reset(8)
-  state.charset.configure(Slots::G0, Charset::Ascii)
-  state.charset.invoke(ActiveSlot::Gl, Slots::G3, false)
-  state.charset.invoke(ActiveSlot::Gr, Slots::G1, false)
+  state.charset.configure(G0, Ascii)
+  state.charset.invoke(Gl, G3, false)
+  state.charset.invoke(Gr, G1, false)
 
   let formatter = Formatter::new_terminal(
     terminal,
     FormatterOptions::new(
-      Format::Vt,
+      Vt,
       extra=FormatterTerminalExtra::new(
         modes=true,
         scrolling_region=true,
@@ -345,7 +345,7 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
     fail("expected hyperlink-none screen extras to stay silent")
   }
 
-  state.charset.invoke(ActiveSlot::Gr, Slots::G0, false)
+  state.charset.invoke(Gr, G0, false)
   let gr_zero_buffer = Buffer()
   formatter_write_screen_extras(
     FormatterScreenExtra::new(charsets=true),

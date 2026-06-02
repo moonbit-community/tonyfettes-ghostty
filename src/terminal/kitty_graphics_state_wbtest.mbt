@@ -12,7 +12,7 @@ fn sample_kitty_image(
     width,
     height,
     format: Rgb,
-    compression: KittyImageCompression::None,
+    compression: None,
     data: b"\x00\x01\x02\x03\x04\x05\x06\x07",
     implicit_id: false,
     transmit_seq,
@@ -90,21 +90,21 @@ test "kitty graphics state/internal and external placements" {
     scrollback,
     1U,
     0U,
-    KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+    Pin(sample_kitty_pin(scrollback)),
     sample_display(),
   )
   let second = state.add_placement(
     scrollback,
     1U,
     0U,
-    KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+    Pin(sample_kitty_pin(scrollback)),
     sample_display(),
   )
   let replaced = state.add_placement(
     scrollback,
     1U,
     9U,
-    KittyGraphicsPlacementLocation::Virtual,
+    Virtual,
     sample_display(placement_id=9U),
   )
   ignore(
@@ -112,7 +112,7 @@ test "kitty graphics state/internal and external placements" {
       scrollback,
       1U,
       9U,
-      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+      Pin(sample_kitty_pin(scrollback)),
       sample_display(placement_id=9U, columns=2U, rows=1U),
     ),
   )
@@ -143,7 +143,7 @@ test "kitty graphics state/delete helpers" {
       scrollback,
       1U,
       4U,
-      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+      Pin(sample_kitty_pin(scrollback)),
       sample_display(image_id=1U, placement_id=4U),
     ),
   )
@@ -152,7 +152,7 @@ test "kitty graphics state/delete helpers" {
       scrollback,
       2U,
       5U,
-      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+      Pin(sample_kitty_pin(scrollback)),
       sample_display(image_id=2U, placement_id=5U),
     ),
   )
@@ -194,7 +194,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
   let loading = KittyGraphicsLoadingImage::new(
     transmission,
     b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17",
-    KittyGraphicsQuiet::No,
+    No,
     None,
   )
   guard finalize_kitty_graphics_loading(loading, 7UL) is Ok(image) &&
@@ -206,7 +206,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
   let invalid_loading = KittyGraphicsLoadingImage::new(
     transmission,
     b"\x00",
-    KittyGraphicsQuiet::No,
+    No,
     None,
   )
   guard finalize_kitty_graphics_loading(invalid_loading, 8UL)
@@ -220,7 +220,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     fail("expected png header validation to defer to system decoder")
   }
   guard finalize_kitty_graphics_loading(
-      KittyGraphicsLoadingImage::new(png, b"QUJD", KittyGraphicsQuiet::No, None),
+      KittyGraphicsLoadingImage::new(png, b"QUJD", No, None),
       9UL,
     )
     is Err(UnsupportedFormat) else {
@@ -232,7 +232,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     Some(SystemImage::new(1U, 1U, b"\x00\x11\x22\x33"))
   })
   guard finalize_kitty_graphics_loading(
-      KittyGraphicsLoadingImage::new(png, b"QUJD", KittyGraphicsQuiet::No, None),
+      KittyGraphicsLoadingImage::new(png, b"QUJD", No, None),
       10UL,
     )
     is Ok(png_image) &&
@@ -248,7 +248,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     Some(SystemImage::new(1U, 1U, b"\x00"))
   })
   guard finalize_kitty_graphics_loading(
-      KittyGraphicsLoadingImage::new(png, b"QUJD", KittyGraphicsQuiet::No, None),
+      KittyGraphicsLoadingImage::new(png, b"QUJD", No, None),
       11UL,
     )
     is Err(InvalidData) else {
@@ -268,7 +268,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     image_id: 1U,
     placement_id: 0U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+    location: Pin(sample_kitty_pin(scrollback)),
     x_offset: 5U,
     y_offset: 3U,
     source_x: 1U,
@@ -292,7 +292,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     image_id: 1U,
     placement_id: 2U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Virtual,
+    location: Virtual,
     x_offset: 0U,
     y_offset: 0U,
     source_x: 0U,
@@ -312,7 +312,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     image_id: 1U,
     placement_id: 1U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Virtual,
+    location: Virtual,
     x_offset: 5U,
     y_offset: 3U,
     source_x: 0U,
@@ -336,7 +336,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     image_id: 1U,
     placement_id: 3U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Virtual,
+    location: Virtual,
     x_offset: 0U,
     y_offset: 0U,
     source_x: 4U,
@@ -356,7 +356,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     image_id: 1U,
     placement_id: 4U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Virtual,
+    location: Virtual,
     x_offset: 0U,
     y_offset: 0U,
     source_x: 0U,
@@ -382,7 +382,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     explicit_scrollback,
     1U,
     0U,
-    KittyGraphicsPlacementLocation::Virtual,
+    Virtual,
     explicit,
   )
   let explicit_grid = placed.grid_size(image, 80, 24, 800U, 480U)
@@ -417,17 +417,12 @@ test "kitty graphics state/reset and edge helper branches" {
       scrollback,
       5U,
       0U,
-      KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+      Pin(sample_kitty_pin(scrollback)),
       sample_display(image_id=5U),
     ),
   )
   state.loading = Some(
-    KittyGraphicsLoadingImage::new(
-      KittyImageTransmission::new(),
-      b"",
-      KittyGraphicsQuiet::Ok,
-      None,
-    ),
+    KittyGraphicsLoadingImage::new(KittyImageTransmission::new(), b"", Ok, None),
   )
   state.full_reset(scrollback)
   guard !state.dirty() &&
@@ -446,7 +441,7 @@ test "kitty graphics state/reset and edge helper branches" {
   let required = KittyGraphicsLoadingImage::new(
     KittyImageTransmission::new(),
     b"",
-    KittyGraphicsQuiet::No,
+    No,
     None,
   )
   guard finalize_kitty_graphics_loading(required, 0UL)
@@ -460,7 +455,7 @@ test "kitty graphics state/reset and edge helper branches" {
   let too_large_loading = KittyGraphicsLoadingImage::new(
     too_large,
     b"",
-    KittyGraphicsQuiet::No,
+    No,
     None,
   )
   guard finalize_kitty_graphics_loading(too_large_loading, 0UL)
@@ -491,7 +486,7 @@ test "kitty graphics state/reset and edge helper branches" {
     image_id: 1U,
     placement_id: 0U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Virtual,
+    location: Virtual,
     x_offset: 0U,
     y_offset: 0U,
     source_x: 4U,
@@ -519,7 +514,7 @@ test "kitty graphics state/reset and edge helper branches" {
     image_id: 1U,
     placement_id: 1U,
     external: false,
-    location: KittyGraphicsPlacementLocation::Pin(sample_kitty_pin(scrollback)),
+    location: Pin(sample_kitty_pin(scrollback)),
     x_offset: 1U,
     y_offset: 2U,
     source_x: 0U,

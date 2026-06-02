@@ -134,7 +134,7 @@ pub fn KittyGraphics::image(
 ///|
 pub fn KittyGraphics::placement_iterator(
   self : KittyGraphics,
-  layer? : KittyPlacementLayer = KittyPlacementLayer::All,
+  layer? : KittyPlacementLayer = All,
 ) -> KittyPlacementIterator {
   { entries: kitty_public_placements(self, layer), index: 0 }
 }
@@ -266,7 +266,7 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
   }
 
   let top_left_point = match
-    scrollback.point_from_pin(grid, placement_pin, Tag::Screen) {
+    scrollback.point_from_pin(grid, placement_pin, Screen) {
     Some(value) => value
     None => return None
   }
@@ -292,9 +292,7 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
   let bottom_right = match
     scrollback.pin(
       grid,
-      Point::Screen(
-        Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint()),
-      ),
+      Screen(Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint())),
     ) {
     Some(value) => value
     None => return None
@@ -355,7 +353,7 @@ pub fn KittyPlacement::viewport_position(
   }
   let grid = kitty_placement_grid(self)
   let scrollback = kitty_placement_scrollback(self)
-  let screen = scrollback.point_from_pin(grid, placement_pin, Tag::Screen)
+  let screen = scrollback.point_from_pin(grid, placement_pin, Screen)
   let pin_x = match scrollback.pin_x(placement_pin) {
     Some(value) => value
     None => return None
@@ -537,14 +535,13 @@ fn kitty_private_image(image : KittyImage) -> KittyGraphicsImage {
     width: image.width(),
     height: image.height(),
     format: match image.format() {
-      KittyGraphicsFormat::Rgb => KittyImageFormat::Rgb
-      KittyGraphicsFormat::Rgba => KittyImageFormat::Rgba
-      KittyGraphicsFormat::Png => KittyImageFormat::Png
+      Rgb => Rgb
+      Rgba => Rgba
+      Png => Png
     },
     compression: match image.compression() {
-      KittyGraphicsCompression::None => KittyImageCompression::None
-      KittyGraphicsCompression::ZlibDeflate =>
-        KittyImageCompression::ZlibDeflate
+      None => None
+      ZlibDeflate => ZlibDeflate
     },
     data: image.data(),
     implicit_id: false,
@@ -555,9 +552,9 @@ fn kitty_private_image(image : KittyImage) -> KittyGraphicsImage {
 ///|
 fn kitty_public_format(format : KittyImageFormat) -> KittyGraphicsFormat {
   match format {
-    KittyImageFormat::Rgb => KittyGraphicsFormat::Rgb
-    KittyImageFormat::Rgba => KittyGraphicsFormat::Rgba
-    KittyImageFormat::Png => KittyGraphicsFormat::Png
+    Rgb => Rgb
+    Rgba => Rgba
+    Png => Png
   }
 }
 
@@ -566,8 +563,8 @@ fn kitty_public_compression(
   compression : KittyImageCompression,
 ) -> KittyGraphicsCompression {
   match compression {
-    KittyImageCompression::None => KittyGraphicsCompression::None
-    KittyImageCompression::ZlibDeflate => KittyGraphicsCompression::ZlibDeflate
+    None => None
+    ZlibDeflate => ZlibDeflate
   }
 }
 
@@ -577,8 +574,8 @@ fn kitty_graphics_owner_state(owner : KittyGraphics) -> KittyGraphicsState {
     owner.bridge.kitty_graphics
   } else {
     match owner.screen {
-      TerminalScreen::Primary => owner.bridge.primary_storage.kitty_graphics
-      TerminalScreen::Alternate => owner.bridge.alternate_storage.kitty_graphics
+      Primary => owner.bridge.primary_storage.kitty_graphics
+      Alternate => owner.bridge.alternate_storage.kitty_graphics
     }
   }
 }
@@ -589,8 +586,8 @@ fn kitty_placement_grid(placement : KittyPlacement) -> ScreenGridState {
     placement.bridge.grid
   } else {
     match placement.screen {
-      TerminalScreen::Primary => placement.bridge.primary_storage.grid
-      TerminalScreen::Alternate => placement.bridge.alternate_storage.grid
+      Primary => placement.bridge.primary_storage.grid
+      Alternate => placement.bridge.alternate_storage.grid
     }
   }
 }
@@ -601,8 +598,8 @@ fn kitty_placement_scrollback(placement : KittyPlacement) -> PageList {
     placement.bridge.scrollback
   } else {
     match placement.screen {
-      TerminalScreen::Primary => placement.bridge.primary_storage.scrollback
-      TerminalScreen::Alternate => placement.bridge.alternate_storage.scrollback
+      Primary => placement.bridge.primary_storage.scrollback
+      Alternate => placement.bridge.alternate_storage.scrollback
     }
   }
 }

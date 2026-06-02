@@ -8,5 +8,6 @@
     },
     "moonbit-community/rabbita": "0.12.1"
   },
-  "preferred-target": "js"
+  "preferred-target": "js",
+  "warn-list": "+unnecessary_annotation"
 }

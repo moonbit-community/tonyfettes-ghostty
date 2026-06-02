@@ -53,7 +53,7 @@ pub fn MousePosition::y(self : MousePosition) -> Float {
 ///|
 pub fn MouseInputEvent::new() -> MouseInputEvent {
   {
-    action: MouseAction::Press,
+    action: Press,
     button: None,
     mods: KeyMods::new(),
     position: MousePosition::new(0.0F, 0.0F),

@@ -19,7 +19,7 @@ test "build_info/current snapshot matches translated module metadata" {
 ///|
 test "build_info/optimize mode stays within supported moonbit variants" {
   let optimize = build_info().optimize()
-  guard optimize == OptimizeMode::Debug || optimize == OptimizeMode::ReleaseSafe else {
+  guard optimize == Debug || optimize == ReleaseSafe else {
     fail("unexpected optimize mode projection")
   }
 }

@@ -11,3 +11,5 @@ license = "Apache-2.0"
 keywords = [ ]
 
 description = ""
+
+warnings = "+unnecessary_annotation"

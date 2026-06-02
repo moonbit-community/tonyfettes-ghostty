@@ -6,7 +6,7 @@ test "page row state/defaults and managed memory" {
     !row.grapheme() &&
     !row.styled() &&
     !row.hyperlink() &&
-    row.semantic_prompt() == RowSemanticPrompt::None &&
+    row.semantic_prompt() == None &&
     !row.kitty_virtual_placeholder() &&
     !row.dirty() &&
     !row.managed_memory() else {
@@ -22,7 +22,7 @@ test "page row state/flags semantic prompt and full reset" {
   row.set_grapheme(true)
   row.set_styled(true)
   row.set_hyperlink(true)
-  row.set_semantic_prompt(RowSemanticPrompt::PromptContinuation)
+  row.set_semantic_prompt(PromptContinuation)
   row.set_kitty_virtual_placeholder(true)
   row.set_dirty(true)
 
@@ -31,7 +31,7 @@ test "page row state/flags semantic prompt and full reset" {
     row.grapheme() &&
     row.styled() &&
     row.hyperlink() &&
-    row.semantic_prompt() == RowSemanticPrompt::PromptContinuation &&
+    row.semantic_prompt() == PromptContinuation &&
     row.kitty_virtual_placeholder() &&
     row.dirty() &&
     row.managed_memory() else {
@@ -44,7 +44,7 @@ test "page row state/flags semantic prompt and full reset" {
     !row.grapheme() &&
     !row.styled() &&
     !row.hyperlink() &&
-    row.semantic_prompt() == RowSemanticPrompt::None &&
+    row.semantic_prompt() == None &&
     !row.kitty_virtual_placeholder() &&
     !row.dirty() &&
     !row.managed_memory() else {
@@ -55,15 +55,15 @@ test "page row state/flags semantic prompt and full reset" {
 ///|
 test "page cell state/defaults and zero helpers" {
   let cell = PageCellState::new()
-  guard cell.content_tag() == PageCellContentTag::Codepoint &&
+  guard cell.content_tag() == Codepoint &&
     cell.codepoint() == 0U &&
     cell.palette_index() == None &&
     cell.background_rgb() == None &&
     cell.style().is_default() &&
-    cell.wide() == PageCellWide::Narrow &&
+    cell.wide() == Narrow &&
     !cell.is_protected() &&
     cell.hyperlink() == None &&
-    cell.semantic_content() == SemanticContent::Output &&
+    cell.semantic_content() == Output &&
     cell.is_zero() &&
     !cell.has_text() &&
     !cell.has_styling() &&
@@ -77,7 +77,7 @@ test "page cell state/defaults and zero helpers" {
 ///|
 test "page cell state/codepoint grapheme and wide helpers" {
   let cell = PageCellState::init(0x41U)
-  guard cell.content_tag() == PageCellContentTag::Codepoint &&
+  guard cell.content_tag() == Codepoint &&
     cell.codepoint() == 0x41U &&
     cell.has_text() &&
     !cell.has_grapheme() &&
@@ -86,8 +86,8 @@ test "page cell state/codepoint grapheme and wide helpers" {
   }
 
   cell.set_codepoint(0x62U, true)
-  cell.set_wide(PageCellWide::Wide)
-  guard cell.content_tag() == PageCellContentTag::CodepointGrapheme &&
+  cell.set_wide(Wide)
+  guard cell.content_tag() == CodepointGrapheme &&
     cell.codepoint() == 0x62U &&
     cell.has_text() &&
     cell.has_grapheme() &&
@@ -96,7 +96,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
   }
 
   cell.set_codepoint(0U, false)
-  cell.set_wide(PageCellWide::SpacerHead)
+  cell.set_wide(SpacerHead)
   guard !cell.is_empty() && cell.grid_width() == 1 else {
     fail("expected spacer head to remain non-empty")
   }
@@ -107,7 +107,7 @@ test "page cell state/background content reports no text and preserves payloads"
   let cell = PageCellState::new()
   let rgb = RGB::new(1, 2, 3)
   cell.set_background_palette(7)
-  guard cell.content_tag() == PageCellContentTag::BackgroundPalette &&
+  guard cell.content_tag() == BackgroundPalette &&
     cell.palette_index() == Some(7) &&
     cell.background_rgb() == None &&
     !cell.has_text() &&
@@ -117,7 +117,7 @@ test "page cell state/background content reports no text and preserves payloads"
   }
 
   cell.set_background_rgb(rgb)
-  guard cell.content_tag() == PageCellContentTag::BackgroundRgb &&
+  guard cell.content_tag() == BackgroundRgb &&
     cell.palette_index() == None &&
     cell.background_rgb() == Some(rgb) &&
     !cell.has_text() &&
@@ -136,14 +136,14 @@ test "page cell state/style hyperlink semantic and full reset" {
   cell.set_style(style)
   cell.set_protected(true)
   cell.set_hyperlink(Some(hyperlink))
-  cell.set_semantic_content(SemanticContent::Prompt)
+  cell.set_semantic_content(Prompt)
 
   let style_copy = cell.style()
   guard style_copy.bold() &&
     cell.has_styling() &&
     cell.is_protected() &&
     cell.hyperlink() == Some(hyperlink) &&
-    cell.semantic_content() == SemanticContent::Prompt else {
+    cell.semantic_content() == Prompt else {
     fail("expected style, hyperlink, protection, and semantic state")
   }
 
@@ -153,15 +153,15 @@ test "page cell state/style hyperlink semantic and full reset" {
   }
 
   cell.full_reset()
-  guard cell.content_tag() == PageCellContentTag::Codepoint &&
+  guard cell.content_tag() == Codepoint &&
     cell.codepoint() == 0U &&
     cell.palette_index() == None &&
     cell.background_rgb() == None &&
     cell.style().is_default() &&
-    cell.wide() == PageCellWide::Narrow &&
+    cell.wide() == Narrow &&
     !cell.is_protected() &&
     cell.hyperlink() == None &&
-    cell.semantic_content() == SemanticContent::Output else {
+    cell.semantic_content() == Output else {
     fail("expected page cell full reset")
   }
 }

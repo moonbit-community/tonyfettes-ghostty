@@ -6,7 +6,7 @@ struct TerminalDisplayState {
 
 ///|
 pub fn TerminalDisplayState::new() -> TerminalDisplayState {
-  { status_display: StatusDisplay::Main, mouse_shape: MouseShape::Text }
+  { status_display: Main, mouse_shape: Text }
 }
 
 ///|
@@ -41,5 +41,5 @@ pub fn TerminalDisplayState::set_mouse_shape(
 
 ///|
 pub fn TerminalDisplayState::full_reset(self : TerminalDisplayState) -> Unit {
-  self.status_display = StatusDisplay::Main
+  self.status_display = Main
 }

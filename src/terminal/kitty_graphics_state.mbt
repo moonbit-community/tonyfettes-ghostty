@@ -529,7 +529,7 @@ fn kitty_graphics_validate_transmission_header(
   if transmission.medium != Direct {
     return Some(UnsupportedMedium)
   }
-  if transmission.compression != KittyImageCompression::None {
+  if transmission.compression != None {
     return Some(UnsupportedCompression)
   }
   None
@@ -579,7 +579,7 @@ fn finalize_kitty_graphics_loading(
     width,
     height,
     format,
-    compression: KittyImageCompression::None,
+    compression: None,
     data: Bytes::from_array(data),
     implicit_id: image.implicit_id,
     transmit_seq,

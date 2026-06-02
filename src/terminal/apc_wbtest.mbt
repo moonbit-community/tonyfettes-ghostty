@@ -50,9 +50,7 @@ test "apc/valid transmit and display yields typed output" {
     fail("expected typed kitty APC command")
   }
 
-  guard command.quiet == KittyGraphicsQuiet::No else {
-    fail("expected default quiet mode")
-  }
+  guard command.quiet == No else { fail("expected default quiet mode") }
   guard command.control is TransmitAndDisplay(value) else {
     fail("expected transmit-and-display control")
   }

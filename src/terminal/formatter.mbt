@@ -198,11 +198,11 @@ fn formatter_write_render_state_frame_row(
         None => ()
         Some(cell) => {
           match cell.wide() {
-            PageCellWide::SpacerHead | PageCellWide::SpacerTail => {
+            SpacerHead | SpacerTail => {
               x += 1
               continue
             }
-            PageCellWide::Narrow | PageCellWide::Wide => ()
+            Narrow | Wide => ()
           }
 
           if formatter_history_cell_is_blank(cell) {
@@ -217,13 +217,13 @@ fn formatter_write_render_state_frame_row(
           }
 
           output.sync_vt_style(formatter_cell_style(cell), buffer)
-          formatter_write_cell_text(Format::Vt, cell, buffer)
+          formatter_write_cell_text(Vt, cell, buffer)
         }
       }
       x += 1
     }
   }
-  output.close(Format::Vt, buffer)
+  output.close(Vt, buffer)
   buffer.write_bytes(VtEraseToEndOfLine)
 }
 
@@ -332,11 +332,11 @@ fn formatter_selection_bounds(
         rectangle: false,
       })
     Some(selection) => {
-      let start = match state.point_from_pin(selection.start(), Tag::Screen) {
+      let start = match state.point_from_pin(selection.start(), Screen) {
         Some(value) => value
         None => return None
       }
-      let end_ = match state.point_from_pin(selection.end(), Tag::Screen) {
+      let end_ = match state.point_from_pin(selection.end(), Screen) {
         Some(value) => value
         None => return None
       }
@@ -371,7 +371,7 @@ fn formatter_write_prefix(
     formatter_write_palette(formatter.opts.emit, state.palette(), buffer)
   }
 
-  if formatter.opts.emit == Format::Html {
+  if formatter.opts.emit == Html {
     buffer.write_bytes(HtmlWrapperOpen)
   }
 }
@@ -382,11 +382,11 @@ fn formatter_write_suffix(
   state : StreamTerminalBridgeState,
   buffer : @buffer.Buffer,
 ) -> Unit {
-  if formatter.opts.emit == Format::Vt {
+  if formatter.opts.emit == Vt {
     formatter_write_terminal_extras(formatter, state, buffer)
   }
 
-  if formatter.opts.emit == Format::Html {
+  if formatter.opts.emit == Html {
     buffer.write_bytes(HtmlWrapperClose)
   }
 }
@@ -440,11 +440,11 @@ fn formatter_write_content(
                 None => x += 1
                 Some(cell) => {
                   match cell.wide() {
-                    PageCellWide::SpacerHead | PageCellWide::SpacerTail => {
+                    SpacerHead | SpacerTail => {
                       x += 1
                       continue
                     }
-                    PageCellWide::Narrow | PageCellWide::Wide => ()
+                    Narrow | Wide => ()
                   }
 
                   if formatter_cell_is_blank(formatter, cell) {
@@ -459,7 +459,7 @@ fn formatter_write_content(
                   }
 
                   let style = formatter_cell_style(cell)
-                  let hyperlink = if formatter.opts.emit == Format::Html {
+                  let hyperlink = if formatter.opts.emit == Html {
                     match cell.hyperlink() {
                       Some(link) => Some(link.uri())
                       None => None
@@ -469,10 +469,9 @@ fn formatter_write_content(
                   }
 
                   match formatter.opts.emit {
-                    Format::Plain => ()
-                    Format::Vt => output.sync_vt_style(style, buffer)
-                    Format::Html =>
-                      output.sync_html_run(style, hyperlink, buffer)
+                    Plain => ()
+                    Vt => output.sync_vt_style(style, buffer)
+                    Html => output.sync_html_run(style, hyperlink, buffer)
                   }
 
                   formatter_write_cell_text(formatter.opts.emit, cell, buffer)
@@ -533,9 +532,9 @@ fn formatter_row_bounds(
       ) {
       Some(cell) =>
         match cell.wide() {
-          PageCellWide::SpacerTail => start_x -= 1
-          PageCellWide::SpacerHead => return None
-          PageCellWide::Narrow | PageCellWide::Wide => ()
+          SpacerTail => start_x -= 1
+          SpacerHead => return None
+          Narrow | Wide => ()
         }
       None => ()
     }
@@ -564,8 +563,7 @@ fn formatter_row_is_blank(
 
 ///|
 fn formatter_cell_is_blank(formatter : Formatter, cell : PageCellState) -> Bool {
-  if formatter.opts.emit != Format::Plain &&
-    (!cell.is_empty() || cell.has_styling()) {
+  if formatter.opts.emit != Plain && (!cell.is_empty() || cell.has_styling()) {
     return false
   }
   if !cell.has_text() {
@@ -588,14 +586,13 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
 ///|
 fn formatter_cell_style(cell : PageCellState) -> CellStyle {
   match cell.content_tag() {
-    PageCellContentTag::Codepoint | PageCellContentTag::CodepointGrapheme =>
-      cell.style()
-    PageCellContentTag::BackgroundPalette => {
+    Codepoint | CodepointGrapheme => cell.style()
+    BackgroundPalette => {
       let style = CellStyle::new()
       style.bg_color = style_color_palette(cell.palette_index().unwrap())
       style
     }
-    PageCellContentTag::BackgroundRgb => {
+    BackgroundRgb => {
       let style = CellStyle::new()
       style.bg_color = style_color_rgb(cell.background_rgb().unwrap())
       style
@@ -624,9 +621,9 @@ fn formatter_write_codepoint(
   codepoint : UInt,
 ) -> Unit {
   match emit {
-    Format::Plain | Format::Vt =>
+    Plain | Vt =>
       buffer.write_char_utf8(codepoint.reinterpret_as_int().unsafe_to_char())
-    Format::Html =>
+    Html =>
       if codepoint == b'<'.to_uint() {
         buffer.write_bytes(b"&lt;")
       } else if codepoint == b'>'.to_uint() {
@@ -663,9 +660,9 @@ fn formatter_write_newlines(
   count : Int,
 ) -> Unit {
   let sequence = match emit {
-    Format::Plain => NewlinePlain
-    Format::Vt => NewlineVt
-    Format::Html => NewlineHtml
+    Plain => NewlinePlain
+    Vt => NewlineVt
+    Html => NewlineHtml
   }
 
   let mut remaining = count
@@ -682,8 +679,8 @@ fn formatter_write_palette(
   buffer : @buffer.Buffer,
 ) -> Unit {
   match emit {
-    Format::Plain => ()
-    Format::Vt => {
+    Plain => ()
+    Vt => {
       let mut i = 0
       while i < palette.length() {
         let rgb = palette[i]
@@ -699,7 +696,7 @@ fn formatter_write_palette(
         i += 1
       }
     }
-    Format::Html => {
+    Html => {
       buffer.write_bytes(b"<style>:root{")
       let mut i = 0
       while i < palette.length() {
@@ -832,33 +829,33 @@ fn formatter_write_screen_extras(
   }
 
   if extra.charsets {
-    for slot in [Slots::G0, Slots::G1, Slots::G2, Slots::G3] {
+    for slot in [Slots::G0, G1, G2, G3] {
       let charset = state.charset.charset(slot)
-      if charset != Charset::Utf8 {
+      if charset != Utf8 {
         buffer.write_byte(b'\x1B')
         buffer.write_byte(formatter_charset_designator(slot))
         buffer.write_byte(formatter_charset_final(charset))
       }
     }
 
-    if state.charset.gl() != Slots::G0 {
+    if state.charset.gl() != G0 {
       buffer.write_bytes(
         match state.charset.gl() {
-          Slots::G0 => b""
-          Slots::G1 => b"\x0E"
-          Slots::G2 => b"\x1Bn"
-          Slots::G3 => b"\x1Bo"
+          G0 => b""
+          G1 => b"\x0E"
+          G2 => b"\x1Bn"
+          G3 => b"\x1Bo"
         },
       )
     }
 
-    if state.charset.gr() != Slots::G2 {
+    if state.charset.gr() != G2 {
       buffer.write_bytes(
         match state.charset.gr() {
-          Slots::G0 => b""
-          Slots::G1 => b"\x1B~"
-          Slots::G2 => b""
-          Slots::G3 => b"\x1B|"
+          G0 => b""
+          G1 => b"\x1B~"
+          G2 => b""
+          G3 => b"\x1B|"
         },
       )
     }
@@ -944,13 +941,13 @@ fn FormatterOutputState::close(
   buffer : @buffer.Buffer,
 ) -> Unit {
   match emit {
-    Format::Plain => ()
-    Format::Vt =>
+    Plain => ()
+    Vt =>
       if !self.vt_style.is_default() {
         buffer.write_bytes(VtStyleReset)
         self.vt_style = CellStyle::new()
       }
-    Format::Html =>
+    Html =>
       if self.html_open {
         formatter_close_html_run(buffer, self.html_style, self.html_hyperlink)
         self.html_open = false
@@ -992,12 +989,12 @@ fn formatter_write_vt_style_open(
   }
 
   match style.underline() {
-    SgrUnderline::None => ()
-    SgrUnderline::Single => buffer.write_bytes(b"\x1B[4m")
-    SgrUnderline::Double => buffer.write_bytes(b"\x1B[4:2m")
-    SgrUnderline::Curly => buffer.write_bytes(b"\x1B[4:3m")
-    SgrUnderline::Dotted => buffer.write_bytes(b"\x1B[4:4m")
-    SgrUnderline::Dashed => buffer.write_bytes(b"\x1B[4:5m")
+    None => ()
+    Single => buffer.write_bytes(b"\x1B[4m")
+    Double => buffer.write_bytes(b"\x1B[4:2m")
+    Curly => buffer.write_bytes(b"\x1B[4:3m")
+    Dotted => buffer.write_bytes(b"\x1B[4:4m")
+    Dashed => buffer.write_bytes(b"\x1B[4:5m")
   }
 
   formatter_write_vt_style_color(buffer, 38U, style.fg_color())
@@ -1084,13 +1081,13 @@ fn formatter_write_html_style(
     style.underline_color(),
   )
 
-  let has_line = style.underline() != SgrUnderline::None ||
+  let has_line = style.underline() != None ||
     style.strikethrough() ||
     style.overline() ||
     style.blink()
   if has_line {
     buffer.write_bytes(b"text-decoration-line:")
-    if style.underline() != SgrUnderline::None {
+    if style.underline() != None {
       buffer.write_bytes(b" underline")
     }
     if style.strikethrough() {
@@ -1106,15 +1103,12 @@ fn formatter_write_html_style(
   }
 
   match style.underline() {
-    SgrUnderline::None => ()
-    SgrUnderline::Single => buffer.write_bytes(b"text-decoration-style: solid;")
-    SgrUnderline::Double =>
-      buffer.write_bytes(b"text-decoration-style: double;")
-    SgrUnderline::Curly => buffer.write_bytes(b"text-decoration-style: wavy;")
-    SgrUnderline::Dotted =>
-      buffer.write_bytes(b"text-decoration-style: dotted;")
-    SgrUnderline::Dashed =>
-      buffer.write_bytes(b"text-decoration-style: dashed;")
+    None => ()
+    Single => buffer.write_bytes(b"text-decoration-style: solid;")
+    Double => buffer.write_bytes(b"text-decoration-style: double;")
+    Curly => buffer.write_bytes(b"text-decoration-style: wavy;")
+    Dotted => buffer.write_bytes(b"text-decoration-style: dotted;")
+    Dashed => buffer.write_bytes(b"text-decoration-style: dashed;")
   }
 
   if style.bold() {
@@ -1168,27 +1162,27 @@ fn formatter_write_html_attribute(
 ) -> Unit {
   for char in value {
     let codepoint = char.to_int().reinterpret_as_uint()
-    formatter_write_codepoint(Format::Html, buffer, codepoint)
+    formatter_write_codepoint(Html, buffer, codepoint)
   }
 }
 
 ///|
 fn formatter_charset_designator(slot : Slots) -> Byte {
   match slot {
-    Slots::G0 => b'('
-    Slots::G1 => b')'
-    Slots::G2 => b'*'
-    Slots::G3 => b'+'
+    G0 => b'('
+    G1 => b')'
+    G2 => b'*'
+    G3 => b'+'
   }
 }
 
 ///|
 fn formatter_charset_final(charset : Charset) -> Byte {
   match charset {
-    Charset::Ascii => b'B'
-    Charset::British => b'A'
-    Charset::DecSpecial => b'0'
-    Charset::Utf8 => b'B'
+    Ascii => b'B'
+    British => b'A'
+    DecSpecial => b'0'
+    Utf8 => b'B'
   }
 }
 
@@ -1254,47 +1248,47 @@ fn formatter_max_uint(lhs : UInt, rhs : UInt) -> UInt {
 ///|
 fn formatter_all_modes() -> Array[Mode] {
   [
-    Mode::DisableKeyboard,
-    Mode::Insert,
-    Mode::SendReceiveMode,
-    Mode::Linefeed,
-    Mode::CursorKeys,
-    Mode::Mode132Column,
-    Mode::SlowScroll,
-    Mode::ReverseColors,
-    Mode::Origin,
-    Mode::Wraparound,
-    Mode::Autorepeat,
-    Mode::MouseEventX10,
-    Mode::CursorBlinking,
-    Mode::CursorVisible,
-    Mode::EnableMode3,
-    Mode::ReverseWrap,
-    Mode::AltScreenLegacy,
-    Mode::KeypadKeys,
-    Mode::BackarrowKeyMode,
-    Mode::EnableLeftAndRightMargin,
-    Mode::MouseEventNormal,
-    Mode::MouseEventButton,
-    Mode::MouseEventAny,
-    Mode::FocusEvent,
-    Mode::MouseFormatUtf8,
-    Mode::MouseFormatSgr,
-    Mode::MouseAlternateScroll,
-    Mode::MouseFormatUrxvt,
-    Mode::MouseFormatSgrPixels,
-    Mode::IgnoreKeypadWithNumlock,
-    Mode::AltEscPrefix,
-    Mode::AltSendsEscape,
-    Mode::ReverseWrapExtended,
-    Mode::AltScreen,
-    Mode::SaveCursor,
-    Mode::AltScreenSaveCursorClearEnter,
-    Mode::BracketedPaste,
-    Mode::SynchronizedOutput,
-    Mode::GraphemeCluster,
-    Mode::ReportColorScheme,
-    Mode::InBandSizeReports,
+    DisableKeyboard,
+    Insert,
+    SendReceiveMode,
+    Linefeed,
+    CursorKeys,
+    Mode132Column,
+    SlowScroll,
+    ReverseColors,
+    Origin,
+    Wraparound,
+    Autorepeat,
+    MouseEventX10,
+    CursorBlinking,
+    CursorVisible,
+    EnableMode3,
+    ReverseWrap,
+    AltScreenLegacy,
+    KeypadKeys,
+    BackarrowKeyMode,
+    EnableLeftAndRightMargin,
+    MouseEventNormal,
+    MouseEventButton,
+    MouseEventAny,
+    FocusEvent,
+    MouseFormatUtf8,
+    MouseFormatSgr,
+    MouseAlternateScroll,
+    MouseFormatUrxvt,
+    MouseFormatSgrPixels,
+    IgnoreKeypadWithNumlock,
+    AltEscPrefix,
+    AltSendsEscape,
+    ReverseWrapExtended,
+    AltScreen,
+    SaveCursor,
+    AltScreenSaveCursorClearEnter,
+    BracketedPaste,
+    SynchronizedOutput,
+    GraphemeCluster,
+    ReportColorScheme,
+    InBandSizeReports,
   ]
 }
 

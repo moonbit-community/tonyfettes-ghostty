@@ -188,15 +188,15 @@ fn parse_kitty_text_sizing_command(
 ///|
 fn decode_safe_utf8(payload : Array[Byte]) -> String? {
   let bytes = @buffer.from_array(payload[:]).to_bytes()
-  let decoded : Result[String, @utf8.Malformed] = try? @utf8.decode(bytes[:])
-  match decoded {
-    Err(_) => None
-    Ok(text) =>
-      if kitty_text_contains_escape_control(text) {
-        None
-      } else {
-        Some(text)
-      }
+  let text = try @utf8.decode(bytes[:]) catch {
+    _ => return None
+  } noraise {
+    text => text
+  }
+  if kitty_text_contains_escape_control(text) {
+    None
+  } else {
+    Some(text)
   }
 }
 

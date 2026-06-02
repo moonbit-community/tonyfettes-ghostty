@@ -33,14 +33,14 @@ pub fn RenderState::new() -> RenderState {
     initialized: false,
     rows: 0,
     columns: 0,
-    dirty: RenderDirty::False,
-    screen: TerminalScreen::Primary,
+    dirty: False,
+    screen: Primary,
     viewport_origin: None,
     background: default_render_background(),
     foreground: default_render_foreground(),
     cursor_color: None,
     palette: clone_render_palette(default_palette()),
-    cursor_visual_style: CursorVisualStyle::Block,
+    cursor_visual_style: Block,
     cursor_visible: true,
     cursor_blinking: false,
     cursor_password_input: false,
@@ -132,14 +132,14 @@ pub fn RenderState::update(
   let columns = terminal.columns()
   let screen = terminal.active_screen()
   let viewport_origin = resolve_viewport_origin(terminal, rows, columns)
-  let reverse_colors = terminal.mode_get(Mode::ReverseColors)
+  let reverse_colors = terminal.mode_get(ReverseColors)
   let background = resolved_render_background(terminal, reverse_colors)
   let foreground = resolved_render_foreground(terminal, reverse_colors)
   let cursor_color = terminal.cursor_color()
   let palette = terminal.palette()
   let cursor_visual_style = terminal.cursor_visual_style()
   let cursor_visible = terminal.cursor_visible()
-  let cursor_blinking = terminal.mode_get(Mode::CursorBlinking)
+  let cursor_blinking = terminal.mode_get(CursorBlinking)
   let cursor_password_input = false
   let (cursor_viewport, cursor_viewport_wide_tail) = resolve_cursor_viewport(
     terminal,
@@ -171,9 +171,9 @@ pub fn RenderState::update(
   }
 
   if full_dirty {
-    self.dirty = RenderDirty::Full
-  } else if (any_row_dirty || cursor_dirty) && self.dirty == RenderDirty::False {
-    self.dirty = RenderDirty::Partial
+    self.dirty = Full
+  } else if (any_row_dirty || cursor_dirty) && self.dirty == False {
+    self.dirty = Partial
   }
 
   self.initialized = true
@@ -249,9 +249,7 @@ fn resolve_viewport_origin(
   if rows == 0 || columns == 0 {
     None
   } else {
-    terminal
-    .bridge()
-    .point_from_point(Point::Viewport(Coordinate::new(0, 0U)), Tag::Screen)
+    terminal.bridge().point_from_point(Viewport(Coordinate::new(0, 0U)), Screen)
   }
 }
 
@@ -289,10 +287,10 @@ fn resolve_cursor_viewport(terminal : StreamTerminal) -> (Coordinate?, Bool) {
     Coordinate::new(terminal.cursor_x(), terminal.cursor_y().to_uint()),
   )
   let state = terminal.bridge()
-  match state.point_from_point(cursor_point, Tag::Viewport) {
+  match state.point_from_point(cursor_point, Viewport) {
     Some(viewport) => {
       let wide_tail = match state.cell_at_point(cursor_point) {
-        Some(cell) => cell.wide() == PageCellWide::SpacerTail
+        Some(cell) => cell.wide() == SpacerTail
         None => false
       }
       (Some(viewport), wide_tail)
@@ -464,10 +462,9 @@ fn render_cell_background_color(
   palette : Array[RGB],
 ) -> RGB? {
   match cell.content_tag {
-    PageCellContentTag::BackgroundPalette =>
-      Some(palette[cell.palette_index.to_int()])
-    PageCellContentTag::BackgroundRgb => Some(cell.bg_rgb)
-    PageCellContentTag::Codepoint | PageCellContentTag::CodepointGrapheme =>
+    BackgroundPalette => Some(palette[cell.palette_index.to_int()])
+    BackgroundRgb => Some(cell.bg_rgb)
+    Codepoint | CodepointGrapheme =>
       style_color_to_rgb(cell.style.bg_color, palette)
   }
 }

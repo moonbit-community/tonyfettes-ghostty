@@ -43,18 +43,18 @@ test "terminal system/log callback install clear and small emit" {
     recorder.record(level, scope, message)
   })
 
-  terminal_system_emit_log(SystemLogLevel::Info, b"test", b"hello")
+  terminal_system_emit_log(Info, b"test", b"hello")
 
   guard recorder.call_count == 1 &&
     recorder.total_bytes == 5 &&
-    recorder.levels == [SystemLogLevel::Info] &&
+    recorder.levels == [Info] &&
     recorder.scopes == [b"test"] &&
     recorder.messages == [b"hello"] else {
     fail("expected small log message to be emitted as one chunk")
   }
 
   terminal_system_clear_log()
-  terminal_system_emit_log(SystemLogLevel::Error, b"test", b"ignored")
+  terminal_system_emit_log(Error, b"test", b"ignored")
   guard recorder.call_count == 1 else {
     fail("expected cleared log callback to ignore messages")
   }
@@ -69,12 +69,12 @@ test "terminal system/log emit splits messages larger than one chunk" {
   })
 
   let payload = repeated_bytes(b'A', 3000)
-  terminal_system_emit_log(SystemLogLevel::Warning, b"gfx", payload)
+  terminal_system_emit_log(Warning, b"gfx", payload)
   terminal_system_clear_log()
 
   guard recorder.call_count == 2 &&
     recorder.total_bytes == 3000 &&
-    recorder.levels == [SystemLogLevel::Warning, SystemLogLevel::Warning] &&
+    recorder.levels == [Warning, Warning] &&
     recorder.scopes == [b"gfx", b"gfx"] &&
     recorder.messages[0].length() == 2048 &&
     recorder.messages[1].length() == 952 else {
@@ -89,11 +89,7 @@ test "terminal system/log emit preserves exact chunk boundaries" {
   terminal_system_set_log(fn(level, scope, message) {
     exact.record(level, scope, message)
   })
-  terminal_system_emit_log(
-    SystemLogLevel::Debug,
-    b"",
-    repeated_bytes(b'B', 2048),
-  )
+  terminal_system_emit_log(Debug, b"", repeated_bytes(b'B', 2048))
 
   guard exact.call_count == 1 &&
     exact.total_bytes == 2048 &&
@@ -105,11 +101,7 @@ test "terminal system/log emit preserves exact chunk boundaries" {
   terminal_system_set_log(fn(level, scope, message) {
     double.record(level, scope, message)
   })
-  terminal_system_emit_log(
-    SystemLogLevel::Debug,
-    b"",
-    repeated_bytes(b'C', 4096),
-  )
+  terminal_system_emit_log(Debug, b"", repeated_bytes(b'C', 4096))
   terminal_system_clear_log()
 
   guard double.call_count == 2 &&

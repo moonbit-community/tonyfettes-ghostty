@@ -15,33 +15,32 @@ test "ansi/c0 mapping" {
 ///|
 test "ansi/enum ordinal helpers" {
   assert_eq(CursorStyle::BlinkingBar.ordinal(), 5)
-  guard cursor_style_from_int(6) == Some(CursorStyle::SteadyBar) else {
+  guard cursor_style_from_int(6) == Some(SteadyBar) else {
     fail("expected steady bar")
   }
-  guard status_line_type_from_int(2) == Some(StatusLineType::HostWritable) else {
+  guard status_line_type_from_int(2) == Some(HostWritable) else {
     fail("expected host_writable status line type")
   }
   assert_eq(StatusDisplay::StatusLine.ordinal(), 1)
-  guard status_display_from_int(0) == Some(StatusDisplay::Main) else {
+  guard status_display_from_int(0) == Some(Main) else {
     fail("expected main status display")
   }
-  guard modify_key_format_from_int(4) ==
-    Some(ModifyKeyFormat::OtherKeysNumericExcept) else {
+  guard modify_key_format_from_int(4) == Some(OtherKeysNumericExcept) else {
     fail("expected other_keys_numeric_except")
   }
-  guard rendition_aspect_from_int(39) == Some(RenditionAspect::DefaultFg) else {
+  guard rendition_aspect_from_int(39) == Some(DefaultFg) else {
     fail("expected default fg aspect")
   }
-  assert_eq(ProtectedMode::Iso == ProtectedMode::Iso, true)
+  assert_eq(ProtectedMode::Iso == Iso, true)
 }
 
 ///|
 test "ansi/all conversion helpers roundtrip" {
   let aspects : Array[(RenditionAspect, UInt16)] = [
-    (RenditionAspect::Default, 0),
-    (RenditionAspect::Bold, 1),
-    (RenditionAspect::DefaultFg, 39),
-    (RenditionAspect::DefaultBg, 49),
+    (Default, 0),
+    (Bold, 1),
+    (DefaultFg, 39),
+    (DefaultBg, 49),
   ]
   for entry in aspects {
     assert_eq(entry.0.code(), entry.1)
@@ -54,13 +53,13 @@ test "ansi/all conversion helpers roundtrip" {
   }
 
   let cursor_styles : Array[(CursorStyle, Int)] = [
-    (CursorStyle::Default, 0),
-    (CursorStyle::BlinkingBlock, 1),
-    (CursorStyle::SteadyBlock, 2),
-    (CursorStyle::BlinkingUnderline, 3),
-    (CursorStyle::SteadyUnderline, 4),
-    (CursorStyle::BlinkingBar, 5),
-    (CursorStyle::SteadyBar, 6),
+    (Default, 0),
+    (BlinkingBlock, 1),
+    (SteadyBlock, 2),
+    (BlinkingUnderline, 3),
+    (SteadyUnderline, 4),
+    (BlinkingBar, 5),
+    (SteadyBar, 6),
   ]
   for entry in cursor_styles {
     assert_eq(entry.0.ordinal(), entry.1)
@@ -73,9 +72,9 @@ test "ansi/all conversion helpers roundtrip" {
   }
 
   let status_line_types : Array[(StatusLineType, UInt16)] = [
-    (StatusLineType::None, 0),
-    (StatusLineType::Indicator, 1),
-    (StatusLineType::HostWritable, 2),
+    (None, 0),
+    (Indicator, 1),
+    (HostWritable, 2),
   ]
   for entry in status_line_types {
     assert_eq(entry.0.code(), entry.1)
@@ -88,8 +87,8 @@ test "ansi/all conversion helpers roundtrip" {
   }
 
   let status_displays : Array[(StatusDisplay, Int)] = [
-    (StatusDisplay::Main, 0),
-    (StatusDisplay::StatusLine, 1),
+    (Main, 0),
+    (StatusLine, 1),
   ]
   for entry in status_displays {
     assert_eq(entry.0.ordinal(), entry.1)
@@ -102,12 +101,12 @@ test "ansi/all conversion helpers roundtrip" {
   }
 
   let key_formats : Array[(ModifyKeyFormat, Int)] = [
-    (ModifyKeyFormat::Legacy, 0),
-    (ModifyKeyFormat::CursorKeys, 1),
-    (ModifyKeyFormat::FunctionKeys, 2),
-    (ModifyKeyFormat::OtherKeysNone, 3),
-    (ModifyKeyFormat::OtherKeysNumericExcept, 4),
-    (ModifyKeyFormat::OtherKeysNumeric, 5),
+    (Legacy, 0),
+    (CursorKeys, 1),
+    (FunctionKeys, 2),
+    (OtherKeysNone, 3),
+    (OtherKeysNumericExcept, 4),
+    (OtherKeysNumeric, 5),
   ]
   for entry in key_formats {
     assert_eq(entry.0.ordinal(), entry.1)

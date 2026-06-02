@@ -1,7 +1,7 @@
 ///|
 test "mouse input event/defaults and setters roundtrip" {
   let event = MouseInputEvent::new()
-  guard event.action() == MouseAction::Press else {
+  guard event.action() == Press else {
     fail("mouse events should default to press")
   }
   guard event.button() == None else {
@@ -16,15 +16,13 @@ test "mouse input event/defaults and setters roundtrip" {
 
   let mods = KeyMods::new().with_shift(true).with_ctrl(true)
   let position = MousePosition::new(12.5F, -4.0F)
-  event.set_action(MouseAction::Motion)
-  event.set_button(MouseButton::Left)
+  event.set_action(Motion)
+  event.set_button(Left)
   event.set_mods(mods)
   event.set_position(position)
 
-  guard event.action() == MouseAction::Motion else {
-    fail("expected motion action")
-  }
-  guard event.button() == Some(MouseButton::Left) else {
+  guard event.action() == Motion else { fail("expected motion action") }
+  guard event.button() == Some(Left) else {
     fail("expected stored left button")
   }
   guard event.mods() == mods else { fail("expected stored modifiers") }

@@ -22,7 +22,7 @@ test "surface registry/covers upstream type list in order" {
 ///|
 test "surface registry/returns direct mappings" {
   let style = terminal_surface_type("GhosttyStyle").unwrap()
-  guard style.mapping() == TerminalSurfaceTypeMapping::Direct else {
+  guard style.mapping() == Direct else {
     fail("expected GhosttyStyle to stay a direct mapping")
   }
   guard style.moonbit_surface() == "CellStyle" else {
@@ -33,7 +33,7 @@ test "surface registry/returns direct mappings" {
   }
 
   let selection = terminal_surface_type("GhosttySelection").unwrap()
-  guard selection.mapping() == TerminalSurfaceTypeMapping::Direct else {
+  guard selection.mapping() == Direct else {
     fail("expected GhosttySelection to stay direct")
   }
   guard selection.moonbit_surface() == "Selection" else {
@@ -41,8 +41,7 @@ test "surface registry/returns direct mappings" {
   }
 
   let pin = terminal_surface_type("GhosttyGridRef").unwrap()
-  guard pin.mapping() == TerminalSurfaceTypeMapping::Direct &&
-    pin.moonbit_surface() == "Pin" else {
+  guard pin.mapping() == Direct && pin.moonbit_surface() == "Pin" else {
     fail("expected GhosttyGridRef to map to Pin")
   }
 }
@@ -50,7 +49,7 @@ test "surface registry/returns direct mappings" {
 ///|
 test "surface registry/marks native and absorbed replacements" {
   let string_info = terminal_surface_type("GhosttyString").unwrap()
-  guard string_info.mapping() == TerminalSurfaceTypeMapping::Native else {
+  guard string_info.mapping() == Native else {
     fail("expected GhosttyString to be replaced by native MoonBit types")
   }
   guard string_info.moonbit_surface() == "String / Bytes" else {
@@ -61,7 +60,7 @@ test "surface registry/marks native and absorbed replacements" {
   }
 
   let terminal_opts = terminal_surface_type("GhosttyTerminalOptions").unwrap()
-  guard terminal_opts.mapping() == TerminalSurfaceTypeMapping::Absorbed else {
+  guard terminal_opts.mapping() == Absorbed else {
     fail("expected GhosttyTerminalOptions to be absorbed into StreamTerminal")
   }
   guard terminal_opts.moonbit_surface() == "StreamTerminal" else {

@@ -1,15 +1,12 @@
 ///|
 test "device status/request lookup and packed tag layout" {
-  guard device_status_request_from_int(5, false) ==
-    Some(DeviceStatusRequest::OperatingStatus) else {
+  guard device_status_request_from_int(5, false) == Some(OperatingStatus) else {
     fail("expected operating status request")
   }
-  guard device_status_request_from_int(6, false) ==
-    Some(DeviceStatusRequest::CursorPosition) else {
+  guard device_status_request_from_int(6, false) == Some(CursorPosition) else {
     fail("expected cursor position request")
   }
-  guard device_status_request_from_int(996, true) ==
-    Some(DeviceStatusRequest::ColorScheme) else {
+  guard device_status_request_from_int(996, true) == Some(ColorScheme) else {
     fail("expected color scheme request")
   }
   guard device_status_request_from_int(996, false) == None else {

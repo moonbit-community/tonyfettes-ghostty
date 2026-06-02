@@ -1,8 +1,7 @@
 ///|
 test "terminal metadata state/defaults" {
   let state = TerminalMetadataState::new()
-  guard state.title() == None &&
-    state.shell_redraws_prompt() == SemanticPromptRedraw::Enabled else {
+  guard state.title() == None && state.shell_redraws_prompt() == Enabled else {
     fail("expected terminal metadata defaults")
   }
 }
@@ -25,15 +24,13 @@ test "terminal metadata state/set title stores non-empty strings and clears empt
 test "terminal metadata state/prompt redraw and full reset" {
   let state = TerminalMetadataState::new()
   state.set_title("Prompt")
-  state.set_shell_redraws_prompt(SemanticPromptRedraw::Last)
-  guard state.title() == Some("Prompt") &&
-    state.shell_redraws_prompt() == SemanticPromptRedraw::Last else {
+  state.set_shell_redraws_prompt(Last)
+  guard state.title() == Some("Prompt") && state.shell_redraws_prompt() == Last else {
     fail("expected metadata mutation before reset")
   }
 
   state.full_reset()
-  guard state.title() == None &&
-    state.shell_redraws_prompt() == SemanticPromptRedraw::Enabled else {
+  guard state.title() == None && state.shell_redraws_prompt() == Enabled else {
     fail("expected metadata full reset defaults")
   }
 }

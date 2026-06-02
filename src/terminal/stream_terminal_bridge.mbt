@@ -242,10 +242,10 @@ fn StreamTerminalBridgeState::with_effects(
     charset: ScreenCharsetState::new(),
     current_style: CellStyle::new(),
     previous_char: None,
-    mouse_event: MouseEvent::None,
-    mouse_format: MouseFormat::X10,
+    mouse_event: None,
+    mouse_format: X10,
     palette_dirty: false,
-    active_screen: TerminalScreen::Primary,
+    active_screen: Primary,
     width_px: 0U,
     height_px: 0U,
     scrollback_cleared: false,
@@ -308,7 +308,7 @@ fn StreamTerminalBridgeState::cursor_visual_style(
 fn StreamTerminalBridgeState::cursor_visible(
   self : StreamTerminalBridgeState,
 ) -> Bool {
-  self.modes.get(Mode::CursorVisible)
+  self.modes.get(CursorVisible)
 }
 
 ///|
@@ -378,7 +378,7 @@ fn StreamTerminalBridgeState::mouse_format(
 fn StreamTerminalBridgeState::mouse_tracking(
   self : StreamTerminalBridgeState,
 ) -> Bool {
-  self.mouse_event != MouseEvent::None
+  self.mouse_event != None
 }
 
 ///|
@@ -449,10 +449,10 @@ fn StreamTerminalBridgeState::set_default_palette(
   palette : Array[RGB]?,
 ) -> TerminalResultCode {
   if !self.colors.set_default_palette(palette) {
-    return TerminalResultCode::InvalidValue
+    return InvalidValue
   }
   self.palette_dirty = true
-  TerminalResultCode::Success
+  Success
 }
 
 ///|
@@ -498,14 +498,14 @@ fn StreamTerminalBridgeState::untrack_pin(
   pin : Pin,
 ) -> Unit {
   match pin.screen {
-    TerminalScreen::Primary =>
-      if self.active_screen == TerminalScreen::Primary {
+    Primary =>
+      if self.active_screen == Primary {
         self.scrollback.untrack_pin_ref(pin)
       } else {
         self.primary_storage.scrollback.untrack_pin_ref(pin)
       }
-    TerminalScreen::Alternate =>
-      if self.active_screen == TerminalScreen::Alternate {
+    Alternate =>
+      if self.active_screen == Alternate {
         self.scrollback.untrack_pin_ref(pin)
       } else {
         self.alternate_storage.scrollback.untrack_pin_ref(pin)
@@ -796,7 +796,7 @@ fn StreamTerminalBridgeState::resize(
   cell_height_px : UInt,
 ) -> TerminalResultCode {
   if columns == 0 || rows == 0 {
-    return TerminalResultCode::InvalidValue
+    return InvalidValue
   }
 
   self.store_active_screen()
@@ -807,13 +807,13 @@ fn StreamTerminalBridgeState::resize(
   self.tabstops = TerminalTabstopsState::new(columns)
   self.width_px = saturated_dimension(columns, cell_width_px)
   self.height_px = saturated_dimension(rows, cell_height_px)
-  self.modes.set(Mode::SynchronizedOutput, false)
-  if self.modes.get(Mode::InBandSizeReports) {
+  self.modes.set(SynchronizedOutput, false)
+  if self.modes.get(InBandSizeReports) {
     self.write_pty(
       encode(Mode2048, Size::new(rows, columns, cell_width_px, cell_height_px)),
     )
   }
-  TerminalResultCode::Success
+  Success
 }
 
 ///|
@@ -886,15 +886,15 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamProtectedModeOff => {
-      self.protected_state.set(ProtectedMode::Off)
+      self.protected_state.set(Off)
       true
     }
     StreamProtectedModeIso => {
-      self.protected_state.set(ProtectedMode::Iso)
+      self.protected_state.set(Iso)
       true
     }
     StreamProtectedModeDec => {
-      self.protected_state.set(ProtectedMode::Dec)
+      self.protected_state.set(Dec)
       true
     }
     StreamActiveStatusDisplay(display) => {
@@ -973,7 +973,7 @@ fn StreamTerminalBridgeState::apply(
       self.cursor.set_cursor_pos(
         self.cursor.y() + 1,
         movement_count(movement),
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
       )
       true
     }
@@ -981,7 +981,7 @@ fn StreamTerminalBridgeState::apply(
       self.cursor.set_cursor_pos(
         movement_count(movement),
         self.cursor.x() + 1,
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
       )
       true
     }
@@ -991,7 +991,7 @@ fn StreamTerminalBridgeState::apply(
         saturated_request(
           self.cursor.x().to_int() + 1 + movement_count_int(movement),
         ),
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
       )
       true
     }
@@ -1001,7 +1001,7 @@ fn StreamTerminalBridgeState::apply(
           self.cursor.y().to_int() + 1 + movement_count_int(movement),
         ),
         self.cursor.x() + 1,
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
       )
       true
     }
@@ -1009,15 +1009,12 @@ fn StreamTerminalBridgeState::apply(
       self.cursor.set_cursor_pos(
         position.row,
         position.col,
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
       )
       true
     }
     StreamCursorStyle(style) => {
-      self.modes.set(
-        Mode::CursorBlinking,
-        self.cursor.apply_cursor_style(style),
-      )
+      self.modes.set(CursorBlinking, self.cursor.apply_cursor_style(style))
       true
     }
     StreamSetAttribute(attribute) => {
@@ -1052,26 +1049,26 @@ fn StreamTerminalBridgeState::apply(
       self.cursor.set_top_and_bottom_margin(
         margin.top_left,
         margin.bottom_right,
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
       )
       true
     }
     StreamLeftAndRightMargin(margin) => {
       self.cursor.set_left_and_right_margin(
-        self.modes.get(Mode::EnableLeftAndRightMargin),
+        self.modes.get(EnableLeftAndRightMargin),
         margin.top_left,
         margin.bottom_right,
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
       )
       true
     }
     StreamLeftAndRightMarginAmbiguous => {
-      if self.modes.get(Mode::EnableLeftAndRightMargin) {
+      if self.modes.get(EnableLeftAndRightMargin) {
         self.cursor.set_left_and_right_margin(
           true,
           0,
           0,
-          self.modes.get(Mode::Origin),
+          self.modes.get(Origin),
         )
       } else {
         self.save_cursor()
@@ -1108,7 +1105,7 @@ fn StreamTerminalBridgeState::apply(
       self.grid.erase_display(
         self.cursor,
         self.current_style,
-        ScreenEraseDisplayMode::Below,
+        Below,
         self.protected_state.mode(),
         protected_req,
       )
@@ -1118,7 +1115,7 @@ fn StreamTerminalBridgeState::apply(
       self.grid.erase_display(
         self.cursor,
         self.current_style,
-        ScreenEraseDisplayMode::Above,
+        Above,
         self.protected_state.mode(),
         protected_req,
       )
@@ -1128,7 +1125,7 @@ fn StreamTerminalBridgeState::apply(
       self.grid.erase_display(
         self.cursor,
         self.current_style,
-        ScreenEraseDisplayMode::Complete,
+        Complete,
         self.protected_state.mode(),
         protected_req,
       )
@@ -1146,7 +1143,7 @@ fn StreamTerminalBridgeState::apply(
       self.grid.erase_display(
         self.cursor,
         self.current_style,
-        ScreenEraseDisplayMode::ScrollComplete,
+        ScrollComplete,
         self.protected_state.mode(),
         protected_req,
       )
@@ -1156,7 +1153,7 @@ fn StreamTerminalBridgeState::apply(
       self.grid.erase_line(
         self.cursor,
         self.current_style,
-        ScreenEraseLineMode::Right,
+        Right,
         self.protected_state.mode(),
         protected_req,
       )
@@ -1166,7 +1163,7 @@ fn StreamTerminalBridgeState::apply(
       self.grid.erase_line(
         self.cursor,
         self.current_style,
-        ScreenEraseLineMode::Left,
+        Left,
         self.protected_state.mode(),
         protected_req,
       )
@@ -1176,7 +1173,7 @@ fn StreamTerminalBridgeState::apply(
       self.grid.erase_line(
         self.cursor,
         self.current_style,
-        ScreenEraseLineMode::Complete,
+        Complete,
         self.protected_state.mode(),
         protected_req,
       )
@@ -1187,7 +1184,7 @@ fn StreamTerminalBridgeState::apply(
         self.grid.erase_line(
           self.cursor,
           self.current_style,
-          ScreenEraseLineMode::Right,
+          Right,
           self.protected_state.mode(),
           protected_req,
         )
@@ -1231,7 +1228,7 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamScrollDown(count) => {
-      if self.active_screen == TerminalScreen::Primary &&
+      if self.active_screen == Primary &&
         self.cursor.top_margin() == 0 &&
         self.cursor.bottom_margin() == self.grid.rows - 1 &&
         self.cursor.left_margin() == 0 &&
@@ -1319,20 +1316,20 @@ fn StreamTerminalBridgeState::save_cursor(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   match self.active_screen {
-    TerminalScreen::Primary =>
+    Primary =>
       self.primary_storage.saved_cursor.save(
         self.cursor,
         self.current_style,
         self.protected_state.cursor_protected(),
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
         self.charset,
       )
-    TerminalScreen::Alternate =>
+    Alternate =>
       self.alternate_storage.saved_cursor.save(
         self.cursor,
         self.current_style,
         self.protected_state.cursor_protected(),
-        self.modes.get(Mode::Origin),
+        self.modes.get(Origin),
         self.charset,
       )
   }
@@ -1343,12 +1340,12 @@ fn StreamTerminalBridgeState::restore_cursor(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   let saved = match self.active_screen {
-    TerminalScreen::Primary => self.primary_storage.saved_cursor.restore()
-    TerminalScreen::Alternate => self.alternate_storage.saved_cursor.restore()
+    Primary => self.primary_storage.saved_cursor.restore()
+    Alternate => self.alternate_storage.saved_cursor.restore()
   }
   self.current_style = saved.style()
   self.charset = saved.charset()
-  self.modes.set(Mode::Origin, saved.origin())
+  self.modes.set(Origin, saved.origin())
   self.cursor.set_pending_wrap(saved.pending_wrap())
   self.protected_state.set_cursor_protected(saved.cursor_protected())
   self.cursor.set_cursor_pos(saved.y() + 1, saved.x() + 1, false)
@@ -1360,7 +1357,7 @@ fn StreamTerminalBridgeState::print(
   self : StreamTerminalBridgeState,
   codepoint : UInt,
 ) -> Unit {
-  if self.display_state.status_display() != StatusDisplay::Main {
+  if self.display_state.status_display() != Main {
     return
   }
 
@@ -1378,8 +1375,8 @@ fn StreamTerminalBridgeState::print(
     self.semantic.cursor_content(),
     self.semantic.row_prompt(),
     self.active_hyperlink(),
-    self.modes.get(Mode::Wraparound),
-    self.modes.get(Mode::Insert),
+    self.modes.get(Wraparound),
+    self.modes.get(Insert),
   )
   self.previous_char = Some(codepoint)
 }
@@ -1389,7 +1386,7 @@ fn StreamTerminalBridgeState::print_repeat(
   self : StreamTerminalBridgeState,
   count : UInt16,
 ) -> Unit {
-  if self.display_state.status_display() != StatusDisplay::Main {
+  if self.display_state.status_display() != Main {
     return
   }
 
@@ -1409,8 +1406,8 @@ fn StreamTerminalBridgeState::print_repeat(
         self.semantic.cursor_content(),
         self.semantic.row_prompt(),
         self.active_hyperlink(),
-        self.modes.get(Mode::Wraparound),
-        self.modes.get(Mode::Insert),
+        self.modes.get(Wraparound),
+        self.modes.get(Insert),
         count,
       )
       self.previous_char = Some(codepoint)
@@ -1424,7 +1421,7 @@ fn StreamTerminalBridgeState::carriage_return(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   self.cursor.set_pending_wrap(false)
-  let target = if self.modes.get(Mode::Origin) {
+  let target = if self.modes.get(Origin) {
     self.cursor.left_margin().to_int()
   } else if self.cursor.x().to_int() >= self.cursor.left_margin().to_int() {
     self.cursor.left_margin().to_int()
@@ -1439,7 +1436,7 @@ fn StreamTerminalBridgeState::linefeed(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   self.index()
-  if self.modes.get(Mode::Linefeed) {
+  if self.modes.get(Linefeed) {
     self.carriage_return()
   }
 }
@@ -1452,7 +1449,7 @@ fn StreamTerminalBridgeState::index(self : StreamTerminalBridgeState) -> Unit {
       self.cursor.y = self.cursor.y() + 1
     }
   } else {
-    if self.active_screen == TerminalScreen::Primary &&
+    if self.active_screen == Primary &&
       self.cursor.y() == self.cursor.bottom_margin() &&
       self.primary_top_scroll_region_captures_scrollback() {
       self.scrollback.capture_top_scroll_region_up(
@@ -1470,7 +1467,7 @@ fn StreamTerminalBridgeState::index(self : StreamTerminalBridgeState) -> Unit {
 fn StreamTerminalBridgeState::primary_top_scroll_region_captures_scrollback(
   self : StreamTerminalBridgeState,
 ) -> Bool {
-  self.active_screen == TerminalScreen::Primary &&
+  self.active_screen == Primary &&
   self.cursor.top_margin() == 0 &&
   self.cursor.left_margin() == 0 &&
   self.cursor.right_margin() == self.grid.cols - 1
@@ -1487,7 +1484,7 @@ fn StreamTerminalBridgeState::reverse_index(
     return
   }
 
-  if self.active_screen == TerminalScreen::Primary &&
+  if self.active_screen == Primary &&
     self.cursor.top_margin() == 0 &&
     self.cursor.bottom_margin() == self.grid.rows - 1 &&
     self.cursor.left_margin() == 0 &&
@@ -1503,7 +1500,7 @@ fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
   style.fg_color = self.current_style.fg_color
   style.bg_color = self.current_style.bg_color
   self.current_style = copy_cell_style(style)
-  self.modes.set(Mode::Origin, false)
+  self.modes.set(Origin, false)
   self.cursor.full_reset()
   self.grid.decaln(self.current_style)
   self.cursor.set_cursor_pos(1, 1, false)
@@ -1521,8 +1518,8 @@ fn StreamTerminalBridgeState::full_reset(
     DefaultMaxScrollback,
   )
   self.alternate_storage = TerminalScreenStorage::new(rows, cols, 0)
-  self.active_screen = TerminalScreen::Primary
-  self.load_active_screen(TerminalScreen::Primary)
+  self.active_screen = Primary
+  self.load_active_screen(Primary)
   self.protected_state.reset()
   self.display_state.full_reset()
   self.modes.reset()
@@ -1535,8 +1532,8 @@ fn StreamTerminalBridgeState::full_reset(
   self.charset.reset()
   self.current_style.reset()
   self.previous_char = None
-  self.mouse_event = MouseEvent::None
-  self.mouse_format = MouseFormat::X10
+  self.mouse_event = None
+  self.mouse_format = X10
   self.palette_dirty = false
   self.scrollback_cleared = true
 }
@@ -1576,7 +1573,7 @@ fn StreamTerminalBridgeState::apply_semantic_prompt(
       self.semantic.set_output()
       if self.cursor.x() == 0 {
         match self.grid.row(self.cursor.y()) {
-          Some(row) => row.set_semantic_prompt(RowSemanticPrompt::None)
+          Some(row) => row.set_semantic_prompt(None)
           None => ()
         }
       }
@@ -1617,7 +1614,7 @@ fn StreamTerminalBridgeState::sync_current_row_prompt(
 fn StreamTerminalBridgeState::apply_semantic_after_newline(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  if self.semantic.cursor_content() == SemanticContent::Output {
+  if self.semantic.cursor_content() == Output {
     return
   }
 
@@ -1626,9 +1623,9 @@ fn StreamTerminalBridgeState::apply_semantic_after_newline(
     return
   }
 
-  self.semantic.row_prompt = RowSemanticPrompt::PromptContinuation
+  self.semantic.row_prompt = PromptContinuation
   match self.grid.row(self.cursor.y()) {
-    Some(row) => row.set_semantic_prompt(RowSemanticPrompt::PromptContinuation)
+    Some(row) => row.set_semantic_prompt(PromptContinuation)
     None => ()
   }
 }
@@ -1693,12 +1690,12 @@ fn StreamTerminalBridgeState::device_status(
   match request {
     OperatingStatus => self.write_pty(b"\x1B[0n")
     CursorPosition => {
-      let x = if self.modes.get(Mode::Origin) {
+      let x = if self.modes.get(Origin) {
         self.cursor.x().to_int() - self.cursor.left_margin().to_int()
       } else {
         self.cursor.x().to_int()
       }
-      let y = if self.modes.get(Mode::Origin) {
+      let y = if self.modes.get(Origin) {
         self.cursor.y().to_int() - self.cursor.top_margin().to_int()
       } else {
         self.cursor.y().to_int()
@@ -1894,9 +1891,9 @@ fn StreamTerminalBridgeState::write_kitty_graphics_response(
   match response {
     Some(value) => {
       let should_write = match quiet {
-        KittyGraphicsQuiet::No => !value.empty()
-        KittyGraphicsQuiet::Ok => !value.ok()
-        KittyGraphicsQuiet::Failures => false
+        No => !value.empty()
+        Ok => !value.ok()
+        Failures => false
       }
       if should_write {
         let encoded = value.encode()
@@ -1935,12 +1932,7 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_query(
       result
     }
     None => {
-      let loading = KittyGraphicsLoadingImage::new(
-        transmission,
-        data,
-        KittyGraphicsQuiet::No,
-        None,
-      )
+      let loading = KittyGraphicsLoadingImage::new(transmission, data, No, None)
       match finalize_kitty_graphics_loading(loading, 0UL) {
         Ok(_) => result
         Err(error) => {
@@ -1977,10 +1969,10 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_transmit(
   match self.kitty_graphics.loading {
     Some(loading) => {
       let effective_quiet = match quiet {
-        KittyGraphicsQuiet::No => loading.quiet
-        KittyGraphicsQuiet::Ok | KittyGraphicsQuiet::Failures => quiet
+        No => loading.quiet
+        Ok | Failures => quiet
       }
-      if quiet != KittyGraphicsQuiet::No {
+      if quiet != No {
         loading.quiet = quiet
       }
       loading.append(data)
@@ -2120,7 +2112,7 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_display(
     KittyGraphicsPlacementLocation::Virtual
   } else {
     match self.kitty_graphics_cursor_pin() {
-      Some(pin) => KittyGraphicsPlacementLocation::Pin(pin)
+      Some(pin) => Pin(pin)
       None => {
         result.message = b"EINVAL: failed to prepare terminal state"
         return result
@@ -2200,7 +2192,7 @@ fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
 ) -> PageListPin? {
   self.scrollback.track_pin_at_point(
     self.grid,
-    Point::Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
+    Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
   )
 }
 
@@ -2211,8 +2203,7 @@ fn StreamTerminalBridgeState::apply_kitty_graphics_cursor_movement(
   image : KittyGraphicsImage,
   display : KittyImageDisplay,
 ) -> Unit {
-  if display.cursor_movement == KittyImageCursorMovement::None ||
-    placement.is_virtual() {
+  if display.cursor_movement == None || placement.is_virtual() {
     return
   }
 
@@ -2254,13 +2245,13 @@ fn StreamTerminalBridgeState::store_active_screen(
   self : StreamTerminalBridgeState,
 ) -> Unit {
   match self.active_screen {
-    TerminalScreen::Primary => {
+    Primary => {
       self.primary_storage.grid = self.grid
       self.primary_storage.cursor = self.cursor
       self.primary_storage.scrollback = self.scrollback
       self.primary_storage.kitty_graphics = self.kitty_graphics
     }
-    TerminalScreen::Alternate => {
+    Alternate => {
       self.alternate_storage.grid = self.grid
       self.alternate_storage.cursor = self.cursor
       self.alternate_storage.scrollback = self.scrollback
@@ -2275,13 +2266,13 @@ fn StreamTerminalBridgeState::load_active_screen(
   screen : TerminalScreen,
 ) -> Unit {
   match screen {
-    TerminalScreen::Primary => {
+    Primary => {
       self.grid = self.primary_storage.grid
       self.cursor = self.primary_storage.cursor
       self.scrollback = self.primary_storage.scrollback
       self.kitty_graphics = self.primary_storage.kitty_graphics
     }
-    TerminalScreen::Alternate => {
+    Alternate => {
       self.grid = self.alternate_storage.grid
       self.cursor = self.alternate_storage.cursor
       self.scrollback = self.alternate_storage.scrollback
@@ -2312,12 +2303,12 @@ fn StreamTerminalBridgeState::copy_cursor_between_screens(
   to : TerminalScreen,
 ) -> Unit {
   let source = match from {
-    TerminalScreen::Primary => self.primary_storage.cursor
-    TerminalScreen::Alternate => self.alternate_storage.cursor
+    Primary => self.primary_storage.cursor
+    Alternate => self.alternate_storage.cursor
   }
   let target = match to {
-    TerminalScreen::Primary => self.primary_storage.cursor
-    TerminalScreen::Alternate => self.alternate_storage.cursor
+    Primary => self.primary_storage.cursor
+    Alternate => self.alternate_storage.cursor
   }
   target.x = min_int(source.x().to_int(), target.columns.to_int() - 1).to_uint16()
   target.y = min_int(source.y().to_int(), target.rows.to_int() - 1).to_uint16()
@@ -2351,28 +2342,24 @@ fn StreamTerminalBridgeState::switch_screen_mode(
   enabled : Bool,
 ) -> Unit {
   match mode {
-    ScreenMode::Mode47 => ()
-    ScreenMode::Mode1047 =>
-      if !enabled && self.active_screen == TerminalScreen::Alternate {
+    Mode47 => ()
+    Mode1047 =>
+      if !enabled && self.active_screen == Alternate {
         self.clear_active_screen()
       }
-    ScreenMode::Mode1049 => if enabled { self.save_cursor() }
+    Mode1049 => if enabled { self.save_cursor() }
   }
 
   let from = self.active_screen
-  let to = if enabled {
-    TerminalScreen::Alternate
-  } else {
-    TerminalScreen::Primary
-  }
+  let to = if enabled { TerminalScreen::Alternate } else { Primary }
   let changed = self.switch_active_screen(to)
   match mode {
-    ScreenMode::Mode47 | ScreenMode::Mode1047 =>
+    Mode47 | Mode1047 =>
       if changed {
         self.copy_cursor_between_screens(from, to)
         self.load_active_screen(to)
       }
-    ScreenMode::Mode1049 =>
+    Mode1049 =>
       if enabled {
         self.clear_active_screen()
         self.store_active_screen()
@@ -2394,7 +2381,7 @@ fn StreamTerminalBridgeState::set_mode(
 ) -> Unit {
   self.modes.set(mode, enabled)
   match mode {
-    Origin => self.cursor.set_cursor_pos(1, 1, self.modes.get(Mode::Origin))
+    Origin => self.cursor.set_cursor_pos(1, 1, self.modes.get(Origin))
     EnableLeftAndRightMargin =>
       if !enabled {
         self.reset_left_and_right_margin()
@@ -2405,58 +2392,18 @@ fn StreamTerminalBridgeState::set_mode(
       } else {
         self.restore_cursor()
       }
-    AltScreenLegacy => self.switch_screen_mode(ScreenMode::Mode47, enabled)
-    AltScreen => self.switch_screen_mode(ScreenMode::Mode1047, enabled)
-    AltScreenSaveCursorClearEnter =>
-      self.switch_screen_mode(ScreenMode::Mode1049, enabled)
-    MouseEventX10 =>
-      self.mouse_event = if enabled {
-        MouseEvent::X10
-      } else {
-        MouseEvent::None
-      }
-    MouseEventNormal =>
-      self.mouse_event = if enabled {
-        MouseEvent::Normal
-      } else {
-        MouseEvent::None
-      }
-    MouseEventButton =>
-      self.mouse_event = if enabled {
-        MouseEvent::Button
-      } else {
-        MouseEvent::None
-      }
-    MouseEventAny =>
-      self.mouse_event = if enabled {
-        MouseEvent::Any
-      } else {
-        MouseEvent::None
-      }
-    MouseFormatUtf8 =>
-      self.mouse_format = if enabled {
-        MouseFormat::Utf8
-      } else {
-        MouseFormat::X10
-      }
-    MouseFormatSgr =>
-      self.mouse_format = if enabled {
-        MouseFormat::Sgr
-      } else {
-        MouseFormat::X10
-      }
-    MouseFormatUrxvt =>
-      self.mouse_format = if enabled {
-        MouseFormat::Urxvt
-      } else {
-        MouseFormat::X10
-      }
+    AltScreenLegacy => self.switch_screen_mode(Mode47, enabled)
+    AltScreen => self.switch_screen_mode(Mode1047, enabled)
+    AltScreenSaveCursorClearEnter => self.switch_screen_mode(Mode1049, enabled)
+    MouseEventX10 => self.mouse_event = if enabled { X10 } else { None }
+    MouseEventNormal => self.mouse_event = if enabled { Normal } else { None }
+    MouseEventButton => self.mouse_event = if enabled { Button } else { None }
+    MouseEventAny => self.mouse_event = if enabled { Any } else { None }
+    MouseFormatUtf8 => self.mouse_format = if enabled { Utf8 } else { X10 }
+    MouseFormatSgr => self.mouse_format = if enabled { Sgr } else { X10 }
+    MouseFormatUrxvt => self.mouse_format = if enabled { Urxvt } else { X10 }
     MouseFormatSgrPixels =>
-      self.mouse_format = if enabled {
-        MouseFormat::SgrPixels
-      } else {
-        MouseFormat::X10
-      }
+      self.mouse_format = if enabled { SgrPixels } else { X10 }
     _ => ()
   }
 }
@@ -2472,7 +2419,7 @@ fn StreamTerminalBridgeState::reset_left_and_right_margin(
     true,
     1,
     DefaultColumns,
-    self.modes.get(Mode::Origin),
+    self.modes.get(Origin),
   )
   self.cursor.set_cursor_pos(y + 1, x + 1, false)
   self.cursor.set_pending_wrap(pending_wrap)
@@ -2527,7 +2474,7 @@ fn StreamTerminalBridgeState::horizontal_tab_back(
 fn StreamTerminalBridgeState::horizontal_tab_back_once(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  let left_limit = if self.modes.get(Mode::Origin) {
+  let left_limit = if self.modes.get(Origin) {
     self.cursor.left_margin().to_int()
   } else {
     0
@@ -2600,11 +2547,11 @@ fn StreamTerminalBridgeState::cursor_left(
   self : StreamTerminalBridgeState,
   movement : CursorMovement,
 ) -> Unit {
-  let wrap_mode = if !self.modes.get(Mode::Wraparound) {
+  let wrap_mode = if !self.modes.get(Wraparound) {
     0
-  } else if self.modes.get(Mode::ReverseWrapExtended) {
+  } else if self.modes.get(ReverseWrapExtended) {
     2
-  } else if self.modes.get(Mode::ReverseWrap) {
+  } else if self.modes.get(ReverseWrap) {
     1
   } else {
     0
@@ -2613,7 +2560,7 @@ fn StreamTerminalBridgeState::cursor_left(
   let mut count = movement_count_int(movement)
   if wrap_mode == 0 {
     let x = self.cursor.x().to_int()
-    let left_limit = if self.modes.get(Mode::Origin) {
+    let left_limit = if self.modes.get(Origin) {
       self.cursor.left_margin().to_int()
     } else {
       0

@@ -11,7 +11,7 @@ test "terminal style/default state" {
   guard style.underline_color().is_default() else {
     fail("expected default underline color")
   }
-  guard style.underline() == SgrUnderline::None else {
+  guard style.underline() == None else {
     fail("expected default underline style")
   }
   guard style.fg_color().palette_index() == None else {
@@ -33,7 +33,7 @@ test "terminal style/apply sgr flags and resets" {
   style.apply_attribute(Invisible)
   style.apply_attribute(Strikethrough)
   style.apply_attribute(Overline)
-  style.apply_attribute(Underline(SgrUnderline::Curly))
+  style.apply_attribute(Underline(Curly))
 
   guard style.bold() &&
     style.faint() &&
@@ -43,7 +43,7 @@ test "terminal style/apply sgr flags and resets" {
     style.invisible() &&
     style.strikethrough() &&
     style.overline() &&
-    style.underline() == SgrUnderline::Curly else {
+    style.underline() == Curly else {
     fail("expected sgr flags to be applied")
   }
 
@@ -58,14 +58,14 @@ test "terminal style/apply sgr flags and resets" {
   style.apply_attribute(ResetInvisible)
   style.apply_attribute(ResetStrikethrough)
   style.apply_attribute(ResetOverline)
-  style.apply_attribute(Underline(SgrUnderline::None))
+  style.apply_attribute(Underline(None))
   guard !style.italic() &&
     !style.blink() &&
     !style.inverse() &&
     !style.invisible() &&
     !style.strikethrough() &&
     !style.overline() &&
-    style.underline() == SgrUnderline::None else {
+    style.underline() == None else {
     fail("expected sgr resets to clear style flags")
   }
 }
@@ -73,10 +73,10 @@ test "terminal style/apply sgr flags and resets" {
 ///|
 test "terminal style/applies foreground background and underline colors" {
   let style = CellStyle::new()
-  style.apply_attribute(Color8Fg(Name::Red))
-  style.apply_attribute(Color8Bg(Name::Blue))
-  style.apply_attribute(BrightColor8Bg(Name::BrightBlue))
-  style.apply_attribute(BrightColor8Fg(Name::BrightYellow))
+  style.apply_attribute(Color8Fg(Red))
+  style.apply_attribute(Color8Bg(Blue))
+  style.apply_attribute(BrightColor8Bg(BrightBlue))
+  style.apply_attribute(BrightColor8Fg(BrightYellow))
   style.apply_attribute(Color256Underline(17))
   guard style.bg_color().palette_index() == Some(Name::BrightBlue.code()) else {
     fail("expected bright palette background color")
@@ -89,7 +89,7 @@ test "terminal style/applies foreground background and underline colors" {
   }
 
   let palette_bg = CellStyle::new()
-  palette_bg.apply_attribute(Color8Bg(Name::Blue))
+  palette_bg.apply_attribute(Color8Bg(Blue))
   guard palette_bg.bg_color().palette_index() == Some(Name::Blue.code()) else {
     fail("expected base palette background color")
   }
@@ -134,7 +134,7 @@ test "terminal style/unset resets whole style" {
   let style = CellStyle::new()
   style.apply_attribute(Bold)
   style.apply_attribute(DirectColorFg(RGB::new(0xAA, 0xBB, 0xCC)))
-  style.apply_attribute(Underline(SgrUnderline::Dashed))
+  style.apply_attribute(Underline(Dashed))
   style.apply_attribute(Unset)
   guard style.is_default() else {
     fail("expected unset to restore default style")

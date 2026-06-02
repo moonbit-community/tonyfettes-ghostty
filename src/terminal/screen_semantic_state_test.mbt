@@ -34,10 +34,10 @@ fn expect_screen_semantic_prompt(bytes : Bytes) -> SemanticPrompt raise {
 test "screen semantic state/defaults" {
   let state = ScreenSemanticState::new()
   guard !state.seen() else { fail("expected semantic state to start unseen") }
-  guard state.click() == SemanticClickMode::None &&
-    state.cursor_content() == SemanticContent::Output &&
+  guard state.click() == None &&
+    state.cursor_content() == Output &&
     !state.cursor_content_clear_eol() &&
-    state.row_prompt() == RowSemanticPrompt::None else {
+    state.row_prompt() == None else {
     fail("expected default semantic state")
   }
 }
@@ -51,9 +51,9 @@ test "screen semantic state/fresh line new prompt applies prompt and click_event
   state.apply_fresh_line_new_prompt(prompt)
 
   guard state.seen() &&
-    state.click() == SemanticClickMode::ClickEvents &&
-    state.cursor_content() == SemanticContent::Prompt &&
-    state.row_prompt() == RowSemanticPrompt::Prompt else {
+    state.click() == ClickEvents &&
+    state.cursor_content() == Prompt &&
+    state.row_prompt() == Prompt else {
     fail("expected fresh-line-new-prompt semantic state")
   }
 }
@@ -65,9 +65,9 @@ test "screen semantic state/prompt start maps continuation kinds" {
   state.apply_prompt_start(prompt)
 
   guard state.seen() &&
-    state.click() == SemanticClickMode::None &&
-    state.cursor_content() == SemanticContent::Prompt &&
-    state.row_prompt() == RowSemanticPrompt::PromptContinuation else {
+    state.click() == None &&
+    state.cursor_content() == Prompt &&
+    state.row_prompt() == PromptContinuation else {
     fail("expected prompt start continuation semantic state")
   }
 }
@@ -80,12 +80,12 @@ test "screen semantic state/cl fallback and disabled click_events preserve exist
   )
   let state = ScreenSemanticState::new()
   state.apply_fresh_line_new_prompt(click_prompt)
-  guard state.click() == SemanticClickMode::Cl(SmartVertical) else {
+  guard state.click() == Cl(SmartVertical) else {
     fail("expected cl fallback click mode")
   }
 
   state.apply_fresh_line_new_prompt(disabled_prompt)
-  guard state.click() == SemanticClickMode::Cl(SmartVertical) else {
+  guard state.click() == Cl(SmartVertical) else {
     fail("expected disabled click_events without cl to preserve click mode")
   }
 }
@@ -96,30 +96,28 @@ test "screen semantic state/input output row clear and full reset" {
   let prompt = expect_screen_semantic_prompt(b"\x1B]133;P;k=i\x07")
   state.apply_prompt_start(prompt)
   state.start_input(true)
-  guard state.cursor_content() == SemanticContent::Input &&
+  guard state.cursor_content() == Input &&
     state.cursor_content_clear_eol() &&
-    state.row_prompt() == RowSemanticPrompt::Prompt else {
+    state.row_prompt() == Prompt else {
     fail("expected input semantic state")
   }
 
   state.set_output()
-  guard state.cursor_content() == SemanticContent::Output &&
+  guard state.cursor_content() == Output &&
     !state.cursor_content_clear_eol() &&
-    state.row_prompt() == RowSemanticPrompt::Prompt else {
+    state.row_prompt() == Prompt else {
     fail("expected output semantic state without row change")
   }
 
   state.clear_row_prompt()
-  guard state.row_prompt() == RowSemanticPrompt::None else {
-    fail("expected row prompt clear")
-  }
+  guard state.row_prompt() == None else { fail("expected row prompt clear") }
 
   state.full_reset()
   guard !state.seen() &&
-    state.click() == SemanticClickMode::None &&
-    state.cursor_content() == SemanticContent::Output &&
+    state.click() == None &&
+    state.cursor_content() == Output &&
     !state.cursor_content_clear_eol() &&
-    state.row_prompt() == RowSemanticPrompt::None else {
+    state.row_prompt() == None else {
     fail("expected semantic state full reset")
   }
 }

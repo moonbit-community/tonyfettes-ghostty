@@ -136,11 +136,12 @@ fn kitty_color_append_request(
   let spec = captured_string(
     copy_bytes_range(buffer, trimmed_start, trimmed_end),
   )
-  let parsed : Result[RGB, ColorParseError] = try? RGB::parse(spec)
-  match parsed {
-    Ok(color) => requests.push(KittySet(KittyColorSet::new(kind, color)))
-    Err(_) => ()
+  let color = try RGB::parse(spec) catch {
+    _ => return
+  } noraise {
+    color => color
   }
+  requests.push(KittySet(KittyColorSet::new(kind, color)))
 }
 
 ///|

@@ -1,12 +1,12 @@
 import {
   "tonyfettes/ghostty/src/terminal",
   "moonbitlang/core/buffer",
-  "moonbitlang/core/encoding/base64" @base64,
-  "moonbitlang/core/encoding/utf8" @utf8,
+  "moonbitlang/core/encoding/base64",
+  "moonbitlang/core/encoding/utf8",
 }
 
 import {
-  "moonbitlang/core/json" @json,
+  "moonbitlang/core/json",
 } for "test"
 
 options(

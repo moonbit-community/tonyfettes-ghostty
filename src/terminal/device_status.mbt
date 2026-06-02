@@ -65,9 +65,9 @@ pub fn device_status_request_from_int(
   question : Bool,
 ) -> DeviceStatusRequest? {
   match (value, question) {
-    (5, false) => Some(DeviceStatusRequest::OperatingStatus)
-    (6, false) => Some(DeviceStatusRequest::CursorPosition)
-    (996, true) => Some(DeviceStatusRequest::ColorScheme)
+    (5, false) => Some(OperatingStatus)
+    (6, false) => Some(CursorPosition)
+    (996, true) => Some(ColorScheme)
     _ => None
   }
 }

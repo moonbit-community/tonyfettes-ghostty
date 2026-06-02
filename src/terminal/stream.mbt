@@ -373,21 +373,9 @@ fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
     Some(Lf) | Some(Vt) | Some(Ff) => self.emit(StreamLinefeed)
     Some(Cr) => self.emit(StreamCarriageReturn)
     Some(So) =>
-      self.emit(
-        StreamInvokeCharset({
-          bank: ActiveSlot::Gl,
-          charset: Slots::G1,
-          locking: false,
-        }),
-      )
+      self.emit(StreamInvokeCharset({ bank: Gl, charset: G1, locking: false }))
     Some(Si) =>
-      self.emit(
-        StreamInvokeCharset({
-          bank: ActiveSlot::Gl,
-          charset: Slots::G0,
-          locking: false,
-        }),
-      )
+      self.emit(StreamInvokeCharset({ bank: Gl, charset: G0, locking: false }))
     None => ()
   }
 }
@@ -529,9 +517,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
       if device_status_request(_csi.intermediates, _csi.params) is Some(request) {
         self.emit(StreamDeviceStatus(request))
       } else if _csi.intermediates == [b'>'] {
-        self.emit(
-          StreamModifyKeyFormat(ModifyKeyFormat::OtherKeysNumericExcept),
-        )
+        self.emit(StreamModifyKeyFormat(OtherKeysNumericExcept))
       }
     b'm' =>
       match _csi.intermediates {
@@ -553,7 +539,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
       match _csi.intermediates {
         [b' '] =>
           match _csi.params {
-            [] => self.emit(StreamCursorStyle(CursorStyle::Default))
+            [] => self.emit(StreamCursorStyle(Default))
             [value] =>
               if cursor_style_from_int(value.to_int()) is Some(style) {
                 self.emit(StreamCursorStyle(style))
@@ -710,9 +696,9 @@ fn[H : StreamHandler] Stream::esc_dispatch(
   _esc : Esc,
 ) -> Unit {
   match _esc.final_byte {
-    b'B' => self.configure_charset(_esc.intermediates, Charset::Ascii)
-    b'A' => self.configure_charset(_esc.intermediates, Charset::British)
-    b'0' => self.configure_charset(_esc.intermediates, Charset::DecSpecial)
+    b'B' => self.configure_charset(_esc.intermediates, Ascii)
+    b'A' => self.configure_charset(_esc.intermediates, British)
+    b'0' => self.configure_charset(_esc.intermediates, DecSpecial)
     b'7' => if _esc.intermediates == [] { self.emit(StreamSaveCursor) }
     b'8' =>
       match _esc.intermediates {
@@ -726,45 +712,42 @@ fn[H : StreamHandler] Stream::esc_dispatch(
     b'M' => if _esc.intermediates == [] { self.emit(StreamReverseIndex) }
     b'N' =>
       if _esc.intermediates == [] {
-        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G2, true)
+        self.emit_invoke_charset(Gl, G2, true)
       }
     b'O' =>
       if _esc.intermediates == [] {
-        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G3, true)
+        self.emit_invoke_charset(Gl, G3, true)
       }
     b'n' =>
       if _esc.intermediates == [] {
-        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G2, false)
+        self.emit_invoke_charset(Gl, G2, false)
       }
     b'o' =>
       if _esc.intermediates == [] {
-        self.emit_invoke_charset(ActiveSlot::Gl, Slots::G3, false)
+        self.emit_invoke_charset(Gl, G3, false)
       }
     b'~' =>
       if _esc.intermediates == [] {
-        self.emit_invoke_charset(ActiveSlot::Gr, Slots::G1, false)
+        self.emit_invoke_charset(Gr, G1, false)
       }
     b'}' =>
       if _esc.intermediates == [] {
-        self.emit_invoke_charset(ActiveSlot::Gr, Slots::G2, false)
+        self.emit_invoke_charset(Gr, G2, false)
       }
     b'|' =>
       if _esc.intermediates == [] {
-        self.emit_invoke_charset(ActiveSlot::Gr, Slots::G3, false)
+        self.emit_invoke_charset(Gr, G3, false)
       }
-    b'=' =>
-      if _esc.intermediates == [] {
-        self.emit(StreamSetMode(Mode::KeypadKeys))
-      }
+    b'=' => if _esc.intermediates == [] { self.emit(StreamSetMode(KeypadKeys)) }
     b'>' =>
       if _esc.intermediates == [] {
-        self.emit(StreamResetMode(Mode::KeypadKeys))
+        self.emit(StreamResetMode(KeypadKeys))
       }
     b'V' => if _esc.intermediates == [] { self.emit(StreamProtectedModeIso) }
     b'W' => if _esc.intermediates == [] { self.emit(StreamProtectedModeOff) }
     b'Z' =>
       if _esc.intermediates == [] {
-        self.emit(StreamDeviceAttributes(DeviceAttributeRequest::Primary))
+        self.emit(StreamDeviceAttributes(Primary))
       }
     b'c' => if _esc.intermediates == [] { self.emit(StreamFullReset) }
     b'\\' => ()
@@ -858,10 +841,10 @@ fn[H : StreamHandler] Stream::configure_charset(
   charset : Charset,
 ) -> Unit {
   match intermediates {
-    [b'('] => self.emit(StreamConfigureCharset({ slot: Slots::G0, charset }))
-    [b')'] => self.emit(StreamConfigureCharset({ slot: Slots::G1, charset }))
-    [b'*'] => self.emit(StreamConfigureCharset({ slot: Slots::G2, charset }))
-    [b'+'] => self.emit(StreamConfigureCharset({ slot: Slots::G3, charset }))
+    [b'('] => self.emit(StreamConfigureCharset({ slot: G0, charset }))
+    [b')'] => self.emit(StreamConfigureCharset({ slot: G1, charset }))
+    [b'*'] => self.emit(StreamConfigureCharset({ slot: G2, charset }))
+    [b'+'] => self.emit(StreamConfigureCharset({ slot: G3, charset }))
     _ => ()
   }
 }
@@ -918,9 +901,9 @@ fn device_attributes_request(
   intermediates : Array[Byte],
 ) -> DeviceAttributeRequest? {
   match intermediates {
-    [] => Some(DeviceAttributeRequest::Primary)
-    [b'>'] => Some(DeviceAttributeRequest::Secondary)
-    [b'='] => Some(DeviceAttributeRequest::Tertiary)
+    [] => Some(Primary)
+    [b'>'] => Some(Secondary)
+    [b'='] => Some(Tertiary)
     _ => None
   }
 }
@@ -952,14 +935,14 @@ fn request_mode_tag(
 ///|
 fn modify_key_format_action(params : Array[UInt16]) -> ModifyKeyFormat? {
   match params {
-    [] | [0] => Some(ModifyKeyFormat::Legacy)
-    [1] => Some(ModifyKeyFormat::CursorKeys)
-    [2] => Some(ModifyKeyFormat::FunctionKeys)
-    [4] => Some(ModifyKeyFormat::OtherKeysNone)
-    [4, 2] => Some(ModifyKeyFormat::OtherKeysNumeric)
-    [0, _] => Some(ModifyKeyFormat::Legacy)
-    [1, _] => Some(ModifyKeyFormat::CursorKeys)
-    [2, _] => Some(ModifyKeyFormat::FunctionKeys)
+    [] | [0] => Some(Legacy)
+    [1] => Some(CursorKeys)
+    [2] => Some(FunctionKeys)
+    [4] => Some(OtherKeysNone)
+    [4, 2] => Some(OtherKeysNumeric)
+    [0, _] => Some(Legacy)
+    [1, _] => Some(CursorKeys)
+    [2, _] => Some(FunctionKeys)
     _ => None
   }
 }
@@ -1053,10 +1036,10 @@ fn active_status_display(params : Array[UInt16]) -> StatusDisplay? {
 ///|
 fn xtwinops_action(params : Array[UInt16]) -> StreamAction? {
   match params {
-    [14] => Some(StreamSizeReport(SizeReportStyle::Csi14t))
-    [16] => Some(StreamSizeReport(SizeReportStyle::Csi16t))
-    [18] => Some(StreamSizeReport(SizeReportStyle::Csi18t))
-    [21] => Some(StreamSizeReport(SizeReportStyle::Csi21t))
+    [14] => Some(StreamSizeReport(Csi14t))
+    [16] => Some(StreamSizeReport(Csi16t))
+    [18] => Some(StreamSizeReport(Csi18t))
+    [21] => Some(StreamSizeReport(Csi21t))
     [22, scope] => title_push_action(scope, 0)
     [22, scope, index] => title_push_action(scope, index)
     [23, scope] => title_pop_action(scope, 0)

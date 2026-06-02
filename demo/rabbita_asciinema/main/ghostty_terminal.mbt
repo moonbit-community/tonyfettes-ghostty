@@ -31,7 +31,7 @@ priv struct TerminalLog {
 
 ///|
 fn TerminalLog::new() -> TerminalLog {
-  { bell_count: 0, title_change_count: 0, pty: @buffer.new() }
+  { bell_count: 0, title_change_count: 0, pty: Buffer() }
 }
 
 ///|
@@ -214,7 +214,7 @@ fn GhosttyTerminal::cursor_y(self : GhosttyTerminal) -> Int {
 ///|
 #warnings("-unused_value")
 fn GhosttyTerminal::plain_viewport(self : GhosttyTerminal) -> String {
-  let out = @buffer.new()
+  let out = Buffer()
   let rows = self.rows()
   let cols = self.cols()
   for row in 0..<rows {
@@ -311,9 +311,8 @@ fn GhosttyTerminal::cell_text(
   cell : @terminal.PageCellState,
 ) -> String {
   match cell.wide() {
-    @terminal.PageCellWide::SpacerHead | @terminal.PageCellWide::SpacerTail =>
-      return " "
-    @terminal.PageCellWide::Narrow | @terminal.PageCellWide::Wide => ()
+    SpacerHead | SpacerTail => return " "
+    Narrow | Wide => ()
   }
   if !cell.has_text() {
     return " "
@@ -382,7 +381,7 @@ fn GhosttyTerminal::is_cursor_cell(
 
 ///|
 fn codepoints_to_string(codepoints : Array[UInt]) -> String {
-  let out = @buffer.new()
+  let out = Buffer()
   for codepoint in codepoints {
     if codepoint == 0U {
       out.write_byte(b' ')
@@ -400,13 +399,10 @@ fn cell_background_css(
   style : @terminal.CellStyle,
 ) -> String? {
   match cell.content_tag() {
-    @terminal.PageCellContentTag::BackgroundPalette =>
+    BackgroundPalette =>
       cell.palette_index().map(index => rgb_css(palette[index.to_int()]))
-    @terminal.PageCellContentTag::BackgroundRgb =>
-      cell.background_rgb().map(rgb => rgb_css(rgb))
-    @terminal.PageCellContentTag::Codepoint
-    | @terminal.PageCellContentTag::CodepointGrapheme =>
-      style_color_css(style.bg_color(), palette)
+    BackgroundRgb => cell.background_rgb().map(rgb => rgb_css(rgb))
+    Codepoint | CodepointGrapheme => style_color_css(style.bg_color(), palette)
   }
 }
 
@@ -433,7 +429,7 @@ fn rgb_css(rgb : @terminal.RGB) -> String {
 ///|
 fn text_decoration(style : @terminal.CellStyle) -> String? {
   let lines : Array[String] = []
-  if style.underline() != @terminal.SgrUnderline::None {
+  if style.underline() != None {
     lines.push("underline")
   }
   if style.strikethrough() {
@@ -446,11 +442,11 @@ fn text_decoration(style : @terminal.CellStyle) -> String? {
     None
   } else {
     let decoration_style = match style.underline() {
-      @terminal.SgrUnderline::None | @terminal.SgrUnderline::Single => "solid"
-      @terminal.SgrUnderline::Double => "double"
-      @terminal.SgrUnderline::Curly => "wavy"
-      @terminal.SgrUnderline::Dotted => "dotted"
-      @terminal.SgrUnderline::Dashed => "dashed"
+      None | Single => "solid"
+      Double => "double"
+      Curly => "wavy"
+      Dotted => "dotted"
+      Dashed => "dashed"
     }
     let line_value = lines.join(" ")
     Some(

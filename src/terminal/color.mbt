@@ -768,7 +768,7 @@ fn clone_palette(source : Array[RGB]) -> Array[RGB] {
 ///|
 pub fn RGB::parse(value : String) -> RGB raise ColorParseError {
   if value.length() == 0 {
-    raise ColorParseError::InvalidFormat
+    raise InvalidFormat
   }
 
   if value[0] == '#' {
@@ -808,17 +808,17 @@ fn parse_hash_rgb(value : String) -> RGB raise ColorParseError {
         g: parse_hex_component(value, 5, 9),
         b: parse_hex_component(value, 9, 13),
       }
-    _ => raise ColorParseError::InvalidFormat
+    _ => raise InvalidFormat
   }
 }
 
 ///|
 fn parse_rgb_spec(value : String) -> RGB raise ColorParseError {
   if value.length() < 6 {
-    raise ColorParseError::InvalidFormat
+    raise InvalidFormat
   }
   guard value[0] == 'r' && value[1] == 'g' && value[2] == 'b' else {
-    raise ColorParseError::InvalidFormat
+    raise InvalidFormat
   }
 
   let mut index = 3
@@ -830,7 +830,7 @@ fn parse_rgb_spec(value : String) -> RGB raise ColorParseError {
   }
 
   guard index < value.length() && value[index] == ':' else {
-    raise ColorParseError::InvalidFormat
+    raise InvalidFormat
   }
   index += 1
 
@@ -840,11 +840,9 @@ fn parse_rgb_spec(value : String) -> RGB raise ColorParseError {
     None => None
   }
   guard slash1 is Some(first) && slash2 is Some(second) else {
-    raise ColorParseError::InvalidFormat
+    raise InvalidFormat
   }
-  guard find_char(value, second + 1, '/') == None else {
-    raise ColorParseError::InvalidFormat
-  }
+  guard find_char(value, second + 1, '/') == None else { raise InvalidFormat }
 
   if use_intensity {
     {
@@ -868,14 +866,14 @@ fn parse_hex_component(
   end_ : Int,
 ) -> Byte raise ColorParseError {
   let width = end_ - start
-  guard width >= 1 && width <= 4 else { raise ColorParseError::InvalidFormat }
+  guard width >= 1 && width <= 4 else { raise InvalidFormat }
 
   let mut result = 0
   let mut i = start
   while i < end_ {
     let digit = match hex_digit(value[i]) {
       Some(d) => d
-      None => raise ColorParseError::InvalidFormat
+      None => raise InvalidFormat
     }
     result = result * 16 + digit
     i += 1
@@ -900,7 +898,7 @@ fn parse_intensity_component(
   start : Int,
   end_ : Int,
 ) -> Byte raise ColorParseError {
-  guard start < end_ else { raise ColorParseError::InvalidFormat }
+  guard start < end_ else { raise InvalidFormat }
 
   let mut i = start
   let mut saw_digit = false
@@ -923,19 +921,19 @@ fn parse_intensity_component(
     } else if char == '.' && !saw_dot {
       saw_dot = true
     } else {
-      raise ColorParseError::InvalidFormat
+      raise InvalidFormat
     }
     i += 1
   }
 
-  guard saw_digit else { raise ColorParseError::InvalidFormat }
+  guard saw_digit else { raise InvalidFormat }
 
   let mut denominator = 1
   for _ in 0..<fraction_digits {
     denominator = denominator * 10
   }
   let numerator = integer * denominator + fraction
-  guard numerator <= denominator else { raise ColorParseError::InvalidFormat }
+  guard numerator <= denominator else { raise InvalidFormat }
 
   (numerator * 0xFF / denominator).to_byte()
 }
