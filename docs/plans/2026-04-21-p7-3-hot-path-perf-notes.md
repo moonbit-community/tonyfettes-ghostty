@@ -92,7 +92,7 @@ Local release rerun on 2026-04-21 with
 - `moon fmt`
 - `moon check`
 - `moon test`
-- `moon coverage analyze -p tonyfettes/ghostty/src/terminal`
+- `moon coverage analyze -p tonyfettes/ghostty/terminal`
 - `moon info`
 
 ## Review findings

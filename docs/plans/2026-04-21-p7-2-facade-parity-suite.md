@@ -36,7 +36,7 @@ Port the agreed host-boundary parity corpus from upstream
 - `moon fmt`
 - `moon check`
 - `moon test`
-- `moon coverage analyze -p tonyfettes/ghostty/src/terminal`
+- `moon coverage analyze -p tonyfettes/ghostty/terminal`
 - `moon info`
 
 ## Upstream parity mapping

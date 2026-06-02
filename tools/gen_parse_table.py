@@ -6,7 +6,7 @@ import pathlib
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-TARGET = ROOT / "src/terminal/parse_table_data.mbt"
+TARGET = ROOT / "terminal/parse_table_data.mbt"
 
 STATES = [
     "Ground",

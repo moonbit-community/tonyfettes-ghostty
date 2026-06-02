@@ -36,14 +36,14 @@ quality gates, read [`docs/plan.md`](docs/plan.md).
 The main public package is:
 
 ```text
-tonyfettes/ghostty/src/terminal
+tonyfettes/ghostty/terminal
 ```
 
 In a MoonBit package, import it from `moon.pkg`:
 
 ```moonbit
 import {
-  "tonyfettes/ghostty/src/terminal"
+  "tonyfettes/ghostty/terminal"
   "moonbitlang/core/encoding/utf8"
 }
 ```
@@ -69,12 +69,12 @@ fn render_plain(input : Bytes) -> String {
 ```
 
 The generated public interface lives at
-[`src/terminal/pkg.generated.mbti`](src/terminal/pkg.generated.mbti).
+[`terminal/pkg.generated.mbti`](terminal/pkg.generated.mbti).
 
 ## Repository Layout
 
 ```text
-src/terminal/                  MoonBit terminal parser and model package
+terminal/                      MoonBit terminal parser and model package
 docs/architecture.md           Parser stack architecture notes
 docs/plan.md                   Translation plan, scope, and quality gates
 docs/plans/                    Task-specific implementation plans and audits

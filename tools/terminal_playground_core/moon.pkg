@@ -1,5 +1,5 @@
 import {
-  "tonyfettes/ghostty/src/terminal",
+  "tonyfettes/ghostty/terminal",
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/base64",
   "moonbitlang/core/encoding/utf8",

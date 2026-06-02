@@ -48,7 +48,7 @@ Scope completion note:
 - Do not introduce native FFI just to mimic C enums, structs, callbacks, or
   wrapper layering when MoonBit can express the same behavior directly.
 - Native FFI/export work is out of scope for this plan.
-- In the single `src/terminal` package, do not force a one-wrapper/one-file
+- In the single `terminal` package, do not force a one-wrapper/one-file
   mirror of `src/terminal/c/*.zig`. Prefer extending existing translated owner
   modules when the C wrapper is only projecting behavior that already belongs
   there.
@@ -227,7 +227,7 @@ format/interface checks. Tests land with the code they validate.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P1.0 | done | package boundary decisions | single `src/terminal` package skeleton and file map | P0.4, P0.6, P0.7 | none | main | one `src/terminal` package exists and the planned file layout matches the mapping table | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(parser)` |
+| P1.0 | done | package boundary decisions | single `terminal` package skeleton and file map | P0.4, P0.6, P0.7 | none | main | one `terminal` package exists and the planned file layout matches the mapping table | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(parser)` |
 | P1.A | done | `ansi.zig`, `charsets.zig`, `modes.zig` | corresponding MoonBit modules + tests | P1.0 | P1.B, P1.C | `[W]` | modules compile, tests pass, no missing shared types for downstream parser work | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
 | P1.B | done | `color.zig`, `mouse.zig`, `device_attributes.zig`, `device_status.zig` | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.C | `[W]` | modules compile, tests pass, parser-facing contracts preserved | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |
 | P1.C | done | `point.zig`, `size_report.zig`, small report/value types | corresponding MoonBit modules + tests | P1.0 | P1.A, P1.B | `[W]` | modules compile, tests pass, shared constants/types stable | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-foundation)` |

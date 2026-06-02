@@ -60,7 +60,7 @@ Ran:
 - `moon test src/terminal/formatter_test.mbt`
 - `moon test src/terminal/formatter_wbtest.mbt`
 - `moon test`
-- `moon coverage analyze -p tonyfettes/ghostty/src/terminal`
+- `moon coverage analyze -p tonyfettes/ghostty/terminal`
 - `moon fmt`
 - `moon info`
 

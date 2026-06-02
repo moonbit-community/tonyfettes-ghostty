@@ -47,7 +47,7 @@ pass-through effect actions that are intentionally no-op for terminal state.
 - `moon fmt`
 - `moon check`
 - `moon test`
-- `moon coverage analyze -p tonyfettes/ghostty/src/terminal`
+- `moon coverage analyze -p tonyfettes/ghostty/terminal`
 - `moon info`
 
 ## Coverage findings for touched files

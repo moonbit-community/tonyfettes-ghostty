@@ -8,7 +8,7 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "upstream/ghostty/src/terminal/res/rgb.txt"
-TARGET = ROOT / "src/terminal/x11_color_tables.mbt"
+TARGET = ROOT / "terminal/x11_color_tables.mbt"
 LINE_RE = re.compile(r"^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*?)\s*$")
 
 
