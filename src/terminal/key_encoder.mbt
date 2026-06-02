@@ -712,7 +712,7 @@ fn is_control_utf8(bytes : Bytes) -> Bool {
 
 ///|
 fn utf8_codepoints(bytes : Bytes) -> Array[Int]? {
-  let text = try @utf8.decode(bytes[:]) catch {
+  let text = try @utf8.decode(bytes) catch {
     _ => return None
   } noraise {
     text => text

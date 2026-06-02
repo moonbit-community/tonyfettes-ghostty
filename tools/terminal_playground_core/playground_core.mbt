@@ -52,7 +52,7 @@ fn PlaygroundLog::title_changed(self : PlaygroundLog) -> Unit {
 
 ///|
 fn PlaygroundLog::pty_text(self : PlaygroundLog) -> String {
-  @utf8.decode_lossy(self.pty.contents()[:])
+  @utf8.decode_lossy(self.pty.contents())
 }
 
 ///|
@@ -379,7 +379,7 @@ fn formatted_terminal(
       ),
     ),
   )
-  @utf8.decode_lossy(formatter.format()[:])
+  @utf8.decode_lossy(formatter.format())
 }
 
 ///|
@@ -657,7 +657,7 @@ fn json_kitty_placement(
       "height": uint_to_int(image.height()),
       "format": kitty_image_format_json(image.format()),
       "compression": kitty_image_compression_json(image.compression()),
-      "dataBase64": @base64.encode(image.data()[:]),
+      "dataBase64": @base64.encode(image.data()),
     },
   }
 }

@@ -3310,12 +3310,12 @@ let wide_codepoint_ranges : ReadOnlyArray[(UInt, UInt)] = [
 
 ///|
 fn is_zero_width(codepoint : UInt) -> Bool {
-  codepoint_in_ranges(codepoint, zero_width_codepoint_ranges[:])
+  codepoint_in_ranges(codepoint, zero_width_codepoint_ranges)
 }
 
 ///|
 fn is_wide_codepoint(codepoint : UInt) -> Bool {
-  codepoint_in_ranges(codepoint, wide_codepoint_ranges[:])
+  codepoint_in_ranges(codepoint, wide_codepoint_ranges)
 }
 
 ///|

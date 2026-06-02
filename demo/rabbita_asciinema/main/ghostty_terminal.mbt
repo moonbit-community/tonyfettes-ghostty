@@ -58,7 +58,7 @@ fn TerminalLog::title_changed(self : TerminalLog) -> Unit {
 
 ///|
 fn TerminalLog::pty_text(self : TerminalLog) -> String {
-  @utf8.decode_lossy(self.pty.contents()[:])
+  @utf8.decode_lossy(self.pty.contents())
 }
 
 ///|
@@ -232,7 +232,7 @@ fn GhosttyTerminal::plain_viewport(self : GhosttyTerminal) -> String {
       }
     }
   }
-  @utf8.decode_lossy(out.contents()[:])
+  @utf8.decode_lossy(out.contents())
 }
 
 ///|
@@ -389,7 +389,7 @@ fn codepoints_to_string(codepoints : Array[UInt]) -> String {
       out.write_char_utf8(codepoint.reinterpret_as_int().unsafe_to_char())
     }
   }
-  @utf8.decode_lossy(out.contents()[:])
+  @utf8.decode_lossy(out.contents())
 }
 
 ///|

@@ -333,8 +333,8 @@ fn semantic_prompt_printf_q_decode(
       index += 2
     }
   }
-  let bytes = @buffer.from_array(result[:]).to_bytes()
-  @utf8.decode_lossy(bytes[:])
+  let bytes = @buffer.from_array(result).to_bytes()
+  @utf8.decode_lossy(bytes)
 }
 
 ///|
@@ -382,8 +382,8 @@ fn semantic_prompt_url_percent_decode(
       index += 3
     }
   }
-  let bytes = @buffer.from_array(result[:]).to_bytes()
-  @utf8.decode_lossy(bytes[:])
+  let bytes = @buffer.from_array(result).to_bytes()
+  @utf8.decode_lossy(bytes)
 }
 
 ///|

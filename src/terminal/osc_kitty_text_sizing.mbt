@@ -187,8 +187,8 @@ fn parse_kitty_text_sizing_command(
 
 ///|
 fn decode_safe_utf8(payload : Array[Byte]) -> String? {
-  let bytes = @buffer.from_array(payload[:]).to_bytes()
-  let text = try @utf8.decode(bytes[:]) catch {
+  let bytes = @buffer.from_array(payload).to_bytes()
+  let text = try @utf8.decode(bytes) catch {
     _ => return None
   } noraise {
     text => text
