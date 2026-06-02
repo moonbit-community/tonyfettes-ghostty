@@ -52,6 +52,12 @@ priv struct MuxState {
 }
 
 ///|
+priv struct CursorPosition {
+  row : Int
+  col : Int
+}
+
+///|
 fn pane_shell_script(id : Int) -> String {
   "printf '\\033[1;32mmini tmux pane \{id}\\033[0m\\r\\n'; " +
   "printf 'Ctrl-b c new | Ctrl-b n/o next | Ctrl-b p prev | Ctrl-b q quit\\r\\n'; " +
@@ -183,7 +189,7 @@ fn visible_pane_count(state : MuxState) -> Int {
   let count = state.panes.length()
   if count <= 1 {
     count
-  } else if @cmp.maximum(state.rows - 1, 1) >= count * 2 {
+  } else if @cmp.maximum(state.rows - 1, 1) >= count * 3 {
     count
   } else {
     1
@@ -218,9 +224,10 @@ fn resize_visible_panes(state : MuxState) -> Unit {
   for visible in 0..<count {
     let pane_index = visible_pane_index(state, visible)
     if pane_index >= 0 && pane_index < state.panes.length() {
+      let rows = slot_rows(total, count, visible)
       state.panes[pane_index].resize(
-        @cmp.maximum(slot_rows(total, count, visible) - 1, 1),
-        @cmp.maximum(state.cols, 1),
+        @cmp.maximum(rows - 2, 1),
+        @cmp.maximum(state.cols - 2, 1),
       )
     }
   }
@@ -314,13 +321,56 @@ fn append_screen_line(
 }
 
 ///|
-fn pane_header(pane : Pane, active : Bool) -> String {
+fn pane_title(pane : Pane, active : Bool) -> String {
   let marker = if active { "*" } else { " " }
   let state = match pane.exit_code {
     Some(code) => " exited=\{code}"
     None => " pid=\{pane.pty.pid()}"
   }
   "[\{marker}] pane \{pane.id}\{state}"
+}
+
+///|
+fn border_line(title : String, cols : Int, active : Bool) -> String {
+  if cols <= 0 {
+    ""
+  } else if cols == 1 {
+    "+"
+  } else {
+    let fill = if active { '=' } else { '-' }
+    let inner_cols = cols - 2
+    let label = if title == "" { "" } else { " \{title} " }
+    let builder = StringBuilder()
+    let mut used = 0
+    builder.write_char('+')
+    for ch in label {
+      if used >= inner_cols {
+        break
+      }
+      builder.write_char(ch)
+      used += 1
+    }
+    if used < inner_cols {
+      builder.write_string(String::make(inner_cols - used, fill))
+    }
+    builder.write_char('+')
+    builder.to_string()
+  }
+}
+
+///|
+fn boxed_content_line(text : String, cols : Int) -> String {
+  if cols <= 0 {
+    ""
+  } else if cols == 1 {
+    "|"
+  } else {
+    let builder = StringBuilder()
+    builder.write_char('|')
+    builder.write_string(fit_line(text, cols - 2))
+    builder.write_char('|')
+    builder.to_string()
+  }
 }
 
 ///|
@@ -342,10 +392,14 @@ fn append_pane(
   let pane = state.panes[pane_index]
   let total = @cmp.maximum(state.rows - 1, 1)
   let rows = slot_rows(total, visible_count, slot)
-  let content_rows = @cmp.maximum(rows - 1, 0)
+  let content_rows = @cmp.maximum(rows - 2, 0)
   append_screen_line(
     out,
-    pane_header(pane, pane_index == state.active),
+    border_line(
+      pane_title(pane, pane_index == state.active),
+      state.cols,
+      pane_index == state.active,
+    ),
     state.cols,
     row,
     state.rows,
@@ -360,7 +414,23 @@ fn append_pane(
       Some(text) => text
       None => ""
     }
-    append_screen_line(out, text, state.cols, row, state.rows)
+    append_screen_line(
+      out,
+      boxed_content_line(text, state.cols),
+      state.cols,
+      row,
+      state.rows,
+    )
+    row += 1
+  }
+  if rows > 1 {
+    append_screen_line(
+      out,
+      border_line("", state.cols, pane_index == state.active),
+      state.cols,
+      row,
+      state.rows,
+    )
     row += 1
   }
   row
@@ -395,10 +465,55 @@ fn render_text(state : MuxState) -> String {
 }
 
 ///|
+fn active_cursor_position(state : MuxState) -> CursorPosition? {
+  let visible_count = visible_pane_count(state)
+  if visible_count == 0 ||
+    state.active < 0 ||
+    state.active >= state.panes.length() {
+    return None
+  }
+  let total = @cmp.maximum(state.rows - 1, 1)
+  let mut row0 = 0
+  for visible in 0..<visible_count {
+    let rows = slot_rows(total, visible_count, visible)
+    let pane_index = visible_pane_index(state, visible)
+    if pane_index == state.active {
+      let pane = state.panes[pane_index]
+      let content_rows = rows - 2
+      let content_cols = state.cols - 2
+      if content_rows <= 0 ||
+        content_cols <= 0 ||
+        !pane.terminal.cursor_visible() {
+        return None
+      }
+      let cursor_row = pane.terminal
+        .cursor_y()
+        .to_int()
+        .clamp(min=0, max=content_rows - 1)
+      let cursor_col = pane.terminal
+        .cursor_x()
+        .to_int()
+        .clamp(min=0, max=content_cols - 1)
+      return Some({ row: row0 + cursor_row + 2, col: cursor_col + 2 })
+    }
+    row0 += rows
+  }
+  None
+}
+
+///|
 async fn render(tty : @tty.Tty, state : MuxState) -> Unit {
+  tty.hide_cursor()
   tty.set_cursor_position(1, 1)
   tty.erase_display()
   tty.write(render_text(state))
+  match active_cursor_position(state) {
+    Some(pos) => {
+      tty.set_cursor_position(pos.row, pos.col)
+      tty.show_cursor()
+    }
+    None => tty.hide_cursor()
+  }
 }
 
 ///|
