@@ -4,11 +4,18 @@ import {
   "moonbit-community/tty/input" @tty/input,
   "moonbitlang/async",
   "moonbitlang/async/aqueue",
+  "moonbitlang/async/fs",
   "moonbitlang/async/io" @async/io,
+  "moonbitlang/async/process",
+  "moonbitlang/async/socket",
+  "moonbitlang/core/argparse",
   "moonbitlang/core/buffer",
   "moonbitlang/core/cmp",
   "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
   "tonyfettes/ghostty/src/terminal",
 }
 
@@ -16,4 +23,5 @@ supported_targets = "native"
 
 options(
   "is-main": true,
+  "native-stub": [ "self_exec.c" ],
 )
