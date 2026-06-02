@@ -14,6 +14,24 @@ const ReadBufferSize : Int = 4096
 const ShellExitTimeoutMs : Int = 300
 
 ///|
+let sgr_reset : String = @utf8.decode_lossy(b"\x1B[0m")
+
+///|
+let sgr_active_border : String = @utf8.decode_lossy(b"\x1B[1;36m")
+
+///|
+let sgr_inactive_border : String = @utf8.decode_lossy(b"\x1B[2;37m")
+
+///|
+let sgr_exited_border : String = @utf8.decode_lossy(b"\x1B[31m")
+
+///|
+let sgr_status : String = @utf8.decode_lossy(b"\x1B[7m")
+
+///|
+let sgr_prefix_status : String = @utf8.decode_lossy(b"\x1B[1;33;7m")
+
+///|
 priv struct PaneSize {
   mut rows : Int
   mut cols : Int
@@ -321,6 +339,27 @@ fn append_screen_line(
 }
 
 ///|
+fn append_styled_screen_line(
+  out : StringBuilder,
+  text : String,
+  cols : Int,
+  row : Int,
+  rows : Int,
+  style : String,
+) -> Unit {
+  if style != "" {
+    out.write_string(style)
+  }
+  out.write_string(fit_line(text, cols))
+  if style != "" {
+    out.write_string(sgr_reset)
+  }
+  if row + 1 < rows {
+    out.write_string("\r\n")
+  }
+}
+
+///|
 fn pane_title(pane : Pane, active : Bool) -> String {
   let marker = if active { "*" } else { " " }
   let state = match pane.exit_code {
@@ -359,17 +398,45 @@ fn border_line(title : String, cols : Int, active : Bool) -> String {
 }
 
 ///|
-fn boxed_content_line(text : String, cols : Int) -> String {
+fn pane_border_style(pane : Pane, active : Bool) -> String {
+  match pane.exit_code {
+    Some(_) => sgr_exited_border
+    None => if active { sgr_active_border } else { sgr_inactive_border }
+  }
+}
+
+///|
+fn append_boxed_content_line(
+  out : StringBuilder,
+  text : String,
+  cols : Int,
+  row : Int,
+  rows : Int,
+  style : String,
+) -> Unit {
   if cols <= 0 {
-    ""
+    append_screen_line(out, "", cols, row, rows)
   } else if cols == 1 {
-    "|"
+    append_styled_screen_line(out, "|", cols, row, rows, style)
   } else {
-    let builder = StringBuilder()
-    builder.write_char('|')
-    builder.write_string(fit_line(text, cols - 2))
-    builder.write_char('|')
-    builder.to_string()
+    if style != "" {
+      out.write_string(style)
+    }
+    out.write_char('|')
+    if style != "" {
+      out.write_string(sgr_reset)
+    }
+    out.write_string(fit_line(text, cols - 2))
+    if style != "" {
+      out.write_string(style)
+    }
+    out.write_char('|')
+    if style != "" {
+      out.write_string(sgr_reset)
+    }
+    if row + 1 < rows {
+      out.write_string("\r\n")
+    }
   }
 }
 
@@ -377,6 +444,15 @@ fn boxed_content_line(text : String, cols : Int) -> String {
 fn status_line(state : MuxState) -> String {
   let mode = if state.prefix { "prefix" } else { "ready" }
   "mini tmux | panes=\{state.panes.length()} active=\{state.active} | \{mode} | Ctrl-b c new n/o next p prev q quit | \{state.status}"
+}
+
+///|
+fn status_style(state : MuxState) -> String {
+  if state.prefix {
+    sgr_prefix_status
+  } else {
+    sgr_status
+  }
 }
 
 ///|
@@ -393,7 +469,8 @@ fn append_pane(
   let total = @cmp.maximum(state.rows - 1, 1)
   let rows = slot_rows(total, visible_count, slot)
   let content_rows = @cmp.maximum(rows - 2, 0)
-  append_screen_line(
+  let style = pane_border_style(pane, pane_index == state.active)
+  append_styled_screen_line(
     out,
     border_line(
       pane_title(pane, pane_index == state.active),
@@ -403,6 +480,7 @@ fn append_pane(
     state.cols,
     row,
     state.rows,
+    style,
   )
   row += 1
   let lines = plain_snapshot(pane.terminal)
@@ -414,22 +492,17 @@ fn append_pane(
       Some(text) => text
       None => ""
     }
-    append_screen_line(
-      out,
-      boxed_content_line(text, state.cols),
-      state.cols,
-      row,
-      state.rows,
-    )
+    append_boxed_content_line(out, text, state.cols, row, state.rows, style)
     row += 1
   }
   if rows > 1 {
-    append_screen_line(
+    append_styled_screen_line(
       out,
       border_line("", state.cols, pane_index == state.active),
       state.cols,
       row,
       state.rows,
+      style,
     )
     row += 1
   }
@@ -460,7 +533,14 @@ fn render_text(state : MuxState) -> String {
     append_screen_line(out, "", state.cols, row, state.rows)
     row += 1
   }
-  append_screen_line(out, status_line(state), state.cols, row, state.rows)
+  append_styled_screen_line(
+    out,
+    status_line(state),
+    state.cols,
+    row,
+    state.rows,
+    status_style(state),
+  )
   out.to_string()
 }
 

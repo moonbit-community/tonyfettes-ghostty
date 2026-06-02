@@ -6,7 +6,8 @@ This native demo is a small tmux-like multiplexer built with
 
 It does not shell out to the system `tmux` binary. Each pane owns its own PTY
 and terminal model. The demo renders pane borders, tracks the active pane, and
-maps the active pane cursor back to the outer TTY.
+maps the active pane cursor back to the outer TTY. The outer multiplexer UI is
+colorized while pane contents remain controlled by each pane's terminal stream.
 
 Run it from the repository root:
 
