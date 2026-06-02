@@ -76,9 +76,7 @@ priv struct CursorPosition {
 }
 
 ///|
-fn pane_shell_script(id : Int) -> String {
-  "printf '\\033[1;32mmini tmux pane \{id}\\033[0m\\r\\n'; " +
-  "printf 'Ctrl-b c new | Ctrl-b n/o next | Ctrl-b p prev | Ctrl-b q quit\\r\\n'; " +
+fn pane_shell_script() -> String {
   "exec sh"
 }
 
@@ -131,7 +129,7 @@ async fn Pane::new(
   let terminal = new_terminal(size, replies)
   let pty = @pty.Pty::spawn(
     group,
-    ["sh", "-lc", pane_shell_script(id)],
+    ["sh", "-lc", pane_shell_script()],
     cols~,
     rows~,
   )
