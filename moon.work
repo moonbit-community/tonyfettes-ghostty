@@ -1,4 +1,4 @@
 members = [
   ".",
-  "demo/rabbita_asciinema",
+  "./examples",
 ]

@@ -52,7 +52,7 @@ fn sample_cast() -> String {
   "[0.28,\"o\",\"Checking tonyfettes/ghostty ...\\r\\n\"]\n" +
   "[0.18,\"o\",\"Checked terminal parser.\\r\\n\\r\\n\"]\n" +
   "[0.25,\"m\",\"build\"]\n" +
-  "[0.15,\"o\",\"\\u001b[38;5;81m$ moon build --target js --release demo/rabbita_asciinema/main\\u001b[0m\\r\\n\"]\n" +
+  "[0.15,\"o\",\"\\u001b[38;5;81m$ moon -C examples build --target js --release rabbita_asciinema/main\\u001b[0m\\r\\n\"]\n" +
   "[0.32,\"o\",\"Rendering with the translated Ghostty terminal model.\\r\\n\"]\n" +
   "[0.22,\"o\",\"No xterm.js parser is used in this demo.\\r\\n\\r\\n\"]\n" +
   "[0.30,\"r\",\"100x28\"]\n" +
