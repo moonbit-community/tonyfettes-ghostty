@@ -5,6 +5,9 @@ version = "0.1.0"
 import {
   "tonyfettes/ghostty@0.1.0",
   "moonbit-community/rabbita@0.12.1",
+  "moonbit-community/pty@0.2.0",
+  "moonbitlang/async@0.19.1",
+  "moonbit-community/tty@0.2.4",
 }
 
 preferred_target = "js"
