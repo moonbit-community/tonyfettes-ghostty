@@ -4,7 +4,8 @@
 // Each benchmark feeds a fixed payload into a fresh 80x24 terminal, so the
 // measured unit is "process this chunk of program output from scratch".
 
-///| Append a decimal integer as ASCII (for CSI/OSC numeric params).
+///|
+/// Append a decimal integer as ASCII (for CSI/OSC numeric params).
 fn put_uint(buf : Buffer, value : Int) -> Unit {
   if value >= 10 {
     put_uint(buf, value / 10)
@@ -12,7 +13,8 @@ fn put_uint(buf : Buffer, value : Int) -> Unit {
   buf.write_byte((b'0'.to_int() + value % 10).to_byte())
 }
 
-///| Feed a payload into a fresh 80x24 terminal (the measured unit).
+///|
+/// Feed a payload into a fresh 80x24 terminal (the measured unit).
 fn process(payload : Bytes) -> @terminal.StreamTerminal {
   let t = @terminal.StreamTerminal::new()
   ignore(t.resize(80, 24, 8U, 16U))
@@ -22,7 +24,8 @@ fn process(payload : Bytes) -> @terminal.StreamTerminal {
 
 // ---- payload builders -------------------------------------------------------
 
-///| Normal program output: `lines` rows of 72 printable chars + newline.
+///|
+/// Normal program output: `lines` rows of 72 printable chars + newline.
 fn plain_lines(lines : Int) -> Bytes {
   let line = Buffer(size_hint=256)
   for i in 0..<72 {
@@ -37,7 +40,8 @@ fn plain_lines(lines : Int) -> Bytes {
   buf.contents()
 }
 
-///| One very long line with no newline: stresses auto-wrap.
+///|
+/// One very long line with no newline: stresses auto-wrap.
 fn wrapped_blob(chars : Int) -> Bytes {
   let chunk = b"abcdefghijklmnopqrstuvwxyz"
   let buf = Buffer(size_hint=256)
@@ -47,7 +51,8 @@ fn wrapped_blob(chars : Int) -> Bytes {
   buf.contents()
 }
 
-///| Mostly newlines: stresses scrolling / scrollback.
+///|
+/// Mostly newlines: stresses scrolling / scrollback.
 fn scroll_storm(lines : Int) -> Bytes {
   let buf = Buffer(size_hint=256)
   for _ in 0..<lines {
@@ -56,7 +61,8 @@ fn scroll_storm(lines : Int) -> Bytes {
   buf.contents()
 }
 
-///| Colored log lines (build output / `ls --color`): heavy SGR churn.
+///|
+/// Colored log lines (build output / `ls --color`): heavy SGR churn.
 fn colored_log(lines : Int) -> Bytes {
   let buf = Buffer(size_hint=256)
   for i in 0..<lines {
@@ -67,7 +73,8 @@ fn colored_log(lines : Int) -> Bytes {
   buf.contents()
 }
 
-///| Full-screen TUI redraws (vim/htop): cursor addressing + clears.
+///|
+/// Full-screen TUI redraws (vim/htop): cursor addressing + clears.
 fn tui_redraw(frames : Int) -> Bytes {
   let buf = Buffer(size_hint=256)
   for _ in 0..<frames {
@@ -83,7 +90,8 @@ fn tui_redraw(frames : Int) -> Bytes {
   buf.contents()
 }
 
-///| CJK wide-character text (UTF-8 multibyte + wide-cell handling).
+///|
+/// CJK wide-character text (UTF-8 multibyte + wide-cell handling).
 fn cjk_text(lines : Int) -> Bytes {
   // "中文终端测试" + newline
   let chunk = b"\xE4\xB8\xAD\xE6\x96\x87\xE7\xBB\x88\xE7\xAB\xAF\xE6\xB5\x8B\xE8\xAF\x95\n"
@@ -96,7 +104,8 @@ fn cjk_text(lines : Int) -> Bytes {
   buf.contents()
 }
 
-///| OSC title churn interleaved with text.
+///|
+/// OSC title churn interleaved with text.
 fn osc_titles(count : Int) -> Bytes {
   let buf = Buffer(size_hint=256)
   for i in 0..<count {
@@ -107,7 +116,8 @@ fn osc_titles(count : Int) -> Bytes {
   buf.contents()
 }
 
-///| A realistic blend of the above.
+///|
+/// A realistic blend of the above.
 fn mixed_realistic(blocks : Int) -> Bytes {
   let buf = Buffer(size_hint=256)
   for i in 0..<blocks {
@@ -116,7 +126,9 @@ fn mixed_realistic(blocks : Int) -> Bytes {
     buf.write_bytes(b"\x07")
     buf.write_bytes(b"\x1b[1;34m==>\x1b[0m building \x1b[32msrc/mod.c\x1b[0m\n")
     buf.write_bytes(b"plain compiler output describing what happened here\n")
-    buf.write_bytes(b"\x1b[31merror:\x1b[0m something went \x1b[1mwrong\x1b[0m at line ")
+    buf.write_bytes(
+      b"\x1b[31merror:\x1b[0m something went \x1b[1mwrong\x1b[0m at line ",
+    )
     put_uint(buf, i)
     buf.write_bytes(b"\n")
   }
@@ -140,6 +152,16 @@ test "bench wrapped_blob 16k" (it : @bench.T) {
 ///|
 test "bench scroll_storm x4000" (it : @bench.T) {
   let payload = scroll_storm(4000)
+  it.bench(fn() { it.keep(process(payload)) })
+}
+
+///|
+/// 20_000 newlines overflow the scrollback limit (DefaultMaxScrollback =
+/// 10_000), so every line past the limit forces a history eviction — the path
+/// `scroll_storm` (4_000 lines) never reaches. Its per-line cost should stay
+/// flat vs scroll_storm, proving eviction is O(1) amortized, not O(history).
+test "bench scroll_full x20000" (it : @bench.T) {
+  let payload = scroll_storm(20000)
   it.bench(fn() { it.keep(process(payload)) })
 }
 
