@@ -28,8 +28,10 @@ Out of scope for now:
 - packaging a complete terminal emulator application
 
 For the detailed upstream-to-MoonBit architecture, read
-[`docs/architecture.md`](docs/architecture.md). For the execution plan and
-quality gates, read [`docs/plan.md`](docs/plan.md).
+[`docs/architecture.md`](docs/architecture.md). For a map of how the
+`terminal` package and its sub-packages are organized (what lives where and how
+to read it), see [`docs/terminal-package.md`](docs/terminal-package.md). For the
+execution plan and quality gates, read [`docs/plan.md`](docs/plan.md).
 
 ## Package
 
