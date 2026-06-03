@@ -48,7 +48,7 @@ pub(all) enum KeyModSide {
 } derive(Eq, Debug)
 
 ///|
-struct KeyMods(UInt16) derive(Eq, Debug)
+pub(all) struct KeyMods(UInt16) derive(Eq, Debug)
 
 ///|
 pub(all) enum Key {
@@ -231,7 +231,7 @@ pub(all) enum Key {
 } derive(Eq, Debug)
 
 ///|
-struct KeyEvent {
+pub(all) struct KeyEvent {
   mut action : KeyAction
   mut key : Key
   mut mods : KeyMods

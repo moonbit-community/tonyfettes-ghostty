@@ -22,13 +22,13 @@ pub(all) enum MouseButton {
 } derive(Eq, Debug)
 
 ///|
-struct MousePosition {
+pub(all) struct MousePosition {
   x : Float
   y : Float
 } derive(Eq, Debug)
 
 ///|
-struct MouseInputEvent {
+pub(all) struct MouseInputEvent {
   mut action : MouseAction
   mut button : MouseButton?
   mut mods : KeyMods

@@ -136,7 +136,7 @@ pub(all) enum StreamAction {
   StreamProgressReport(@osc.ConEmuProgressReport)
   StreamStartHyperlink(@osc.HyperlinkStart)
   StreamEndHyperlink
-  StreamMouseShape(MouseShape)
+  StreamMouseShape(@input.MouseShape)
   StreamKittyColorReport(@osc.KittyColorOsc)
   StreamColorOperation(@osc.ColorCommand)
   StreamSemanticPrompt(@osc.SemanticPrompt)
@@ -787,7 +787,7 @@ fn[H : StreamHandler] Stream::osc_dispatch(
     ChangeWindowIcon(_) | Invalid => ()
     ReportPwd(url) => self.emit(StreamReportPwd(url))
     MouseShape(value) =>
-      match MouseShape::from_string(value) {
+      match @input.MouseShape::from_string(value) {
         Some(shape) => self.emit(StreamMouseShape(shape))
         None => ()
       }

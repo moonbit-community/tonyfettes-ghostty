@@ -23,11 +23,11 @@ fn PackageSurfaceLogRecorder::record(
 
 ///|
 fn package_smoke_key_event(
-  key : Key,
-  mods? : KeyMods = KeyMods::new(),
+  key : @input.Key,
+  mods? : @input.KeyMods = @input.KeyMods::new(),
   utf8? : Bytes = b"",
-) -> KeyEvent {
-  let event = KeyEvent::new()
+) -> @input.KeyEvent {
+  let event = @input.KeyEvent::new()
   event.set_key(key)
   event.set_mods(mods)
   event.set_utf8(utf8)
@@ -36,18 +36,18 @@ fn package_smoke_key_event(
 
 ///|
 fn package_smoke_mouse_event(
-  action : MouseAction,
-  button : MouseButton?,
+  action : @input.MouseAction,
+  button : @input.MouseButton?,
   x : Float,
   y : Float,
-) -> MouseInputEvent {
-  let event = MouseInputEvent::new()
+) -> @input.MouseInputEvent {
+  let event = @input.MouseInputEvent::new()
   event.set_action(action)
   match button {
     Some(value) => event.set_button(value)
     None => event.clear_button()
   }
-  event.set_position(MousePosition::new(x, y))
+  event.set_position(@input.MousePosition::new(x, y))
   event
 }
 

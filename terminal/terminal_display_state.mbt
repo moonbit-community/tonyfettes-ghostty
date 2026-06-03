@@ -1,7 +1,7 @@
 ///|
 struct TerminalDisplayState {
   mut status_display : StatusDisplay
-  mut mouse_shape : MouseShape
+  mut mouse_shape : @input.MouseShape
 } derive(Eq, Debug)
 
 ///|
@@ -19,7 +19,7 @@ pub fn TerminalDisplayState::status_display(
 ///|
 pub fn TerminalDisplayState::mouse_shape(
   self : TerminalDisplayState,
-) -> MouseShape {
+) -> @input.MouseShape {
   self.mouse_shape
 }
 
@@ -34,7 +34,7 @@ pub fn TerminalDisplayState::set_status_display(
 ///|
 pub fn TerminalDisplayState::set_mouse_shape(
   self : TerminalDisplayState,
-  mouse_shape : MouseShape,
+  mouse_shape : @input.MouseShape,
 ) -> Unit {
   self.mouse_shape = mouse_shape
 }

@@ -197,8 +197,8 @@ priv struct StreamTerminalBridgeState {
   mut charset : ScreenCharsetState
   mut current_style : CellStyle
   mut previous_char : UInt?
-  mut mouse_event : MouseEvent
-  mut mouse_format : MouseFormat
+  mut mouse_event : @input.MouseEvent
+  mut mouse_format : @input.MouseFormat
   mut palette_dirty : Bool
   mut active_screen : TerminalScreen
   mut width_px : UInt
@@ -363,14 +363,14 @@ fn StreamTerminalBridgeState::kitty_keyboard_flags(
 ///|
 fn StreamTerminalBridgeState::mouse_event(
   self : StreamTerminalBridgeState,
-) -> MouseEvent {
+) -> @input.MouseEvent {
   self.mouse_event
 }
 
 ///|
 fn StreamTerminalBridgeState::mouse_format(
   self : StreamTerminalBridgeState,
-) -> MouseFormat {
+) -> @input.MouseFormat {
   self.mouse_format
 }
 
