@@ -1,14 +1,14 @@
 ///|
 pub(all) struct InvokeCharsetAction {
-  bank : ActiveSlot
-  charset : Slots
+  bank : @charsets.ActiveSlot
+  charset : @charsets.Slots
   locking : Bool
 } derive(Eq, Debug)
 
 ///|
 pub(all) struct ConfigureCharsetAction {
-  slot : Slots
-  charset : Charset
+  slot : @charsets.Slots
+  charset : @charsets.Charset
 } derive(Eq, Debug)
 
 ///|
@@ -827,8 +827,8 @@ fn[H : StreamHandler] Stream::apc_end(self : Stream[H]) -> Unit {
 ///|
 fn[H : StreamHandler] Stream::emit_invoke_charset(
   self : Stream[H],
-  bank : ActiveSlot,
-  charset : Slots,
+  bank : @charsets.ActiveSlot,
+  charset : @charsets.Slots,
   locking : Bool,
 ) -> Unit {
   self.emit(StreamInvokeCharset({ bank, charset, locking }))
@@ -838,7 +838,7 @@ fn[H : StreamHandler] Stream::emit_invoke_charset(
 fn[H : StreamHandler] Stream::configure_charset(
   self : Stream[H],
   intermediates : Array[Byte],
-  charset : Charset,
+  charset : @charsets.Charset,
 ) -> Unit {
   match intermediates {
     [b'('] => self.emit(StreamConfigureCharset({ slot: G0, charset }))

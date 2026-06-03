@@ -829,7 +829,7 @@ fn formatter_write_screen_extras(
   }
 
   if extra.charsets {
-    for slot in [Slots::G0, G1, G2, G3] {
+    for slot in [@charsets.Slots::G0, G1, G2, G3] {
       let charset = state.charset.charset(slot)
       if charset != Utf8 {
         buffer.write_byte(b'\x1B')
@@ -1167,7 +1167,7 @@ fn formatter_write_html_attribute(
 }
 
 ///|
-fn formatter_charset_designator(slot : Slots) -> Byte {
+fn formatter_charset_designator(slot : @charsets.Slots) -> Byte {
   match slot {
     G0 => b'('
     G1 => b')'
@@ -1177,7 +1177,7 @@ fn formatter_charset_designator(slot : Slots) -> Byte {
 }
 
 ///|
-fn formatter_charset_final(charset : Charset) -> Byte {
+fn formatter_charset_final(charset : @charsets.Charset) -> Byte {
   match charset {
     Ascii => b'B'
     British => b'A'

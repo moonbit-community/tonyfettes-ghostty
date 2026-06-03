@@ -42,29 +42,29 @@ fn StreamTerminalBridgeState::tabstop(
 ///|
 fn StreamTerminalBridgeState::charset(
   self : StreamTerminalBridgeState,
-  slot : Slots,
-) -> Charset {
+  slot : @charsets.Slots,
+) -> @charsets.Charset {
   self.charset.charset(slot)
 }
 
 ///|
 fn StreamTerminalBridgeState::charset_gl(
   self : StreamTerminalBridgeState,
-) -> Slots {
+) -> @charsets.Slots {
   self.charset.gl()
 }
 
 ///|
 fn StreamTerminalBridgeState::charset_gr(
   self : StreamTerminalBridgeState,
-) -> Slots {
+) -> @charsets.Slots {
   self.charset.gr()
 }
 
 ///|
 fn StreamTerminalBridgeState::charset_single_shift(
   self : StreamTerminalBridgeState,
-) -> Slots? {
+) -> @charsets.Slots? {
   self.charset.single_shift()
 }
 

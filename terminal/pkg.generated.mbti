@@ -3,6 +3,7 @@ package "tonyfettes/ghostty/terminal"
 
 import {
   "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/charsets",
 }
 
 // Values
@@ -40,8 +41,6 @@ pub fn status_display_from_int(Int) -> StatusDisplay?
 
 pub fn status_line_type_from_int(UInt16) -> StatusLineType?
 
-pub fn table(Charset) -> ReadOnlyArray[UInt16]
-
 pub fn terminal_result_code_from_int(Int) -> TerminalResultCode?
 
 pub fn terminal_surface_type(String) -> TerminalSurfaceTypeInfo?
@@ -72,11 +71,6 @@ pub(all) suberror SemanticPromptDecodeError {
 } derive(Eq, @debug.Debug)
 
 // Types and methods
-pub(all) enum ActiveSlot {
-  Gl
-  Gr
-} derive(Eq, @debug.Debug)
-
 type BuildInfo derive(Eq, @debug.Debug)
 pub fn BuildInfo::kitty_graphics(Self) -> Bool
 pub fn BuildInfo::optimize(Self) -> OptimizeMode
@@ -134,13 +128,6 @@ pub fn CellStyle::reset(Self) -> Unit
 pub fn CellStyle::strikethrough(Self) -> Bool
 pub fn CellStyle::underline(Self) -> SgrUnderline
 pub fn CellStyle::underline_color(Self) -> StyleColor
-
-pub(all) enum Charset {
-  Utf8
-  Ascii
-  British
-  DecSpecial
-} derive(Eq, @debug.Debug)
 
 type ClipboardContents derive(Eq, @debug.Debug)
 pub fn ClipboardContents::data(Self) -> String
@@ -254,8 +241,8 @@ pub fn ConEmuXtermEmulation::keyboard(Self) -> Bool?
 pub fn ConEmuXtermEmulation::output(Self) -> Bool?
 
 pub(all) struct ConfigureCharsetAction {
-  slot : Slots
-  charset : Charset
+  slot : @charsets.Slots
+  charset : @charsets.Charset
 } derive(Eq, @debug.Debug)
 
 pub(all) enum ConformanceLevel {
@@ -470,8 +457,8 @@ pub fn HyperlinkStart::id(Self) -> String?
 pub fn HyperlinkStart::uri(Self) -> String
 
 pub(all) struct InvokeCharsetAction {
-  bank : ActiveSlot
-  charset : Slots
+  bank : @charsets.ActiveSlot
+  charset : @charsets.Slots
   locking : Bool
 } derive(Eq, @debug.Debug)
 
@@ -1344,15 +1331,15 @@ pub(all) enum RowSemanticPrompt {
 } derive(Eq, @debug.Debug)
 
 type ScreenCharsetState derive(Eq, @debug.Debug)
-pub fn ScreenCharsetState::charset(Self, Slots) -> Charset
-pub fn ScreenCharsetState::configure(Self, Slots, Charset) -> Unit
-pub fn ScreenCharsetState::consume_single_shift(Self) -> Slots?
-pub fn ScreenCharsetState::gl(Self) -> Slots
-pub fn ScreenCharsetState::gr(Self) -> Slots
-pub fn ScreenCharsetState::invoke(Self, ActiveSlot, Slots, Bool) -> Unit
+pub fn ScreenCharsetState::charset(Self, @charsets.Slots) -> @charsets.Charset
+pub fn ScreenCharsetState::configure(Self, @charsets.Slots, @charsets.Charset) -> Unit
+pub fn ScreenCharsetState::consume_single_shift(Self) -> @charsets.Slots?
+pub fn ScreenCharsetState::gl(Self) -> @charsets.Slots
+pub fn ScreenCharsetState::gr(Self) -> @charsets.Slots
+pub fn ScreenCharsetState::invoke(Self, @charsets.ActiveSlot, @charsets.Slots, Bool) -> Unit
 pub fn ScreenCharsetState::new() -> Self
 pub fn ScreenCharsetState::reset(Self) -> Unit
-pub fn ScreenCharsetState::single_shift(Self) -> Slots?
+pub fn ScreenCharsetState::single_shift(Self) -> @charsets.Slots?
 
 type ScreenHyperlinkState derive(Eq, @debug.Debug)
 pub fn ScreenHyperlinkState::active(Self) -> Bool
@@ -1539,13 +1526,6 @@ pub(all) enum SizeReportStyle {
   Csi16t
   Csi18t
   Csi21t
-} derive(Eq, @debug.Debug)
-
-pub(all) enum Slots {
-  G0
-  G1
-  G2
-  G3
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Special {
@@ -1893,8 +1873,6 @@ pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)
 
 // Type aliases
 pub type CellCountInt = UInt16
-
-pub type CharsetTable = ReadOnlyArray[UInt16]
 
 // Traits
 pub(open) trait StreamHandler {
