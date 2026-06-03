@@ -590,10 +590,58 @@ fn ScreenGridState::print_cell(
     }
   }
 
+  // Flags the cell being overwritten contributed to the row. If the new cell
+  // drops any of them, the row flag may need clearing, which only a full rescan
+  // can decide. Capture before write_cell replaces the cell object.
+  let lost_grapheme = current.has_grapheme()
+  let lost_styled = current.has_styling()
+  let lost_hyperlink = current.hyperlink() is Some(_)
   self.write_cell(
     row_idx, col_idx, codepoint, wide, style, protected_flag, semantic_content, hyperlink,
   )
-  self.recompute_row_flags(row_idx)
+  self.update_row_flags_after_write(
+    row_idx, col_idx, lost_grapheme, lost_styled, lost_hyperlink,
+  )
+}
+
+///|
+/// Incremental row-flag maintenance for the single-cell print hot path.
+///
+/// `recompute_row_flags` rescans every column, so calling it once per printed
+/// cell makes filling a row O(cols^2). A freshly written cell can only *add*
+/// row flags, so OR its contribution in directly. A full rescan is only needed
+/// when the overwritten cell *removed* the last source of a flag — detected by
+/// `lost_*` (the old cell had it) combined with the new cell no longer having
+/// it. Net effect matches `recompute_row_flags` exactly.
+fn ScreenGridState::update_row_flags_after_write(
+  self : ScreenGridState,
+  row_idx : Int,
+  col_idx : Int,
+  lost_grapheme : Bool,
+  lost_styled : Bool,
+  lost_hyperlink : Bool,
+) -> Unit {
+  let cell = self.lines[row_idx].cells[col_idx]
+  let has_grapheme = cell.has_grapheme()
+  let has_styled = cell.has_styling()
+  let has_hyperlink = cell.hyperlink() is Some(_)
+  if (lost_grapheme && !has_grapheme) ||
+    (lost_styled && !has_styled) ||
+    (lost_hyperlink && !has_hyperlink) {
+    self.recompute_row_flags(row_idx)
+    return
+  }
+  let row = self.lines[row_idx].desc
+  if has_grapheme {
+    row.set_grapheme(true)
+  }
+  if has_styled {
+    row.set_styled(true)
+  }
+  if has_hyperlink {
+    row.set_hyperlink(true)
+  }
+  row.set_kitty_virtual_placeholder(false)
 }
 
 ///|
