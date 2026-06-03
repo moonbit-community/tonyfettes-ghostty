@@ -14,8 +14,6 @@ priv struct PageListPage {
 
 ///|
 priv struct PageListNode {
-  mut prev : PageListNode?
-  mut next : PageListNode?
   page : PageListPage
 }
 
@@ -66,10 +64,8 @@ priv struct PageList {
   max_rows : Int
   mut rows : CellCountInt
   mut cols : CellCountInt
-  mut first : PageListNode?
-  mut last : PageListNode?
   mut active_node : PageListNode
-  mut history : Array[PageListRow]
+  mut history : @deque.Deque[PageListRow]
   mut viewport : PageListViewport
   mut tracked_pins : Array[PageListPin]
   mut viewport_pin : PageListPin?
@@ -127,7 +123,7 @@ fn PageListPage::new(rows : CellCountInt, cols : CellCountInt) -> PageListPage {
 
 ///|
 fn PageListNode::new(page : PageListPage) -> PageListNode {
-  { prev: None, next: None, page }
+  { page, }
 }
 
 ///|
@@ -141,17 +137,14 @@ fn PageList::new(
     max_rows,
     rows: active_node.page.rows,
     cols: active_node.page.cols,
-    first: Some(active_node),
-    last: Some(active_node),
     active_node,
-    history: [],
+    history: @deque.Deque::from_array(([] : Array[PageListRow])),
     viewport: Active,
     tracked_pins: [],
     viewport_pin: None,
     viewport_pin_row_offset: None,
   }
   state.viewport_pin = Some(state.track_pin(active_node, 0, 0))
-  state.relink_nodes()
   state
 }
 
@@ -173,23 +166,6 @@ fn PageList::scrollback_rows(self : PageList) -> UInt {
 ///|
 fn PageList::total_rows(self : PageList, visible_rows : CellCountInt) -> UInt {
   visible_rows.to_uint() + self.scrollback_rows()
-}
-
-///|
-fn PageList::total_rows_int(self : PageList) -> Int {
-  let mut total = 0
-  let mut node = self.first
-  let mut done = false
-  while !done {
-    match node {
-      Some(current) => {
-        total += current.page.rows.to_int()
-        node = current.next
-      }
-      None => done = true
-    }
-  }
-  total
 }
 
 ///|
@@ -327,7 +303,7 @@ fn PageList::capture_top_scroll_region_up(
         row.node,
         row.y,
       )
-      self.history.push(row)
+      self.history.push_back(row)
       row_idx += 1
     }
 
@@ -356,10 +332,9 @@ fn PageList::capture_full_screen_scroll_down(
 
 ///|
 fn PageList::full_reset(self : PageList, _rows : CellCountInt) -> Unit {
-  self.history = []
+  self.history.clear()
   self.viewport = Active
   self.viewport_pin_row_offset = None
-  self.relink_nodes()
   for index in 0..<self.tracked_pins.length() {
     self.mark_pin_garbage(index)
   }
@@ -367,11 +342,12 @@ fn PageList::full_reset(self : PageList, _rows : CellCountInt) -> Unit {
 
 ///|
 fn PageList::clear_history(self : PageList) -> Unit {
-  self.mark_pins_for_rows_garbage(self.history)
-  self.history = []
+  for row in self.history {
+    self.mark_pins_for_row_garbage(row)
+  }
+  self.history.clear()
   self.viewport = Active
   self.viewport_pin_row_offset = None
-  self.relink_nodes()
 }
 
 ///|
@@ -828,66 +804,26 @@ fn PageList::fixup_viewport(self : PageList, removed : Int) -> Unit {
         }
       }
     Top =>
-      match self.first {
-        Some(first) =>
-          if physical_equal(first, self.active_node) {
-            self.viewport = Active
-            self.viewport_pin_row_offset = None
-          }
-        None => {
-          self.viewport = Active
-          self.viewport_pin_row_offset = None
-        }
+      // The viewport sits at the top of history; if history is now empty it
+      // collapses back to the active screen. (Was: first node == active_node.)
+      if self.history.is_empty() {
+        self.viewport = Active
+        self.viewport_pin_row_offset = None
       }
   }
-}
-
-///|
-fn PageList::relink_nodes(self : PageList) -> Unit {
-  let mut previous : PageListNode? = None
-  let mut first : PageListNode? = None
-  for row in self.history {
-    row.node.prev = previous
-    row.node.next = None
-    match previous {
-      Some(node) => node.next = Some(row.node)
-      None => first = Some(row.node)
-    }
-    previous = Some(row.node)
-  }
-  self.active_node.prev = previous
-  self.active_node.next = None
-  match previous {
-    Some(node) => node.next = Some(self.active_node)
-    None => first = Some(self.active_node)
-  }
-  self.first = first
-  self.last = Some(self.active_node)
 }
 
 ///|
 fn PageList::pin_row_offset(self : PageList, pin : PageListPin) -> Int? {
-  let total_rows = self.total_rows_int()
-  let mut node = self.last
-  let mut rows_from_bottom = 0
-  let mut result : Int? = None
-  let mut done = false
-  while !done {
-    match node {
-      Some(current) => {
-        let row_count = current.page.rows.to_int()
-        rows_from_bottom += row_count
-        if physical_equal(current, pin.node) {
-          result = Some(total_rows - rows_from_bottom + pin.y.to_int())
-          done = true
-        } else {
-          node = current.prev
-        }
-      }
-      None => done = true
-    }
+  // A pin's absolute row offset: history rows precede the active screen, so a
+  // history pin maps to its history index and an active pin to
+  // history.length() + its screen row. Same mapping as
+  // viewport_index_for_source; replaces the old backward node-list walk.
+  match self.row_source_for_pin(pin) {
+    Some(History(index)) => Some(index)
+    Some(Screen(index)) => Some(self.history.length() + index)
+    None => None
   }
-  result
 }
 
 ///|
@@ -979,7 +915,7 @@ fn PageList::resize_without_reflow(
   }
   if cols != grid.cols {
     let resized_history : Array[PageListRow] = []
-    for row in self.history {
+    self.history.each(row => {
       let resized = make_pinned_row(
         row.row,
         row.cells,
@@ -990,8 +926,8 @@ fn PageList::resize_without_reflow(
       )
       self.move_pins_for_row(row.node, row.y, resized.node, resized.y)
       resized_history.push(resized)
-    }
-    self.history = resized_history
+    })
+    self.history = @deque.Deque::from_array(resized_history)
   }
 
   let active_rows : Array[PageListRow] = []
@@ -1035,7 +971,7 @@ fn PageList::resize_without_reflow(
           history_row.node,
           history_row.y,
         )
-        self.history.push(history_row)
+        self.history.push_back(history_row)
       } else {
         self.mark_pins_for_row_garbage(source)
       }
@@ -1063,7 +999,7 @@ fn PageList::resize_without_reflow(
       for index in 0..<history_keep {
         history_rows.push(self.history[index])
       }
-      self.history = history_rows
+      self.history = @deque.Deque::from_array(history_rows)
     }
 
     for index in 0..<pulled_rows.length() {
@@ -1109,7 +1045,6 @@ fn PageList::resize_without_reflow(
       row_idx.to_uint16(),
     )
   }
-  self.relink_nodes()
 
   {
     grid: resized_grid,
@@ -1216,7 +1151,7 @@ fn PageList::resize_cols(
   for index in active_end..<reflowed.length() {
     self.mark_pins_for_row_garbage(reflowed[index])
   }
-  self.history = history_rows
+  self.history = @deque.Deque::from_array(history_rows)
   self.trim_history()
 
   let grid_rows : Array[PageListRow] = []
@@ -1242,7 +1177,6 @@ fn PageList::resize_cols(
       row_idx.to_uint16(),
     )
   }
-  self.relink_nodes()
 
   {
     grid: resized_grid,
@@ -1742,36 +1676,37 @@ fn PageList::viewport_row_offset(self : PageList) -> Int {
 ///|
 fn PageList::trim_history(self : PageList) -> Unit {
   if self.max_rows <= 0 {
-    self.mark_pins_for_rows_garbage(self.history)
-    self.history = []
+    for row in self.history {
+      self.mark_pins_for_row_garbage(row)
+    }
+    self.history.clear()
     self.viewport = Active
     self.viewport_pin_row_offset = None
-    self.relink_nodes()
     return
   }
 
-  self.relink_nodes()
   let excess = self.history.length() - self.max_rows
   if excess <= 0 {
     return
   }
 
-  let trimmed : Array[PageListRow] = []
-  let removed : Array[PageListRow] = []
-  for index in 0..<excess {
-    removed.push(self.history[index])
-  }
-  for index in excess..<self.history.length() {
-    trimmed.push(self.history[index])
-  }
+  // Materialize a Pin viewport's offset before the front rows are dropped, so
+  // fixup_viewport can shift it by `excess` (indices move down by that much).
   match self.viewport {
     Pin => {
       let _ = self.viewport_row_offset()
     }
     _ => ()
   }
-  self.history = trimmed
-  self.relink_nodes()
+  // Evict the oldest rows from the front of the ring buffer: O(excess) (== 1
+  // per line feed once full), not an O(history) array rebuild.
+  let removed : Array[PageListRow] = []
+  for _ in 0..<excess {
+    match self.history.pop_front() {
+      Some(row) => removed.push(row)
+      None => break
+    }
+  }
   self.fixup_viewport(excess)
   self.mark_pins_for_rows_garbage(removed)
 }
@@ -1820,12 +1755,13 @@ fn snapshot_scrollback_row(
   grid : ScreenGridState,
   row_idx : Int,
 ) -> PageListRow {
+  // Gather the row's cells by reference; make_pinned_row performs the single
+  // deep copy into the history row (previously this pre-copied them too, so
+  // every captured row was deep-copied twice).
   let cells : Array[PageCellState] = []
   let mut col_idx = 0
   while col_idx < grid.cols.to_int() {
-    cells.push(
-      copy_scrollback_cell(grid.cells[grid.cell_index(row_idx, col_idx)]),
-    )
+    cells.push(grid.cells[grid.cell_index(row_idx, col_idx)])
     col_idx += 1
   }
   make_pinned_row(
