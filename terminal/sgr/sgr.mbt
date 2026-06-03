@@ -27,7 +27,7 @@ pub(all) enum SgrAttribute {
   ResetItalic
   Faint
   Underline(SgrUnderline)
-  UnderlineColor(RGB)
+  UnderlineColor(@color.RGB)
   Color256Underline(Byte)
   ResetUnderlineColor
   Overline
@@ -40,28 +40,42 @@ pub(all) enum SgrAttribute {
   ResetInvisible
   Strikethrough
   ResetStrikethrough
-  DirectColorFg(RGB)
-  DirectColorBg(RGB)
-  Color8Bg(Name)
-  Color8Fg(Name)
+  DirectColorFg(@color.RGB)
+  DirectColorBg(@color.RGB)
+  Color8Bg(@color.Name)
+  Color8Fg(@color.Name)
   ResetFg
   ResetBg
-  BrightColor8Bg(Name)
-  BrightColor8Fg(Name)
+  BrightColor8Bg(@color.Name)
+  BrightColor8Fg(@color.Name)
   Color256Bg(Byte)
   Color256Fg(Byte)
 } derive(Eq, Debug)
 
 ///|
+/// Abstract (no `pub`): callers build one via `SgrParser::from_params` / `new`
+/// and drive it through `set_params`/`next`/`reset`, so its cursor state stays
+/// sealed across the package boundary.
 struct SgrParser {
   mut params : Array[UInt16]
-  mut params_sep : SepList
+  mut params_sep : @parser.SepList
   mut idx : Int
 } derive(Debug)
 
 ///|
 fn SgrParser::empty() -> SgrParser {
-  { params: [], params_sep: SepList::init_empty(), idx: 0 }
+  { params: [], params_sep: @parser.SepList::init_empty(), idx: 0 }
+}
+
+///|
+/// Build a parser over already-collected CSI parameters and their separator
+/// set. Boundary factory so callers in other packages do not construct the
+/// SgrParser record directly.
+pub fn SgrParser::from_params(
+  params : Array[UInt16],
+  params_sep : @parser.SepList,
+) -> SgrParser {
+  { params, params_sep, idx: 0 }
 }
 
 ///|
@@ -79,7 +93,7 @@ pub fn SgrParser::set_params(
   self : SgrParser,
   params : Array[UInt16],
   separators : Array[Byte],
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   if params.length() > SgrSeparatorCapacity ||
     separators.length() > SgrSeparatorCapacity {
     return InvalidValue
@@ -88,8 +102,8 @@ pub fn SgrParser::set_params(
     return InvalidValue
   }
 
-  self.params = clone_params(params)
-  self.params_sep = SepList::init_empty()
+  self.params = @parser.clone_params(params)
+  self.params_sep = @parser.SepList::init_empty()
   for index in 0..<separators.length() {
     if separators[index] == b':' {
       self.params_sep.set(index)
@@ -129,7 +143,7 @@ pub fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
         }
         return Some(
           Unknown({
-            full: clone_params(self.params),
+            full: @parser.clone_params(self.params),
             partial: clone_param_range(self.params, current, consumed_end),
           }),
         )
@@ -270,7 +284,7 @@ fn SgrParser::parse_direct_color(
   self : SgrParser,
   current : Int,
   colon : Bool,
-) -> RGB? {
+) -> @color.RGB? {
   if remaining_len(self, current) < 5 {
     return None
   }
@@ -336,7 +350,7 @@ fn SgrParser::consume_unknown_colon(self : SgrParser) -> Unit {
 ///|
 fn SgrParser::unknown_from(self : SgrParser, current : Int) -> SgrAttribute {
   Unknown({
-    full: clone_params(self.params),
+    full: @parser.clone_params(self.params),
     partial: clone_param_range(self.params, current, self.params.length()),
   })
 }
@@ -360,7 +374,7 @@ fn remaining_len(parser : SgrParser, current : Int) -> Int {
 }
 
 ///|
-fn name_from_code(code : Byte) -> Name {
+fn name_from_code(code : Byte) -> @color.Name {
   match code {
     0 => Black
     1 => Red

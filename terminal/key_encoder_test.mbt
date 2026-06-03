@@ -1,14 +1,14 @@
 ///|
 fn make_key_event(
-  key : Key,
-  mods? : KeyMods = KeyMods::new(),
+  key : @input.Key,
+  mods? : @input.KeyMods = @input.KeyMods::new(),
   utf8? : Bytes = b"",
   unshifted_codepoint? : UInt = 0U,
-  action? : KeyAction = Press,
-  consumed_mods? : KeyMods = KeyMods::new(),
+  action? : @input.KeyAction = Press,
+  consumed_mods? : @input.KeyMods = @input.KeyMods::new(),
   composing? : Bool = false,
-) -> KeyEvent {
-  let event = KeyEvent::new()
+) -> @input.KeyEvent {
+  let event = @input.KeyEvent::new()
   event.set_key(key)
   event.set_mods(mods)
   event.set_utf8(utf8)
@@ -100,7 +100,7 @@ test "key encoder/kitty plain text control release and composing cases" {
   guard encoder.encode(
       make_key_event(
         ControlLeft,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         action=Release,
       ),
     ) ==
@@ -112,7 +112,7 @@ test "key encoder/kitty plain text control release and composing cases" {
   guard encoder.encode(
       make_key_event(
         ShiftLeft,
-        mods=KeyMods::new().with_shift(true),
+        mods=@input.KeyMods::new().with_shift(true),
         composing=true,
       ),
     ) ==
@@ -121,7 +121,11 @@ test "key encoder/kitty plain text control release and composing cases" {
   }
 
   guard encoder.encode(
-      make_key_event(KeyA, mods=KeyMods::new().with_shift(true), composing=true),
+      make_key_event(
+        KeyA,
+        mods=@input.KeyMods::new().with_shift(true),
+        composing=true,
+      ),
     ) ==
     b"" else {
     fail("expected composing plain keys to stay silent")
@@ -135,7 +139,7 @@ test "key encoder/kitty alternates associated text dead-key and keypad cases" {
   guard encoder.encode(
       make_key_event(
         KeyA,
-        mods=KeyMods::new().with_shift(true),
+        mods=@input.KeyMods::new().with_shift(true),
         utf8=b"A",
         unshifted_codepoint=b'a'.to_uint(),
       ),
@@ -148,7 +152,7 @@ test "key encoder/kitty alternates associated text dead-key and keypad cases" {
   guard encoder.encode(
       make_key_event(
         KeyJ,
-        mods=KeyMods::new().with_shift(true),
+        mods=@input.KeyMods::new().with_shift(true),
         utf8=b"J",
         unshifted_codepoint=b'j'.to_uint(),
       ),
@@ -177,7 +181,7 @@ test "key encoder/kitty macos option-as-alt behavior matches platform branches" 
 
   let event = make_key_event(
     KeyW,
-    mods=KeyMods::new().with_alt(true),
+    mods=@input.KeyMods::new().with_alt(true),
     utf8=b"\xE2\x88\x91",
     unshifted_codepoint=b'w'.to_uint(),
   )
@@ -200,7 +204,7 @@ test "key encoder/legacy control and alt-prefix cases" {
   guard encoder.encode(
       make_key_event(
         KeyC,
-        mods=KeyMods::new().with_ctrl(true).with_alt(true),
+        mods=@input.KeyMods::new().with_ctrl(true).with_alt(true),
         utf8=b"c",
       ),
     ) ==
@@ -211,7 +215,7 @@ test "key encoder/legacy control and alt-prefix cases" {
   encoder.set_alt_esc_prefix(true)
   encoder.set_macos_option_as_alt(True)
   guard encoder.encode(
-      make_key_event(KeyC, mods=KeyMods::new().with_alt(true), utf8=b"c"),
+      make_key_event(KeyC, mods=@input.KeyMods::new().with_alt(true), utf8=b"c"),
     ) ==
     b"\x1Bc" else {
     fail("expected alt-esc-prefix encoding for text")
@@ -222,7 +226,7 @@ test "key encoder/legacy control and alt-prefix cases" {
   guard encoder.encode(
       make_key_event(
         KeyC,
-        mods=KeyMods::new().with_alt(true),
+        mods=@input.KeyMods::new().with_alt(true),
         utf8=b"\xE2\x89\x88",
         unshifted_codepoint=b'c'.to_uint(),
       ),
@@ -240,7 +244,7 @@ test "key encoder/legacy backspace modify-other and csi-u cases" {
     fail("expected backspace DEL with DECBKM reset")
   }
   guard encoder.encode(
-      make_key_event(Backspace, mods=KeyMods::new().with_ctrl(true)),
+      make_key_event(Backspace, mods=@input.KeyMods::new().with_ctrl(true)),
     ) ==
     b"\x08" else {
     fail("expected ctrl+backspace BS with DECBKM reset")
@@ -249,7 +253,7 @@ test "key encoder/legacy backspace modify-other and csi-u cases" {
   encoder.set_backarrow_key_mode(true)
   guard encoder.encode(make_key_event(Backspace)) == b"\x08" &&
     encoder.encode(
-      make_key_event(Backspace, mods=KeyMods::new().with_ctrl(true)),
+      make_key_event(Backspace, mods=@input.KeyMods::new().with_ctrl(true)),
     ) ==
     b"\x7F" else {
     fail("expected DECBKM inversion for backspace")
@@ -260,7 +264,7 @@ test "key encoder/legacy backspace modify-other and csi-u cases" {
   guard encoder.encode(
       make_key_event(
         KeyH,
-        mods=KeyMods::new().with_ctrl(true).with_shift(true),
+        mods=@input.KeyMods::new().with_ctrl(true).with_shift(true),
         utf8=b"H",
       ),
     ) ==
@@ -270,7 +274,11 @@ test "key encoder/legacy backspace modify-other and csi-u cases" {
 
   encoder.set_modify_other_keys_state_2(false)
   guard encoder.encode(
-      make_key_event(KeyI, mods=KeyMods::new().with_ctrl(true), utf8=b"i"),
+      make_key_event(
+        KeyI,
+        mods=@input.KeyMods::new().with_ctrl(true),
+        utf8=b"i",
+      ),
     ) ==
     b"\x1B[105;5u" else {
     fail("expected fixterms awkward-letter fallback")
@@ -279,7 +287,7 @@ test "key encoder/legacy backspace modify-other and csi-u cases" {
   guard encoder.encode(
       make_key_event(
         KeyM,
-        mods=KeyMods::new().with_ctrl(true).with_shift(true),
+        mods=@input.KeyMods::new().with_ctrl(true).with_shift(true),
         utf8=b"M",
         unshifted_codepoint=b'm'.to_uint(),
       ),
@@ -291,7 +299,7 @@ test "key encoder/legacy backspace modify-other and csi-u cases" {
   guard encoder.encode(
       make_key_event(
         BracketLeft,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"\xC5\x91",
         unshifted_codepoint=337U,
       ),
@@ -308,8 +316,8 @@ test "key encoder/legacy function key and keypad application paths" {
   guard encoder.encode(
       make_key_event(
         ArrowUp,
-        mods=KeyMods::new().with_shift(true),
-        consumed_mods=KeyMods::new().with_shift(true),
+        mods=@input.KeyMods::new().with_shift(true),
+        consumed_mods=@input.KeyMods::new().with_shift(true),
       ),
     ) ==
     b"\x1B[1;2A" else {
@@ -329,7 +337,7 @@ test "key encoder/legacy function key and keypad application paths" {
   guard encoder.encode(
       make_key_event(
         Numpad1,
-        mods=KeyMods::new().with_num_lock(true),
+        mods=@input.KeyMods::new().with_num_lock(true),
         utf8=b"1",
       ),
     ) ==
@@ -338,7 +346,9 @@ test "key encoder/legacy function key and keypad application paths" {
   }
 
   encoder.set_ignore_keypad_with_numlock(false)
-  guard encoder.encode(make_key_event(F5, mods=KeyMods::new().with_ctrl(true))) ==
+  guard encoder.encode(
+      make_key_event(F5, mods=@input.KeyMods::new().with_ctrl(true)),
+    ) ==
     b"\x1B[15;5~" else {
     fail("expected ctrl+f5 legacy function-key encoding")
   }
@@ -400,7 +410,7 @@ test "key encoder/kitty alternates associated text and special keys" {
   guard encoder.encode(
       make_key_event(
         Unidentified,
-        mods=KeyMods::new().with_alt(true),
+        mods=@input.KeyMods::new().with_alt(true),
         utf8=b"X",
       ),
     ) ==
@@ -429,7 +439,11 @@ test "key encoder/kitty alternates associated text and special keys" {
 
   encoder.set_kitty_flags(KittyKeyboardFlags(0x04))
   guard encoder.encode(
-      make_key_event(Numpad1, mods=KeyMods::new().with_shift(true), utf8=b"!"),
+      make_key_event(
+        Numpad1,
+        mods=@input.KeyMods::new().with_shift(true),
+        utf8=b"!",
+      ),
     ) ==
     b"\x1B[57400:33:49;2u" else {
     fail(
@@ -438,7 +452,11 @@ test "key encoder/kitty alternates associated text and special keys" {
   }
 
   guard encoder.encode(
-      make_key_event(NumpadUp, mods=KeyMods::new().with_shift(true), utf8=b"A"),
+      make_key_event(
+        NumpadUp,
+        mods=@input.KeyMods::new().with_shift(true),
+        utf8=b"A",
+      ),
     ) ==
     b"\x1B[57419:65;2u" else {
     fail("expected kitty alternates to tolerate keys without base codepoints")
@@ -456,7 +474,7 @@ test "key encoder/kitty alternates associated text and special keys" {
   guard encoder.encode(
       make_key_event(
         KeyW,
-        mods=KeyMods::new().with_alt(true).with_alt_side(Left),
+        mods=@input.KeyMods::new().with_alt(true).with_alt_side(Left),
         utf8=b"\xE2\x88\x91",
         unshifted_codepoint=b'w'.to_uint(),
       ),
@@ -473,7 +491,9 @@ test "key encoder/kitty alternates associated text and special keys" {
     fail("expected kitty special-key encoding without modifiers")
   }
 
-  guard encoder.encode(make_key_event(F1, mods=KeyMods::new().with_shift(true))) ==
+  guard encoder.encode(
+      make_key_event(F1, mods=@input.KeyMods::new().with_shift(true)),
+    ) ==
     b"\x1B[1;2P" else {
     fail("expected kitty special-key encoding with modifiers")
   }
@@ -515,7 +535,7 @@ test "key encoder/legacy guard and ctrl fallback coverage" {
   guard encoder.encode(
       make_key_event(
         Backspace,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"\x08",
       ),
     ) ==
@@ -531,7 +551,7 @@ test "key encoder/legacy guard and ctrl fallback coverage" {
   guard encoder.encode(
       make_key_event(
         Unidentified,
-        mods=KeyMods::new().with_alt(true),
+        mods=@input.KeyMods::new().with_alt(true),
         unshifted_codepoint=256U,
       ),
     ) ==
@@ -561,7 +581,7 @@ test "key encoder/legacy guard and ctrl fallback coverage" {
   guard encoder.encode(
       make_key_event(
         Unidentified,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"\xC3\x28",
       ),
     ) ==
@@ -571,7 +591,11 @@ test "key encoder/legacy guard and ctrl fallback coverage" {
 
   encoder.set_host_is_macos(true)
   guard encoder.encode(
-      make_key_event(KeyX, mods=KeyMods::new().with_super_(true), utf8=b"x"),
+      make_key_event(
+        KeyX,
+        mods=@input.KeyMods::new().with_super_(true),
+        utf8=b"x",
+      ),
     ) ==
     b"" else {
     fail("expected legacy macOS super-modified text to stay silent")
@@ -584,8 +608,8 @@ test "key encoder/legacy macos option-as-alt branches" {
   encoder.set_host_is_macos(true)
   encoder.set_modify_other_keys_state_2(true)
 
-  let alt_left = KeyMods::new().with_alt(true).with_alt_side(Left)
-  let alt_right = KeyMods::new().with_alt(true).with_alt_side(Right)
+  let alt_left = @input.KeyMods::new().with_alt(true).with_alt_side(Left)
+  let alt_right = @input.KeyMods::new().with_alt(true).with_alt_side(Right)
 
   encoder.set_macos_option_as_alt(False)
   guard encoder.encode(
@@ -699,7 +723,10 @@ test "key encoder/legacy ctrl sequence coverage" {
   let encoder = KeyEncoder::new()
 
   guard encoder.encode(
-      make_key_event(KeyA, mods=KeyMods::new().with_ctrl(true).with_shift(true)),
+      make_key_event(
+        KeyA,
+        mods=@input.KeyMods::new().with_ctrl(true).with_shift(true),
+      ),
     ) ==
     b"" else {
     fail(
@@ -708,7 +735,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   }
 
   guard encoder.encode(
-      make_key_event(Unidentified, mods=KeyMods::new().with_ctrl(true)),
+      make_key_event(Unidentified, mods=@input.KeyMods::new().with_ctrl(true)),
     ) ==
     b"" else {
     fail("expected unidentified ctrl keys without UTF-8 to stay silent")
@@ -717,7 +744,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   guard encoder.encode(
       make_key_event(
         Slash,
-        mods=KeyMods::new().with_ctrl(true).with_shift(true),
+        mods=@input.KeyMods::new().with_ctrl(true).with_shift(true),
         utf8=b"/",
         unshifted_codepoint=b'/'.to_uint(),
       ),
@@ -729,7 +756,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   guard encoder.encode(
       make_key_event(
         Space,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b" ",
         unshifted_codepoint=b' '.to_uint(),
       ),
@@ -741,7 +768,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   guard encoder.encode(
       make_key_event(
         Digit0,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"0",
         unshifted_codepoint=b'0'.to_uint(),
       ),
@@ -753,7 +780,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   guard encoder.encode(
       make_key_event(
         Digit1,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"1",
         unshifted_codepoint=b'1'.to_uint(),
       ),
@@ -765,7 +792,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   guard encoder.encode(
       make_key_event(
         KeyD,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"d",
         unshifted_codepoint=b'd'.to_uint(),
       ),
@@ -777,7 +804,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   guard encoder.encode(
       make_key_event(
         KeyE,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"e",
         unshifted_codepoint=b'e'.to_uint(),
       ),
@@ -789,7 +816,7 @@ test "key encoder/legacy ctrl sequence coverage" {
   guard encoder.encode(
       make_key_event(
         KeyF,
-        mods=KeyMods::new().with_ctrl(true),
+        mods=@input.KeyMods::new().with_ctrl(true),
         utf8=b"f",
         unshifted_codepoint=b'f'.to_uint(),
       ),
@@ -815,13 +842,17 @@ test "key encoder/legacy function key matrix coverage" {
   encoder.set_cursor_key_application(false)
   guard encoder.encode(make_key_event(F2)) == b"\x1BOQ" &&
     encoder.encode(make_key_event(F3)) == b"\x1BOR" &&
-    encoder.encode(make_key_event(F3, mods=KeyMods::new().with_shift(true))) ==
+    encoder.encode(
+      make_key_event(F3, mods=@input.KeyMods::new().with_shift(true)),
+    ) ==
     b"\x1B[13;2~" &&
     encoder.encode(make_key_event(F4)) == b"\x1BOS" &&
     encoder.encode(make_key_event(F6)) == b"\x1B[17~" &&
     encoder.encode(make_key_event(F7)) == b"\x1B[18~" &&
     encoder.encode(make_key_event(F8)) == b"\x1B[19~" &&
-    encoder.encode(make_key_event(F1, mods=KeyMods::new().with_shift(true))) ==
+    encoder.encode(
+      make_key_event(F1, mods=@input.KeyMods::new().with_shift(true)),
+    ) ==
     b"\x1B[1;2P" else {
     fail("expected function-key matrix coverage for F3/F4/F6")
   }
@@ -846,14 +877,14 @@ test "key encoder/legacy function key matrix coverage" {
   encoder.set_keypad_key_application(true)
   guard encoder.encode(make_key_event(NumpadEnter)) == b"\x1BOM" &&
     encoder.encode(
-      make_key_event(NumpadEnter, mods=KeyMods::new().with_shift(true)),
+      make_key_event(NumpadEnter, mods=@input.KeyMods::new().with_shift(true)),
     ) ==
     b"\x1BO2M" else {
     fail("expected keypad enter application coverage")
   }
 
   guard encoder.encode(
-      make_key_event(Numpad3, mods=KeyMods::new().with_shift(true)),
+      make_key_event(Numpad3, mods=@input.KeyMods::new().with_shift(true)),
     ) ==
     b"\x1BO2s" else {
     fail("expected keypad application coverage for modified keypad digits")
@@ -865,11 +896,11 @@ test "key encoder/legacy function key matrix coverage" {
   }
 
   guard encoder.encode(
-      make_key_event(NumpadEnter, mods=KeyMods::new().with_shift(true)),
+      make_key_event(NumpadEnter, mods=@input.KeyMods::new().with_shift(true)),
     ) ==
     b"" &&
     encoder.encode(
-      make_key_event(Numpad2, mods=KeyMods::new().with_shift(true)),
+      make_key_event(Numpad2, mods=@input.KeyMods::new().with_shift(true)),
     ) ==
     b"" else {
     fail(
@@ -882,36 +913,44 @@ test "key encoder/legacy function key matrix coverage" {
   }
 
   guard encoder.encode(
-      make_key_event(Tab, mods=KeyMods::new().with_shift(true)),
+      make_key_event(Tab, mods=@input.KeyMods::new().with_shift(true)),
     ) ==
     b"\x1B[Z" &&
-    encoder.encode(make_key_event(Tab, mods=KeyMods::new().with_alt(true))) ==
+    encoder.encode(
+      make_key_event(Tab, mods=@input.KeyMods::new().with_alt(true)),
+    ) ==
     b"\x1B\t" else {
     fail("expected tab shift/alt fallback coverage")
   }
 
   encoder.set_modify_other_keys_state_2(true)
   guard encoder.encode(
-      make_key_event(Tab, mods=KeyMods::new().with_shift(true)),
+      make_key_event(Tab, mods=@input.KeyMods::new().with_shift(true)),
     ) ==
     b"\x1B[27;2;9~" &&
-    encoder.encode(make_key_event(Tab, mods=KeyMods::new().with_alt(true))) ==
+    encoder.encode(
+      make_key_event(Tab, mods=@input.KeyMods::new().with_alt(true)),
+    ) ==
     b"\x1B[27;3;9~" &&
-    encoder.encode(make_key_event(Tab, mods=KeyMods::new().with_ctrl(true))) ==
+    encoder.encode(
+      make_key_event(Tab, mods=@input.KeyMods::new().with_ctrl(true)),
+    ) ==
     b"\x1B[27;5;9~" else {
     fail("expected modify-other-keys tab coverage")
   }
 
   encoder.set_modify_other_keys_state_2(false)
   guard encoder.encode(make_key_event(Enter)) == b"\r" &&
-    encoder.encode(make_key_event(Enter, mods=KeyMods::new().with_alt(true))) ==
+    encoder.encode(
+      make_key_event(Enter, mods=@input.KeyMods::new().with_alt(true)),
+    ) ==
     b"\x1B\r" else {
     fail("expected enter fallback coverage")
   }
 
   encoder.set_modify_other_keys_state_2(true)
   guard encoder.encode(
-      make_key_event(Enter, mods=KeyMods::new().with_ctrl(true)),
+      make_key_event(Enter, mods=@input.KeyMods::new().with_ctrl(true)),
     ) ==
     b"\x1B[27;5;13~" else {
     fail("expected modify-other-keys enter coverage")
@@ -919,22 +958,24 @@ test "key encoder/legacy function key matrix coverage" {
 
   encoder.set_modify_other_keys_state_2(false)
   guard encoder.encode(make_key_event(Escape)) == b"\x1B" &&
-    encoder.encode(make_key_event(Escape, mods=KeyMods::new().with_alt(true))) ==
+    encoder.encode(
+      make_key_event(Escape, mods=@input.KeyMods::new().with_alt(true)),
+    ) ==
     b"\x1B\x1B" else {
     fail("expected escape fallback coverage")
   }
 
   encoder.set_modify_other_keys_state_2(true)
   guard encoder.encode(
-      make_key_event(Escape, mods=KeyMods::new().with_ctrl(true)),
+      make_key_event(Escape, mods=@input.KeyMods::new().with_ctrl(true)),
     ) ==
     b"\x1B[27;5;27~" &&
     encoder.encode(
-      make_key_event(Backspace, mods=KeyMods::new().with_alt(true)),
+      make_key_event(Backspace, mods=@input.KeyMods::new().with_alt(true)),
     ) ==
     b"\x1B[27;3;127~" &&
     encoder.encode(
-      make_key_event(Backspace, mods=KeyMods::new().with_ctrl(true)),
+      make_key_event(Backspace, mods=@input.KeyMods::new().with_ctrl(true)),
     ) ==
     b"\x08" else {
     fail("expected modify-other-keys escape and backspace coverage")
@@ -942,7 +983,7 @@ test "key encoder/legacy function key matrix coverage" {
 
   encoder.set_modify_other_keys_state_2(false)
   guard encoder.encode(
-      make_key_event(Backspace, mods=KeyMods::new().with_alt(true)),
+      make_key_event(Backspace, mods=@input.KeyMods::new().with_alt(true)),
     ) ==
     b"\x1B\x7F" else {
     fail("expected legacy alt+backspace fallback coverage")
@@ -959,7 +1000,7 @@ test "key encoder/kitty right-option associated-text suppression" {
   guard encoder.encode(
       make_key_event(
         KeyW,
-        mods=KeyMods::new().with_alt(true).with_alt_side(Right),
+        mods=@input.KeyMods::new().with_alt(true).with_alt_side(Right),
         utf8=b"\xE2\x88\x91",
         unshifted_codepoint=b'w'.to_uint(),
       ),

@@ -1,0 +1,120 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/color"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn default_palette() -> Array[RGB]
+
+pub fn x11_color_lookup(String) -> RGB?
+
+// Errors
+pub suberror ColorParseError {
+  InvalidFormat
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) enum Dynamic {
+  Foreground
+  Background
+  Cursor
+  PointerForeground
+  PointerBackground
+  TektronixForeground
+  TektronixBackground
+  HighlightBackground
+  TektronixCursor
+  HighlightForeground
+} derive(Eq, @debug.Debug)
+pub fn Dynamic::code(Self) -> UInt16
+pub fn Dynamic::next(Self) -> Self?
+
+type DynamicPalette derive(Eq, @debug.Debug)
+pub fn DynamicPalette::change_default(Self, Array[RGB]) -> Unit
+pub fn DynamicPalette::color(Self, Byte) -> RGB
+pub fn DynamicPalette::new() -> Self
+pub fn DynamicPalette::reset(Self, Byte) -> Unit
+pub fn DynamicPalette::reset_all(Self) -> Unit
+pub fn DynamicPalette::set(Self, Byte, RGB) -> Unit
+
+type DynamicRGB derive(Eq, @debug.Debug)
+pub fn DynamicRGB::get(Self) -> RGB?
+pub fn DynamicRGB::init(RGB) -> Self
+pub fn DynamicRGB::reset(Self) -> Unit
+pub fn DynamicRGB::set(Self, RGB) -> Unit
+pub fn DynamicRGB::unset() -> Self
+
+pub(all) enum Name {
+  Black
+  Red
+  Green
+  Yellow
+  Blue
+  Magenta
+  Cyan
+  White
+  BrightBlack
+  BrightRed
+  BrightGreen
+  BrightYellow
+  BrightBlue
+  BrightMagenta
+  BrightCyan
+  BrightWhite
+} derive(Eq, @debug.Debug)
+pub fn Name::code(Self) -> Byte
+pub fn Name::default_rgb(Self) -> RGB
+
+pub(all) struct RGB {
+  r : Byte
+  g : Byte
+  b : Byte
+} derive(Eq, @debug.Debug)
+pub fn RGB::b(Self) -> Byte
+pub fn RGB::g(Self) -> Byte
+pub fn RGB::new(Byte, Byte, Byte) -> Self
+pub fn RGB::parse(String) -> Self raise ColorParseError
+pub fn RGB::r(Self) -> Byte
+
+pub(all) enum Special {
+  Bold
+  Underline
+  Blink
+  Reverse
+  Italic
+} derive(Eq, @debug.Debug)
+pub fn Special::osc4(Self) -> UInt16
+
+type TerminalColors derive(Eq, @debug.Debug)
+pub fn TerminalColors::background(Self) -> RGB?
+pub fn TerminalColors::change_default_palette(Self, Array[RGB]) -> Unit
+pub fn TerminalColors::cursor(Self) -> RGB?
+pub fn TerminalColors::default_background(Self) -> RGB?
+pub fn TerminalColors::default_cursor(Self) -> RGB?
+pub fn TerminalColors::default_foreground(Self) -> RGB?
+pub fn TerminalColors::default_palette_snapshot(Self) -> Array[RGB]
+pub fn TerminalColors::foreground(Self) -> RGB?
+pub fn TerminalColors::has_palette_changes(Self) -> Bool
+pub fn TerminalColors::new() -> Self
+pub fn TerminalColors::palette_color(Self, Byte) -> RGB
+pub fn TerminalColors::palette_snapshot(Self) -> Array[RGB]
+pub fn TerminalColors::reset_background(Self) -> Unit
+pub fn TerminalColors::reset_cursor(Self) -> Unit
+pub fn TerminalColors::reset_foreground(Self) -> Unit
+pub fn TerminalColors::reset_palette(Self) -> Unit
+pub fn TerminalColors::reset_palette_color(Self, Byte) -> Unit
+pub fn TerminalColors::set_background(Self, RGB) -> Unit
+pub fn TerminalColors::set_cursor(Self, RGB) -> Unit
+pub fn TerminalColors::set_default_background(Self, RGB?) -> Unit
+pub fn TerminalColors::set_default_cursor(Self, RGB?) -> Unit
+pub fn TerminalColors::set_default_foreground(Self, RGB?) -> Unit
+pub fn TerminalColors::set_default_palette(Self, Array[RGB]?) -> Bool
+pub fn TerminalColors::set_foreground(Self, RGB) -> Unit
+pub fn TerminalColors::set_palette_color(Self, Byte, RGB) -> Unit
+
+// Type aliases
+
+// Traits
+

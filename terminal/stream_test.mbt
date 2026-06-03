@@ -186,7 +186,9 @@ test "stream/osc report pwd mouse shape and color operation subset" {
     [
       StreamReportPwd("file:///tmp"),
       StreamMouseShape(Pointer),
-      StreamColorOperation(ColorCommand::new(Osc4, [Query(Palette(1))], St)),
+      StreamColorOperation(
+        @osc.ColorCommand::new(Osc4, [Query(Palette(1))], St),
+      ),
     ] else {
     fail("expected report-pwd, mouse-shape, and color-operation actions")
   }
@@ -893,7 +895,7 @@ test "stream/csi sgr subset" {
       StreamSetAttribute(Unset),
       StreamSetAttribute(Bold),
       StreamSetAttribute(Underline(Curly)),
-      StreamSetAttribute(DirectColorFg(RGB::new(1, 2, 3))),
+      StreamSetAttribute(DirectColorFg(@color.RGB::new(1, 2, 3))),
       StreamSetAttribute(Unknown({ full: [1, 2], partial: [1, 2] })),
       StreamSetAttribute(Color256Underline(9)),
     ] else {

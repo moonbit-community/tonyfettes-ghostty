@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/utf8_decoder"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Utf8Decoder derive(Eq, @debug.Debug)
+pub fn Utf8Decoder::is_accept_state(Self) -> Bool
+pub fn Utf8Decoder::new() -> Self
+pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)
+
+// Type aliases
+
+// Traits
+

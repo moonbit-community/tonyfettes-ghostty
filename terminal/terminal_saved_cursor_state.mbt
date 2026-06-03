@@ -1,12 +1,12 @@
 ///|
 struct ScreenCharsetState {
-  mut g0 : Charset
-  mut g1 : Charset
-  mut g2 : Charset
-  mut g3 : Charset
-  mut gl : Slots
-  mut gr : Slots
-  mut single_shift : Slots?
+  mut g0 : @charsets.Charset
+  mut g1 : @charsets.Charset
+  mut g2 : @charsets.Charset
+  mut g3 : @charsets.Charset
+  mut gl : @charsets.Slots
+  mut gr : @charsets.Slots
+  mut single_shift : @charsets.Slots?
 } derive(Eq, Debug)
 
 ///|
@@ -17,8 +17,8 @@ pub fn ScreenCharsetState::new() -> ScreenCharsetState {
 ///|
 pub fn ScreenCharsetState::charset(
   self : ScreenCharsetState,
-  slot : Slots,
-) -> Charset {
+  slot : @charsets.Slots,
+) -> @charsets.Charset {
   match slot {
     G0 => self.g0
     G1 => self.g1
@@ -28,25 +28,27 @@ pub fn ScreenCharsetState::charset(
 }
 
 ///|
-pub fn ScreenCharsetState::gl(self : ScreenCharsetState) -> Slots {
+pub fn ScreenCharsetState::gl(self : ScreenCharsetState) -> @charsets.Slots {
   self.gl
 }
 
 ///|
-pub fn ScreenCharsetState::gr(self : ScreenCharsetState) -> Slots {
+pub fn ScreenCharsetState::gr(self : ScreenCharsetState) -> @charsets.Slots {
   self.gr
 }
 
 ///|
-pub fn ScreenCharsetState::single_shift(self : ScreenCharsetState) -> Slots? {
+pub fn ScreenCharsetState::single_shift(
+  self : ScreenCharsetState,
+) -> @charsets.Slots? {
   self.single_shift
 }
 
 ///|
 pub fn ScreenCharsetState::configure(
   self : ScreenCharsetState,
-  slot : Slots,
-  charset : Charset,
+  slot : @charsets.Slots,
+  charset : @charsets.Charset,
 ) -> Unit {
   match slot {
     G0 => self.g0 = charset
@@ -59,8 +61,8 @@ pub fn ScreenCharsetState::configure(
 ///|
 pub fn ScreenCharsetState::invoke(
   self : ScreenCharsetState,
-  active : ActiveSlot,
-  slot : Slots,
+  active : @charsets.ActiveSlot,
+  slot : @charsets.Slots,
   single : Bool,
 ) -> Unit {
   if single {
@@ -77,7 +79,7 @@ pub fn ScreenCharsetState::invoke(
 ///|
 pub fn ScreenCharsetState::consume_single_shift(
   self : ScreenCharsetState,
-) -> Slots? {
+) -> @charsets.Slots? {
   let shift = self.single_shift
   self.single_shift = None
   shift

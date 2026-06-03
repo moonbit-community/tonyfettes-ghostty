@@ -1,6 +1,15 @@
 import {
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
+  "tonyfettes/ghostty/terminal/ascii",
+  "tonyfettes/ghostty/terminal/charsets",
+  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/parser",
+  "tonyfettes/ghostty/terminal/result_code",
+  "tonyfettes/ghostty/terminal/sgr",
+  "tonyfettes/ghostty/terminal/utf8_decoder",
 }
 
 options(

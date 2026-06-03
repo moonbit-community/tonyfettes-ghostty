@@ -1,10 +1,10 @@
 ///|
-pub(all) suberror ColorParseError {
+pub suberror ColorParseError {
   InvalidFormat
 } derive(Eq, Debug)
 
 ///|
-struct RGB {
+pub(all) struct RGB {
   r : Byte
   g : Byte
   b : Byte
@@ -478,6 +478,11 @@ fn DynamicRGB::set_default(self : DynamicRGB, color : RGB?) -> Unit {
 }
 
 ///|
+/// Abstract (no `pub`): the three arrays carry a 256-entry palette invariant
+/// that `color`/`set`/`change_default` rely on when indexing. Callers go
+/// through the constructor + accessor/mutator methods, so keep the storage
+/// sealed rather than letting another package replace an array with the wrong
+/// length.
 struct DynamicPalette {
   mut current : Array[RGB]
   mut original : Array[RGB]
@@ -542,6 +547,10 @@ pub fn DynamicPalette::change_default(
 }
 
 ///|
+/// Abstract (no `pub`): the terminal's dynamic color state, built via `new` and
+/// driven through its accessor/mutator methods (`foreground`/`set_default_*`/
+/// …). Its storage — including the invariant-bearing `DynamicPalette` — stays
+/// sealed across the package boundary.
 struct TerminalColors {
   background : DynamicRGB
   foreground : DynamicRGB
@@ -575,17 +584,17 @@ pub fn TerminalColors::cursor(self : TerminalColors) -> RGB? {
 }
 
 ///|
-fn TerminalColors::default_background(self : TerminalColors) -> RGB? {
+pub fn TerminalColors::default_background(self : TerminalColors) -> RGB? {
   self.background.default_color()
 }
 
 ///|
-fn TerminalColors::default_foreground(self : TerminalColors) -> RGB? {
+pub fn TerminalColors::default_foreground(self : TerminalColors) -> RGB? {
   self.foreground.default_color()
 }
 
 ///|
-fn TerminalColors::default_cursor(self : TerminalColors) -> RGB? {
+pub fn TerminalColors::default_cursor(self : TerminalColors) -> RGB? {
   self.cursor.default_color()
 }
 
@@ -595,12 +604,12 @@ pub fn TerminalColors::palette_color(self : TerminalColors, idx : Byte) -> RGB {
 }
 
 ///|
-fn TerminalColors::palette_snapshot(self : TerminalColors) -> Array[RGB] {
+pub fn TerminalColors::palette_snapshot(self : TerminalColors) -> Array[RGB] {
   clone_palette(self.palette.current)
 }
 
 ///|
-fn TerminalColors::default_palette_snapshot(
+pub fn TerminalColors::default_palette_snapshot(
   self : TerminalColors,
 ) -> Array[RGB] {
   clone_palette(self.palette.original)
@@ -628,7 +637,7 @@ pub fn TerminalColors::set_cursor(self : TerminalColors, color : RGB) -> Unit {
 }
 
 ///|
-fn TerminalColors::set_default_background(
+pub fn TerminalColors::set_default_background(
   self : TerminalColors,
   color : RGB?,
 ) -> Unit {
@@ -636,7 +645,7 @@ fn TerminalColors::set_default_background(
 }
 
 ///|
-fn TerminalColors::set_default_foreground(
+pub fn TerminalColors::set_default_foreground(
   self : TerminalColors,
   color : RGB?,
 ) -> Unit {
@@ -644,7 +653,7 @@ fn TerminalColors::set_default_foreground(
 }
 
 ///|
-fn TerminalColors::set_default_cursor(
+pub fn TerminalColors::set_default_cursor(
   self : TerminalColors,
   color : RGB?,
 ) -> Unit {
@@ -697,7 +706,7 @@ pub fn TerminalColors::change_default_palette(
 }
 
 ///|
-fn TerminalColors::set_default_palette(
+pub fn TerminalColors::set_default_palette(
   self : TerminalColors,
   defaults : Array[RGB]?,
 ) -> Bool {
@@ -717,7 +726,7 @@ fn TerminalColors::set_default_palette(
 }
 
 ///|
-fn TerminalColors::has_palette_changes(self : TerminalColors) -> Bool {
+pub fn TerminalColors::has_palette_changes(self : TerminalColors) -> Bool {
   self.palette.has_changes()
 }
 

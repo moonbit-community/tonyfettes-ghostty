@@ -1,6 +1,10 @@
 ///|
 fn test_parse(params : Array[UInt16]) -> SgrAttribute {
-  let parser : SgrParser = { params, params_sep: SepList::init_empty(), idx: 0 }
+  let parser : SgrParser = {
+    params,
+    params_sep: @parser.SepList::init_empty(),
+    idx: 0,
+  }
   parser.next().unwrap()
 }
 
@@ -9,7 +13,7 @@ fn parser_with_colons(
   params : Array[UInt16],
   colon_indices : Array[Int],
 ) -> SgrParser {
-  let params_sep = SepList::init_empty()
+  let params_sep = @parser.SepList::init_empty()
   for index in colon_indices {
     params_sep.set(index)
   }
@@ -60,7 +64,7 @@ test "sgr/parser basic direct colors and empty input" {
 test "sgr/parser multiple next calls and null termination" {
   let parser : SgrParser = {
     params: [0, 38, 2, 40, 44, 52],
-    params_sep: SepList::init_empty(),
+    params_sep: @parser.SepList::init_empty(),
     idx: 0,
   }
   expect_next_eq(parser, Unset, "expected first value to unset")
@@ -175,7 +179,7 @@ test "sgr/private helpers and fallback branches" {
 
   let impossible_colorspace : SgrParser = {
     params: [0, 38, 2, 0, 1, 2],
-    params_sep: SepList::init_empty(),
+    params_sep: @parser.SepList::init_empty(),
     idx: 1,
   }
   impossible_colorspace.params_sep.set(1)
@@ -252,7 +256,7 @@ test "sgr/underline colon regressions preserve continuation" {
 test "sgr/named colors and bright colors" {
   let parser : SgrParser = {
     params: [31, 43, 90, 103],
-    params_sep: SepList::init_empty(),
+    params_sep: @parser.SepList::init_empty(),
     idx: 0,
   }
   expect_next_eq(parser, Color8Fg(Red), "expected red fg")
@@ -274,7 +278,7 @@ test "sgr/named colors and bright colors" {
 test "sgr/256-color selectors" {
   let parser : SgrParser = {
     params: [38, 5, 161, 48, 5, 236],
-    params_sep: SepList::init_empty(),
+    params_sep: @parser.SepList::init_empty(),
     idx: 0,
   }
   expect_next_eq(parser, Color256Fg(161), "expected 256 fg")
@@ -283,7 +287,7 @@ test "sgr/256-color selectors" {
 
   let underline : SgrParser = {
     params: [58, 5, 9],
-    params_sep: SepList::init_empty(),
+    params_sep: @parser.SepList::init_empty(),
     idx: 0,
   }
   expect_next_eq(
@@ -325,7 +329,7 @@ test "sgr/direct and underline colors in colon forms" {
 test "sgr/underline fg and bg mixed sequence" {
   let parser : SgrParser = {
     params: [4, 38, 2, 255, 247, 219, 48, 2, 242, 93, 147, 4],
-    params_sep: SepList::init_empty(),
+    params_sep: @parser.SepList::init_empty(),
     idx: 0,
   }
   expect_next_eq(parser, Underline(Single), "expected first underline")

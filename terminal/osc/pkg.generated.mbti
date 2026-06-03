@@ -1,0 +1,359 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/osc"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/color",
+}
+
+// Values
+pub fn terminator_init(Byte?) -> Terminator
+
+// Errors
+pub suberror SemanticPromptDecodeError {
+  DecodeError
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub struct ClipboardContents {
+  kind : Byte
+  data : String
+} derive(Eq, @debug.Debug)
+pub fn ClipboardContents::data(Self) -> String
+pub fn ClipboardContents::kind(Self) -> Byte
+
+pub struct ColorCommand {
+  op : ColorOperation
+  requests : Array[ColorRequest]
+  terminator : Terminator
+} derive(Eq, @debug.Debug)
+pub fn ColorCommand::new(ColorOperation, Array[ColorRequest], Terminator) -> Self
+pub fn ColorCommand::op(Self) -> ColorOperation
+pub fn ColorCommand::requests(Self) -> Array[ColorRequest]
+pub fn ColorCommand::terminator(Self) -> Terminator
+
+pub(all) enum ColorOperation {
+  Osc4
+  Osc5
+  Osc10
+  Osc11
+  Osc12
+  Osc13
+  Osc14
+  Osc15
+  Osc16
+  Osc17
+  Osc18
+  Osc19
+  Osc104
+  Osc110
+  Osc111
+  Osc112
+  Osc113
+  Osc114
+  Osc115
+  Osc116
+  Osc117
+  Osc118
+  Osc119
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ColorRequest {
+  Set(ColoredTarget)
+  Query(ColorTarget)
+  Reset(ColorTarget)
+  ResetPalette
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ColorTarget {
+  Palette(Byte)
+  Special(@color.Special)
+  Dynamic(@color.Dynamic)
+} derive(Eq, @debug.Debug)
+
+pub struct ColoredTarget {
+  target : ColorTarget
+  color : @color.RGB
+} derive(Eq, @debug.Debug)
+pub fn ColoredTarget::color(Self) -> @color.RGB
+pub fn ColoredTarget::new(ColorTarget, @color.RGB) -> Self
+pub fn ColoredTarget::target(Self) -> ColorTarget
+
+pub(all) enum Command {
+  Invalid
+  ChangeWindowTitle(String)
+  ChangeWindowIcon(String)
+  ClipboardContents(ClipboardContents)
+  KittyClipboardProtocol(KittyClipboardOsc)
+  KittyColorProtocol(KittyColorOsc)
+  KittyTextSizing(KittyTextSizingOsc)
+  ShowDesktopNotification(DesktopNotification)
+  HyperlinkStart(HyperlinkStart)
+  HyperlinkEnd
+  ConEmuSleep(ConEmuSleep)
+  ConEmuShowMessageBox(String)
+  ConEmuChangeTabTitle(ConEmuTabTitleChange)
+  ConEmuProgressReport(ConEmuProgressReport)
+  ConEmuWaitInput
+  ConEmuGuiMacro(String)
+  ConEmuRunProcess(String)
+  ConEmuOutputEnvironmentVariable(String)
+  ConEmuXtermEmulation(ConEmuXtermEmulation)
+  ConEmuComment(String)
+  ContextSignal(ContextSignalOsc)
+  SemanticPrompt(SemanticPrompt)
+  ReportPwd(String)
+  MouseShape(String)
+  ColorOperation(ColorCommand)
+} derive(Eq, @debug.Debug)
+
+pub struct ConEmuProgressReport {
+  state : ConEmuProgressState
+  progress : Byte?
+} derive(Eq, @debug.Debug)
+pub fn ConEmuProgressReport::progress(Self) -> Byte?
+pub fn ConEmuProgressReport::state(Self) -> ConEmuProgressState
+
+pub(all) enum ConEmuProgressState {
+  ConEmuProgressRemove
+  ConEmuProgressSet
+  ConEmuProgressError
+  ConEmuProgressIndeterminate
+  ConEmuProgressPause
+} derive(Eq, @debug.Debug)
+
+type ConEmuSleep derive(Eq, @debug.Debug)
+pub fn ConEmuSleep::duration_ms(Self) -> UInt16
+
+pub enum ConEmuTabTitleChange {
+  ConEmuTabTitleReset
+  ConEmuTabTitleValue(String)
+} derive(Eq, @debug.Debug)
+
+type ConEmuXtermEmulation derive(Eq, @debug.Debug)
+pub fn ConEmuXtermEmulation::keyboard(Self) -> Bool?
+pub fn ConEmuXtermEmulation::output(Self) -> Bool?
+
+pub(all) enum ContextSignalAction {
+  ContextSignalStart
+  ContextSignalEnd
+} derive(Eq, @debug.Debug)
+
+pub enum ContextSignalExitStatus {
+  ContextSignalExitSuccess
+  ContextSignalExitFailure
+  ContextSignalExitCrash
+  ContextSignalExitInterrupt
+} derive(Eq, @debug.Debug)
+
+type ContextSignalOsc derive(Eq, @debug.Debug)
+pub fn ContextSignalOsc::action(Self) -> ContextSignalAction
+pub fn ContextSignalOsc::bootid(Self) -> String?
+pub fn ContextSignalOsc::cmdline(Self) -> String?
+pub fn ContextSignalOsc::comm(Self) -> String?
+pub fn ContextSignalOsc::container(Self) -> String?
+pub fn ContextSignalOsc::context_type(Self) -> ContextSignalType?
+pub fn ContextSignalOsc::cwd(Self) -> String?
+pub fn ContextSignalOsc::exit_status(Self) -> ContextSignalExitStatus?
+pub fn ContextSignalOsc::hostname(Self) -> String?
+pub fn ContextSignalOsc::id(Self) -> String
+pub fn ContextSignalOsc::machineid(Self) -> String?
+pub fn ContextSignalOsc::metadata(Self) -> String
+pub fn ContextSignalOsc::pid(Self) -> UInt64?
+pub fn ContextSignalOsc::pidfdid(Self) -> UInt64?
+pub fn ContextSignalOsc::sessionid(Self) -> String?
+pub fn ContextSignalOsc::signal(Self) -> String?
+pub fn ContextSignalOsc::status(Self) -> UInt64?
+pub fn ContextSignalOsc::targethost(Self) -> String?
+pub fn ContextSignalOsc::targetuser(Self) -> String?
+pub fn ContextSignalOsc::user(Self) -> String?
+pub fn ContextSignalOsc::vm(Self) -> String?
+
+pub(all) enum ContextSignalType {
+  ContextSignalBoot
+  ContextSignalContainer
+  ContextSignalVm
+  ContextSignalElevate
+  ContextSignalChpriv
+  ContextSignalSubcontext
+  ContextSignalRemote
+  ContextSignalShell
+  ContextSignalCommand
+  ContextSignalApp
+  ContextSignalService
+  ContextSignalSession
+} derive(Eq, @debug.Debug)
+
+pub struct DesktopNotification {
+  title : String
+  body : String
+} derive(Eq, @debug.Debug)
+pub fn DesktopNotification::body(Self) -> String
+pub fn DesktopNotification::title(Self) -> String
+
+pub struct HyperlinkStart {
+  uri : String
+  id : String?
+} derive(Eq, @debug.Debug)
+pub fn HyperlinkStart::id(Self) -> String?
+pub fn HyperlinkStart::uri(Self) -> String
+
+pub enum KittyClipboardLocation {
+  KittyClipboardPrimary
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KittyClipboardOperation {
+  KittyClipboardRead
+  KittyClipboardWalias
+  KittyClipboardWdata
+  KittyClipboardWrite
+} derive(Eq, @debug.Debug)
+
+type KittyClipboardOsc derive(Eq, @debug.Debug)
+pub fn KittyClipboardOsc::id(Self) -> String?
+pub fn KittyClipboardOsc::location(Self) -> KittyClipboardLocation?
+pub fn KittyClipboardOsc::metadata(Self) -> String
+pub fn KittyClipboardOsc::mime(Self) -> String?
+pub fn KittyClipboardOsc::name(Self) -> String?
+pub fn KittyClipboardOsc::operation(Self) -> KittyClipboardOperation?
+pub fn KittyClipboardOsc::password(Self) -> String?
+pub fn KittyClipboardOsc::payload(Self) -> String?
+pub fn KittyClipboardOsc::pw(Self) -> String?
+pub fn KittyClipboardOsc::status(Self) -> KittyClipboardStatus?
+pub fn KittyClipboardOsc::terminator(Self) -> Terminator
+
+pub(all) enum KittyClipboardStatus {
+  KittyClipboardData
+  KittyClipboardDone
+  KittyClipboardEbusy
+  KittyClipboardEinval
+  KittyClipboardEio
+  KittyClipboardEnosys
+  KittyClipboardEperm
+  KittyClipboardOk
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KittyColorKind {
+  KittyPalette(Byte)
+  KittySpecial(KittyColorSpecial)
+} derive(Eq, @debug.Debug)
+
+pub struct KittyColorOsc {
+  requests : Array[KittyColorRequest]
+  terminator : Terminator
+} derive(Eq, @debug.Debug)
+pub fn KittyColorOsc::requests(Self) -> Array[KittyColorRequest]
+pub fn KittyColorOsc::terminator(Self) -> Terminator
+
+pub(all) enum KittyColorRequest {
+  KittyQuery(KittyColorKind)
+  KittySet(KittyColorSet)
+  KittyReset(KittyColorKind)
+} derive(Eq, @debug.Debug)
+
+pub struct KittyColorSet {
+  key : KittyColorKind
+  color : @color.RGB
+} derive(Eq, @debug.Debug)
+pub fn KittyColorSet::color(Self) -> @color.RGB
+pub fn KittyColorSet::key(Self) -> KittyColorKind
+pub fn KittyColorSet::new(KittyColorKind, @color.RGB) -> Self
+
+pub(all) enum KittyColorSpecial {
+  KittyForeground
+  KittyBackground
+  KittySelectionForeground
+  KittySelectionBackground
+  KittyCursor
+  KittyCursorText
+  KittyVisualBell
+  KittySecondTransparentBackground
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KittyTextSizingHorizontalAlign {
+  KittyTextSizingHLeft
+  KittyTextSizingHRight
+  KittyTextSizingHCenter
+} derive(Eq, @debug.Debug)
+
+type KittyTextSizingOsc derive(Eq, @debug.Debug)
+pub fn KittyTextSizingOsc::denominator(Self) -> Byte
+pub fn KittyTextSizingOsc::halign(Self) -> KittyTextSizingHorizontalAlign
+pub fn KittyTextSizingOsc::numerator(Self) -> Byte
+pub fn KittyTextSizingOsc::scale(Self) -> Byte
+pub fn KittyTextSizingOsc::terminator(Self) -> Terminator
+pub fn KittyTextSizingOsc::text(Self) -> String
+pub fn KittyTextSizingOsc::valign(Self) -> KittyTextSizingVerticalAlign
+pub fn KittyTextSizingOsc::width(Self) -> Byte
+
+pub(all) enum KittyTextSizingVerticalAlign {
+  KittyTextSizingVTop
+  KittyTextSizingVBottom
+  KittyTextSizingVCenter
+} derive(Eq, @debug.Debug)
+
+type OscParser derive(@debug.Debug)
+pub fn OscParser::deinit(Self) -> Unit
+pub fn OscParser::end(Self, Byte?) -> Command?
+pub fn OscParser::new() -> Self
+pub fn OscParser::next(Self, Byte) -> Unit
+pub fn OscParser::reset(Self) -> Unit
+
+pub struct SemanticPrompt {
+  action : SemanticPromptAction
+  options_unvalidated : Array[Byte]
+} derive(Eq, @debug.Debug)
+pub fn SemanticPrompt::action(Self) -> SemanticPromptAction
+pub fn SemanticPrompt::aid(Self) -> String?
+pub fn SemanticPrompt::cl(Self) -> SemanticPromptClick?
+pub fn SemanticPrompt::click_events(Self) -> Bool?
+pub fn SemanticPrompt::cmdline(Self) -> String?
+pub fn SemanticPrompt::cmdline_url(Self) -> String?
+pub fn SemanticPrompt::decoded_command_line(Self) -> String? raise SemanticPromptDecodeError
+pub fn SemanticPrompt::err(Self) -> String?
+pub fn SemanticPrompt::exit_code(Self) -> Int?
+pub fn SemanticPrompt::new(SemanticPromptAction, Array[Byte]) -> Self
+pub fn SemanticPrompt::prompt_kind(Self) -> SemanticPromptKind?
+pub fn SemanticPrompt::redraw(Self) -> SemanticPromptRedraw?
+pub fn SemanticPrompt::special_key(Self) -> Bool?
+
+pub(all) enum SemanticPromptAction {
+  FreshLine
+  FreshLineNewPrompt
+  NewCommand
+  PromptStart
+  EndPromptStartInput
+  EndPromptStartInputTerminateEol
+  EndInputStartOutput
+  EndCommand
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticPromptClick {
+  Line
+  Multiple
+  ConservativeVertical
+  SmartVertical
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticPromptKind {
+  Initial
+  Right
+  Continuation
+  Secondary
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticPromptRedraw {
+  Enabled
+  Disabled
+  Last
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Terminator {
+  St
+  Bel
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

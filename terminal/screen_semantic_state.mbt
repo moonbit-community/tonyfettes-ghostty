@@ -16,7 +16,7 @@ pub(all) enum RowSemanticPrompt {
 pub(all) enum SemanticClickMode {
   None
   ClickEvents
-  Cl(SemanticPromptClick)
+  Cl(@osc.SemanticPromptClick)
 } derive(Eq, Debug)
 
 ///|
@@ -75,7 +75,7 @@ pub fn ScreenSemanticState::row_prompt(
 ///|
 pub fn ScreenSemanticState::apply_fresh_line_new_prompt(
   self : ScreenSemanticState,
-  prompt : SemanticPrompt,
+  prompt : @osc.SemanticPrompt,
 ) -> Unit {
   self.apply_prompt_start(prompt)
   if prompt.click_events() == Some(true) {
@@ -90,7 +90,7 @@ pub fn ScreenSemanticState::apply_fresh_line_new_prompt(
 ///|
 pub fn ScreenSemanticState::apply_prompt_start(
   self : ScreenSemanticState,
-  prompt : SemanticPrompt,
+  prompt : @osc.SemanticPrompt,
 ) -> Unit {
   let kind = match prompt.prompt_kind() {
     Some(kind) => kind
@@ -133,7 +133,7 @@ pub fn ScreenSemanticState::full_reset(self : ScreenSemanticState) -> Unit {
 ///|
 fn ScreenSemanticState::set_prompt_kind(
   self : ScreenSemanticState,
-  kind : SemanticPromptKind,
+  kind : @osc.SemanticPromptKind,
 ) -> Unit {
   self.seen = true
   self.cursor_content = Prompt

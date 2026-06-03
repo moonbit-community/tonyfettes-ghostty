@@ -180,7 +180,7 @@ priv struct StreamTerminalBridgeState {
   apc_handler : ApcHandler
   protected_state : ScreenProtectedState
   display_state : TerminalDisplayState
-  colors : TerminalColors
+  colors : @color.TerminalColors
   modes : ModeState
   mut cursor : TerminalCursorState
   input_flags : TerminalInputFlags
@@ -197,8 +197,8 @@ priv struct StreamTerminalBridgeState {
   mut charset : ScreenCharsetState
   mut current_style : CellStyle
   mut previous_char : UInt?
-  mut mouse_event : MouseEvent
-  mut mouse_format : MouseFormat
+  mut mouse_event : @input.MouseEvent
+  mut mouse_format : @input.MouseFormat
   mut palette_dirty : Bool
   mut active_screen : TerminalScreen
   mut width_px : UInt
@@ -225,7 +225,7 @@ fn StreamTerminalBridgeState::with_effects(
     apc_handler: ApcHandler::new(),
     protected_state: ScreenProtectedState::new(),
     display_state: TerminalDisplayState::new(),
-    colors: TerminalColors::new(),
+    colors: @color.TerminalColors::new(),
     modes: ModeState::new(),
     cursor: primary_storage.cursor,
     input_flags: TerminalInputFlags::new(),
@@ -363,14 +363,14 @@ fn StreamTerminalBridgeState::kitty_keyboard_flags(
 ///|
 fn StreamTerminalBridgeState::mouse_event(
   self : StreamTerminalBridgeState,
-) -> MouseEvent {
+) -> @input.MouseEvent {
   self.mouse_event
 }
 
 ///|
 fn StreamTerminalBridgeState::mouse_format(
   self : StreamTerminalBridgeState,
-) -> MouseFormat {
+) -> @input.MouseFormat {
   self.mouse_format
 }
 
@@ -419,7 +419,7 @@ fn StreamTerminalBridgeState::set_pwd(
 ///|
 fn StreamTerminalBridgeState::set_default_foreground_color(
   self : StreamTerminalBridgeState,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.colors.set_default_foreground(color)
   self.palette_dirty = true
@@ -428,7 +428,7 @@ fn StreamTerminalBridgeState::set_default_foreground_color(
 ///|
 fn StreamTerminalBridgeState::set_default_background_color(
   self : StreamTerminalBridgeState,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.colors.set_default_background(color)
   self.palette_dirty = true
@@ -437,7 +437,7 @@ fn StreamTerminalBridgeState::set_default_background_color(
 ///|
 fn StreamTerminalBridgeState::set_default_cursor_color(
   self : StreamTerminalBridgeState,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.colors.set_default_cursor(color)
   self.palette_dirty = true
@@ -446,8 +446,8 @@ fn StreamTerminalBridgeState::set_default_cursor_color(
 ///|
 fn StreamTerminalBridgeState::set_default_palette(
   self : StreamTerminalBridgeState,
-  palette : Array[RGB]?,
-) -> TerminalResultCode {
+  palette : Array[@color.RGB]?,
+) -> @result_code.TerminalResultCode {
   if !self.colors.set_default_palette(palette) {
     return InvalidValue
   }
@@ -592,56 +592,56 @@ fn StreamTerminalBridgeState::height_px(
 ///|
 fn StreamTerminalBridgeState::foreground_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.foreground()
 }
 
 ///|
 fn StreamTerminalBridgeState::background_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.background()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.cursor()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_foreground_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.default_foreground()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_background_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.default_background()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_cursor_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.default_cursor()
 }
 
 ///|
 fn StreamTerminalBridgeState::palette(
   self : StreamTerminalBridgeState,
-) -> Array[RGB] {
+) -> Array[@color.RGB] {
   self.colors.palette_snapshot()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_palette(
   self : StreamTerminalBridgeState,
-) -> Array[RGB] {
+) -> Array[@color.RGB] {
   self.colors.default_palette_snapshot()
 }
 
@@ -794,7 +794,7 @@ fn StreamTerminalBridgeState::resize(
   rows : CellCountInt,
   cell_width_px : UInt,
   cell_height_px : UInt,
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   if columns == 0 || rows == 0 {
     return InvalidValue
   }
@@ -1541,7 +1541,7 @@ fn StreamTerminalBridgeState::full_reset(
 ///|
 fn StreamTerminalBridgeState::apply_semantic_prompt(
   self : StreamTerminalBridgeState,
-  prompt : SemanticPrompt,
+  prompt : @osc.SemanticPrompt,
 ) -> Unit {
   match prompt.action() {
     FreshLine => self.semantic_prompt_fresh_line()
@@ -1702,9 +1702,9 @@ fn StreamTerminalBridgeState::device_status(
       }
       let buffer = Buffer()
       buffer.write_bytes(b"\x1B[")
-      write_uint_ascii(buffer, (y + 1).to_uint64())
+      @ascii.write_uint_ascii(buffer, (y + 1).to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, (x + 1).to_uint64())
+      @ascii.write_uint_ascii(buffer, (x + 1).to_uint64())
       buffer.write_byte(b'R')
       self.write_pty(buffer.contents())
     }
@@ -1822,7 +1822,7 @@ fn StreamTerminalBridgeState::query_kitty_keyboard(
 ) -> Unit {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[?")
-  write_uint_ascii(buffer, self.kitty_keyboard.current().0.to_uint64())
+  @ascii.write_uint_ascii(buffer, self.kitty_keyboard.current().0.to_uint64())
   buffer.write_byte(b'u')
   self.write_pty(buffer.contents())
 }
@@ -2644,7 +2644,7 @@ fn StreamTerminalBridgeState::cursor_left(
 ///|
 fn StreamTerminalBridgeState::apply_color_operation(
   self : StreamTerminalBridgeState,
-  command : ColorCommand,
+  command : @osc.ColorCommand,
 ) -> Unit {
   let requests = command.requests()
   if requests.length() == 0 {
@@ -2668,14 +2668,14 @@ fn StreamTerminalBridgeState::apply_color_operation(
 ///|
 fn StreamTerminalBridgeState::apply_color_query(
   self : StreamTerminalBridgeState,
-  target : ColorTarget,
-  terminator : Terminator,
+  target : @osc.ColorTarget,
+  terminator : @osc.Terminator,
 ) -> Unit {
   match target {
     Palette(index) => {
       let buffer = Buffer()
       buffer.write_bytes(b"\x1B]4;")
-      write_uint_ascii(buffer, index.to_uint64())
+      @ascii.write_uint_ascii(buffer, index.to_uint64())
       buffer.write_byte(b';')
       write_osc_rgb(buffer, self.colors.palette_color(index))
       write_osc_terminator(buffer, terminator)
@@ -2686,7 +2686,7 @@ fn StreamTerminalBridgeState::apply_color_query(
         Some(color) => {
           let buffer = Buffer()
           buffer.write_bytes(b"\x1B]")
-          write_uint_ascii(buffer, dynamic.code().to_uint64())
+          @ascii.write_uint_ascii(buffer, dynamic.code().to_uint64())
           buffer.write_byte(b';')
           write_osc_rgb(buffer, color)
           write_osc_terminator(buffer, terminator)
@@ -2701,8 +2701,8 @@ fn StreamTerminalBridgeState::apply_color_query(
 ///|
 fn StreamTerminalBridgeState::dynamic_color_query(
   self : StreamTerminalBridgeState,
-  dynamic : Dynamic,
-) -> RGB? {
+  dynamic : @color.Dynamic,
+) -> @color.RGB? {
   match dynamic {
     Foreground =>
       match self.colors.foreground() {
@@ -2730,7 +2730,7 @@ fn StreamTerminalBridgeState::dynamic_color_query(
 }
 
 ///|
-fn write_osc_rgb(buffer : @buffer.Buffer, color : RGB) -> Unit {
+fn write_osc_rgb(buffer : @buffer.Buffer, color : @color.RGB) -> Unit {
   buffer.write_bytes(b"rgb:")
   write_hex_byte(buffer, color.r())
   buffer.write_byte(b'/')
@@ -2742,7 +2742,7 @@ fn write_osc_rgb(buffer : @buffer.Buffer, color : RGB) -> Unit {
 ///|
 fn write_osc_terminator(
   buffer : @buffer.Buffer,
-  terminator : Terminator,
+  terminator : @osc.Terminator,
 ) -> Unit {
   match terminator {
     Bel => buffer.write_byte(b'\x07')
@@ -2753,7 +2753,7 @@ fn write_osc_terminator(
 ///|
 fn StreamTerminalBridgeState::apply_kitty_color_report(
   self : StreamTerminalBridgeState,
-  command : KittyColorOsc,
+  command : @osc.KittyColorOsc,
 ) -> Unit {
   for request in command.requests() {
     match request {
@@ -2801,7 +2801,7 @@ fn StreamTerminalBridgeState::apply_kitty_color_report(
 ///|
 fn StreamTerminalBridgeState::apply_color_set(
   self : StreamTerminalBridgeState,
-  set : ColoredTarget,
+  set : @osc.ColoredTarget,
 ) -> Unit {
   match set.target() {
     Palette(index) => {
@@ -2828,7 +2828,7 @@ fn StreamTerminalBridgeState::apply_color_set(
 ///|
 fn StreamTerminalBridgeState::apply_color_reset(
   self : StreamTerminalBridgeState,
-  target : ColorTarget,
+  target : @osc.ColorTarget,
 ) -> Unit {
   match target {
     Palette(index) => {

@@ -90,7 +90,7 @@ fn parse_kitty_text_sizing_command(
   buffer : Array[Byte],
   terminator_ch : Byte?,
 ) -> Command? {
-  let payload_start = match find_byte(buffer, 0, buffer.length(), b';') {
+  let payload_start = match @ascii.find_byte(buffer, 0, buffer.length(), b';') {
     Some(index) => index
     None => return None
   }
@@ -112,16 +112,17 @@ fn parse_kitty_text_sizing_command(
 
   let mut start = 0
   while start < payload_start {
-    let segment_end = match find_byte(buffer, start, payload_start, b':') {
+    let segment_end = match
+      @ascii.find_byte(buffer, start, payload_start, b':') {
       Some(index) => index
       None => payload_start
     }
-    match find_byte(buffer, start, segment_end, b'=') {
+    match @ascii.find_byte(buffer, start, segment_end, b'=') {
       Some(eq_index) =>
         if eq_index == start + 1 && eq_index + 1 < segment_end {
           let key = buffer[start]
           let value = copy_bytes_range(buffer, eq_index + 1, segment_end)
-          let parsed = parse_u32_ascii(value, 0, value.length())
+          let parsed = @ascii.parse_u32_ascii(value, 0, value.length())
           match key {
             b's' =>
               match parsed {

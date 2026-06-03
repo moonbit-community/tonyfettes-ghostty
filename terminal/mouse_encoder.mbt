@@ -79,8 +79,8 @@ pub fn MouseEncoderSize::padding_left(self : MouseEncoderSize) -> UInt {
 
 ///|
 struct MouseEncoder {
-  mut event : MouseEvent
-  mut format : MouseFormat
+  mut event : @input.MouseEvent
+  mut format : @input.MouseFormat
   mut size : MouseEncoderSize
   mut any_button_pressed : Bool
   mut track_last_cell : Bool
@@ -100,12 +100,15 @@ pub fn MouseEncoder::new() -> MouseEncoder {
 }
 
 ///|
-pub fn MouseEncoder::event(self : MouseEncoder) -> MouseEvent {
+pub fn MouseEncoder::event(self : MouseEncoder) -> @input.MouseEvent {
   self.event
 }
 
 ///|
-pub fn MouseEncoder::set_event(self : MouseEncoder, value : MouseEvent) -> Unit {
+pub fn MouseEncoder::set_event(
+  self : MouseEncoder,
+  value : @input.MouseEvent,
+) -> Unit {
   if self.event != value {
     self.last_cell = None
   }
@@ -113,14 +116,14 @@ pub fn MouseEncoder::set_event(self : MouseEncoder, value : MouseEvent) -> Unit 
 }
 
 ///|
-pub fn MouseEncoder::format(self : MouseEncoder) -> MouseFormat {
+pub fn MouseEncoder::format(self : MouseEncoder) -> @input.MouseFormat {
   self.format
 }
 
 ///|
 pub fn MouseEncoder::set_format(
   self : MouseEncoder,
-  value : MouseFormat,
+  value : @input.MouseFormat,
 ) -> Unit {
   if self.format != value {
     self.last_cell = None
@@ -189,7 +192,7 @@ pub fn MouseEncoder::reset(self : MouseEncoder) -> Unit {
 ///|
 pub fn MouseEncoder::encode(
   self : MouseEncoder,
-  event : MouseInputEvent,
+  event : @input.MouseInputEvent,
 ) -> Bytes {
   if !mouse_should_report(event, self.event) {
     return b""
@@ -197,7 +200,7 @@ pub fn MouseEncoder::encode(
 
   if event.action() != Release &&
     mouse_position_out_of_viewport(event.position(), self.size) {
-    if !mouse_event_sends_motion(self.event) || !self.any_button_pressed {
+    if !@input.mouse_event_sends_motion(self.event) || !self.any_button_pressed {
       return b""
     }
   }
@@ -247,7 +250,10 @@ fn default_mouse_encoder_size() -> MouseEncoderSize {
 }
 
 ///|
-fn mouse_should_report(event : MouseInputEvent, mode : MouseEvent) -> Bool {
+fn mouse_should_report(
+  event : @input.MouseInputEvent,
+  mode : @input.MouseEvent,
+) -> Bool {
   match mode {
     None => false
     X10 =>
@@ -264,9 +270,9 @@ fn mouse_should_report(event : MouseInputEvent, mode : MouseEvent) -> Bool {
 
 ///|
 fn mouse_button_code(
-  event : MouseInputEvent,
-  mode : MouseEvent,
-  format : MouseFormat,
+  event : @input.MouseInputEvent,
+  mode : @input.MouseEvent,
+  format : @input.MouseFormat,
 ) -> Int? {
   let mut code = match event.button() {
     None => 3
@@ -338,15 +344,18 @@ fn encode_mouse_utf8(button_code : Int, cell : Coordinate) -> Bytes {
 fn encode_mouse_sgr(
   button_code : Int,
   cell : Coordinate,
-  action : MouseAction,
+  action : @input.MouseAction,
 ) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[<")
-  write_uint_ascii(buffer, button_code.to_uint64())
+  @ascii.write_uint_ascii(buffer, button_code.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.y().reinterpret_as_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(
+    buffer,
+    (cell.y().reinterpret_as_int() + 1).to_uint64(),
+  )
   buffer.write_byte(mouse_action_final_byte(action))
   buffer.contents()
 }
@@ -355,11 +364,14 @@ fn encode_mouse_sgr(
 fn encode_mouse_urxvt(button_code : Int, cell : Coordinate) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, (32 + button_code).to_uint64())
+  @ascii.write_uint_ascii(buffer, (32 + button_code).to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.y().reinterpret_as_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(
+    buffer,
+    (cell.y().reinterpret_as_int() + 1).to_uint64(),
+  )
   buffer.write_byte(b'M')
   buffer.contents()
 }
@@ -368,11 +380,11 @@ fn encode_mouse_urxvt(button_code : Int, cell : Coordinate) -> Bytes {
 fn encode_mouse_sgr_pixels(
   button_code : Int,
   pixels : MousePixelPoint,
-  action : MouseAction,
+  action : @input.MouseAction,
 ) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[<")
-  write_uint_ascii(buffer, button_code.to_uint64())
+  @ascii.write_uint_ascii(buffer, button_code.to_uint64())
   buffer.write_byte(b';')
   write_signed_ascii(buffer, pixels.x)
   buffer.write_byte(b';')
@@ -382,7 +394,7 @@ fn encode_mouse_sgr_pixels(
 }
 
 ///|
-fn mouse_action_final_byte(action : MouseAction) -> Byte {
+fn mouse_action_final_byte(action : @input.MouseAction) -> Byte {
   match action {
     Release => b'm'
     _ => b'M'
@@ -403,10 +415,10 @@ fn write_codepoint_utf8(buffer : @buffer.Buffer, codepoint : Int) -> Unit {
 fn write_signed_ascii(buffer : @buffer.Buffer, value : Int) -> Unit {
   if value < 0 {
     buffer.write_byte(b'-')
-    write_uint_ascii(buffer, (0 - value).to_uint64())
+    @ascii.write_uint_ascii(buffer, (0 - value).to_uint64())
     return
   }
-  write_uint_ascii(buffer, value.to_uint64())
+  @ascii.write_uint_ascii(buffer, value.to_uint64())
 }
 
 ///|
@@ -417,7 +429,7 @@ priv struct MousePixelPoint {
 
 ///|
 fn mouse_position_out_of_viewport(
-  pos : MousePosition,
+  pos : @input.MousePosition,
   size : MouseEncoderSize,
 ) -> Bool {
   pos.x().to_double() < 0.0 ||
@@ -428,7 +440,7 @@ fn mouse_position_out_of_viewport(
 
 ///|
 fn mouse_position_to_cell(
-  pos : MousePosition,
+  pos : @input.MousePosition,
   size : MouseEncoderSize,
 ) -> Coordinate {
   let content_columns = mouse_encoder_columns(size)
@@ -448,7 +460,7 @@ fn mouse_position_to_cell(
 
 ///|
 fn mouse_position_to_pixels(
-  pos : MousePosition,
+  pos : @input.MousePosition,
   size : MouseEncoderSize,
 ) -> MousePixelPoint {
   {

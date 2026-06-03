@@ -22,12 +22,15 @@ pub(all) enum MouseButton {
 } derive(Eq, Debug)
 
 ///|
-struct MousePosition {
+pub(all) struct MousePosition {
   x : Float
   y : Float
 } derive(Eq, Debug)
 
 ///|
+/// Abstract (no `pub`): a host mouse event built with `new` + the `set_*`
+/// mutators and read through the getters, so callers can't assemble arbitrary
+/// action/button/modifier/position combinations as part of the ABI.
 struct MouseInputEvent {
   mut action : MouseAction
   mut button : MouseButton?

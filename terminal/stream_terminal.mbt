@@ -185,7 +185,7 @@ pub fn StreamTerminal::resize(
   rows : CellCountInt,
   cell_width_px : UInt,
   cell_height_px : UInt,
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   self.bridge().resize(columns, rows, cell_width_px, cell_height_px)
 }
 
@@ -248,49 +248,57 @@ pub fn StreamTerminal::height_px(self : StreamTerminal) -> UInt {
 }
 
 ///|
-pub fn StreamTerminal::foreground_color(self : StreamTerminal) -> RGB? {
+pub fn StreamTerminal::foreground_color(self : StreamTerminal) -> @color.RGB? {
   self.bridge().foreground_color()
 }
 
 ///|
-pub fn StreamTerminal::background_color(self : StreamTerminal) -> RGB? {
+pub fn StreamTerminal::background_color(self : StreamTerminal) -> @color.RGB? {
   self.bridge().background_color()
 }
 
 ///|
-pub fn StreamTerminal::cursor_color(self : StreamTerminal) -> RGB? {
+pub fn StreamTerminal::cursor_color(self : StreamTerminal) -> @color.RGB? {
   self.bridge().cursor_color()
 }
 
 ///|
-pub fn StreamTerminal::default_foreground_color(self : StreamTerminal) -> RGB? {
+pub fn StreamTerminal::default_foreground_color(
+  self : StreamTerminal,
+) -> @color.RGB? {
   self.bridge().default_foreground_color()
 }
 
 ///|
-pub fn StreamTerminal::default_background_color(self : StreamTerminal) -> RGB? {
+pub fn StreamTerminal::default_background_color(
+  self : StreamTerminal,
+) -> @color.RGB? {
   self.bridge().default_background_color()
 }
 
 ///|
-pub fn StreamTerminal::default_cursor_color(self : StreamTerminal) -> RGB? {
+pub fn StreamTerminal::default_cursor_color(
+  self : StreamTerminal,
+) -> @color.RGB? {
   self.bridge().default_cursor_color()
 }
 
 ///|
-pub fn StreamTerminal::palette(self : StreamTerminal) -> Array[RGB] {
+pub fn StreamTerminal::palette(self : StreamTerminal) -> Array[@color.RGB] {
   self.bridge().palette()
 }
 
 ///|
-pub fn StreamTerminal::default_palette(self : StreamTerminal) -> Array[RGB] {
+pub fn StreamTerminal::default_palette(
+  self : StreamTerminal,
+) -> Array[@color.RGB] {
   self.bridge().default_palette()
 }
 
 ///|
 pub fn StreamTerminal::set_default_foreground_color(
   self : StreamTerminal,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.bridge().set_default_foreground_color(color)
 }
@@ -298,7 +306,7 @@ pub fn StreamTerminal::set_default_foreground_color(
 ///|
 pub fn StreamTerminal::set_default_background_color(
   self : StreamTerminal,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.bridge().set_default_background_color(color)
 }
@@ -306,7 +314,7 @@ pub fn StreamTerminal::set_default_background_color(
 ///|
 pub fn StreamTerminal::set_default_cursor_color(
   self : StreamTerminal,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.bridge().set_default_cursor_color(color)
 }
@@ -314,8 +322,8 @@ pub fn StreamTerminal::set_default_cursor_color(
 ///|
 pub fn StreamTerminal::set_default_palette(
   self : StreamTerminal,
-  palette : Array[RGB]?,
-) -> TerminalResultCode {
+  palette : Array[@color.RGB]?,
+) -> @result_code.TerminalResultCode {
   self.bridge().set_default_palette(palette)
 }
 

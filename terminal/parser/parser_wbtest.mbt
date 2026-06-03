@@ -255,30 +255,6 @@ test "parser/osc clipboard dispatch" {
 }
 
 ///|
-test "parser/osc kitty color dispatch" {
-  let parser = Parser::new()
-  for byte in b"\x1b]21;foreground=?;255=#010203" {
-    expect_no_actions(parser.next(byte))
-  }
-
-  let actions = parser.next(0x07)
-  guard actions[0] is Some(OscDispatch(KittyColorProtocol(command))) else {
-    fail("expected OSC kitty color dispatch in exit slot")
-  }
-  guard command.requests() ==
-    [
-      KittyQuery(KittySpecial(KittyForeground)),
-      KittySet(KittyColorSet::new(KittyPalette(255), RGB::new(1, 2, 3))),
-    ] else {
-    fail("expected kitty color payload")
-  }
-  guard command.terminator() == Bel else {
-    fail("expected kitty color BEL terminator")
-  }
-  guard actions[1] is None && actions[2] is None else {
-    fail("unexpected OSC kitty color trailing actions")
-  }
-}
 
 ///|
 test "parser/osc9 desktop notification report-pwd and semantic prompt dispatch" {

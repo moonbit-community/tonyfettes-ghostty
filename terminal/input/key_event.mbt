@@ -48,7 +48,7 @@ pub(all) enum KeyModSide {
 } derive(Eq, Debug)
 
 ///|
-struct KeyMods(UInt16) derive(Eq, Debug)
+pub(all) struct KeyMods(UInt16) derive(Eq, Debug)
 
 ///|
 pub(all) enum Key {
@@ -231,6 +231,10 @@ pub(all) enum Key {
 } derive(Eq, Debug)
 
 ///|
+/// Abstract (no `pub`): a host key event whose fields are consumed together by
+/// `KeyEncoder` (a `key` that disagrees with `utf8`/`unshifted_codepoint`
+/// encodes nonsense). Build one with `new` + the `set_*` mutators and read it
+/// through the getters, so malformed field combinations aren't part of the ABI.
 struct KeyEvent {
   mut action : KeyAction
   mut key : Key

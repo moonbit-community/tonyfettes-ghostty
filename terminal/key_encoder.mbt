@@ -212,7 +212,10 @@ priv struct KittyMods {
 }
 
 ///|
-fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
+fn KeyEncoder::encode_kitty(
+  self : KeyEncoder,
+  event : @input.KeyEvent,
+) -> Bytes {
   if self.kitty_flags.0 == 0 {
     return self.encode_legacy(event)
   }
@@ -344,7 +347,10 @@ fn KeyEncoder::encode_kitty(self : KeyEncoder, event : KeyEvent) -> Bytes {
 }
 
 ///|
-fn KeyEncoder::encode_legacy(self : KeyEncoder, event : KeyEvent) -> Bytes {
+fn KeyEncoder::encode_legacy(
+  self : KeyEncoder,
+  event : @input.KeyEvent,
+) -> Bytes {
   let all_mods = event.mods()
   let effective_mods = event.effective_mods()
   let binding_mods = effective_mods.binding()
@@ -450,7 +456,7 @@ fn KeyEncoder::encode_legacy(self : KeyEncoder, event : KeyEvent) -> Bytes {
 ///|
 fn populate_kitty_alternates(
   sequence : KittySequence,
-  event : KeyEvent,
+  event : @input.KeyEvent,
 ) -> Unit {
   match utf8_codepoints(event.utf8()) {
     Some([first, .. rest]) => {
@@ -482,7 +488,7 @@ fn populate_kitty_alternates(
 ///|
 fn KeyEncoder::modify_other_keys_sequence_for_event(
   self : KeyEncoder,
-  event : KeyEvent,
+  event : @input.KeyEvent,
 ) -> Bytes? {
   let decoded = utf8_codepoints(event.utf8())
   guard decoded is Some([codepoint]) else { return None }
@@ -529,7 +535,7 @@ fn KeyEncoder::modify_other_keys_sequence_for_event(
 }
 
 ///|
-fn csi_u_sequence(event : KeyEvent) -> Bytes? {
+fn csi_u_sequence(event : @input.KeyEvent) -> Bytes? {
   let decoded = utf8_codepoints(event.utf8())
   guard decoded is Some([first]) else { return None }
 
@@ -547,9 +553,9 @@ fn csi_u_sequence(event : KeyEvent) -> Bytes? {
 
   let buffer = Buffer(size_hint=16)
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, char.to_uint64())
+  @ascii.write_uint_ascii(buffer, char.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, mods.seq_int().to_uint64())
+  @ascii.write_uint_ascii(buffer, mods.seq_int().to_uint64())
   buffer.write_byte(b'u')
   Some(buffer.contents())
 }
@@ -557,9 +563,9 @@ fn csi_u_sequence(event : KeyEvent) -> Bytes? {
 ///|
 fn KeyEncoder::legacy_alt_prefix(
   self : KeyEncoder,
-  event : KeyEvent,
-  binding_mods : KeyMods,
-  mods : KeyMods,
+  event : @input.KeyEvent,
+  binding_mods : @input.KeyMods,
+  mods : @input.KeyMods,
 ) -> Byte? {
   if !binding_mods.alt() || !self.alt_esc_prefix {
     return None
@@ -587,12 +593,12 @@ fn KeyEncoder::legacy_alt_prefix(
 
 ///|
 fn ctrl_sequence(
-  logical_key : Key,
+  logical_key : @input.Key,
   utf8 : Bytes,
   unshifted_codepoint : UInt,
-  mods : KeyMods,
+  mods : @input.KeyMods,
 ) -> Byte? {
-  let ctrl_only = KeyMods::new().with_ctrl(true)
+  let ctrl_only = @input.KeyMods::new().with_ctrl(true)
   if !mods.ctrl() {
     return None
   }
@@ -682,7 +688,10 @@ fn ctrl_sequence(
 }
 
 ///|
-fn KeyEncoder::alt_prevents_text(self : KeyEncoder, mods : KeyMods) -> Bool {
+fn KeyEncoder::alt_prevents_text(
+  self : KeyEncoder,
+  mods : @input.KeyMods,
+) -> Bool {
   if !self.host_is_macos {
     return true
   }
@@ -736,11 +745,11 @@ fn KittySequence::encode(self : KittySequence) -> Bytes {
 fn KittySequence::encode_full(self : KittySequence) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, self.key.to_uint64())
+  @ascii.write_uint_ascii(buffer, self.key.to_uint64())
   match self.alternate_shifted {
     Some(shifted) => {
       buffer.write_byte(b':')
-      write_uint_ascii(buffer, shifted.to_uint64())
+      @ascii.write_uint_ascii(buffer, shifted.to_uint64())
     }
     None => ()
   }
@@ -750,7 +759,7 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
       if self.alternate_shifted == None {
         buffer.write_byte(b':')
       }
-      write_uint_ascii(buffer, base.to_uint64())
+      @ascii.write_uint_ascii(buffer, base.to_uint64())
     }
     None => ()
   }
@@ -758,13 +767,16 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
   let mods = self.mods.seq_int()
   let emitted_mods = if self.event != None && self.event != Press {
     buffer.write_byte(b';')
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(b':')
-    write_uint_ascii(buffer, kitty_sequence_event_code(self.event).to_uint64())
+    @ascii.write_uint_ascii(
+      buffer,
+      kitty_sequence_event_code(self.event).to_uint64(),
+    )
     true
   } else if mods > 1U {
     buffer.write_byte(b';')
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     true
   } else {
     false
@@ -786,7 +798,7 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
           } else {
             buffer.write_byte(b':')
           }
-          write_uint_ascii(buffer, codepoint.to_uint64())
+          @ascii.write_uint_ascii(buffer, codepoint.to_uint64())
           count += 1
         }
       }
@@ -804,16 +816,19 @@ fn KittySequence::encode_special(self : KittySequence) -> Bytes {
   let mods = self.mods.seq_int()
   if self.event != None {
     buffer.write_bytes(b"\x1B[1;")
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(b':')
-    write_uint_ascii(buffer, kitty_sequence_event_code(self.event).to_uint64())
+    @ascii.write_uint_ascii(
+      buffer,
+      kitty_sequence_event_code(self.event).to_uint64(),
+    )
     buffer.write_byte(self.final_byte)
     return buffer.contents()
   }
 
   if mods > 1U {
     buffer.write_bytes(b"\x1B[1;")
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(self.final_byte)
     return buffer.contents()
   }
@@ -834,7 +849,7 @@ fn kitty_sequence_event_code(event : KittySequenceEvent) -> UInt {
 }
 
 ///|
-fn CsiUMods::from_input(mods : KeyMods) -> CsiUMods {
+fn CsiUMods::from_input(mods : @input.KeyMods) -> CsiUMods {
   { shift: mods.shift(), alt: mods.alt(), ctrl: mods.ctrl() }
 }
 
@@ -850,9 +865,9 @@ fn CsiUMods::seq_int(self : CsiUMods) -> UInt {
 
 ///|
 fn KittyMods::from_input(
-  _action : KeyAction,
-  _key : Key,
-  mods : KeyMods,
+  _action : @input.KeyAction,
+  _key : @input.Key,
+  mods : @input.KeyMods,
 ) -> KittyMods {
   {
     shift: mods.shift(),
@@ -893,7 +908,7 @@ fn KittyMods::seq_int(self : KittyMods) -> UInt {
 }
 
 ///|
-pub fn KeyEncoder::encode(self : KeyEncoder, event : KeyEvent) -> Bytes {
+pub fn KeyEncoder::encode(self : KeyEncoder, event : @input.KeyEvent) -> Bytes {
   if self.kitty_flags.0 != 0 {
     self.encode_kitty(event)
   } else {

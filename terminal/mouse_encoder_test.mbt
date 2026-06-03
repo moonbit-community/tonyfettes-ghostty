@@ -5,20 +5,20 @@ fn test_mouse_encoder_size() -> MouseEncoderSize {
 
 ///|
 fn make_mouse_event(
-  action : MouseAction,
-  button : MouseButton?,
+  action : @input.MouseAction,
+  button : @input.MouseButton?,
   x : Float,
   y : Float,
-  mods? : KeyMods = KeyMods::new(),
-) -> MouseInputEvent {
-  let event = MouseInputEvent::new()
+  mods? : @input.KeyMods = @input.KeyMods::new(),
+) -> @input.MouseInputEvent {
+  let event = @input.MouseInputEvent::new()
   event.set_action(action)
   match button {
     Some(value) => event.set_button(value)
     None => event.clear_button()
   }
   event.set_mods(mods)
-  event.set_position(MousePosition::new(x, y))
+  event.set_position(@input.MousePosition::new(x, y))
   event
 }
 
@@ -198,7 +198,10 @@ test "mouse encoder/utf8 urxvt and sgr pixels formats encode correctly" {
   urxvt.set_event(Any)
   urxvt.set_format(Urxvt)
   urxvt.set_size(test_mouse_encoder_size())
-  let mods = KeyMods::new().with_shift(true).with_alt(true).with_ctrl(true)
+  let mods = @input.KeyMods::new()
+    .with_shift(true)
+    .with_alt(true)
+    .with_ctrl(true)
   guard urxvt.encode(make_mouse_event(Press, Some(Left), 2.0F, 3.0F, mods~)) ==
     b"\x1B[60;3;4M" else {
     fail("expected urxvt encoding with modifiers")

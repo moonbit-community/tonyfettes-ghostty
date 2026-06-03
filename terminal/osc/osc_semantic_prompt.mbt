@@ -34,18 +34,18 @@ pub(all) enum SemanticPromptRedraw {
 } derive(Eq, Debug)
 
 ///|
-pub(all) suberror SemanticPromptDecodeError {
+pub suberror SemanticPromptDecodeError {
   DecodeError
 } derive(Eq, Debug)
 
 ///|
-struct SemanticPrompt {
+pub struct SemanticPrompt {
   action : SemanticPromptAction
   options_unvalidated : Array[Byte]
 } derive(Eq, Debug)
 
 ///|
-fn SemanticPrompt::new(
+pub fn SemanticPrompt::new(
   action : SemanticPromptAction,
   options_unvalidated : Array[Byte],
 ) -> SemanticPrompt {
@@ -126,7 +126,7 @@ pub fn SemanticPrompt::exit_code(self : SemanticPrompt) -> Int? {
   }
 
   let first_end = match
-    find_byte(
+    @ascii.find_byte(
       self.options_unvalidated,
       0,
       self.options_unvalidated.length(),
@@ -135,7 +135,7 @@ pub fn SemanticPrompt::exit_code(self : SemanticPrompt) -> Int? {
     Some(index) => index
     None => self.options_unvalidated.length()
   }
-  parse_i32_ascii(self.options_unvalidated, 0, first_end)
+  @ascii.parse_i32_ascii(self.options_unvalidated, 0, first_end)
 }
 
 ///|
@@ -221,14 +221,19 @@ fn semantic_prompt_option_value(
   let mut start = 0
   while start <= options_unvalidated.length() {
     let segment_end = match
-      find_byte(options_unvalidated, start, options_unvalidated.length(), b';') {
+      @ascii.find_byte(
+        options_unvalidated,
+        start,
+        options_unvalidated.length(),
+        b';',
+      ) {
       Some(index) => index
       None => options_unvalidated.length()
     }
 
-    match find_byte(options_unvalidated, start, segment_end, b'=') {
+    match @ascii.find_byte(options_unvalidated, start, segment_end, b'=') {
       Some(eq_index) =>
-        if slice_equals_ascii(options_unvalidated, start, eq_index, key) {
+        if @ascii.slice_equals_ascii(options_unvalidated, start, eq_index, key) {
           return Some(
             copy_bytes_range(options_unvalidated, eq_index + 1, segment_end),
           )
@@ -255,7 +260,7 @@ fn semantic_prompt_click_from_bytes(
       b'w' => Some(SmartVertical)
       _ => None
     }
-  } else if slice_equals_ascii(value, 0, value.length(), "line") {
+  } else if @ascii.slice_equals_ascii(value, 0, value.length(), "line") {
     Some(Line)
   } else {
     None
@@ -286,7 +291,7 @@ fn semantic_prompt_redraw_from_bytes(
       b'1' => Some(Enabled)
       _ => None
     }
-  } else if slice_equals_ascii(value, 0, value.length(), "last") {
+  } else if @ascii.slice_equals_ascii(value, 0, value.length(), "last") {
     Some(Last)
   } else {
     None

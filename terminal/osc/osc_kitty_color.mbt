@@ -17,13 +17,16 @@ pub(all) enum KittyColorKind {
 } derive(Eq, Debug)
 
 ///|
-struct KittyColorSet {
+pub struct KittyColorSet {
   key : KittyColorKind
-  color : RGB
+  color : @color.RGB
 } derive(Eq, Debug)
 
 ///|
-fn KittyColorSet::new(key : KittyColorKind, color : RGB) -> KittyColorSet {
+pub fn KittyColorSet::new(
+  key : KittyColorKind,
+  color : @color.RGB,
+) -> KittyColorSet {
   { key, color }
 }
 
@@ -33,7 +36,7 @@ pub fn KittyColorSet::key(self : KittyColorSet) -> KittyColorKind {
 }
 
 ///|
-pub fn KittyColorSet::color(self : KittyColorSet) -> RGB {
+pub fn KittyColorSet::color(self : KittyColorSet) -> @color.RGB {
   self.color
 }
 
@@ -45,7 +48,7 @@ pub(all) enum KittyColorRequest {
 } derive(Eq, Debug)
 
 ///|
-struct KittyColorOsc {
+pub struct KittyColorOsc {
   requests : Array[KittyColorRequest]
   terminator : Terminator
 } derive(Eq, Debug)
@@ -78,7 +81,8 @@ fn parse_kitty_color_command(
       return None
     }
 
-    let segment_end = match find_byte(buffer, start, buffer.length(), b';') {
+    let segment_end = match
+      @ascii.find_byte(buffer, start, buffer.length(), b';') {
       Some(index) => index
       None => buffer.length()
     }
@@ -102,7 +106,7 @@ fn kitty_color_append_request(
   end_ : Int,
   requests : Array[KittyColorRequest],
 ) -> Unit {
-  let key_end = match find_byte(buffer, start, end_, b'=') {
+  let key_end = match @ascii.find_byte(buffer, start, end_, b'=') {
     Some(index) => index
     None => end_
   }
@@ -136,7 +140,7 @@ fn kitty_color_append_request(
   let spec = captured_string(
     copy_bytes_range(buffer, trimmed_start, trimmed_end),
   )
-  let color = try RGB::parse(spec) catch {
+  let color = try @color.RGB::parse(spec) catch {
     _ => return
   } noraise {
     color => color
@@ -150,33 +154,39 @@ fn kitty_color_kind_from_bytes(
   start : Int,
   end_ : Int,
 ) -> KittyColorKind? {
-  if slice_equals_ascii(buffer, start, end_, "foreground") {
+  if @ascii.slice_equals_ascii(buffer, start, end_, "foreground") {
     return Some(KittySpecial(KittyForeground))
   }
-  if slice_equals_ascii(buffer, start, end_, "background") {
+  if @ascii.slice_equals_ascii(buffer, start, end_, "background") {
     return Some(KittySpecial(KittyBackground))
   }
-  if slice_equals_ascii(buffer, start, end_, "selection_foreground") {
+  if @ascii.slice_equals_ascii(buffer, start, end_, "selection_foreground") {
     return Some(KittySpecial(KittySelectionForeground))
   }
-  if slice_equals_ascii(buffer, start, end_, "selection_background") {
+  if @ascii.slice_equals_ascii(buffer, start, end_, "selection_background") {
     return Some(KittySpecial(KittySelectionBackground))
   }
-  if slice_equals_ascii(buffer, start, end_, "cursor") {
+  if @ascii.slice_equals_ascii(buffer, start, end_, "cursor") {
     return Some(KittySpecial(KittyCursor))
   }
-  if slice_equals_ascii(buffer, start, end_, "cursor_text") {
+  if @ascii.slice_equals_ascii(buffer, start, end_, "cursor_text") {
     return Some(KittySpecial(KittyCursorText))
   }
-  if slice_equals_ascii(buffer, start, end_, "visual_bell") {
+  if @ascii.slice_equals_ascii(buffer, start, end_, "visual_bell") {
     return Some(KittySpecial(KittyVisualBell))
   }
-  if slice_equals_ascii(buffer, start, end_, "second_transparent_background") {
+  if @ascii.slice_equals_ascii(
+      buffer, start, end_, "second_transparent_background",
+    ) {
     return Some(KittySpecial(KittySecondTransparentBackground))
   }
 
   match
-    parse_u32_ascii(copy_bytes_range(buffer, start, end_), 0, end_ - start) {
+    @ascii.parse_u32_ascii(
+      copy_bytes_range(buffer, start, end_),
+      0,
+      end_ - start,
+    ) {
     Some(value) =>
       if value <= 255U {
         Some(KittyPalette(value.to_byte()))

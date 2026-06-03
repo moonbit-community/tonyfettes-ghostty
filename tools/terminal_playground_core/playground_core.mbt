@@ -147,7 +147,7 @@ pub fn playground_resize(handle : Int, columns : Int, rows : Int) -> Int {
         DefaultCellHeightPx,
       )
       .code()
-    None => @terminal.TerminalResultCode::InvalidValue.code()
+    None => @result_code.TerminalResultCode::InvalidValue.code()
   }
 }
 
@@ -403,7 +403,7 @@ fn json_string_or_null(value : String?) -> Json {
 }
 
 ///|
-fn json_rgb(value : @terminal.RGB?) -> Json {
+fn json_rgb(value : @color.RGB?) -> Json {
   match value {
     Some(rgb) =>
       { "r": rgb.r().to_int(), "g": rgb.g().to_int(), "b": rgb.b().to_int() }
@@ -488,7 +488,7 @@ fn page_cell_wide_json(value : @terminal.PageCellWide) -> Json {
 }
 
 ///|
-fn sgr_underline_json(value : @terminal.SgrUnderline) -> Json {
+fn sgr_underline_json(value : @sgr.SgrUnderline) -> Json {
   Json::string(
     match value {
       None => "none"

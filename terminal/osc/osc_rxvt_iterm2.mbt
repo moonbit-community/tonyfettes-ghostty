@@ -1,6 +1,6 @@
 ///|
 fn parse_rxvt_extension_command(buffer : Array[Byte]) -> Command? {
-  let extension_end = match find_byte(buffer, 0, buffer.length(), b';') {
+  let extension_end = match @ascii.find_byte(buffer, 0, buffer.length(), b';') {
     Some(index) => index
     None => return None
   }
@@ -9,7 +9,7 @@ fn parse_rxvt_extension_command(buffer : Array[Byte]) -> Command? {
   }
 
   let title_end = match
-    find_byte(buffer, extension_end + 1, buffer.length(), b';') {
+    @ascii.find_byte(buffer, extension_end + 1, buffer.length(), b';') {
     Some(index) => index
     None => return None
   }
@@ -28,7 +28,7 @@ fn parse_rxvt_extension_command(buffer : Array[Byte]) -> Command? {
 
 ///|
 fn parse_iterm2_command(buffer : Array[Byte]) -> Command? {
-  let separator = find_byte(buffer, 0, buffer.length(), b'=')
+  let separator = @ascii.find_byte(buffer, 0, buffer.length(), b'=')
   let key_end = match separator {
     Some(index) => index
     None => buffer.length()

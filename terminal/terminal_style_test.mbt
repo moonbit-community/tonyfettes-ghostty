@@ -78,10 +78,11 @@ test "terminal style/applies foreground background and underline colors" {
   style.apply_attribute(BrightColor8Bg(BrightBlue))
   style.apply_attribute(BrightColor8Fg(BrightYellow))
   style.apply_attribute(Color256Underline(17))
-  guard style.bg_color().palette_index() == Some(Name::BrightBlue.code()) else {
+  guard style.bg_color().palette_index() == Some(@color.Name::BrightBlue.code()) else {
     fail("expected bright palette background color")
   }
-  guard style.fg_color().palette_index() == Some(Name::BrightYellow.code()) else {
+  guard style.fg_color().palette_index() ==
+    Some(@color.Name::BrightYellow.code()) else {
     fail("expected bright palette foreground color")
   }
   guard style.underline_color().palette_index() == Some(17) else {
@@ -90,13 +91,13 @@ test "terminal style/applies foreground background and underline colors" {
 
   let palette_bg = CellStyle::new()
   palette_bg.apply_attribute(Color8Bg(Blue))
-  guard palette_bg.bg_color().palette_index() == Some(Name::Blue.code()) else {
+  guard palette_bg.bg_color().palette_index() == Some(@color.Name::Blue.code()) else {
     fail("expected base palette background color")
   }
 
-  let fg = RGB::new(1, 2, 3)
-  let bg = RGB::new(4, 5, 6)
-  let underline = RGB::new(7, 8, 9)
+  let fg = @color.RGB::new(1, 2, 3)
+  let bg = @color.RGB::new(4, 5, 6)
+  let underline = @color.RGB::new(7, 8, 9)
   style.apply_attribute(DirectColorFg(fg))
   style.apply_attribute(DirectColorBg(bg))
   style.apply_attribute(UnderlineColor(underline))
@@ -133,7 +134,7 @@ test "terminal style/applies foreground background and underline colors" {
 test "terminal style/unset resets whole style" {
   let style = CellStyle::new()
   style.apply_attribute(Bold)
-  style.apply_attribute(DirectColorFg(RGB::new(0xAA, 0xBB, 0xCC)))
+  style.apply_attribute(DirectColorFg(@color.RGB::new(0xAA, 0xBB, 0xCC)))
   style.apply_attribute(Underline(Dashed))
   style.apply_attribute(Unset)
   guard style.is_default() else {

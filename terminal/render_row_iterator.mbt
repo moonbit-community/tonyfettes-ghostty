@@ -108,11 +108,11 @@ pub fn RenderRowCells::cell(self : RenderRowCells) -> PageCellState? {
 }
 
 ///|
-pub fn RenderRowCells::background_color(self : RenderRowCells) -> RGB? {
+pub fn RenderRowCells::background_color(self : RenderRowCells) -> @color.RGB? {
   render_cell_background_color_at(self.state, self.row, self.x)
 }
 
 ///|
-pub fn RenderRowCells::foreground_color(self : RenderRowCells) -> RGB? {
+pub fn RenderRowCells::foreground_color(self : RenderRowCells) -> @color.RGB? {
   render_cell_foreground_color_at(self.state, self.row, self.x)
 }

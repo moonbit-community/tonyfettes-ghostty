@@ -3,6 +3,12 @@ package "tonyfettes/ghostty/terminal"
 
 import {
   "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/charsets",
+  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/result_code",
+  "tonyfettes/ghostty/terminal/sgr",
 }
 
 // Values
@@ -11,8 +17,6 @@ pub fn build_info() -> BuildInfo
 pub fn c0_from_byte(Byte) -> C0?
 
 pub fn cursor_style_from_int(Int) -> CursorStyle?
-
-pub fn default_palette() -> Array[RGB]
 
 pub fn device_status_request_from_int(UInt16, Bool) -> DeviceStatusRequest?
 
@@ -30,8 +34,6 @@ pub fn mode_tag_from_raw(UInt16) -> ModeTag
 
 pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
 
-pub fn mouse_event_sends_motion(MouseEvent) -> Bool
-
 pub fn paste_is_safe(Bytes) -> Bool
 
 pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
@@ -39,10 +41,6 @@ pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
 pub fn status_display_from_int(Int) -> StatusDisplay?
 
 pub fn status_line_type_from_int(UInt16) -> StatusLineType?
-
-pub fn table(Charset) -> ReadOnlyArray[UInt16]
-
-pub fn terminal_result_code_from_int(Int) -> TerminalResultCode?
 
 pub fn terminal_surface_type(String) -> TerminalSurfaceTypeInfo?
 
@@ -58,25 +56,9 @@ pub fn terminal_system_set_decode_png((Bytes) -> SystemImage?) -> Unit
 
 pub fn terminal_system_set_log((SystemLogLevel, Bytes, Bytes) -> Unit) -> Unit
 
-pub fn terminator_init(Byte?) -> Terminator
-
-pub fn x11_color_lookup(String) -> RGB?
-
 // Errors
-pub(all) suberror ColorParseError {
-  InvalidFormat
-} derive(Eq, @debug.Debug)
-
-pub(all) suberror SemanticPromptDecodeError {
-  DecodeError
-} derive(Eq, @debug.Debug)
 
 // Types and methods
-pub(all) enum ActiveSlot {
-  Gl
-  Gr
-} derive(Eq, @debug.Debug)
-
 type BuildInfo derive(Eq, @debug.Debug)
 pub fn BuildInfo::kitty_graphics(Self) -> Bool
 pub fn BuildInfo::optimize(Self) -> OptimizeMode
@@ -118,7 +100,7 @@ pub fn CellHyperlink::implicit_id(Self) -> Int?
 pub fn CellHyperlink::uri(Self) -> String
 
 type CellStyle derive(Eq, @debug.Debug)
-pub fn CellStyle::apply_attribute(Self, SgrAttribute) -> Unit
+pub fn CellStyle::apply_attribute(Self, @sgr.SgrAttribute) -> Unit
 pub fn CellStyle::bg_color(Self) -> StyleColor
 pub fn CellStyle::blink(Self) -> Bool
 pub fn CellStyle::bold(Self) -> Bool
@@ -132,130 +114,17 @@ pub fn CellStyle::new() -> Self
 pub fn CellStyle::overline(Self) -> Bool
 pub fn CellStyle::reset(Self) -> Unit
 pub fn CellStyle::strikethrough(Self) -> Bool
-pub fn CellStyle::underline(Self) -> SgrUnderline
+pub fn CellStyle::underline(Self) -> @sgr.SgrUnderline
 pub fn CellStyle::underline_color(Self) -> StyleColor
-
-pub(all) enum Charset {
-  Utf8
-  Ascii
-  British
-  DecSpecial
-} derive(Eq, @debug.Debug)
-
-type ClipboardContents derive(Eq, @debug.Debug)
-pub fn ClipboardContents::data(Self) -> String
-pub fn ClipboardContents::kind(Self) -> Byte
-
-type ColorCommand derive(Eq, @debug.Debug)
-pub fn ColorCommand::new(ColorOperation, Array[ColorRequest], Terminator) -> Self
-pub fn ColorCommand::op(Self) -> ColorOperation
-pub fn ColorCommand::requests(Self) -> Array[ColorRequest]
-pub fn ColorCommand::terminator(Self) -> Terminator
-
-pub(all) enum ColorOperation {
-  Osc4
-  Osc5
-  Osc10
-  Osc11
-  Osc12
-  Osc13
-  Osc14
-  Osc15
-  Osc16
-  Osc17
-  Osc18
-  Osc19
-  Osc104
-  Osc110
-  Osc111
-  Osc112
-  Osc113
-  Osc114
-  Osc115
-  Osc116
-  Osc117
-  Osc118
-  Osc119
-} derive(Eq, @debug.Debug)
-
-pub(all) enum ColorRequest {
-  Set(ColoredTarget)
-  Query(ColorTarget)
-  Reset(ColorTarget)
-  ResetPalette
-} derive(Eq, @debug.Debug)
 
 pub(all) enum ColorScheme {
   Light
   Dark
 } derive(Eq, @debug.Debug)
 
-pub(all) enum ColorTarget {
-  Palette(Byte)
-  Special(Special)
-  Dynamic(Dynamic)
-} derive(Eq, @debug.Debug)
-
-type ColoredTarget derive(Eq, @debug.Debug)
-pub fn ColoredTarget::color(Self) -> RGB
-pub fn ColoredTarget::new(ColorTarget, RGB) -> Self
-pub fn ColoredTarget::target(Self) -> ColorTarget
-
-pub(all) enum Command {
-  Invalid
-  ChangeWindowTitle(String)
-  ChangeWindowIcon(String)
-  ClipboardContents(ClipboardContents)
-  KittyClipboardProtocol(KittyClipboardOsc)
-  KittyColorProtocol(KittyColorOsc)
-  KittyTextSizing(KittyTextSizingOsc)
-  ShowDesktopNotification(DesktopNotification)
-  HyperlinkStart(HyperlinkStart)
-  HyperlinkEnd
-  ConEmuSleep(ConEmuSleep)
-  ConEmuShowMessageBox(String)
-  ConEmuChangeTabTitle(ConEmuTabTitleChange)
-  ConEmuProgressReport(ConEmuProgressReport)
-  ConEmuWaitInput
-  ConEmuGuiMacro(String)
-  ConEmuRunProcess(String)
-  ConEmuOutputEnvironmentVariable(String)
-  ConEmuXtermEmulation(ConEmuXtermEmulation)
-  ConEmuComment(String)
-  ContextSignal(ContextSignalOsc)
-  SemanticPrompt(SemanticPrompt)
-  ReportPwd(String)
-  MouseShape(String)
-  ColorOperation(ColorCommand)
-} derive(Eq, @debug.Debug)
-
-type ConEmuProgressReport derive(Eq, @debug.Debug)
-pub fn ConEmuProgressReport::progress(Self) -> Byte?
-pub fn ConEmuProgressReport::state(Self) -> ConEmuProgressState
-
-pub(all) enum ConEmuProgressState {
-  ConEmuProgressRemove
-  ConEmuProgressSet
-  ConEmuProgressError
-  ConEmuProgressIndeterminate
-  ConEmuProgressPause
-} derive(Eq, @debug.Debug)
-
-type ConEmuSleep derive(Eq, @debug.Debug)
-pub fn ConEmuSleep::duration_ms(Self) -> UInt16
-
-pub(all) enum ConEmuTabTitleChange {
-  ConEmuTabTitleReset
-  ConEmuTabTitleValue(String)
-} derive(Eq, @debug.Debug)
-
-type ConEmuXtermEmulation derive(Eq, @debug.Debug)
-pub fn ConEmuXtermEmulation::keyboard(Self) -> Bool?
-pub fn ConEmuXtermEmulation::output(Self) -> Bool?
-
 pub(all) struct ConfigureCharsetAction {
-  slot : Slots
-  charset : Charset
+  slot : @charsets.Slots
+  charset : @charsets.Charset
 } derive(Eq, @debug.Debug)
 
 pub(all) enum ConformanceLevel {
@@ -274,56 +143,6 @@ pub(all) enum ConformanceLevel {
   Vt525
 } derive(Eq, @debug.Debug)
 pub fn ConformanceLevel::code(Self) -> UInt16
-
-pub(all) enum ContextSignalAction {
-  ContextSignalStart
-  ContextSignalEnd
-} derive(Eq, @debug.Debug)
-
-pub(all) enum ContextSignalExitStatus {
-  ContextSignalExitSuccess
-  ContextSignalExitFailure
-  ContextSignalExitCrash
-  ContextSignalExitInterrupt
-} derive(Eq, @debug.Debug)
-
-type ContextSignalOsc derive(Eq, @debug.Debug)
-pub fn ContextSignalOsc::action(Self) -> ContextSignalAction
-pub fn ContextSignalOsc::bootid(Self) -> String?
-pub fn ContextSignalOsc::cmdline(Self) -> String?
-pub fn ContextSignalOsc::comm(Self) -> String?
-pub fn ContextSignalOsc::container(Self) -> String?
-pub fn ContextSignalOsc::context_type(Self) -> ContextSignalType?
-pub fn ContextSignalOsc::cwd(Self) -> String?
-pub fn ContextSignalOsc::exit_status(Self) -> ContextSignalExitStatus?
-pub fn ContextSignalOsc::hostname(Self) -> String?
-pub fn ContextSignalOsc::id(Self) -> String
-pub fn ContextSignalOsc::machineid(Self) -> String?
-pub fn ContextSignalOsc::metadata(Self) -> String
-pub fn ContextSignalOsc::pid(Self) -> UInt64?
-pub fn ContextSignalOsc::pidfdid(Self) -> UInt64?
-pub fn ContextSignalOsc::sessionid(Self) -> String?
-pub fn ContextSignalOsc::signal(Self) -> String?
-pub fn ContextSignalOsc::status(Self) -> UInt64?
-pub fn ContextSignalOsc::targethost(Self) -> String?
-pub fn ContextSignalOsc::targetuser(Self) -> String?
-pub fn ContextSignalOsc::user(Self) -> String?
-pub fn ContextSignalOsc::vm(Self) -> String?
-
-pub(all) enum ContextSignalType {
-  ContextSignalBoot
-  ContextSignalContainer
-  ContextSignalVm
-  ContextSignalElevate
-  ContextSignalChpriv
-  ContextSignalSubcontext
-  ContextSignalRemote
-  ContextSignalShell
-  ContextSignalCommand
-  ContextSignalApp
-  ContextSignalService
-  ContextSignalSession
-} derive(Eq, @debug.Debug)
 
 type Coordinate derive(Eq, @debug.Debug)
 pub fn Coordinate::new(UInt16, UInt) -> Self
@@ -358,10 +177,6 @@ type DcsHookPayload derive(Eq, @debug.Debug)
 pub fn DcsHookPayload::final_byte(Self) -> Byte
 pub fn DcsHookPayload::intermediates(Self) -> Array[Byte]
 pub fn DcsHookPayload::params(Self) -> Array[UInt16]
-
-type DesktopNotification derive(Eq, @debug.Debug)
-pub fn DesktopNotification::body(Self) -> String
-pub fn DesktopNotification::title(Self) -> String
 
 pub(all) enum DeviceAttributeRequest {
   Primary
@@ -404,36 +219,6 @@ pub(all) enum DeviceType {
 } derive(Eq, @debug.Debug)
 pub fn DeviceType::code(Self) -> UInt16
 
-pub(all) enum Dynamic {
-  Foreground
-  Background
-  Cursor
-  PointerForeground
-  PointerBackground
-  TektronixForeground
-  TektronixBackground
-  HighlightBackground
-  TektronixCursor
-  HighlightForeground
-} derive(Eq, @debug.Debug)
-pub fn Dynamic::code(Self) -> UInt16
-pub fn Dynamic::next(Self) -> Self?
-
-type DynamicPalette derive(Eq, @debug.Debug)
-pub fn DynamicPalette::change_default(Self, Array[RGB]) -> Unit
-pub fn DynamicPalette::color(Self, Byte) -> RGB
-pub fn DynamicPalette::new() -> Self
-pub fn DynamicPalette::reset(Self, Byte) -> Unit
-pub fn DynamicPalette::reset_all(Self) -> Unit
-pub fn DynamicPalette::set(Self, Byte, RGB) -> Unit
-
-type DynamicRGB derive(Eq, @debug.Debug)
-pub fn DynamicRGB::get(Self) -> RGB?
-pub fn DynamicRGB::init(RGB) -> Self
-pub fn DynamicRGB::reset(Self) -> Unit
-pub fn DynamicRGB::set(Self, RGB) -> Unit
-pub fn DynamicRGB::unset() -> Self
-
 pub(all) enum FocusEvent {
   Gained
   Lost
@@ -465,207 +250,17 @@ pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_reg
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
 
-type HyperlinkStart derive(Eq, @debug.Debug)
-pub fn HyperlinkStart::id(Self) -> String?
-pub fn HyperlinkStart::uri(Self) -> String
-
 pub(all) struct InvokeCharsetAction {
-  bank : ActiveSlot
-  charset : Slots
+  bank : @charsets.ActiveSlot
+  charset : @charsets.Slots
   locking : Bool
-} derive(Eq, @debug.Debug)
-
-pub(all) enum Key {
-  Unidentified
-  Backquote
-  Backslash
-  BracketLeft
-  BracketRight
-  Comma
-  Digit0
-  Digit1
-  Digit2
-  Digit3
-  Digit4
-  Digit5
-  Digit6
-  Digit7
-  Digit8
-  Digit9
-  Equal
-  IntlBackslash
-  IntlRo
-  IntlYen
-  KeyA
-  KeyB
-  KeyC
-  KeyD
-  KeyE
-  KeyF
-  KeyG
-  KeyH
-  KeyI
-  KeyJ
-  KeyK
-  KeyL
-  KeyM
-  KeyN
-  KeyO
-  KeyP
-  KeyQ
-  KeyR
-  KeyS
-  KeyT
-  KeyU
-  KeyV
-  KeyW
-  KeyX
-  KeyY
-  KeyZ
-  Minus
-  Period
-  Quote
-  Semicolon
-  Slash
-  AltLeft
-  AltRight
-  Backspace
-  CapsLock
-  ContextMenu
-  ControlLeft
-  ControlRight
-  Enter
-  MetaLeft
-  MetaRight
-  ShiftLeft
-  ShiftRight
-  Space
-  Tab
-  Convert
-  KanaMode
-  NonConvert
-  Delete
-  End
-  Help
-  Home
-  Insert
-  PageDown
-  PageUp
-  ArrowDown
-  ArrowLeft
-  ArrowRight
-  ArrowUp
-  NumLock
-  Numpad0
-  Numpad1
-  Numpad2
-  Numpad3
-  Numpad4
-  Numpad5
-  Numpad6
-  Numpad7
-  Numpad8
-  Numpad9
-  NumpadAdd
-  NumpadBackspace
-  NumpadClear
-  NumpadClearEntry
-  NumpadComma
-  NumpadDecimal
-  NumpadDivide
-  NumpadEnter
-  NumpadEqual
-  NumpadMemoryAdd
-  NumpadMemoryClear
-  NumpadMemoryRecall
-  NumpadMemoryStore
-  NumpadMemorySubtract
-  NumpadMultiply
-  NumpadParenLeft
-  NumpadParenRight
-  NumpadSubtract
-  NumpadSeparator
-  NumpadUp
-  NumpadDown
-  NumpadRight
-  NumpadLeft
-  NumpadBegin
-  NumpadHome
-  NumpadEnd
-  NumpadInsert
-  NumpadDelete
-  NumpadPageUp
-  NumpadPageDown
-  Escape
-  F1
-  F2
-  F3
-  F4
-  F5
-  F6
-  F7
-  F8
-  F9
-  F10
-  F11
-  F12
-  F13
-  F14
-  F15
-  F16
-  F17
-  F18
-  F19
-  F20
-  F21
-  F22
-  F23
-  F24
-  F25
-  Fn
-  FnLock
-  PrintScreen
-  ScrollLock
-  Pause
-  BrowserBack
-  BrowserFavorites
-  BrowserForward
-  BrowserHome
-  BrowserRefresh
-  BrowserSearch
-  BrowserStop
-  Eject
-  LaunchApp1
-  LaunchApp2
-  LaunchMail
-  MediaPlayPause
-  MediaSelect
-  MediaStop
-  MediaTrackNext
-  MediaTrackPrevious
-  Power
-  Sleep
-  AudioVolumeDown
-  AudioVolumeMute
-  AudioVolumeUp
-  WakeUp
-  Copy
-  Cut
-  Paste
-} derive(Eq, @debug.Debug)
-pub fn Key::codepoint(Self) -> UInt?
-
-pub(all) enum KeyAction {
-  Release
-  Press
-  Repeat
 } derive(Eq, @debug.Debug)
 
 type KeyEncoder derive(Eq, @debug.Debug)
 pub fn KeyEncoder::alt_esc_prefix(Self) -> Bool
 pub fn KeyEncoder::backarrow_key_mode(Self) -> Bool
 pub fn KeyEncoder::cursor_key_application(Self) -> Bool
-pub fn KeyEncoder::encode(Self, KeyEvent) -> Bytes
+pub fn KeyEncoder::encode(Self, @input.KeyEvent) -> Bytes
 pub fn KeyEncoder::host_is_macos(Self) -> Bool
 pub fn KeyEncoder::ignore_keypad_with_numlock(Self) -> Bool
 pub fn KeyEncoder::keypad_key_application(Self) -> Bool
@@ -683,121 +278,6 @@ pub fn KeyEncoder::set_kitty_flags(Self, KittyKeyboardFlags) -> Unit
 pub fn KeyEncoder::set_macos_option_as_alt(Self, OptionAsAlt) -> Unit
 pub fn KeyEncoder::set_modify_other_keys_state_2(Self, Bool) -> Unit
 pub fn KeyEncoder::sync_from_terminal(Self, StreamTerminal) -> Unit
-
-type KeyEvent derive(Eq, @debug.Debug)
-pub fn KeyEvent::action(Self) -> KeyAction
-pub fn KeyEvent::composing(Self) -> Bool
-pub fn KeyEvent::consumed_mods(Self) -> KeyMods
-pub fn KeyEvent::effective_mods(Self) -> KeyMods
-pub fn KeyEvent::key(Self) -> Key
-pub fn KeyEvent::mods(Self) -> KeyMods
-pub fn KeyEvent::new() -> Self
-pub fn KeyEvent::set_action(Self, KeyAction) -> Unit
-pub fn KeyEvent::set_composing(Self, Bool) -> Unit
-pub fn KeyEvent::set_consumed_mods(Self, KeyMods) -> Unit
-pub fn KeyEvent::set_key(Self, Key) -> Unit
-pub fn KeyEvent::set_mods(Self, KeyMods) -> Unit
-pub fn KeyEvent::set_unshifted_codepoint(Self, UInt) -> Unit
-pub fn KeyEvent::set_utf8(Self, Bytes) -> Unit
-pub fn KeyEvent::unshifted_codepoint(Self) -> UInt
-pub fn KeyEvent::utf8(Self) -> Bytes
-
-pub(all) enum KeyModSide {
-  Left
-  Right
-} derive(Eq, @debug.Debug)
-
-type KeyMods derive(Eq, @debug.Debug)
-pub fn KeyMods::alt(Self) -> Bool
-pub fn KeyMods::alt_side(Self) -> KeyModSide
-pub fn KeyMods::binding(Self) -> Self
-pub fn KeyMods::caps_lock(Self) -> Bool
-pub fn KeyMods::ctrl(Self) -> Bool
-pub fn KeyMods::ctrl_side(Self) -> KeyModSide
-pub fn KeyMods::empty(Self) -> Bool
-pub fn KeyMods::new() -> Self
-pub fn KeyMods::num_lock(Self) -> Bool
-pub fn KeyMods::shift(Self) -> Bool
-pub fn KeyMods::shift_side(Self) -> KeyModSide
-pub fn KeyMods::super_(Self) -> Bool
-pub fn KeyMods::super_side(Self) -> KeyModSide
-pub fn KeyMods::unset(Self, Self) -> Self
-pub fn KeyMods::with_alt(Self, Bool) -> Self
-pub fn KeyMods::with_alt_side(Self, KeyModSide) -> Self
-pub fn KeyMods::with_caps_lock(Self, Bool) -> Self
-pub fn KeyMods::with_ctrl(Self, Bool) -> Self
-pub fn KeyMods::with_ctrl_side(Self, KeyModSide) -> Self
-pub fn KeyMods::with_num_lock(Self, Bool) -> Self
-pub fn KeyMods::with_shift(Self, Bool) -> Self
-pub fn KeyMods::with_shift_side(Self, KeyModSide) -> Self
-pub fn KeyMods::with_super_(Self, Bool) -> Self
-pub fn KeyMods::with_super_side(Self, KeyModSide) -> Self
-pub fn KeyMods::without_locks(Self) -> Self
-
-pub(all) enum KittyClipboardLocation {
-  KittyClipboardPrimary
-} derive(Eq, @debug.Debug)
-
-pub(all) enum KittyClipboardOperation {
-  KittyClipboardRead
-  KittyClipboardWalias
-  KittyClipboardWdata
-  KittyClipboardWrite
-} derive(Eq, @debug.Debug)
-
-type KittyClipboardOsc derive(Eq, @debug.Debug)
-pub fn KittyClipboardOsc::id(Self) -> String?
-pub fn KittyClipboardOsc::location(Self) -> KittyClipboardLocation?
-pub fn KittyClipboardOsc::metadata(Self) -> String
-pub fn KittyClipboardOsc::mime(Self) -> String?
-pub fn KittyClipboardOsc::name(Self) -> String?
-pub fn KittyClipboardOsc::operation(Self) -> KittyClipboardOperation?
-pub fn KittyClipboardOsc::password(Self) -> String?
-pub fn KittyClipboardOsc::payload(Self) -> String?
-pub fn KittyClipboardOsc::pw(Self) -> String?
-pub fn KittyClipboardOsc::status(Self) -> KittyClipboardStatus?
-pub fn KittyClipboardOsc::terminator(Self) -> Terminator
-
-pub(all) enum KittyClipboardStatus {
-  KittyClipboardData
-  KittyClipboardDone
-  KittyClipboardEbusy
-  KittyClipboardEinval
-  KittyClipboardEio
-  KittyClipboardEnosys
-  KittyClipboardEperm
-  KittyClipboardOk
-} derive(Eq, @debug.Debug)
-
-pub(all) enum KittyColorKind {
-  KittyPalette(Byte)
-  KittySpecial(KittyColorSpecial)
-} derive(Eq, @debug.Debug)
-
-type KittyColorOsc derive(Eq, @debug.Debug)
-pub fn KittyColorOsc::requests(Self) -> Array[KittyColorRequest]
-pub fn KittyColorOsc::terminator(Self) -> Terminator
-
-pub(all) enum KittyColorRequest {
-  KittyQuery(KittyColorKind)
-  KittySet(KittyColorSet)
-  KittyReset(KittyColorKind)
-} derive(Eq, @debug.Debug)
-
-type KittyColorSet derive(Eq, @debug.Debug)
-pub fn KittyColorSet::color(Self) -> RGB
-pub fn KittyColorSet::key(Self) -> KittyColorKind
-
-pub(all) enum KittyColorSpecial {
-  KittyForeground
-  KittyBackground
-  KittySelectionForeground
-  KittySelectionBackground
-  KittyCursor
-  KittyCursorText
-  KittyVisualBell
-  KittySecondTransparentBackground
-} derive(Eq, @debug.Debug)
 
 type KittyGraphics
 pub fn KittyGraphics::image(Self, UInt) -> KittyImage?
@@ -894,28 +374,6 @@ type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
 pub fn KittyPlacementViewportPosition::col(Self) -> Int
 pub fn KittyPlacementViewportPosition::row(Self) -> Int
 
-pub(all) enum KittyTextSizingHorizontalAlign {
-  KittyTextSizingHLeft
-  KittyTextSizingHRight
-  KittyTextSizingHCenter
-} derive(Eq, @debug.Debug)
-
-type KittyTextSizingOsc derive(Eq, @debug.Debug)
-pub fn KittyTextSizingOsc::denominator(Self) -> Byte
-pub fn KittyTextSizingOsc::halign(Self) -> KittyTextSizingHorizontalAlign
-pub fn KittyTextSizingOsc::numerator(Self) -> Byte
-pub fn KittyTextSizingOsc::scale(Self) -> Byte
-pub fn KittyTextSizingOsc::terminator(Self) -> Terminator
-pub fn KittyTextSizingOsc::text(Self) -> String
-pub fn KittyTextSizingOsc::valign(Self) -> KittyTextSizingVerticalAlign
-pub fn KittyTextSizingOsc::width(Self) -> Byte
-
-pub(all) enum KittyTextSizingVerticalAlign {
-  KittyTextSizingVTop
-  KittyTextSizingVBottom
-  KittyTextSizingVCenter
-} derive(Eq, @debug.Debug)
-
 pub(all) struct Margin {
   top_left : UInt16
   bottom_right : UInt16
@@ -996,37 +454,16 @@ pub(all) enum ModifyKeyFormat {
 } derive(Eq, @debug.Debug)
 pub fn ModifyKeyFormat::ordinal(Self) -> Int
 
-pub(all) enum MouseAction {
-  Press
-  Release
-  Motion
-} derive(Eq, @debug.Debug)
-
-pub(all) enum MouseButton {
-  Unknown
-  Left
-  Right
-  Middle
-  Four
-  Five
-  Six
-  Seven
-  Eight
-  Nine
-  Ten
-  Eleven
-} derive(Eq, @debug.Debug)
-
 type MouseEncoder derive(Eq, @debug.Debug)
 pub fn MouseEncoder::any_button_pressed(Self) -> Bool
-pub fn MouseEncoder::encode(Self, MouseInputEvent) -> Bytes
-pub fn MouseEncoder::event(Self) -> MouseEvent
-pub fn MouseEncoder::format(Self) -> MouseFormat
+pub fn MouseEncoder::encode(Self, @input.MouseInputEvent) -> Bytes
+pub fn MouseEncoder::event(Self) -> @input.MouseEvent
+pub fn MouseEncoder::format(Self) -> @input.MouseFormat
 pub fn MouseEncoder::new() -> Self
 pub fn MouseEncoder::reset(Self) -> Unit
 pub fn MouseEncoder::set_any_button_pressed(Self, Bool) -> Unit
-pub fn MouseEncoder::set_event(Self, MouseEvent) -> Unit
-pub fn MouseEncoder::set_format(Self, MouseFormat) -> Unit
+pub fn MouseEncoder::set_event(Self, @input.MouseEvent) -> Unit
+pub fn MouseEncoder::set_format(Self, @input.MouseFormat) -> Unit
 pub fn MouseEncoder::set_size(Self, MouseEncoderSize) -> Unit
 pub fn MouseEncoder::set_track_last_cell(Self, Bool) -> Unit
 pub fn MouseEncoder::size(Self) -> MouseEncoderSize
@@ -1044,98 +481,6 @@ pub fn MouseEncoderSize::padding_top(Self) -> UInt
 pub fn MouseEncoderSize::screen_height(Self) -> UInt
 pub fn MouseEncoderSize::screen_width(Self) -> UInt
 
-pub(all) enum MouseEvent {
-  None
-  X10
-  Normal
-  Button
-  Any
-} derive(Eq, @debug.Debug)
-
-pub(all) enum MouseFormat {
-  X10
-  Utf8
-  Sgr
-  Urxvt
-  SgrPixels
-} derive(Eq, @debug.Debug)
-
-type MouseInputEvent derive(Eq, @debug.Debug)
-pub fn MouseInputEvent::action(Self) -> MouseAction
-pub fn MouseInputEvent::button(Self) -> MouseButton?
-pub fn MouseInputEvent::clear_button(Self) -> Unit
-pub fn MouseInputEvent::mods(Self) -> KeyMods
-pub fn MouseInputEvent::new() -> Self
-pub fn MouseInputEvent::position(Self) -> MousePosition
-pub fn MouseInputEvent::set_action(Self, MouseAction) -> Unit
-pub fn MouseInputEvent::set_button(Self, MouseButton) -> Unit
-pub fn MouseInputEvent::set_mods(Self, KeyMods) -> Unit
-pub fn MouseInputEvent::set_position(Self, MousePosition) -> Unit
-
-type MousePosition derive(Eq, @debug.Debug)
-pub fn MousePosition::new(Float, Float) -> Self
-pub fn MousePosition::x(Self) -> Float
-pub fn MousePosition::y(Self) -> Float
-
-pub(all) enum MouseShape {
-  Default
-  ContextMenu
-  Help
-  Pointer
-  Progress
-  Wait
-  Cell
-  Crosshair
-  Text
-  VerticalText
-  Alias
-  Copy
-  Move
-  NoDrop
-  NotAllowed
-  Grab
-  Grabbing
-  AllScroll
-  ColResize
-  RowResize
-  NResize
-  EResize
-  SResize
-  WResize
-  NeResize
-  NwResize
-  SeResize
-  SwResize
-  EwResize
-  NsResize
-  NeswResize
-  NwseResize
-  ZoomIn
-  ZoomOut
-} derive(Eq, @debug.Debug)
-pub fn MouseShape::from_string(String) -> Self?
-
-pub(all) enum Name {
-  Black
-  Red
-  Green
-  Yellow
-  Blue
-  Magenta
-  Cyan
-  White
-  BrightBlack
-  BrightRed
-  BrightGreen
-  BrightYellow
-  BrightBlue
-  BrightMagenta
-  BrightCyan
-  BrightWhite
-} derive(Eq, @debug.Debug)
-pub fn Name::code(Self) -> Byte
-pub fn Name::default_rgb(Self) -> RGB
-
 pub(all) enum OptimizeMode {
   Debug
   ReleaseSafe
@@ -1150,12 +495,6 @@ pub(all) enum OptionAsAlt {
   True
 } derive(Eq, @debug.Debug)
 
-type OscParser derive(@debug.Debug)
-pub fn OscParser::end(Self, Byte?) -> Command?
-pub fn OscParser::new() -> Self
-pub fn OscParser::next(Self, Byte) -> Unit
-pub fn OscParser::reset(Self) -> Unit
-
 pub(all) enum PageCellContentTag {
   Codepoint
   CodepointGrapheme
@@ -1164,7 +503,7 @@ pub(all) enum PageCellContentTag {
 } derive(Eq, @debug.Debug)
 
 type PageCellState derive(Eq, @debug.Debug)
-pub fn PageCellState::background_rgb(Self) -> RGB?
+pub fn PageCellState::background_rgb(Self) -> @color.RGB?
 pub fn PageCellState::codepoint(Self) -> UInt
 pub fn PageCellState::content_tag(Self) -> PageCellContentTag
 pub fn PageCellState::full_reset(Self) -> Unit
@@ -1181,7 +520,7 @@ pub fn PageCellState::new() -> Self
 pub fn PageCellState::palette_index(Self) -> Byte?
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::set_background_palette(Self, Byte) -> Unit
-pub fn PageCellState::set_background_rgb(Self, RGB) -> Unit
+pub fn PageCellState::set_background_rgb(Self, @color.RGB) -> Unit
 pub fn PageCellState::set_codepoint(Self, UInt, Bool) -> Unit
 pub fn PageCellState::set_hyperlink(Self, CellHyperlink?) -> Unit
 pub fn PageCellState::set_protected(Self, Bool) -> Unit
@@ -1266,13 +605,6 @@ pub(all) enum ProtectedMode {
   Dec
 } derive(Eq, @debug.Debug)
 
-type RGB derive(Eq, @debug.Debug)
-pub fn RGB::b(Self) -> Byte
-pub fn RGB::g(Self) -> Byte
-pub fn RGB::new(Byte, Byte, Byte) -> Self
-pub fn RGB::parse(String) -> Self raise ColorParseError
-pub fn RGB::r(Self) -> Byte
-
 pub(all) enum RenderDirty {
   False
   Partial
@@ -1280,9 +612,9 @@ pub(all) enum RenderDirty {
 } derive(Eq)
 
 type RenderRowCells
-pub fn RenderRowCells::background_color(Self) -> RGB?
+pub fn RenderRowCells::background_color(Self) -> @color.RGB?
 pub fn RenderRowCells::cell(Self) -> PageCellState?
-pub fn RenderRowCells::foreground_color(Self) -> RGB?
+pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
 pub fn RenderRowCells::next(Self) -> Bool
 pub fn RenderRowCells::select(Self, UInt16) -> Bool
 pub fn RenderRowCells::x(Self) -> UInt16?
@@ -1296,20 +628,20 @@ pub fn RenderRowIterator::set_dirty(Self, Bool) -> Bool
 pub fn RenderRowIterator::y(Self) -> UInt16?
 
 type RenderState
-pub fn RenderState::background_color(Self) -> RGB
+pub fn RenderState::background_color(Self) -> @color.RGB
 pub fn RenderState::columns(Self) -> UInt16
 pub fn RenderState::cursor_blinking(Self) -> Bool
-pub fn RenderState::cursor_color(Self) -> RGB?
+pub fn RenderState::cursor_color(Self) -> @color.RGB?
 pub fn RenderState::cursor_password_input(Self) -> Bool
 pub fn RenderState::cursor_viewport(Self) -> Coordinate?
 pub fn RenderState::cursor_viewport_wide_tail(Self) -> Bool
 pub fn RenderState::cursor_visible(Self) -> Bool
 pub fn RenderState::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn RenderState::dirty(Self) -> RenderDirty
-pub fn RenderState::foreground_color(Self) -> RGB
+pub fn RenderState::foreground_color(Self) -> @color.RGB
 pub fn RenderState::format_vt_framebuffer(Self) -> Bytes
 pub fn RenderState::new() -> Self
-pub fn RenderState::palette(Self) -> Array[RGB]
+pub fn RenderState::palette(Self) -> Array[@color.RGB]
 pub fn RenderState::row_iterator(Self) -> RenderRowIterator
 pub fn RenderState::rows(Self) -> UInt16
 pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
@@ -1344,15 +676,15 @@ pub(all) enum RowSemanticPrompt {
 } derive(Eq, @debug.Debug)
 
 type ScreenCharsetState derive(Eq, @debug.Debug)
-pub fn ScreenCharsetState::charset(Self, Slots) -> Charset
-pub fn ScreenCharsetState::configure(Self, Slots, Charset) -> Unit
-pub fn ScreenCharsetState::consume_single_shift(Self) -> Slots?
-pub fn ScreenCharsetState::gl(Self) -> Slots
-pub fn ScreenCharsetState::gr(Self) -> Slots
-pub fn ScreenCharsetState::invoke(Self, ActiveSlot, Slots, Bool) -> Unit
+pub fn ScreenCharsetState::charset(Self, @charsets.Slots) -> @charsets.Charset
+pub fn ScreenCharsetState::configure(Self, @charsets.Slots, @charsets.Charset) -> Unit
+pub fn ScreenCharsetState::consume_single_shift(Self) -> @charsets.Slots?
+pub fn ScreenCharsetState::gl(Self) -> @charsets.Slots
+pub fn ScreenCharsetState::gr(Self) -> @charsets.Slots
+pub fn ScreenCharsetState::invoke(Self, @charsets.ActiveSlot, @charsets.Slots, Bool) -> Unit
 pub fn ScreenCharsetState::new() -> Self
 pub fn ScreenCharsetState::reset(Self) -> Unit
-pub fn ScreenCharsetState::single_shift(Self) -> Slots?
+pub fn ScreenCharsetState::single_shift(Self) -> @charsets.Slots?
 
 type ScreenHyperlinkState derive(Eq, @debug.Debug)
 pub fn ScreenHyperlinkState::active(Self) -> Bool
@@ -1389,8 +721,8 @@ pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
 pub fn ScreenSavedCursorState::save(Self, TerminalCursorState, CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
 
 type ScreenSemanticState derive(Eq, @debug.Debug)
-pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, SemanticPrompt) -> Unit
-pub fn ScreenSemanticState::apply_prompt_start(Self, SemanticPrompt) -> Unit
+pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPrompt) -> Unit
+pub fn ScreenSemanticState::apply_prompt_start(Self, @osc.SemanticPrompt) -> Unit
 pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
 pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
 pub fn ScreenSemanticState::cursor_content(Self) -> SemanticContent
@@ -1419,112 +751,13 @@ pub fn Selection::start(Self) -> Pin
 pub(all) enum SemanticClickMode {
   None
   ClickEvents
-  Cl(SemanticPromptClick)
+  Cl(@osc.SemanticPromptClick)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum SemanticContent {
   Output
   Input
   Prompt
-} derive(Eq, @debug.Debug)
-
-type SemanticPrompt derive(Eq, @debug.Debug)
-pub fn SemanticPrompt::action(Self) -> SemanticPromptAction
-pub fn SemanticPrompt::aid(Self) -> String?
-pub fn SemanticPrompt::cl(Self) -> SemanticPromptClick?
-pub fn SemanticPrompt::click_events(Self) -> Bool?
-pub fn SemanticPrompt::cmdline(Self) -> String?
-pub fn SemanticPrompt::cmdline_url(Self) -> String?
-pub fn SemanticPrompt::decoded_command_line(Self) -> String? raise SemanticPromptDecodeError
-pub fn SemanticPrompt::err(Self) -> String?
-pub fn SemanticPrompt::exit_code(Self) -> Int?
-pub fn SemanticPrompt::prompt_kind(Self) -> SemanticPromptKind?
-pub fn SemanticPrompt::redraw(Self) -> SemanticPromptRedraw?
-pub fn SemanticPrompt::special_key(Self) -> Bool?
-
-pub(all) enum SemanticPromptAction {
-  FreshLine
-  FreshLineNewPrompt
-  NewCommand
-  PromptStart
-  EndPromptStartInput
-  EndPromptStartInputTerminateEol
-  EndInputStartOutput
-  EndCommand
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SemanticPromptClick {
-  Line
-  Multiple
-  ConservativeVertical
-  SmartVertical
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SemanticPromptKind {
-  Initial
-  Right
-  Continuation
-  Secondary
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SemanticPromptRedraw {
-  Enabled
-  Disabled
-  Last
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SgrAttribute {
-  Unset
-  Unknown(SgrUnknown)
-  Bold
-  ResetBold
-  Italic
-  ResetItalic
-  Faint
-  Underline(SgrUnderline)
-  UnderlineColor(RGB)
-  Color256Underline(Byte)
-  ResetUnderlineColor
-  Overline
-  ResetOverline
-  Blink
-  ResetBlink
-  Inverse
-  ResetInverse
-  Invisible
-  ResetInvisible
-  Strikethrough
-  ResetStrikethrough
-  DirectColorFg(RGB)
-  DirectColorBg(RGB)
-  Color8Bg(Name)
-  Color8Fg(Name)
-  ResetFg
-  ResetBg
-  BrightColor8Bg(Name)
-  BrightColor8Fg(Name)
-  Color256Bg(Byte)
-  Color256Fg(Byte)
-} derive(Eq, @debug.Debug)
-
-type SgrParser derive(@debug.Debug)
-pub fn SgrParser::new() -> Self
-pub fn SgrParser::next(Self) -> SgrAttribute?
-pub fn SgrParser::reset(Self) -> Unit
-pub fn SgrParser::set_params(Self, Array[UInt16], Array[Byte]) -> TerminalResultCode
-
-pub(all) enum SgrUnderline {
-  None
-  Single
-  Double
-  Curly
-  Dotted
-  Dashed
-} derive(Eq, @debug.Debug)
-
-pub(all) struct SgrUnknown {
-  full : Array[UInt16]
-  partial : Array[UInt16]
 } derive(Eq, @debug.Debug)
 
 type Size derive(Eq, @debug.Debug)
@@ -1540,22 +773,6 @@ pub(all) enum SizeReportStyle {
   Csi18t
   Csi21t
 } derive(Eq, @debug.Debug)
-
-pub(all) enum Slots {
-  G0
-  G1
-  G2
-  G3
-} derive(Eq, @debug.Debug)
-
-pub(all) enum Special {
-  Bold
-  Underline
-  Blink
-  Reverse
-  Italic
-} derive(Eq, @debug.Debug)
-pub fn Special::osc4(Self) -> UInt16
 
 pub(all) enum StatusDisplay {
   Main
@@ -1620,7 +837,7 @@ pub(all) enum StreamAction {
   StreamDeleteChars(UInt16)
   StreamEraseChars(UInt16)
   StreamInsertLines(UInt16)
-  StreamSetAttribute(SgrAttribute)
+  StreamSetAttribute(@sgr.SgrAttribute)
   StreamCursorStyle(CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
@@ -1645,16 +862,16 @@ pub(all) enum StreamAction {
   StreamTitlePop(UInt16)
   StreamXtversion
   StreamWindowTitle(String)
-  StreamClipboardContents(ClipboardContents)
+  StreamClipboardContents(@osc.ClipboardContents)
   StreamReportPwd(String)
-  StreamShowDesktopNotification(DesktopNotification)
-  StreamProgressReport(ConEmuProgressReport)
-  StreamStartHyperlink(HyperlinkStart)
+  StreamShowDesktopNotification(@osc.DesktopNotification)
+  StreamProgressReport(@osc.ConEmuProgressReport)
+  StreamStartHyperlink(@osc.HyperlinkStart)
   StreamEndHyperlink
-  StreamMouseShape(MouseShape)
-  StreamKittyColorReport(KittyColorOsc)
-  StreamColorOperation(ColorCommand)
-  StreamSemanticPrompt(SemanticPrompt)
+  StreamMouseShape(@input.MouseShape)
+  StreamKittyColorReport(@osc.KittyColorOsc)
+  StreamColorOperation(@osc.ColorCommand)
+  StreamSemanticPrompt(@osc.SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
@@ -1674,7 +891,7 @@ pub(all) enum StreamAction {
 
 type StreamTerminal
 pub fn StreamTerminal::active_screen(Self) -> TerminalScreen
-pub fn StreamTerminal::background_color(Self) -> RGB?
+pub fn StreamTerminal::background_color(Self) -> @color.RGB?
 pub fn StreamTerminal::clear_bell(Self) -> Unit
 pub fn StreamTerminal::clear_color_scheme(Self) -> Unit
 pub fn StreamTerminal::clear_device_attributes(Self) -> Unit
@@ -1686,7 +903,7 @@ pub fn StreamTerminal::clear_write_pty(Self) -> Unit
 pub fn StreamTerminal::clear_xtversion(Self) -> Unit
 pub fn StreamTerminal::columns(Self) -> UInt16
 pub fn StreamTerminal::cursor_bottom_margin(Self) -> UInt16
-pub fn StreamTerminal::cursor_color(Self) -> RGB?
+pub fn StreamTerminal::cursor_color(Self) -> @color.RGB?
 pub fn StreamTerminal::cursor_left_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_pending_wrap(Self) -> Bool
 pub fn StreamTerminal::cursor_right_margin(Self) -> UInt16
@@ -1695,12 +912,12 @@ pub fn StreamTerminal::cursor_visible(Self) -> Bool
 pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
-pub fn StreamTerminal::default_background_color(Self) -> RGB?
-pub fn StreamTerminal::default_cursor_color(Self) -> RGB?
-pub fn StreamTerminal::default_foreground_color(Self) -> RGB?
-pub fn StreamTerminal::default_palette(Self) -> Array[RGB]
+pub fn StreamTerminal::default_background_color(Self) -> @color.RGB?
+pub fn StreamTerminal::default_cursor_color(Self) -> @color.RGB?
+pub fn StreamTerminal::default_foreground_color(Self) -> @color.RGB?
+pub fn StreamTerminal::default_palette(Self) -> Array[@color.RGB]
 pub fn StreamTerminal::deinit(Self) -> Unit
-pub fn StreamTerminal::foreground_color(Self) -> RGB?
+pub fn StreamTerminal::foreground_color(Self) -> @color.RGB?
 pub fn StreamTerminal::height_px(Self) -> UInt
 pub fn StreamTerminal::kitty_graphics(Self) -> KittyGraphics
 pub fn StreamTerminal::kitty_keyboard_flags(Self) -> KittyKeyboardFlags
@@ -1710,13 +927,13 @@ pub fn StreamTerminal::mouse_tracking(Self) -> Bool
 pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> ColorScheme?, device_attributes? : () -> DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
-pub fn StreamTerminal::palette(Self) -> Array[RGB]
+pub fn StreamTerminal::palette(Self) -> Array[@color.RGB]
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
 pub fn StreamTerminal::pin(Self, Point) -> Pin?
 pub fn StreamTerminal::point_from_pin(Self, Pin, Tag) -> Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
-pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> TerminalResultCode
+pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> PageRowState?
@@ -1728,10 +945,10 @@ pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
 pub fn StreamTerminal::selection(Self, Point, Point, Bool) -> Selection?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
-pub fn StreamTerminal::set_default_background_color(Self, RGB?) -> Unit
-pub fn StreamTerminal::set_default_cursor_color(Self, RGB?) -> Unit
-pub fn StreamTerminal::set_default_foreground_color(Self, RGB?) -> Unit
-pub fn StreamTerminal::set_default_palette(Self, Array[RGB]?) -> TerminalResultCode
+pub fn StreamTerminal::set_default_background_color(Self, @color.RGB?) -> Unit
+pub fn StreamTerminal::set_default_cursor_color(Self, @color.RGB?) -> Unit
+pub fn StreamTerminal::set_default_foreground_color(Self, @color.RGB?) -> Unit
+pub fn StreamTerminal::set_default_palette(Self, Array[@color.RGB]?) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::set_device_attributes(Self, () -> DeviceAttributes?) -> Unit
 pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
 pub fn StreamTerminal::set_pwd(Self, String) -> Unit
@@ -1757,7 +974,7 @@ pub(all) enum Style {
 type StyleColor derive(Eq, @debug.Debug)
 pub fn StyleColor::is_default(Self) -> Bool
 pub fn StyleColor::palette_index(Self) -> Byte?
-pub fn StyleColor::rgb_value(Self) -> RGB?
+pub fn StyleColor::rgb_value(Self) -> @color.RGB?
 
 type SystemImage derive(Eq, @debug.Debug)
 pub fn SystemImage::data(Self) -> Bytes
@@ -1779,23 +996,6 @@ pub(all) enum Tag {
   History
 } derive(Eq, @debug.Debug)
 
-type TerminalColors derive(Eq, @debug.Debug)
-pub fn TerminalColors::background(Self) -> RGB?
-pub fn TerminalColors::change_default_palette(Self, Array[RGB]) -> Unit
-pub fn TerminalColors::cursor(Self) -> RGB?
-pub fn TerminalColors::foreground(Self) -> RGB?
-pub fn TerminalColors::new() -> Self
-pub fn TerminalColors::palette_color(Self, Byte) -> RGB
-pub fn TerminalColors::reset_background(Self) -> Unit
-pub fn TerminalColors::reset_cursor(Self) -> Unit
-pub fn TerminalColors::reset_foreground(Self) -> Unit
-pub fn TerminalColors::reset_palette(Self) -> Unit
-pub fn TerminalColors::reset_palette_color(Self, Byte) -> Unit
-pub fn TerminalColors::set_background(Self, RGB) -> Unit
-pub fn TerminalColors::set_cursor(Self, RGB) -> Unit
-pub fn TerminalColors::set_foreground(Self, RGB) -> Unit
-pub fn TerminalColors::set_palette_color(Self, Byte, RGB) -> Unit
-
 type TerminalCursorState derive(Eq, @debug.Debug)
 pub fn TerminalCursorState::apply_cursor_style(Self, CursorStyle) -> Bool
 pub fn TerminalCursorState::bottom_margin(Self) -> UInt16
@@ -1815,9 +1015,9 @@ pub fn TerminalCursorState::y(Self) -> UInt16
 
 type TerminalDisplayState derive(Eq, @debug.Debug)
 pub fn TerminalDisplayState::full_reset(Self) -> Unit
-pub fn TerminalDisplayState::mouse_shape(Self) -> MouseShape
+pub fn TerminalDisplayState::mouse_shape(Self) -> @input.MouseShape
 pub fn TerminalDisplayState::new() -> Self
-pub fn TerminalDisplayState::set_mouse_shape(Self, MouseShape) -> Unit
+pub fn TerminalDisplayState::set_mouse_shape(Self, @input.MouseShape) -> Unit
 pub fn TerminalDisplayState::set_status_display(Self, StatusDisplay) -> Unit
 pub fn TerminalDisplayState::status_display(Self) -> StatusDisplay
 
@@ -1832,19 +1032,10 @@ pub fn TerminalInputFlags::set_mouse_shift_capture(Self, Bool) -> Unit
 type TerminalMetadataState derive(Eq, @debug.Debug)
 pub fn TerminalMetadataState::full_reset(Self) -> Unit
 pub fn TerminalMetadataState::new() -> Self
-pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, SemanticPromptRedraw) -> Unit
+pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, @osc.SemanticPromptRedraw) -> Unit
 pub fn TerminalMetadataState::set_title(Self, String) -> Unit
-pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> SemanticPromptRedraw
+pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> @osc.SemanticPromptRedraw
 pub fn TerminalMetadataState::title(Self) -> String?
-
-pub(all) enum TerminalResultCode {
-  Success
-  OutOfMemory
-  InvalidValue
-  OutOfSpace
-  NoValue
-} derive(Eq, @debug.Debug)
-pub fn TerminalResultCode::code(Self) -> Int
 
 pub(all) enum TerminalScreen {
   Primary
@@ -1876,25 +1067,14 @@ pub fn TerminalTabstopsState::reset(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::set(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
 
-pub(all) enum Terminator {
-  St
-  Bel
-} derive(Eq, @debug.Debug)
-
 type TertiaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
 pub fn TertiaryDeviceAttributes::new(UInt) -> Self
 pub fn TertiaryDeviceAttributes::unit_id(Self) -> UInt
 
-type Utf8Decoder derive(Eq, @debug.Debug)
-pub fn Utf8Decoder::new() -> Self
-pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)
-
 // Type aliases
 pub type CellCountInt = UInt16
-
-pub type CharsetTable = ReadOnlyArray[UInt16]
 
 // Traits
 pub(open) trait StreamHandler {

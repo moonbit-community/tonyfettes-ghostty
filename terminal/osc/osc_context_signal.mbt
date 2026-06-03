@@ -24,7 +24,7 @@ pub(all) enum ContextSignalType {
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum ContextSignalExitStatus {
+pub enum ContextSignalExitStatus {
   ContextSignalExitSuccess
   ContextSignalExitFailure
   ContextSignalExitCrash
@@ -169,11 +169,11 @@ fn parse_context_signal_command(buffer : Array[Byte]) -> Command? {
   }
 
   let (action, prefix_len) = if buffer.length() >= 6 &&
-    slice_equals_ascii(buffer, 0, 5, "start") &&
+    @ascii.slice_equals_ascii(buffer, 0, 5, "start") &&
     buffer[5] == b'=' {
     (ContextSignalStart, 6)
   } else if buffer.length() >= 4 &&
-    slice_equals_ascii(buffer, 0, 3, "end") &&
+    @ascii.slice_equals_ascii(buffer, 0, 3, "end") &&
     buffer[3] == b'=' {
     (ContextSignalEnd, 4)
   } else {
@@ -184,7 +184,8 @@ fn parse_context_signal_command(buffer : Array[Byte]) -> Command? {
     return None
   }
 
-  let id_end = match find_byte(buffer, prefix_len, buffer.length(), b';') {
+  let id_end = match
+    @ascii.find_byte(buffer, prefix_len, buffer.length(), b';') {
     Some(index) => index
     None => buffer.length()
   }
@@ -243,7 +244,7 @@ fn context_signal_option_value(
   let mut start = 0
   while start <= metadata_unvalidated.length() {
     let segment_end = match
-      find_byte(
+      @ascii.find_byte(
         metadata_unvalidated,
         start,
         metadata_unvalidated.length(),
@@ -253,9 +254,9 @@ fn context_signal_option_value(
       None => metadata_unvalidated.length()
     }
 
-    match find_byte(metadata_unvalidated, start, segment_end, b'=') {
+    match @ascii.find_byte(metadata_unvalidated, start, segment_end, b'=') {
       Some(eq_index) =>
-        if slice_equals_ascii(metadata_unvalidated, start, eq_index, key) {
+        if @ascii.slice_equals_ascii(metadata_unvalidated, start, eq_index, key) {
           return Some(
             copy_bytes_range(metadata_unvalidated, eq_index + 1, segment_end),
           )
@@ -297,40 +298,40 @@ fn context_signal_id_is_valid(
 
 ///|
 fn context_signal_type_from_bytes(value : Array[Byte]) -> ContextSignalType? {
-  if slice_equals_ascii(value, 0, value.length(), "boot") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "boot") {
     return Some(ContextSignalBoot)
   }
-  if slice_equals_ascii(value, 0, value.length(), "container") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "container") {
     return Some(ContextSignalContainer)
   }
-  if slice_equals_ascii(value, 0, value.length(), "vm") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "vm") {
     return Some(ContextSignalVm)
   }
-  if slice_equals_ascii(value, 0, value.length(), "elevate") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "elevate") {
     return Some(ContextSignalElevate)
   }
-  if slice_equals_ascii(value, 0, value.length(), "chpriv") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "chpriv") {
     return Some(ContextSignalChpriv)
   }
-  if slice_equals_ascii(value, 0, value.length(), "subcontext") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "subcontext") {
     return Some(ContextSignalSubcontext)
   }
-  if slice_equals_ascii(value, 0, value.length(), "remote") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "remote") {
     return Some(ContextSignalRemote)
   }
-  if slice_equals_ascii(value, 0, value.length(), "shell") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "shell") {
     return Some(ContextSignalShell)
   }
-  if slice_equals_ascii(value, 0, value.length(), "command") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "command") {
     return Some(ContextSignalCommand)
   }
-  if slice_equals_ascii(value, 0, value.length(), "app") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "app") {
     return Some(ContextSignalApp)
   }
-  if slice_equals_ascii(value, 0, value.length(), "service") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "service") {
     return Some(ContextSignalService)
   }
-  if slice_equals_ascii(value, 0, value.length(), "session") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "session") {
     return Some(ContextSignalSession)
   }
   None
@@ -340,16 +341,16 @@ fn context_signal_type_from_bytes(value : Array[Byte]) -> ContextSignalType? {
 fn context_signal_exit_status_from_bytes(
   value : Array[Byte],
 ) -> ContextSignalExitStatus? {
-  if slice_equals_ascii(value, 0, value.length(), "success") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "success") {
     return Some(ContextSignalExitSuccess)
   }
-  if slice_equals_ascii(value, 0, value.length(), "failure") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "failure") {
     return Some(ContextSignalExitFailure)
   }
-  if slice_equals_ascii(value, 0, value.length(), "crash") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "crash") {
     return Some(ContextSignalExitCrash)
   }
-  if slice_equals_ascii(value, 0, value.length(), "interrupt") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "interrupt") {
     return Some(ContextSignalExitInterrupt)
   }
   None

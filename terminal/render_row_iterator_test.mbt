@@ -98,7 +98,7 @@ test "render row cells/select and next resolve style and content colors" {
   let first = cells.cell().unwrap()
   guard first.codepoint() == b'R'.to_uint() &&
     first.has_text() &&
-    cells.foreground_color() == Some(Name::Red.default_rgb()) &&
+    cells.foreground_color() == Some(@color.Name::Red.default_rgb()) &&
     cells.background_color() == None else {
     fail("expected style foreground resolution on first cell")
   }
@@ -106,8 +106,8 @@ test "render row cells/select and next resolve style and content colors" {
   guard cells.next() &&
     cells.x() == Some(1) &&
     cells.cell().unwrap().codepoint() == b'B'.to_uint() &&
-    cells.foreground_color() == Some(Name::Red.default_rgb()) &&
-    cells.background_color() == Some(Name::Blue.default_rgb()) else {
+    cells.foreground_color() == Some(@color.Name::Red.default_rgb()) &&
+    cells.background_color() == Some(@color.Name::Blue.default_rgb()) else {
     fail("expected style background resolution on second cell")
   }
 
@@ -118,7 +118,7 @@ test "render row cells/select and next resolve style and content colors" {
   guard !third.has_text() &&
     third.content_tag() == BackgroundPalette &&
     cells.foreground_color() == None &&
-    cells.background_color() == Some(Name::Blue.default_rgb()) else {
+    cells.background_color() == Some(@color.Name::Blue.default_rgb()) else {
     fail("expected content-tag background resolution on blank cell")
   }
 
@@ -148,7 +148,7 @@ test "render row cells/resolve direct rgb colors" {
 
   let cells = rows.cells().unwrap()
   guard cells.select(0) &&
-    cells.foreground_color() == Some(RGB::new(1, 2, 3)) &&
+    cells.foreground_color() == Some(@color.RGB::new(1, 2, 3)) &&
     cells.background_color() == None else {
     fail("expected direct rgb foreground resolution")
   }
@@ -156,7 +156,7 @@ test "render row cells/resolve direct rgb colors" {
   guard cells.select(1) &&
     cells.cell().unwrap().content_tag() == BackgroundRgb &&
     cells.foreground_color() == None &&
-    cells.background_color() == Some(RGB::new(4, 5, 6)) else {
+    cells.background_color() == Some(@color.RGB::new(4, 5, 6)) else {
     fail("expected background-rgb content resolution")
   }
 

@@ -20,7 +20,7 @@ fn StreamTerminalBridgeState::display_state(
 ///|
 fn StreamTerminalBridgeState::colors(
   self : StreamTerminalBridgeState,
-) -> TerminalColors {
+) -> @color.TerminalColors {
   self.colors
 }
 
@@ -42,29 +42,29 @@ fn StreamTerminalBridgeState::tabstop(
 ///|
 fn StreamTerminalBridgeState::charset(
   self : StreamTerminalBridgeState,
-  slot : Slots,
-) -> Charset {
+  slot : @charsets.Slots,
+) -> @charsets.Charset {
   self.charset.charset(slot)
 }
 
 ///|
 fn StreamTerminalBridgeState::charset_gl(
   self : StreamTerminalBridgeState,
-) -> Slots {
+) -> @charsets.Slots {
   self.charset.gl()
 }
 
 ///|
 fn StreamTerminalBridgeState::charset_gr(
   self : StreamTerminalBridgeState,
-) -> Slots {
+) -> @charsets.Slots {
   self.charset.gr()
 }
 
 ///|
 fn StreamTerminalBridgeState::charset_single_shift(
   self : StreamTerminalBridgeState,
-) -> Slots? {
+) -> @charsets.Slots? {
   self.charset.single_shift()
 }
 
@@ -109,7 +109,7 @@ fn StreamTerminalBridgeState::semantic_row_prompt(
 ///|
 fn StreamTerminalBridgeState::shell_redraws_prompt(
   self : StreamTerminalBridgeState,
-) -> SemanticPromptRedraw {
+) -> @osc.SemanticPromptRedraw {
   self.metadata.shell_redraws_prompt()
 }
 
@@ -314,7 +314,7 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
 
   let style = state.current_style_snapshot()
   guard style.bold() &&
-    style.bg_color().palette_index() == Some(Name::Cyan.code()) else {
+    style.bg_color().palette_index() == Some(@color.Name::Cyan.code()) else {
     fail("expected current style to preserve bold and background color")
   }
   guard state.semantic_click_mode() == ClickEvents &&
@@ -336,7 +336,7 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
   guard first.codepoint() == b'A'.to_uint() &&
     first.semantic_content() == Prompt &&
     first.style().bold() &&
-    first.style().bg_color().palette_index() == Some(Name::Cyan.code()) else {
+    first.style().bg_color().palette_index() == Some(@color.Name::Cyan.code()) else {
     fail("expected first cell style and semantic metadata")
   }
   let first_link_ok = match first.hyperlink() {
@@ -445,8 +445,8 @@ test "stream terminal bridge/covers reverse index and safe none branches" {
   state.sync_current_row_prompt()
   state.semantic.start_input(false)
   state.apply_semantic_after_newline()
-  state.apply_semantic_prompt(SemanticPrompt::new(EndInputStartOutput, []))
-  state.apply_semantic_prompt(SemanticPrompt::new(PromptStart, []))
+  state.apply_semantic_prompt(@osc.SemanticPrompt::new(EndInputStartOutput, []))
+  state.apply_semantic_prompt(@osc.SemanticPrompt::new(PromptStart, []))
 
   state.previous_char = Some(0U)
   state.print_repeat(1)
@@ -599,8 +599,8 @@ test "stream terminal bridge/applies decaln full reset and kitty color protocol"
     fail("expected kitty color bytes to be handled")
   }
   guard state.palette_dirty() &&
-    state.colors().palette_color(5) == RGB::new(1, 2, 3) &&
-    state.colors().foreground() == Some(RGB::new(4, 5, 6)) else {
+    state.colors().palette_color(5) == @color.RGB::new(1, 2, 3) &&
+    state.colors().foreground() == Some(@color.RGB::new(4, 5, 6)) else {
     fail("expected kitty color protocol mutation")
   }
 
@@ -614,8 +614,8 @@ test "stream terminal bridge/applies decaln full reset and kitty color protocol"
 
   let decaln_style = state.current_style_snapshot()
   guard !decaln_style.bold() &&
-    decaln_style.fg_color().palette_index() == Some(Name::Red.code()) &&
-    decaln_style.bg_color().palette_index() == Some(Name::Green.code()) &&
+    decaln_style.fg_color().palette_index() == Some(@color.Name::Red.code()) &&
+    decaln_style.bg_color().palette_index() == Some(@color.Name::Green.code()) &&
     expect_bridge_cell(state, 0, 0).codepoint() == b'E'.to_uint() &&
     state.cursor_x() == 0 &&
     state.cursor_y() == 0 else {
@@ -632,8 +632,8 @@ test "stream terminal bridge/applies decaln full reset and kitty color protocol"
     state.current_style_snapshot().is_default() &&
     !state.hyperlink_active() &&
     state.semantic_cursor_content() == Output &&
-    state.colors().palette_color(5) == RGB::new(1, 2, 3) &&
-    state.colors().foreground() == Some(RGB::new(4, 5, 6)) else {
+    state.colors().palette_color(5) == @color.RGB::new(1, 2, 3) &&
+    state.colors().foreground() == Some(@color.RGB::new(4, 5, 6)) else {
     fail("expected full reset bridge behavior")
   }
 }
@@ -832,9 +832,9 @@ test "stream terminal bridge/covers kitty color query and reset branches" {
   ) else {
     fail("expected kitty color set/query bytes")
   }
-  guard state.colors().foreground() == Some(RGB::new(1, 2, 3)) &&
-    state.colors().background() == Some(RGB::new(7, 8, 9)) &&
-    state.colors().cursor() == Some(RGB::new(10, 11, 12)) else {
+  guard state.colors().foreground() == Some(@color.RGB::new(1, 2, 3)) &&
+    state.colors().background() == Some(@color.RGB::new(7, 8, 9)) &&
+    state.colors().cursor() == Some(@color.RGB::new(10, 11, 12)) else {
     fail("expected kitty color set branches")
   }
 
@@ -843,7 +843,7 @@ test "stream terminal bridge/covers kitty color query and reset branches" {
   ) else {
     fail("expected kitty color reset bytes")
   }
-  guard state.colors().palette_color(5) == Name::Magenta.default_rgb() &&
+  guard state.colors().palette_color(5) == @color.Name::Magenta.default_rgb() &&
     state.colors().foreground() == None &&
     state.colors().background() == None &&
     state.colors().cursor() == None else {
@@ -1589,15 +1589,24 @@ test "stream terminal bridge/covers cursor movement edge branches" {
 ///|
 test "stream terminal bridge/applies color set operations and ignores non-terminal targets" {
   let state = StreamTerminalBridgeState::new()
-  let command = ColorCommand::new(
+  let command = @osc.ColorCommand::new(
     Osc4,
     [
-      Set(ColoredTarget::new(Palette(1), RGB::new(9, 8, 7))),
-      Set(ColoredTarget::new(Dynamic(Foreground), RGB::new(1, 2, 3))),
-      Set(ColoredTarget::new(Dynamic(Background), RGB::new(4, 5, 6))),
-      Set(ColoredTarget::new(Dynamic(Cursor), RGB::new(7, 8, 9))),
-      Set(ColoredTarget::new(Dynamic(PointerForeground), RGB::new(9, 9, 9))),
-      Set(ColoredTarget::new(Special(Bold), RGB::new(6, 6, 6))),
+      Set(@osc.ColoredTarget::new(Palette(1), @color.RGB::new(9, 8, 7))),
+      Set(
+        @osc.ColoredTarget::new(Dynamic(Foreground), @color.RGB::new(1, 2, 3)),
+      ),
+      Set(
+        @osc.ColoredTarget::new(Dynamic(Background), @color.RGB::new(4, 5, 6)),
+      ),
+      Set(@osc.ColoredTarget::new(Dynamic(Cursor), @color.RGB::new(7, 8, 9))),
+      Set(
+        @osc.ColoredTarget::new(
+          Dynamic(PointerForeground),
+          @color.RGB::new(9, 9, 9),
+        ),
+      ),
+      Set(@osc.ColoredTarget::new(Special(Bold), @color.RGB::new(6, 6, 6))),
     ],
     St,
   )
@@ -1608,16 +1617,16 @@ test "stream terminal bridge/applies color set operations and ignores non-termin
   guard state.palette_dirty() else {
     fail("expected palette writes to mark palette dirty")
   }
-  guard state.colors().palette_color(1) == RGB::new(9, 8, 7) else {
+  guard state.colors().palette_color(1) == @color.RGB::new(9, 8, 7) else {
     fail("expected palette color write")
   }
-  guard state.colors().foreground() == Some(RGB::new(1, 2, 3)) else {
+  guard state.colors().foreground() == Some(@color.RGB::new(1, 2, 3)) else {
     fail("expected foreground dynamic color write")
   }
-  guard state.colors().background() == Some(RGB::new(4, 5, 6)) else {
+  guard state.colors().background() == Some(@color.RGB::new(4, 5, 6)) else {
     fail("expected background dynamic color write")
   }
-  guard state.colors().cursor() == Some(RGB::new(7, 8, 9)) else {
+  guard state.colors().cursor() == Some(@color.RGB::new(7, 8, 9)) else {
     fail("expected cursor dynamic color write")
   }
 }
@@ -1627,14 +1636,26 @@ test "stream terminal bridge/applies color resets and reset palette" {
   let state = StreamTerminalBridgeState::new()
   guard state.apply(
     StreamColorOperation(
-      ColorCommand::new(
+      @osc.ColorCommand::new(
         Osc4,
         [
-          Set(ColoredTarget::new(Palette(1), RGB::new(10, 11, 12))),
-          Set(ColoredTarget::new(Palette(2), RGB::new(20, 21, 22))),
-          Set(ColoredTarget::new(Dynamic(Foreground), RGB::new(1, 2, 3))),
-          Set(ColoredTarget::new(Dynamic(Background), RGB::new(4, 5, 6))),
-          Set(ColoredTarget::new(Dynamic(Cursor), RGB::new(7, 8, 9))),
+          Set(@osc.ColoredTarget::new(Palette(1), @color.RGB::new(10, 11, 12))),
+          Set(@osc.ColoredTarget::new(Palette(2), @color.RGB::new(20, 21, 22))),
+          Set(
+            @osc.ColoredTarget::new(
+              Dynamic(Foreground),
+              @color.RGB::new(1, 2, 3),
+            ),
+          ),
+          Set(
+            @osc.ColoredTarget::new(
+              Dynamic(Background),
+              @color.RGB::new(4, 5, 6),
+            ),
+          ),
+          Set(
+            @osc.ColoredTarget::new(Dynamic(Cursor), @color.RGB::new(7, 8, 9)),
+          ),
         ],
         St,
       ),
@@ -1646,7 +1667,7 @@ test "stream terminal bridge/applies color resets and reset palette" {
   state.clear_palette_dirty()
   guard state.apply(
     StreamColorOperation(
-      ColorCommand::new(
+      @osc.ColorCommand::new(
         Osc104,
         [
           Reset(Palette(1)),
@@ -1665,7 +1686,7 @@ test "stream terminal bridge/applies color resets and reset palette" {
   guard state.palette_dirty() else {
     fail("expected palette reset to mark palette dirty")
   }
-  guard state.colors().palette_color(1) == Name::Red.default_rgb() else {
+  guard state.colors().palette_color(1) == @color.Name::Red.default_rgb() else {
     fail("expected palette reset to restore default entry")
   }
   guard state.colors().foreground() == None &&
@@ -1676,14 +1697,14 @@ test "stream terminal bridge/applies color resets and reset palette" {
 
   state.clear_palette_dirty()
   guard state.apply(
-    StreamColorOperation(ColorCommand::new(Osc104, [ResetPalette], St)),
+    StreamColorOperation(@osc.ColorCommand::new(Osc104, [ResetPalette], St)),
   ) else {
     fail("expected reset palette operation")
   }
   guard state.palette_dirty() else {
     fail("expected reset palette to mark palette dirty when changes exist")
   }
-  guard state.colors().palette_color(2) == Name::Green.default_rgb() else {
+  guard state.colors().palette_color(2) == @color.Name::Green.default_rgb() else {
     fail("expected reset palette to restore all palette entries")
   }
 }
@@ -1691,13 +1712,17 @@ test "stream terminal bridge/applies color resets and reset palette" {
 ///|
 test "stream terminal bridge/empty and query color operations are handled without mutation" {
   let state = StreamTerminalBridgeState::new()
-  guard state.apply(StreamColorOperation(ColorCommand::new(Osc4, [], St))) else {
+  guard state.apply(StreamColorOperation(@osc.ColorCommand::new(Osc4, [], St))) else {
     fail("expected empty color operation to be handled")
   }
 
   guard state.apply(
     StreamColorOperation(
-      ColorCommand::new(Osc4, [Query(Palette(1)), Reset(Special(Bold))], St),
+      @osc.ColorCommand::new(
+        Osc4,
+        [Query(Palette(1)), Reset(Special(Bold))],
+        St,
+      ),
     ),
   ) else {
     fail("expected query-only color operation to be handled")

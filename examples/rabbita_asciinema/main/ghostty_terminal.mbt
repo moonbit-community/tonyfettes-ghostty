@@ -395,7 +395,7 @@ fn codepoints_to_string(codepoints : Array[UInt]) -> String {
 ///|
 fn cell_background_css(
   cell : @terminal.PageCellState,
-  palette : Array[@terminal.RGB],
+  palette : Array[@color.RGB],
   style : @terminal.CellStyle,
 ) -> String? {
   match cell.content_tag() {
@@ -409,7 +409,7 @@ fn cell_background_css(
 ///|
 fn style_color_css(
   color : @terminal.StyleColor,
-  palette : Array[@terminal.RGB],
+  palette : Array[@color.RGB],
 ) -> String? {
   match color.rgb_value() {
     Some(rgb) => Some(rgb_css(rgb))
@@ -422,7 +422,7 @@ fn style_color_css(
 }
 
 ///|
-fn rgb_css(rgb : @terminal.RGB) -> String {
+fn rgb_css(rgb : @color.RGB) -> String {
   "rgb(\{rgb.r().to_int()}, \{rgb.g().to_int()}, \{rgb.b().to_int()})"
 }
 

@@ -183,7 +183,7 @@ struct PageCellState {
   mut content_tag : PageCellContentTag
   mut codepoint : UInt
   mut palette_index : Byte
-  mut bg_rgb : RGB
+  mut bg_rgb : @color.RGB
   mut style : CellStyle
   mut wide : PageCellWide
   mut protected_flag : Bool
@@ -197,7 +197,7 @@ pub fn PageCellState::new() -> PageCellState {
     content_tag: Codepoint,
     codepoint: 0U,
     palette_index: 0,
-    bg_rgb: RGB::new(0, 0, 0),
+    bg_rgb: @color.RGB::new(0, 0, 0),
     style: CellStyle::new(),
     wide: Narrow,
     protected_flag: false,
@@ -240,7 +240,7 @@ pub fn PageCellState::set_background_palette(
 ///|
 pub fn PageCellState::set_background_rgb(
   self : PageCellState,
-  rgb : RGB,
+  rgb : @color.RGB,
 ) -> Unit {
   self.content_tag = BackgroundRgb
   self.bg_rgb = rgb
@@ -263,7 +263,7 @@ pub fn PageCellState::palette_index(self : PageCellState) -> Byte? {
 }
 
 ///|
-pub fn PageCellState::background_rgb(self : PageCellState) -> RGB? {
+pub fn PageCellState::background_rgb(self : PageCellState) -> @color.RGB? {
   match self.content_tag {
     BackgroundRgb => Some(self.bg_rgb)
     Codepoint | CodepointGrapheme | BackgroundPalette => None
@@ -376,7 +376,7 @@ pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
   self.content_tag = Codepoint
   self.codepoint = 0U
   self.palette_index = 0
-  self.bg_rgb = RGB::new(0, 0, 0)
+  self.bg_rgb = @color.RGB::new(0, 0, 0)
   self.style.reset()
   self.wide = Narrow
   self.protected_flag = false

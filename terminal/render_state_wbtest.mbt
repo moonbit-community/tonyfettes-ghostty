@@ -41,9 +41,9 @@ test "render state/internal mismatch helpers report false or none" {
     fail("expected row-cell equality to reject mismatched lengths")
   }
 
-  let first_palette = [RGB::new(1, 2, 3)]
+  let first_palette = [@color.RGB::new(1, 2, 3)]
   guard !render_palette_equals(first_palette, []) &&
-    !render_palette_equals(first_palette, [RGB::new(4, 5, 6)]) else {
+    !render_palette_equals(first_palette, [@color.RGB::new(4, 5, 6)]) else {
     fail("expected palette equality to reject mismatched lengths and values")
   }
 

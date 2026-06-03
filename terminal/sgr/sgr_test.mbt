@@ -19,7 +19,7 @@ test "sgr parser/set params parses and reset rewinds iteration" {
   guard parser.next() == Some(Bold) else {
     fail("expected first sgr attribute to be bold")
   }
-  guard parser.next() == Some(DirectColorFg(RGB::new(40, 44, 52))) else {
+  guard parser.next() == Some(DirectColorFg(@color.RGB::new(40, 44, 52))) else {
     fail("expected second sgr attribute to be direct foreground color")
   }
   guard parser.next() == None else {

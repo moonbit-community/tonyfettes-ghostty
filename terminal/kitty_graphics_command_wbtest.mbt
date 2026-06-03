@@ -368,22 +368,28 @@ test "kitty graphics command/helper parsers cover invalid inputs" {
     fail("expected pair-u8 parsing")
   }
 
-  guard parse_kitty_graphics_u32(kitty_graphics_bytes_array(b"4294967295")) ==
+  guard @ascii.parse_kitty_graphics_u32(
+      kitty_graphics_bytes_array(b"4294967295"),
+    ) ==
     Some(4294967295U) &&
-    parse_kitty_graphics_u32(kitty_graphics_bytes_array(b"")) == None &&
-    parse_kitty_graphics_u32(kitty_graphics_bytes_array(b"4294967296")) == None &&
-    parse_kitty_graphics_u32(kitty_graphics_bytes_array(b"1x")) == None else {
+    @ascii.parse_kitty_graphics_u32(kitty_graphics_bytes_array(b"")) == None &&
+    @ascii.parse_kitty_graphics_u32(kitty_graphics_bytes_array(b"4294967296")) ==
+    None &&
+    @ascii.parse_kitty_graphics_u32(kitty_graphics_bytes_array(b"1x")) == None else {
     fail("expected u32 parsing branches")
   }
 
-  guard parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"2147483647")) ==
+  guard @ascii.parse_kitty_graphics_i32(
+      kitty_graphics_bytes_array(b"2147483647"),
+    ) ==
     Some(2147483647) &&
-    parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"-2147483648")) ==
+    @ascii.parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"-2147483648")) ==
     Some(-2147483648) &&
-    parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"")) == None &&
-    parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"-")) == None &&
-    parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"-2147483649")) == None &&
-    parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"1x")) == None else {
+    @ascii.parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"")) == None &&
+    @ascii.parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"-")) == None &&
+    @ascii.parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"-2147483649")) ==
+    None &&
+    @ascii.parse_kitty_graphics_i32(kitty_graphics_bytes_array(b"1x")) == None else {
     fail("expected i32 parsing branches")
   }
 

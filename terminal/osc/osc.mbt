@@ -45,18 +45,21 @@ pub(all) enum ColorOperation {
 ///|
 pub(all) enum ColorTarget {
   Palette(Byte)
-  Special(Special)
-  Dynamic(Dynamic)
+  Special(@color.Special)
+  Dynamic(@color.Dynamic)
 } derive(Eq, Debug)
 
 ///|
-struct ColoredTarget {
+pub struct ColoredTarget {
   target : ColorTarget
-  color : RGB
+  color : @color.RGB
 } derive(Eq, Debug)
 
 ///|
-pub fn ColoredTarget::new(target : ColorTarget, color : RGB) -> ColoredTarget {
+pub fn ColoredTarget::new(
+  target : ColorTarget,
+  color : @color.RGB,
+) -> ColoredTarget {
   { target, color }
 }
 
@@ -66,7 +69,7 @@ pub fn ColoredTarget::target(self : ColoredTarget) -> ColorTarget {
 }
 
 ///|
-pub fn ColoredTarget::color(self : ColoredTarget) -> RGB {
+pub fn ColoredTarget::color(self : ColoredTarget) -> @color.RGB {
   self.color
 }
 
@@ -79,7 +82,7 @@ pub(all) enum ColorRequest {
 } derive(Eq, Debug)
 
 ///|
-struct ColorCommand {
+pub struct ColorCommand {
   op : ColorOperation
   requests : Array[ColorRequest]
   terminator : Terminator
@@ -110,7 +113,7 @@ pub fn ColorCommand::terminator(self : ColorCommand) -> Terminator {
 }
 
 ///|
-struct HyperlinkStart {
+pub struct HyperlinkStart {
   uri : String
   id : String?
 } derive(Eq, Debug)
@@ -126,7 +129,7 @@ pub fn HyperlinkStart::id(self : HyperlinkStart) -> String? {
 }
 
 ///|
-struct ClipboardContents {
+pub struct ClipboardContents {
   kind : Byte
   data : String
 } derive(Eq, Debug)
@@ -222,6 +225,9 @@ priv enum OscParserState {
 } derive(Debug)
 
 ///|
+/// Abstract (no `pub`): the parser package builds one via `OscParser::new` and
+/// drives it through `next`/`end`/`reset`/`deinit`, so its capture state stays
+/// sealed across the package boundary.
 struct OscParser {
   mut state : OscParserState
   mut capturing : Bool
@@ -235,7 +241,7 @@ pub fn OscParser::new() -> OscParser {
 }
 
 ///|
-fn OscParser::deinit(self : OscParser) -> Unit {
+pub fn OscParser::deinit(self : OscParser) -> Unit {
   self.reset()
 }
 
@@ -731,7 +737,7 @@ fn captured_command(capturing : Bool, command : Command) -> Command? {
 
 ///|
 fn parse_hyperlink_command(buffer : Array[Byte]) -> Command? {
-  let params_end = match find_byte(buffer, 0, buffer.length(), b';') {
+  let params_end = match @ascii.find_byte(buffer, 0, buffer.length(), b';') {
     Some(index) => index
     None => return None
   }
@@ -755,14 +761,14 @@ fn parse_hyperlink_id(buffer : Array[Byte], end_ : Int) -> String? {
   let mut result : String? = None
   let mut start = 0
   while start <= end_ {
-    let segment_end = match find_byte(buffer, start, end_, b':') {
+    let segment_end = match @ascii.find_byte(buffer, start, end_, b':') {
       Some(index) => index
       None => end_
     }
 
-    match find_byte(buffer, start, segment_end, b'=') {
+    match @ascii.find_byte(buffer, start, segment_end, b'=') {
       Some(eq_index) =>
-        if slice_equals_ascii(buffer, start, eq_index, "id") &&
+        if @ascii.slice_equals_ascii(buffer, start, eq_index, "id") &&
           eq_index + 1 < segment_end {
           result = Some(
             captured_string(copy_bytes_range(buffer, eq_index + 1, segment_end)),
@@ -823,7 +829,7 @@ fn copy_bytes_range(
 
 ///|
 fn captured_string(buffer : Array[Byte]) -> String {
-  let decoder = Utf8Decoder::new()
+  let decoder = @utf8_decoder.Utf8Decoder::new()
   let builder = StringBuilder::new(size_hint=buffer.length())
   for byte in buffer {
     let mut consumed = false
@@ -938,7 +944,7 @@ fn parse_get_set_ansi_color(
     if spec == "?" {
       result.push(Query(target))
     } else {
-      let rgb = try RGB::parse(spec) catch {
+      let rgb = try @color.RGB::parse(spec) catch {
         _ => return result
       } noraise {
         rgb => rgb
@@ -982,7 +988,7 @@ fn parse_reset_ansi_color(
 
 ///|
 fn parse_get_set_dynamic_color(
-  start : Dynamic,
+  start : @color.Dynamic,
   body : String,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
@@ -1000,7 +1006,7 @@ fn parse_get_set_dynamic_color(
     if spec == "?" {
       result.push(Query(Dynamic(dynamic)))
     } else {
-      let rgb = try RGB::parse(spec) catch {
+      let rgb = try @color.RGB::parse(spec) catch {
         _ => return result
       } noraise {
         rgb => rgb
@@ -1014,7 +1020,7 @@ fn parse_get_set_dynamic_color(
 
 ///|
 fn parse_reset_dynamic_color(
-  dynamic : Dynamic,
+  dynamic : @color.Dynamic,
   body : String,
 ) -> Array[ColorRequest] {
   let parts = body.split(";").map(part => part.to_owned()).collect()
@@ -1055,7 +1061,7 @@ fn ansi_target_from_index(op : ColorOperation, value : Int) -> ColorTarget? {
 }
 
 ///|
-fn special_from_int(value : Int) -> Special? {
+fn special_from_int(value : Int) -> @color.Special? {
   match value {
     0 => Some(Bold)
     1 => Some(Underline)

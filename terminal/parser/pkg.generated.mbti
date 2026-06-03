@@ -1,0 +1,67 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/parser"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/osc",
+}
+
+// Values
+pub fn clone_bytes(Array[Byte]) -> Array[Byte]
+
+pub fn clone_params(Array[UInt16]) -> Array[UInt16]
+
+// Errors
+
+// Types and methods
+pub(all) enum Action {
+  Print(UInt)
+  Execute(Byte)
+  CsiDispatch(Csi)
+  EscDispatch(Esc)
+  OscDispatch(@osc.Command)
+  DcsHook(Dcs)
+  DcsPut(Byte)
+  DcsUnhook
+  ApcStart
+  ApcPut(Byte)
+  ApcEnd
+}
+
+pub(all) struct Csi {
+  intermediates : Array[Byte]
+  params : Array[UInt16]
+  params_sep : SepList
+  final_byte : Byte
+}
+
+pub(all) struct Dcs {
+  intermediates : Array[Byte]
+  params : Array[UInt16]
+  final_byte : Byte
+}
+
+pub(all) struct Esc {
+  intermediates : Array[Byte]
+  final_byte : Byte
+}
+
+type Parser
+pub fn Parser::deinit(Self) -> Unit
+pub fn Parser::enter_escape(Self) -> Unit
+pub fn Parser::is_ground(Self) -> Bool
+pub fn Parser::new() -> Self
+pub fn Parser::next(Self, Byte) -> FixedArray[Action?]
+pub fn Parser::reset_ground(Self) -> Unit
+
+type SepList derive(@debug.Debug)
+pub fn SepList::count(Self) -> Int
+pub fn SepList::init_empty() -> Self
+pub fn SepList::is_set(Self, Int) -> Bool
+pub fn SepList::set(Self, Int) -> Unit
+
+// Type aliases
+pub type ActionList = FixedArray[Action?]
+
+// Traits
+

@@ -1,14 +1,14 @@
 ///|
 pub(all) struct InvokeCharsetAction {
-  bank : ActiveSlot
-  charset : Slots
+  bank : @charsets.ActiveSlot
+  charset : @charsets.Slots
   locking : Bool
 } derive(Eq, Debug)
 
 ///|
 pub(all) struct ConfigureCharsetAction {
-  slot : Slots
-  charset : Charset
+  slot : @charsets.Slots
+  charset : @charsets.Charset
 } derive(Eq, Debug)
 
 ///|
@@ -37,22 +37,22 @@ struct DcsHookPayload {
 } derive(Eq, Debug)
 
 ///|
-fn DcsHookPayload::from_dcs(dcs : Dcs) -> DcsHookPayload {
+fn DcsHookPayload::from_dcs(dcs : @parser.Dcs) -> DcsHookPayload {
   {
-    intermediates: clone_bytes(dcs.intermediates),
-    params: clone_params(dcs.params),
+    intermediates: @parser.clone_bytes(dcs.intermediates),
+    params: @parser.clone_params(dcs.params),
     final_byte: dcs.final_byte,
   }
 }
 
 ///|
 pub fn DcsHookPayload::intermediates(self : DcsHookPayload) -> Array[Byte] {
-  clone_bytes(self.intermediates)
+  @parser.clone_bytes(self.intermediates)
 }
 
 ///|
 pub fn DcsHookPayload::params(self : DcsHookPayload) -> Array[UInt16] {
-  clone_params(self.params)
+  @parser.clone_params(self.params)
 }
 
 ///|
@@ -105,7 +105,7 @@ pub(all) enum StreamAction {
   StreamDeleteChars(UInt16)
   StreamEraseChars(UInt16)
   StreamInsertLines(UInt16)
-  StreamSetAttribute(SgrAttribute)
+  StreamSetAttribute(@sgr.SgrAttribute)
   StreamCursorStyle(CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
@@ -130,16 +130,16 @@ pub(all) enum StreamAction {
   StreamTitlePop(UInt16)
   StreamXtversion
   StreamWindowTitle(String)
-  StreamClipboardContents(ClipboardContents)
+  StreamClipboardContents(@osc.ClipboardContents)
   StreamReportPwd(String)
-  StreamShowDesktopNotification(DesktopNotification)
-  StreamProgressReport(ConEmuProgressReport)
-  StreamStartHyperlink(HyperlinkStart)
+  StreamShowDesktopNotification(@osc.DesktopNotification)
+  StreamProgressReport(@osc.ConEmuProgressReport)
+  StreamStartHyperlink(@osc.HyperlinkStart)
   StreamEndHyperlink
-  StreamMouseShape(MouseShape)
-  StreamKittyColorReport(KittyColorOsc)
-  StreamColorOperation(ColorCommand)
-  StreamSemanticPrompt(SemanticPrompt)
+  StreamMouseShape(@input.MouseShape)
+  StreamKittyColorReport(@osc.KittyColorOsc)
+  StreamColorOperation(@osc.ColorCommand)
+  StreamSemanticPrompt(@osc.SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
@@ -166,13 +166,17 @@ pub(open) trait StreamHandler {
 ///|
 struct Stream[H] {
   handler : H
-  parser : Parser
-  utf8decoder : Utf8Decoder
+  parser : @parser.Parser
+  utf8decoder : @utf8_decoder.Utf8Decoder
 }
 
 ///|
 pub fn[H] Stream::new(handler : H) -> Stream[H] {
-  { handler, parser: Parser::new(), utf8decoder: Utf8Decoder::new() }
+  {
+    handler,
+    parser: @parser.Parser::new(),
+    utf8decoder: @utf8_decoder.Utf8Decoder::new(),
+  }
 }
 
 ///|
@@ -196,7 +200,7 @@ fn[H : StreamHandler] Stream::next_slice_capped(
 ) -> Unit {
   let mut offset = 0
 
-  while self.utf8decoder.state != AcceptState {
+  while !self.utf8decoder.is_accept_state() {
     if offset >= input.length() {
       return
     }
@@ -215,14 +219,14 @@ fn[H : StreamHandler] Stream::next_slice_capped(
   offset += self.consume_all_escapes(input, offset)
 
   while offset < input.length() {
-    if self.parser.state == Ground {
+    if self.parser.is_ground() {
       self.next_utf8(input[offset])
       offset += 1
     } else {
       offset += self.consume_until_ground(input, offset)
     }
 
-    if offset < input.length() && self.parser.state == Ground {
+    if offset < input.length() && self.parser.is_ground() {
       offset += self.consume_all_escapes(input, offset)
     }
   }
@@ -236,8 +240,7 @@ fn[H : StreamHandler] Stream::consume_all_escapes(
 ) -> Int {
   let mut offset = start
   while offset < input.length() && input[offset] == 0x1B {
-    self.parser.state = Escape
-    self.parser.clear()
+    self.parser.enter_escape()
     offset += 1
     offset += self.consume_until_ground(input, offset)
   }
@@ -251,7 +254,7 @@ fn[H : StreamHandler] Stream::consume_until_ground(
   start : Int,
 ) -> Int {
   let mut offset = start
-  while self.parser.state != Ground {
+  while !self.parser.is_ground() {
     if offset >= input.length() {
       return input.length() - start
     }
@@ -263,7 +266,7 @@ fn[H : StreamHandler] Stream::consume_until_ground(
 
 ///|
 pub fn[H : StreamHandler] Stream::next(self : Stream[H], byte : Byte) -> Unit {
-  if self.parser.state == Ground {
+  if self.parser.is_ground() {
     self.next_utf8(byte)
   } else {
     self.next_non_utf8(byte)
@@ -272,7 +275,7 @@ pub fn[H : StreamHandler] Stream::next(self : Stream[H], byte : Byte) -> Unit {
 
 ///|
 fn[H : StreamHandler] Stream::next_utf8(self : Stream[H], byte : Byte) -> Unit {
-  if self.utf8decoder.state == AcceptState && byte >= 0x80 && byte <= 0x9F {
+  if self.utf8decoder.is_accept_state() && byte >= 0x80 && byte <= 0x9F {
     self.execute(byte)
     return
   }
@@ -300,8 +303,7 @@ fn[H : StreamHandler] Stream::handle_codepoint(
   }
 
   if codepoint == 0x1BU {
-    self.parser.state = Escape
-    self.parser.clear()
+    self.parser.enter_escape()
     return
   }
 
@@ -349,9 +351,9 @@ fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit 
 fn[H : StreamHandler] Stream::emit_sgr(
   self : Stream[H],
   params : Array[UInt16],
-  params_sep : SepList,
+  params_sep : @parser.SepList,
 ) -> Unit {
-  let parser : SgrParser = { params, params_sep, idx: 0 }
+  let parser = @sgr.SgrParser::from_params(params, params_sep)
   while parser.next() is Some(attribute) {
     self.emit(StreamSetAttribute(attribute))
   }
@@ -383,7 +385,7 @@ fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
 ///|
 fn[H : StreamHandler] Stream::csi_dispatch(
   self : Stream[H],
-  _csi : Csi,
+  _csi : @parser.Csi,
 ) -> Unit {
   match _csi.final_byte {
     b'A' | b'k' =>
@@ -693,7 +695,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
 ///|
 fn[H : StreamHandler] Stream::esc_dispatch(
   self : Stream[H],
-  _esc : Esc,
+  _esc : @parser.Esc,
 ) -> Unit {
   match _esc.final_byte {
     b'B' => self.configure_charset(_esc.intermediates, Ascii)
@@ -758,7 +760,7 @@ fn[H : StreamHandler] Stream::esc_dispatch(
 ///|
 fn[H : StreamHandler] Stream::osc_dispatch(
   self : Stream[H],
-  command : Command,
+  command : @osc.Command,
 ) -> Unit {
   match command {
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))
@@ -785,7 +787,7 @@ fn[H : StreamHandler] Stream::osc_dispatch(
     ChangeWindowIcon(_) | Invalid => ()
     ReportPwd(url) => self.emit(StreamReportPwd(url))
     MouseShape(value) =>
-      match MouseShape::from_string(value) {
+      match @input.MouseShape::from_string(value) {
         Some(shape) => self.emit(StreamMouseShape(shape))
         None => ()
       }
@@ -795,7 +797,10 @@ fn[H : StreamHandler] Stream::osc_dispatch(
 }
 
 ///|
-fn[H : StreamHandler] Stream::dcs_hook(self : Stream[H], dcs : Dcs) -> Unit {
+fn[H : StreamHandler] Stream::dcs_hook(
+  self : Stream[H],
+  dcs : @parser.Dcs,
+) -> Unit {
   self.emit(StreamDcsHook(DcsHookPayload::from_dcs(dcs)))
 }
 
@@ -827,8 +832,8 @@ fn[H : StreamHandler] Stream::apc_end(self : Stream[H]) -> Unit {
 ///|
 fn[H : StreamHandler] Stream::emit_invoke_charset(
   self : Stream[H],
-  bank : ActiveSlot,
-  charset : Slots,
+  bank : @charsets.ActiveSlot,
+  charset : @charsets.Slots,
   locking : Bool,
 ) -> Unit {
   self.emit(StreamInvokeCharset({ bank, charset, locking }))
@@ -838,7 +843,7 @@ fn[H : StreamHandler] Stream::emit_invoke_charset(
 fn[H : StreamHandler] Stream::configure_charset(
   self : Stream[H],
   intermediates : Array[Byte],
-  charset : Charset,
+  charset : @charsets.Charset,
 ) -> Unit {
   match intermediates {
     [b'('] => self.emit(StreamConfigureCharset({ slot: G0, charset }))

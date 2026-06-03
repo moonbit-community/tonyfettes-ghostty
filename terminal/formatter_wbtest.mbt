@@ -167,9 +167,9 @@ test "formatter helpers/cover style and palette encoders" {
   style.apply_attribute(Strikethrough)
   style.apply_attribute(Overline)
   style.apply_attribute(Underline(Single))
-  style.apply_attribute(DirectColorFg(RGB::new(1, 2, 3)))
+  style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
   style.apply_attribute(Color256Bg(4))
-  style.apply_attribute(UnderlineColor(RGB::new(5, 6, 7)))
+  style.apply_attribute(UnderlineColor(@color.RGB::new(5, 6, 7)))
 
   let vt = Buffer()
   formatter_write_vt_style_open(vt, style)
@@ -212,7 +212,7 @@ test "formatter helpers/cover style and palette encoders" {
   }
 
   let plain_palette = Buffer()
-  formatter_write_palette(Plain, default_palette(), plain_palette)
+  formatter_write_palette(Plain, @color.default_palette(), plain_palette)
   guard plain_palette.contents() == b"" else {
     fail("expected plain palette helper to stay silent")
   }

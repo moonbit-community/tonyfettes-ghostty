@@ -105,7 +105,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
 ///|
 test "page cell state/background content reports no text and preserves payloads" {
   let cell = PageCellState::new()
-  let rgb = RGB::new(1, 2, 3)
+  let rgb = @color.RGB::new(1, 2, 3)
   cell.set_background_palette(7)
   guard cell.content_tag() == BackgroundPalette &&
     cell.palette_index() == Some(7) &&

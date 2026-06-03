@@ -11,23 +11,23 @@ const EscapeCodepoint : UInt = 27U
 const TabCodepoint : UInt = 9U
 
 ///|
-let function_key_modifiers : ReadOnlyArray[(KeyMods, Int)] = [
-  (KeyMods::new().with_shift(true), 2),
-  (KeyMods::new().with_alt(true), 3),
-  (KeyMods::new().with_shift(true).with_alt(true), 4),
-  (KeyMods::new().with_ctrl(true), 5),
-  (KeyMods::new().with_shift(true).with_ctrl(true), 6),
-  (KeyMods::new().with_alt(true).with_ctrl(true), 7),
-  (KeyMods::new().with_shift(true).with_alt(true).with_ctrl(true), 8),
-  (KeyMods::new().with_super_(true), 9),
-  (KeyMods::new().with_shift(true).with_super_(true), 10),
-  (KeyMods::new().with_alt(true).with_super_(true), 11),
-  (KeyMods::new().with_shift(true).with_alt(true).with_super_(true), 12),
-  (KeyMods::new().with_ctrl(true).with_super_(true), 13),
-  (KeyMods::new().with_shift(true).with_ctrl(true).with_super_(true), 14),
-  (KeyMods::new().with_alt(true).with_ctrl(true).with_super_(true), 15),
+let function_key_modifiers : ReadOnlyArray[(@input.KeyMods, Int)] = [
+  (@input.KeyMods::new().with_shift(true), 2),
+  (@input.KeyMods::new().with_alt(true), 3),
+  (@input.KeyMods::new().with_shift(true).with_alt(true), 4),
+  (@input.KeyMods::new().with_ctrl(true), 5),
+  (@input.KeyMods::new().with_shift(true).with_ctrl(true), 6),
+  (@input.KeyMods::new().with_alt(true).with_ctrl(true), 7),
+  (@input.KeyMods::new().with_shift(true).with_alt(true).with_ctrl(true), 8),
+  (@input.KeyMods::new().with_super_(true), 9),
+  (@input.KeyMods::new().with_shift(true).with_super_(true), 10),
+  (@input.KeyMods::new().with_alt(true).with_super_(true), 11),
+  (@input.KeyMods::new().with_shift(true).with_alt(true).with_super_(true), 12),
+  (@input.KeyMods::new().with_ctrl(true).with_super_(true), 13),
+  (@input.KeyMods::new().with_shift(true).with_ctrl(true).with_super_(true), 14),
+  (@input.KeyMods::new().with_alt(true).with_ctrl(true).with_super_(true), 15),
   (
-    KeyMods::new()
+    @input.KeyMods::new()
     .with_shift(true)
     .with_alt(true)
     .with_ctrl(true)
@@ -37,7 +37,7 @@ let function_key_modifiers : ReadOnlyArray[(KeyMods, Int)] = [
 ]
 
 ///|
-fn function_key_modifier_code(mods : KeyMods) -> Int? {
+fn function_key_modifier_code(mods : @input.KeyMods) -> Int? {
   let binding = mods.binding()
   for entry in function_key_modifiers {
     if entry.0 == binding {
@@ -49,8 +49,8 @@ fn function_key_modifier_code(mods : KeyMods) -> Int? {
 
 ///|
 fn pc_style_function_key(
-  key : Key,
-  mods : KeyMods,
+  key : @input.Key,
+  mods : @input.KeyMods,
   cursor_key_application : Bool,
   keypad_key_application_req : Bool,
   ignore_keypad_with_numlock : Bool,
@@ -145,7 +145,7 @@ fn pc_style_function_key(
 
 ///|
 fn cursor_key(
-  binding : KeyMods,
+  binding : @input.KeyMods,
   cursor_key_application : Bool,
   csi_final : Byte,
   app_final : Byte,
@@ -168,7 +168,7 @@ fn cursor_key(
 }
 
 ///|
-fn csi_tilde_key(binding : KeyMods, number : Int) -> Bytes? {
+fn csi_tilde_key(binding : @input.KeyMods, number : Int) -> Bytes? {
   match function_key_modifier_code(binding) {
     Some(code) => Some(csi_tilde_with_code(number, code))
     None => if binding.empty() { Some(csi_tilde_plain(number)) } else { None }
@@ -176,7 +176,7 @@ fn csi_tilde_key(binding : KeyMods, number : Int) -> Bytes? {
 }
 
 ///|
-fn ss3_function_key(binding : KeyMods, final_byte : Byte) -> Bytes? {
+fn ss3_function_key(binding : @input.KeyMods, final_byte : Byte) -> Bytes? {
   match function_key_modifier_code(binding) {
     Some(code) => Some(csi_1_with_code(code, final_byte))
     None => if binding.empty() { Some(ss3_plain(final_byte)) } else { None }
@@ -185,7 +185,7 @@ fn ss3_function_key(binding : KeyMods, final_byte : Byte) -> Bytes? {
 
 ///|
 fn keypad_key(
-  binding : KeyMods,
+  binding : @input.KeyMods,
   keypad_key_application : Bool,
   suffix : Byte,
 ) -> Bytes? {
@@ -202,7 +202,7 @@ fn keypad_key(
 
 ///|
 fn backspace_key(
-  binding : KeyMods,
+  binding : @input.KeyMods,
   modify_other_keys_state_2 : Bool,
   backarrow_key_mode : Bool,
 ) -> Bytes? {
@@ -210,7 +210,7 @@ fn backspace_key(
     return Some(if backarrow_key_mode { b"\x08" } else { b"\x7F" })
   }
 
-  if binding == KeyMods::new().with_ctrl(true) {
+  if binding == @input.KeyMods::new().with_ctrl(true) {
     return Some(if backarrow_key_mode { b"\x7F" } else { b"\x08" })
   }
 
@@ -231,12 +231,15 @@ fn backspace_key(
 }
 
 ///|
-fn tab_key(binding : KeyMods, modify_other_keys_state_2 : Bool) -> Bytes? {
+fn tab_key(
+  binding : @input.KeyMods,
+  modify_other_keys_state_2 : Bool,
+) -> Bytes? {
   if binding.empty() {
     return Some(b"\t")
   }
 
-  if binding == KeyMods::new().with_shift(true) {
+  if binding == @input.KeyMods::new().with_shift(true) {
     return Some(
       if modify_other_keys_state_2 {
         modify_other_keys_sequence(2, TabCodepoint)
@@ -246,7 +249,7 @@ fn tab_key(binding : KeyMods, modify_other_keys_state_2 : Bool) -> Bytes? {
     )
   }
 
-  if binding == KeyMods::new().with_alt(true) {
+  if binding == @input.KeyMods::new().with_alt(true) {
     return Some(
       if modify_other_keys_state_2 {
         modify_other_keys_sequence(3, TabCodepoint)
@@ -263,12 +266,16 @@ fn tab_key(binding : KeyMods, modify_other_keys_state_2 : Bool) -> Bytes? {
 }
 
 ///|
-fn enter_key(binding : KeyMods, modify_other_keys_state_2 : Bool) -> Bytes? {
+fn enter_key(
+  binding : @input.KeyMods,
+  modify_other_keys_state_2 : Bool,
+) -> Bytes? {
   if binding.empty() {
     return Some(b"\r")
   }
 
-  if binding == KeyMods::new().with_alt(true) && !modify_other_keys_state_2 {
+  if binding == @input.KeyMods::new().with_alt(true) &&
+    !modify_other_keys_state_2 {
     return Some(b"\x1B\r")
   }
 
@@ -279,12 +286,12 @@ fn enter_key(binding : KeyMods, modify_other_keys_state_2 : Bool) -> Bytes? {
 }
 
 ///|
-fn escape_key(binding : KeyMods) -> Bytes? {
+fn escape_key(binding : @input.KeyMods) -> Bytes? {
   if binding.empty() {
     return Some(b"\x1B")
   }
 
-  if binding == KeyMods::new().with_alt(true) {
+  if binding == @input.KeyMods::new().with_alt(true) {
     return Some(b"\x1B\x1B")
   }
 
@@ -314,7 +321,7 @@ fn ss3_plain(final_byte : Byte) -> Bytes {
 fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
   let buffer = Buffer(size_hint=8)
   buffer.write_bytes(b"\x1B[1;")
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(final_byte)
   buffer.contents()
 }
@@ -323,7 +330,7 @@ fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
 fn csi_tilde_plain(number : Int) -> Bytes {
   let buffer = Buffer(size_hint=6)
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, number.to_uint64())
+  @ascii.write_uint_ascii(buffer, number.to_uint64())
   buffer.write_byte(b'~')
   buffer.contents()
 }
@@ -332,9 +339,9 @@ fn csi_tilde_plain(number : Int) -> Bytes {
 fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
   let buffer = Buffer(size_hint=10)
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, number.to_uint64())
+  @ascii.write_uint_ascii(buffer, number.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(b'~')
   buffer.contents()
 }
@@ -343,7 +350,7 @@ fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
 fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
   let buffer = Buffer(size_hint=7)
   buffer.write_bytes(b"\x1BO")
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(suffix)
   buffer.contents()
 }
@@ -352,9 +359,9 @@ fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
 fn modify_other_keys_sequence(code : Int, codepoint : UInt) -> Bytes {
   let buffer = Buffer(size_hint=16)
   buffer.write_bytes(b"\x1B[27;")
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, codepoint.to_uint64())
+  @ascii.write_uint_ascii(buffer, codepoint.to_uint64())
   buffer.write_byte(b'~')
   buffer.contents()
 }

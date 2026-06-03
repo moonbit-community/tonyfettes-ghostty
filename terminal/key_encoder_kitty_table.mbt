@@ -1,6 +1,6 @@
 ///|
 priv struct KittyEntry {
-  key : Key
+  key : @input.Key
   code : UInt
   final_byte : Byte
   modifier : Bool
@@ -92,7 +92,7 @@ let kitty_entries : ReadOnlyArray[KittyEntry] = [
 ]
 
 ///|
-fn kitty_entry(key : Key) -> KittyEntry? {
+fn kitty_entry(key : @input.Key) -> KittyEntry? {
   for entry in kitty_entries {
     if entry.key == key {
       return Some(entry)

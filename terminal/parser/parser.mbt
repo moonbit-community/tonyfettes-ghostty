@@ -11,27 +11,30 @@ const MaxParamDigits : Int = 255
 const MaxParamValue : UInt16 = 65535
 
 ///|
-priv struct SepList {
+/// Abstract (no `pub`): a colon-vs-semicolon separator bitset built and read
+/// only through `init_empty`/`set`/`is_set`/`count`, so its backing word stays
+/// sealed across the package boundary.
+struct SepList {
   mut bits : UInt64
 } derive(Debug)
 
 ///|
-fn SepList::init_empty() -> SepList {
+pub fn SepList::init_empty() -> SepList {
   { bits: 0UL }
 }
 
 ///|
-fn SepList::set(self : SepList, index : Int) -> Unit {
+pub fn SepList::set(self : SepList, index : Int) -> Unit {
   self.bits = self.bits | (1UL << index)
 }
 
 ///|
-fn SepList::is_set(self : SepList, index : Int) -> Bool {
+pub fn SepList::is_set(self : SepList, index : Int) -> Bool {
   (self.bits & (1UL << index)) != 0UL
 }
 
 ///|
-fn SepList::count(self : SepList) -> Int {
+pub fn SepList::count(self : SepList) -> Int {
   let mut result = 0
   for index in 0..<MaxParams {
     if self.is_set(index) {
@@ -42,7 +45,7 @@ fn SepList::count(self : SepList) -> Int {
 }
 
 ///|
-priv struct Csi {
+pub(all) struct Csi {
   intermediates : Array[Byte]
   params : Array[UInt16]
   params_sep : SepList
@@ -50,25 +53,25 @@ priv struct Csi {
 }
 
 ///|
-priv struct Esc {
+pub(all) struct Esc {
   intermediates : Array[Byte]
   final_byte : Byte
 }
 
 ///|
-priv struct Dcs {
+pub(all) struct Dcs {
   intermediates : Array[Byte]
   params : Array[UInt16]
   final_byte : Byte
 }
 
 ///|
-priv enum Action {
+pub(all) enum Action {
   Print(UInt)
   Execute(Byte)
   CsiDispatch(Csi)
   EscDispatch(Esc)
-  OscDispatch(Command)
+  OscDispatch(@osc.Command)
   DcsHook(Dcs)
   DcsPut(Byte)
   DcsUnhook
@@ -78,21 +81,26 @@ priv enum Action {
 }
 
 ///|
-type ActionList = FixedArray[Action?]
+pub type ActionList = FixedArray[Action?]
 
 ///|
-priv struct Parser {
+/// Abstract (no `pub`): the type name crosses the package boundary but its
+/// mutable transition state stays opaque. The stream layer drives the parser
+/// only through `new`/`next`/`is_ground`/`enter_escape`/`reset_ground`/`deinit`,
+/// so the state-machine invariants enforced by `next()`/`clear()` cannot be
+/// bypassed by assigning fields from another package.
+struct Parser {
   mut state : ParserState
   mut intermediates : Array[Byte]
   mut params : Array[UInt16]
   mut params_sep : SepList
   mut param_acc : UInt16
   mut param_acc_idx : Int
-  osc_parser : OscParser
+  osc_parser : @osc.OscParser
 }
 
 ///|
-fn Parser::new() -> Parser {
+pub fn Parser::new() -> Parser {
   {
     state: Ground,
     intermediates: [],
@@ -100,17 +108,40 @@ fn Parser::new() -> Parser {
     params_sep: SepList::init_empty(),
     param_acc: 0,
     param_acc_idx: 0,
-    osc_parser: OscParser::new(),
+    osc_parser: @osc.OscParser::new(),
   }
 }
 
 ///|
-fn Parser::deinit(self : Parser) -> Unit {
+pub fn Parser::deinit(self : Parser) -> Unit {
   self.osc_parser.deinit()
 }
 
 ///|
-fn Parser::next(self : Parser, c : Byte) -> ActionList {
+/// Whether the parser is at the ground state. Read-only boundary accessor so
+/// the stream layer can drive its ground-state fast path without access to the
+/// private parser-state machine.
+pub fn Parser::is_ground(self : Parser) -> Bool {
+  self.state == Ground
+}
+
+///|
+/// Force the parser into the escape state and clear its accumulators. Boundary
+/// helper for the stream layer's bare-ESC handling.
+pub fn Parser::enter_escape(self : Parser) -> Unit {
+  self.state = Escape
+  self.clear()
+}
+
+///|
+/// Reset the parser to the ground state. Boundary helper for callers that need
+/// to rewind the parser without rebuilding it.
+pub fn Parser::reset_ground(self : Parser) -> Unit {
+  self.state = Ground
+}
+
+///|
+pub fn Parser::next(self : Parser, c : Byte) -> ActionList {
   let effect = transition_for(c, self.state)
   let next_state = effect.state
   let action = effect.action
@@ -272,7 +303,7 @@ fn saturating_param_append(value : UInt16, digit : Byte) -> UInt16 {
 }
 
 ///|
-fn clone_bytes(source : Array[Byte]) -> Array[Byte] {
+pub fn clone_bytes(source : Array[Byte]) -> Array[Byte] {
   let result : Array[Byte] = []
   for value in source {
     result.push(value)
@@ -281,7 +312,7 @@ fn clone_bytes(source : Array[Byte]) -> Array[Byte] {
 }
 
 ///|
-fn clone_params(source : Array[UInt16]) -> Array[UInt16] {
+pub fn clone_params(source : Array[UInt16]) -> Array[UInt16] {
   let result : Array[UInt16] = []
   for value in source {
     result.push(value)

@@ -141,7 +141,7 @@ test "playground/invalid handles clamp paths and missing cells stay safe" {
   }
 
   guard playground_resize(-1, 4, 4) ==
-    @terminal.TerminalResultCode::InvalidValue.code() else {
+    @result_code.TerminalResultCode::InvalidValue.code() else {
     fail("expected invalid handle resize to return invalid-value code")
   }
 

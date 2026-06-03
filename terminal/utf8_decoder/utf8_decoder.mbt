@@ -29,6 +29,9 @@ const AcceptState : Byte = 0
 const RejectState : Byte = 12
 
 ///|
+/// Abstract (no `pub`): the DFA's `state` indexes the transition table, so an
+/// out-of-range value assigned from outside would make `next()` read past it.
+/// Callers use `new`/`next`/`is_accept_state` only, so keep the storage sealed.
 struct Utf8Decoder {
   mut accumulator : UInt
   mut state : Byte
@@ -37,6 +40,14 @@ struct Utf8Decoder {
 ///|
 pub fn Utf8Decoder::new() -> Utf8Decoder {
   { accumulator: 0, state: AcceptState }
+}
+
+///|
+/// Whether the decoder is at the accept (ground) state, i.e. not mid-sequence.
+/// Read-only boundary accessor for stream's ground-state fast path, so callers
+/// in other packages do not need access to the private `state` field.
+pub fn Utf8Decoder::is_accept_state(self : Utf8Decoder) -> Bool {
+  self.state == AcceptState
 }
 
 ///|

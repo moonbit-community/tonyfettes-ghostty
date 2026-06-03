@@ -2,7 +2,7 @@
 struct TerminalMetadataState {
   mut title : String?
   mut pwd : String?
-  mut shell_redraws_prompt : SemanticPromptRedraw
+  mut shell_redraws_prompt : @osc.SemanticPromptRedraw
 } derive(Eq, Debug)
 
 ///|
@@ -47,14 +47,14 @@ fn TerminalMetadataState::set_pwd(
 ///|
 pub fn TerminalMetadataState::shell_redraws_prompt(
   self : TerminalMetadataState,
-) -> SemanticPromptRedraw {
+) -> @osc.SemanticPromptRedraw {
   self.shell_redraws_prompt
 }
 
 ///|
 pub fn TerminalMetadataState::set_shell_redraws_prompt(
   self : TerminalMetadataState,
-  value : SemanticPromptRedraw,
+  value : @osc.SemanticPromptRedraw,
 ) -> Unit {
   self.shell_redraws_prompt = value
 }

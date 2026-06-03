@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/charsets"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn table(Charset) -> ReadOnlyArray[UInt16]
+
+// Errors
+
+// Types and methods
+pub(all) enum ActiveSlot {
+  Gl
+  Gr
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Charset {
+  Utf8
+  Ascii
+  British
+  DecSpecial
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Slots {
+  G0
+  G1
+  G2
+  G3
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+pub type CharsetTable = ReadOnlyArray[UInt16]
+
+// Traits
+
