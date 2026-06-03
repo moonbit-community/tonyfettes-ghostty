@@ -36,6 +36,12 @@ priv struct ScreenGridState {
   rows : CellCountInt
   cols : CellCountInt
   lines : Array[GridLine]
+  // Free list of `cols`-wide cell arrays harvested from rows evicted out of
+  // scrollback, reused in place as the blank rows scrolled in at the bottom.
+  // At a full scrollback buffer this makes a line feed allocation-free: the row
+  // evicted from history becomes the new blank row instead of being GC'd while
+  // a fresh 80-cell row is allocated. Bounded to the screen height.
+  cell_pool : Array[Array[PageCellState]]
 }
 
 ///|
@@ -49,7 +55,47 @@ fn ScreenGridState::new(
   for _ in 0..<actual_rows.to_int() {
     lines.push(GridLine::new(actual_cols.to_int()))
   }
-  { rows: actual_rows, cols: actual_cols, lines }
+  { rows: actual_rows, cols: actual_cols, lines, cell_pool: [] }
+}
+
+///|
+/// Offer a `cols`-wide cell array (from a row evicted out of scrollback) to the
+/// blank-row free list. Wrong-width arrays (e.g. across a resize) and overflow
+/// past the screen height are dropped to GC rather than pooled.
+fn ScreenGridState::recycle_row_cells(
+  self : ScreenGridState,
+  cells : Array[PageCellState],
+) -> Unit {
+  if cells.length() == self.cols.to_int() &&
+    self.cell_pool.length() < self.rows.to_int() {
+    self.cell_pool.push(cells)
+  }
+}
+
+///|
+/// A blank full-width line for a scroll. Reuses a recycled cell array (resetting
+/// every cell in place) when one is pooled, otherwise allocates a fresh one.
+/// Always a *distinct* GridLine from any active row — the moved rows above may
+/// transiently alias their source slot, and a distinct object breaks that alias
+/// instead of clearing a shared line in place.
+fn ScreenGridState::blank_line(
+  self : ScreenGridState,
+  style : CellStyle,
+) -> GridLine {
+  match self.cell_pool.pop() {
+    Some(cells) => {
+      for cell in cells {
+        cell.full_reset()
+        match style.bg_color() {
+          None => ()
+          Palette(index) => cell.set_background_palette(index)
+          Rgb(rgb) => cell.set_background_rgb(rgb)
+        }
+      }
+      { desc: PageRowState::new(), cells }
+    }
+    None => blank_grid_line(self.cols.to_int(), style)
+  }
 }
 
 ///|
@@ -713,7 +759,7 @@ fn ScreenGridState::shift_region_down(
         self.copy_row_region(src, row_idx, left, right)
       }
     } else if full_width {
-      self.lines[row_idx] = blank_grid_line(self.cols.to_int(), style)
+      self.lines[row_idx] = self.blank_line(style)
     } else {
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
@@ -743,7 +789,15 @@ fn ScreenGridState::shift_region_up(
   let full_width = left == 0 && right == self.cols.to_int() - 1
   let mut row_idx = start_y
   while row_idx <= bottom {
-    self.row_will_be_shifted(row_idx, left, right, style)
+    // For a full-width scroll the destination row is always fully replaced below
+    // (moved source ref or a fresh blank), so its pre-shift wide-char fragment
+    // cleanup would be wasted work — and worse, the top `count` rows have just
+    // been harvested into history sharing this exact cell array, so clearing a
+    // trailing SpacerHead in place would corrupt the captured scrollback row.
+    // Only partial-width destinations keep cells and need cleaning.
+    if !full_width {
+      self.row_will_be_shifted(row_idx, left, right, style)
+    }
     if row_idx + count <= bottom {
       let src = row_idx + count
       self.row_will_be_shifted(src, left, right, style)
@@ -753,7 +807,7 @@ fn ScreenGridState::shift_region_up(
         self.copy_row_region(src, row_idx, left, right)
       }
     } else if full_width {
-      self.lines[row_idx] = blank_grid_line(self.cols.to_int(), style)
+      self.lines[row_idx] = self.blank_line(style)
     } else {
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }

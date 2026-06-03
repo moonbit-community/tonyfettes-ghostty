@@ -151,6 +151,7 @@ fn PageList::active_grid(self : PageList) -> ScreenGridState {
     rows: self.active_node.page.rows,
     cols: self.cols,
     lines: self.active_node.page.lines,
+    cell_pool: [],
   }
 }
 
@@ -292,7 +293,7 @@ fn PageList::capture_top_scroll_region_up(
   if self.max_rows > 0 {
     let mut row_idx = 0
     while row_idx < count {
-      let row = snapshot_scrollback_row(grid, row_idx)
+      let row = harvest_scrollback_row(grid, row_idx)
       self.move_pins_for_row(
         self.active_node,
         row_idx.to_uint16(),
@@ -303,7 +304,12 @@ fn PageList::capture_top_scroll_region_up(
       row_idx += 1
     }
 
-    self.trim_history()
+    // Recycle the cells of rows evicted here as the blank rows the grid shift
+    // (which runs immediately after this capture) scrolls in at the bottom — at
+    // a full buffer this makes the line feed allocation-free.
+    for evicted in self.trim_history() {
+      grid.recycle_row_cells(evicted.cells)
+    }
   } else {
     self.viewport = Active
     self.viewport_pin_row_offset = None
@@ -1021,7 +1027,7 @@ fn PageList::resize_without_reflow(
     }
   }
 
-  self.trim_history()
+  self.trim_history() |> ignore
 
   let resized_grid = screen_grid_from_rows(rows, cols, grid_rows)
   let active_node = PageListNode::new({
@@ -1147,7 +1153,8 @@ fn PageList::resize_cols(
     self.mark_pins_for_row_garbage(reflowed[index])
   }
   self.history = @deque.Deque::from_array(history_rows)
-  self.trim_history()
+  // Reflow rebuilds the grid with a fresh pool, so evicted rows aren't recycled.
+  self.trim_history() |> ignore
 
   let grid_rows : Array[PageListRow] = []
   for index in active_start..<active_end {
@@ -1668,7 +1675,10 @@ fn PageList::viewport_row_offset(self : PageList) -> Int {
 }
 
 ///|
-fn PageList::trim_history(self : PageList) -> Unit {
+/// Returns the rows evicted from the front of history (empty if none), so the
+/// caller can recycle their cell arrays. The rows are already dropped from
+/// history and their pins marked garbage on return.
+fn PageList::trim_history(self : PageList) -> Array[PageListRow] {
   if self.max_rows <= 0 {
     for row in self.history {
       self.mark_pins_for_row_garbage(row)
@@ -1676,12 +1686,12 @@ fn PageList::trim_history(self : PageList) -> Unit {
     self.history.clear()
     self.viewport = Active
     self.viewport_pin_row_offset = None
-    return
+    return []
   }
 
   let excess = self.history.length() - self.max_rows
   if excess <= 0 {
-    return
+    return []
   }
 
   // Materialize a Pin viewport's offset before the front rows are dropped, so
@@ -1703,6 +1713,7 @@ fn PageList::trim_history(self : PageList) -> Unit {
   }
   self.fixup_viewport(excess)
   self.mark_pins_for_rows_garbage(removed)
+  removed
 }
 
 ///|
@@ -1765,6 +1776,27 @@ fn snapshot_scrollback_row(
     grid.lines[row_idx].desc.wrap(),
     grid.lines[row_idx].desc.wrap_continuation(),
     false,
+  )
+}
+
+///|
+/// Move a soon-to-be-scrolled-off grid row into a history row, taking its cells
+/// by reference instead of deep-copying them (unlike `snapshot_scrollback_row`).
+///
+/// Safe only because every caller (`capture_top_scroll_region_up`) is
+/// immediately followed by the grid shift that overwrites `grid.lines[row_idx]`
+/// with the row below — capture is guarded to top_margin==0 full-width and
+/// harvests exactly the `count` top rows that the shift then vacates, so once
+/// this returns nothing in the active grid aliases these cells. Render snapshots
+/// deep-copy and pins track by node identity, so neither aliases them either.
+fn harvest_scrollback_row(grid : ScreenGridState, row_idx : Int) -> PageListRow {
+  let line = grid.lines[row_idx]
+  make_pinned_row_owned(
+    line.desc,
+    line.cells,
+    grid.cols,
+    line.desc.wrap(),
+    line.desc.wrap_continuation(),
   )
 }
 
@@ -1864,6 +1896,27 @@ fn make_pinned_row(
     row.semantic_prompt() == Prompt {
     row.set_semantic_prompt(PromptContinuation)
   }
+  apply_cell_flags_to_row(row, cells)
+  let node = PageListNode::new({ rows: 1, cols, lines: [{ desc: row, cells }] })
+  { row, cells, node, y: 0 }
+}
+
+///|
+/// Like `make_pinned_row`, but takes ownership of `cells` by reference instead
+/// of deep-copying each cell. `cells` must already be exactly `cols` wide. Used
+/// only by the scroll-off capture hot path, where the source row is about to be
+/// overwritten by the grid shift — see `harvest_scrollback_row`. Eliminates the
+/// per-cell copy (and its style/array allocation) that dominated scroll cost.
+fn make_pinned_row_owned(
+  row_template : PageRowState,
+  cells : Array[PageCellState],
+  cols : CellCountInt,
+  wrap : Bool,
+  wrap_continuation : Bool,
+) -> PageListRow {
+  let row = copy_scrollback_row(row_template)
+  row.set_wrap(wrap)
+  row.set_wrap_continuation(wrap_continuation)
   apply_cell_flags_to_row(row, cells)
   let node = PageListNode::new({ rows: 1, cols, lines: [{ desc: row, cells }] })
   { row, cells, node, y: 0 }

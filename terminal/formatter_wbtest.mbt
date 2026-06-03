@@ -47,7 +47,7 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     rectangle: false,
   }
 
-  state.grid = { rows: 24, cols: 0, lines: [] }
+  state.grid = { rows: 24, cols: 0, lines: [], cell_pool: [] }
   guard formatter_selection_bounds(formatter, state, 1U) is None else {
     fail("expected zero-column guard to reject formatting")
   }
@@ -365,7 +365,7 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
 test "formatter helpers/cover explicit empty format guard" {
   let terminal = StreamTerminal::new()
   let state = terminal.bridge()
-  state.grid = { rows: 0, cols: 0, lines: [] }
+  state.grid = { rows: 0, cols: 0, lines: [], cell_pool: [] }
   state.scrollback = PageList::new(0, 0, 0)
   let formatter = plain_formatter(terminal)
   guard formatter.format() == b"" else {

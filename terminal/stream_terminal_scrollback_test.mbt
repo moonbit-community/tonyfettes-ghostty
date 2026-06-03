@@ -111,6 +111,28 @@ test "scrollback/wide character survives scroll into history" {
 }
 
 ///|
+test "scrollback/trailing spacer head survives scroll into history" {
+  // Regression for the zero-copy enqueue. A wide character that cannot fit in
+  // the last column leaves a trailing SpacerHead and wraps. When that row
+  // scrolls off its cells are *moved* (shared) into the history row, and the
+  // grid shift that immediately follows calls row_will_be_shifted on it — which
+  // for a trailing SpacerHead clears that cell in place. With the shared array
+  // that would corrupt the just-captured scrollback row, so the full-width
+  // shift must skip the cleanup of rows it fully replaces. (The wide char at
+  // column 0 is covered above; this guards the right-edge SpacerHead.)
+  let term = sized_terminal(2, 2)
+  // "x" then a wide emoji that can't fit in the last column: SpacerHead at col 1,
+  // emoji wraps to row 1. The newline pushes the SpacerHead row into history.
+  term.next_slice(b"x\xF0\x9F\x98\x80\r\n")
+  term.scroll_viewport_top()
+  assert_eq(view_cp0(term, 0), b'x'.to_uint())
+  guard term.screen_cell_snapshot(0, 1).unwrap().wide() == SpacerHead else {
+    fail("trailing SpacerHead was cleared in the captured scrollback row")
+  }
+  term.deinit()
+}
+
+///|
 test "scrollback/reflow on resize preserves history content" {
   let term = sized_terminal(10, 3)
   term.next_slice(b"A\r\nB\r\nC\r\nD\r\nE")
