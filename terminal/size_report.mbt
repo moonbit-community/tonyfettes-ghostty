@@ -61,34 +61,34 @@ pub fn encode(style : Style, size : Size) -> Bytes {
   match style {
     Mode2048 => {
       buffer.write_bytes(b"48;")
-      write_uint_ascii(buffer, size.rows.to_uint64())
+      @ascii.write_uint_ascii(buffer, size.rows.to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, size.columns.to_uint64())
+      @ascii.write_uint_ascii(buffer, size.columns.to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, height_pixels(size))
+      @ascii.write_uint_ascii(buffer, height_pixels(size))
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, width_pixels(size))
+      @ascii.write_uint_ascii(buffer, width_pixels(size))
       buffer.write_byte(b't')
     }
     Csi14t => {
       buffer.write_bytes(b"4;")
-      write_uint_ascii(buffer, height_pixels(size))
+      @ascii.write_uint_ascii(buffer, height_pixels(size))
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, width_pixels(size))
+      @ascii.write_uint_ascii(buffer, width_pixels(size))
       buffer.write_byte(b't')
     }
     Csi16t => {
       buffer.write_bytes(b"6;")
-      write_uint_ascii(buffer, size.cell_height.to_uint64())
+      @ascii.write_uint_ascii(buffer, size.cell_height.to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, size.cell_width.to_uint64())
+      @ascii.write_uint_ascii(buffer, size.cell_width.to_uint64())
       buffer.write_byte(b't')
     }
     Csi18t => {
       buffer.write_bytes(b"8;")
-      write_uint_ascii(buffer, size.rows.to_uint64())
+      @ascii.write_uint_ascii(buffer, size.rows.to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, size.columns.to_uint64())
+      @ascii.write_uint_ascii(buffer, size.columns.to_uint64())
       buffer.write_byte(b't')
     }
   }

@@ -368,9 +368,9 @@ pub fn Report::encode(self : Report) -> Bytes {
   if !self.tag.ansi() {
     buffer.write_byte(b'?')
   }
-  write_uint_ascii(buffer, self.tag.value().to_uint64())
+  @ascii.write_uint_ascii(buffer, self.tag.value().to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, self.state.code().to_uint64())
+  @ascii.write_uint_ascii(buffer, self.state.code().to_uint64())
   buffer.write_bytes(b"$y")
   buffer.contents()
 }

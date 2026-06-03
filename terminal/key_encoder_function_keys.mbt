@@ -321,7 +321,7 @@ fn ss3_plain(final_byte : Byte) -> Bytes {
 fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
   let buffer = Buffer(size_hint=8)
   buffer.write_bytes(b"\x1B[1;")
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(final_byte)
   buffer.contents()
 }
@@ -330,7 +330,7 @@ fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
 fn csi_tilde_plain(number : Int) -> Bytes {
   let buffer = Buffer(size_hint=6)
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, number.to_uint64())
+  @ascii.write_uint_ascii(buffer, number.to_uint64())
   buffer.write_byte(b'~')
   buffer.contents()
 }
@@ -339,9 +339,9 @@ fn csi_tilde_plain(number : Int) -> Bytes {
 fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
   let buffer = Buffer(size_hint=10)
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, number.to_uint64())
+  @ascii.write_uint_ascii(buffer, number.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(b'~')
   buffer.contents()
 }
@@ -350,7 +350,7 @@ fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
 fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
   let buffer = Buffer(size_hint=7)
   buffer.write_bytes(b"\x1BO")
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(suffix)
   buffer.contents()
 }
@@ -359,9 +359,9 @@ fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
 fn modify_other_keys_sequence(code : Int, codepoint : UInt) -> Bytes {
   let buffer = Buffer(size_hint=16)
   buffer.write_bytes(b"\x1B[27;")
-  write_uint_ascii(buffer, code.to_uint64())
+  @ascii.write_uint_ascii(buffer, code.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, codepoint.to_uint64())
+  @ascii.write_uint_ascii(buffer, codepoint.to_uint64())
   buffer.write_byte(b'~')
   buffer.contents()
 }

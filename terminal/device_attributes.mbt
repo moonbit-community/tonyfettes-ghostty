@@ -154,10 +154,10 @@ pub fn PrimaryDeviceAttributes::default() -> PrimaryDeviceAttributes {
 pub fn PrimaryDeviceAttributes::encode(self : PrimaryDeviceAttributes) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[?")
-  write_uint_ascii(buffer, self.conformance_level.code().to_uint64())
+  @ascii.write_uint_ascii(buffer, self.conformance_level.code().to_uint64())
   for feature in self.features {
     buffer.write_byte(b';')
-    write_uint_ascii(buffer, feature.code().to_uint64())
+    @ascii.write_uint_ascii(buffer, feature.code().to_uint64())
   }
   buffer.write_byte(b'c')
   buffer.contents()
@@ -211,11 +211,11 @@ pub fn SecondaryDeviceAttributes::encode(
 ) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[>")
-  write_uint_ascii(buffer, self.device_type.code().to_uint64())
+  @ascii.write_uint_ascii(buffer, self.device_type.code().to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, self.firmware_version.to_uint64())
+  @ascii.write_uint_ascii(buffer, self.firmware_version.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, self.rom_cartridge.to_uint64())
+  @ascii.write_uint_ascii(buffer, self.rom_cartridge.to_uint64())
   buffer.write_byte(b'c')
   buffer.contents()
 }
@@ -250,7 +250,7 @@ pub fn TertiaryDeviceAttributes::encode(
 ) -> Bytes {
   let buffer = Buffer(size_hint=15)
   buffer.write_bytes(b"\x1BP!|")
-  write_hex8(buffer, self.unit_id)
+  @ascii.write_hex8(buffer, self.unit_id)
   buffer.write_bytes(b"\x1B\\")
   buffer.contents()
 }

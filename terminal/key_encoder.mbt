@@ -553,9 +553,9 @@ fn csi_u_sequence(event : @input.KeyEvent) -> Bytes? {
 
   let buffer = Buffer(size_hint=16)
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, char.to_uint64())
+  @ascii.write_uint_ascii(buffer, char.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, mods.seq_int().to_uint64())
+  @ascii.write_uint_ascii(buffer, mods.seq_int().to_uint64())
   buffer.write_byte(b'u')
   Some(buffer.contents())
 }
@@ -745,11 +745,11 @@ fn KittySequence::encode(self : KittySequence) -> Bytes {
 fn KittySequence::encode_full(self : KittySequence) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, self.key.to_uint64())
+  @ascii.write_uint_ascii(buffer, self.key.to_uint64())
   match self.alternate_shifted {
     Some(shifted) => {
       buffer.write_byte(b':')
-      write_uint_ascii(buffer, shifted.to_uint64())
+      @ascii.write_uint_ascii(buffer, shifted.to_uint64())
     }
     None => ()
   }
@@ -759,7 +759,7 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
       if self.alternate_shifted == None {
         buffer.write_byte(b':')
       }
-      write_uint_ascii(buffer, base.to_uint64())
+      @ascii.write_uint_ascii(buffer, base.to_uint64())
     }
     None => ()
   }
@@ -767,13 +767,16 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
   let mods = self.mods.seq_int()
   let emitted_mods = if self.event != None && self.event != Press {
     buffer.write_byte(b';')
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(b':')
-    write_uint_ascii(buffer, kitty_sequence_event_code(self.event).to_uint64())
+    @ascii.write_uint_ascii(
+      buffer,
+      kitty_sequence_event_code(self.event).to_uint64(),
+    )
     true
   } else if mods > 1U {
     buffer.write_byte(b';')
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     true
   } else {
     false
@@ -795,7 +798,7 @@ fn KittySequence::encode_full(self : KittySequence) -> Bytes {
           } else {
             buffer.write_byte(b':')
           }
-          write_uint_ascii(buffer, codepoint.to_uint64())
+          @ascii.write_uint_ascii(buffer, codepoint.to_uint64())
           count += 1
         }
       }
@@ -813,16 +816,19 @@ fn KittySequence::encode_special(self : KittySequence) -> Bytes {
   let mods = self.mods.seq_int()
   if self.event != None {
     buffer.write_bytes(b"\x1B[1;")
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(b':')
-    write_uint_ascii(buffer, kitty_sequence_event_code(self.event).to_uint64())
+    @ascii.write_uint_ascii(
+      buffer,
+      kitty_sequence_event_code(self.event).to_uint64(),
+    )
     buffer.write_byte(self.final_byte)
     return buffer.contents()
   }
 
   if mods > 1U {
     buffer.write_bytes(b"\x1B[1;")
-    write_uint_ascii(buffer, mods.to_uint64())
+    @ascii.write_uint_ascii(buffer, mods.to_uint64())
     buffer.write_byte(self.final_byte)
     return buffer.contents()
   }

@@ -252,7 +252,7 @@ fn KittyGraphicsResponse::encode(self : KittyGraphicsResponse) -> Bytes {
     prior = true
     buffer.write_byte(b'i')
     buffer.write_byte(b'=')
-    write_uint_ascii(buffer, self.id.to_uint64())
+    @ascii.write_uint_ascii(buffer, self.id.to_uint64())
   }
   if self.image_number > 0U {
     if prior {
@@ -262,7 +262,7 @@ fn KittyGraphicsResponse::encode(self : KittyGraphicsResponse) -> Bytes {
     }
     buffer.write_byte(b'I')
     buffer.write_byte(b'=')
-    write_uint_ascii(buffer, self.image_number.to_uint64())
+    @ascii.write_uint_ascii(buffer, self.image_number.to_uint64())
   }
   if self.placement_id > 0U {
     if prior {
@@ -270,7 +270,7 @@ fn KittyGraphicsResponse::encode(self : KittyGraphicsResponse) -> Bytes {
     }
     buffer.write_byte(b'p')
     buffer.write_byte(b'=')
-    write_uint_ascii(buffer, self.placement_id.to_uint64())
+    @ascii.write_uint_ascii(buffer, self.placement_id.to_uint64())
   }
   buffer.write_byte(b';')
   buffer.write_bytes(self.message)

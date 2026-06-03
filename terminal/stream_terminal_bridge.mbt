@@ -1702,9 +1702,9 @@ fn StreamTerminalBridgeState::device_status(
       }
       let buffer = Buffer()
       buffer.write_bytes(b"\x1B[")
-      write_uint_ascii(buffer, (y + 1).to_uint64())
+      @ascii.write_uint_ascii(buffer, (y + 1).to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, (x + 1).to_uint64())
+      @ascii.write_uint_ascii(buffer, (x + 1).to_uint64())
       buffer.write_byte(b'R')
       self.write_pty(buffer.contents())
     }
@@ -1822,7 +1822,7 @@ fn StreamTerminalBridgeState::query_kitty_keyboard(
 ) -> Unit {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[?")
-  write_uint_ascii(buffer, self.kitty_keyboard.current().0.to_uint64())
+  @ascii.write_uint_ascii(buffer, self.kitty_keyboard.current().0.to_uint64())
   buffer.write_byte(b'u')
   self.write_pty(buffer.contents())
 }
@@ -2675,7 +2675,7 @@ fn StreamTerminalBridgeState::apply_color_query(
     Palette(index) => {
       let buffer = Buffer()
       buffer.write_bytes(b"\x1B]4;")
-      write_uint_ascii(buffer, index.to_uint64())
+      @ascii.write_uint_ascii(buffer, index.to_uint64())
       buffer.write_byte(b';')
       write_osc_rgb(buffer, self.colors.palette_color(index))
       write_osc_terminator(buffer, terminator)
@@ -2686,7 +2686,7 @@ fn StreamTerminalBridgeState::apply_color_query(
         Some(color) => {
           let buffer = Buffer()
           buffer.write_bytes(b"\x1B]")
-          write_uint_ascii(buffer, dynamic.code().to_uint64())
+          @ascii.write_uint_ascii(buffer, dynamic.code().to_uint64())
           buffer.write_byte(b';')
           write_osc_rgb(buffer, color)
           write_osc_terminator(buffer, terminator)

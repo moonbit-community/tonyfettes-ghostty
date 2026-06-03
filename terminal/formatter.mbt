@@ -638,7 +638,7 @@ fn formatter_write_codepoint(
         buffer.write_byte(codepoint.to_byte())
       } else {
         buffer.write_bytes(b"&#")
-        write_uint_ascii(buffer, codepoint.to_uint64())
+        @ascii.write_uint_ascii(buffer, codepoint.to_uint64())
         buffer.write_byte(b';')
       }
   }
@@ -685,7 +685,7 @@ fn formatter_write_palette(
       while i < palette.length() {
         let rgb = palette[i]
         buffer.write_bytes(b"\x1B]4;")
-        write_uint_ascii(buffer, i.to_uint64())
+        @ascii.write_uint_ascii(buffer, i.to_uint64())
         buffer.write_bytes(b";rgb:")
         write_hex_byte(buffer, rgb.r())
         buffer.write_byte(b'/')
@@ -702,7 +702,7 @@ fn formatter_write_palette(
       while i < palette.length() {
         let rgb = palette[i]
         buffer.write_bytes(b"--vt-palette-")
-        write_uint_ascii(buffer, i.to_uint64())
+        @ascii.write_uint_ascii(buffer, i.to_uint64())
         buffer.write_bytes(b": #")
         write_hex_byte(buffer, rgb.r())
         write_hex_byte(buffer, rgb.g())
@@ -732,7 +732,7 @@ fn formatter_write_terminal_extras(
         if !tag.ansi() {
           buffer.write_byte(b'?')
         }
-        write_uint_ascii(buffer, tag.value().to_uint64())
+        @ascii.write_uint_ascii(buffer, tag.value().to_uint64())
         buffer.write_byte(if current { b'h' } else { b'l' })
       }
     }
@@ -742,17 +742,29 @@ fn formatter_write_terminal_extras(
     if state.cursor.top_margin() != 0 ||
       state.cursor.bottom_margin() != state.grid.rows - 1 {
       buffer.write_bytes(b"\x1B[")
-      write_uint_ascii(buffer, (state.cursor.top_margin() + 1).to_uint64())
+      @ascii.write_uint_ascii(
+        buffer,
+        (state.cursor.top_margin() + 1).to_uint64(),
+      )
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, (state.cursor.bottom_margin() + 1).to_uint64())
+      @ascii.write_uint_ascii(
+        buffer,
+        (state.cursor.bottom_margin() + 1).to_uint64(),
+      )
       buffer.write_byte(b'r')
     }
     if state.cursor.left_margin() != 0 ||
       state.cursor.right_margin() != state.grid.cols - 1 {
       buffer.write_bytes(b"\x1B[")
-      write_uint_ascii(buffer, (state.cursor.left_margin() + 1).to_uint64())
+      @ascii.write_uint_ascii(
+        buffer,
+        (state.cursor.left_margin() + 1).to_uint64(),
+      )
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, (state.cursor.right_margin() + 1).to_uint64())
+      @ascii.write_uint_ascii(
+        buffer,
+        (state.cursor.right_margin() + 1).to_uint64(),
+      )
       buffer.write_byte(b's')
     }
   }
@@ -763,7 +775,7 @@ fn formatter_write_terminal_extras(
     while col < state.grid.cols.to_int() {
       if state.tabstops.get(col.to_uint16()) {
         buffer.write_bytes(b"\x1B[")
-        write_uint_ascii(buffer, (col + 1).to_uint64())
+        @ascii.write_uint_ascii(buffer, (col + 1).to_uint64())
         buffer.write_bytes(b"G\x1BH")
       }
       col += 1
@@ -824,7 +836,10 @@ fn formatter_write_screen_extras(
 
   if extra.kitty_keyboard && state.kitty_keyboard.current().0 != 0 {
     buffer.write_bytes(b"\x1B[=")
-    write_uint_ascii(buffer, state.kitty_keyboard.current().0.to_uint64())
+    @ascii.write_uint_ascii(
+      buffer,
+      state.kitty_keyboard.current().0.to_uint64(),
+    )
     buffer.write_bytes(b";1u")
   }
 
@@ -863,9 +878,9 @@ fn formatter_write_screen_extras(
 
   if extra.cursor {
     buffer.write_bytes(b"\x1B[")
-    write_uint_ascii(buffer, (state.cursor.y() + 1).to_uint64())
+    @ascii.write_uint_ascii(buffer, (state.cursor.y() + 1).to_uint64())
     buffer.write_byte(b';')
-    write_uint_ascii(buffer, (state.cursor.x() + 1).to_uint64())
+    @ascii.write_uint_ascii(buffer, (state.cursor.x() + 1).to_uint64())
     buffer.write_byte(b'H')
   }
 }
@@ -877,9 +892,9 @@ fn formatter_write_vt_cup(
   column : UInt64,
 ) -> Unit {
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, row)
+  @ascii.write_uint_ascii(buffer, row)
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, column)
+  @ascii.write_uint_ascii(buffer, column)
   buffer.write_byte(b'H')
 }
 
@@ -1012,20 +1027,20 @@ fn formatter_write_vt_style_color(
     None => ()
     Palette(index) => {
       buffer.write_bytes(b"\x1B[")
-      write_uint_ascii(buffer, prefix.to_uint64())
+      @ascii.write_uint_ascii(buffer, prefix.to_uint64())
       buffer.write_bytes(b";5;")
-      write_uint_ascii(buffer, index.to_uint64())
+      @ascii.write_uint_ascii(buffer, index.to_uint64())
       buffer.write_byte(b'm')
     }
     Rgb(rgb) => {
       buffer.write_bytes(b"\x1B[")
-      write_uint_ascii(buffer, prefix.to_uint64())
+      @ascii.write_uint_ascii(buffer, prefix.to_uint64())
       buffer.write_bytes(b";2;")
-      write_uint_ascii(buffer, rgb.r().to_uint64())
+      @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, rgb.g().to_uint64())
+      @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
       buffer.write_byte(b';')
-      write_uint_ascii(buffer, rgb.b().to_uint64())
+      @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
       buffer.write_byte(b'm')
     }
   }
@@ -1139,17 +1154,17 @@ fn formatter_write_html_color(
     Palette(index) => {
       buffer.write_string_utf8(property)
       buffer.write_bytes(b": var(--vt-palette-")
-      write_uint_ascii(buffer, index.to_uint64())
+      @ascii.write_uint_ascii(buffer, index.to_uint64())
       buffer.write_bytes(b");")
     }
     Rgb(rgb) => {
       buffer.write_string_utf8(property)
       buffer.write_bytes(b": rgb(")
-      write_uint_ascii(buffer, rgb.r().to_uint64())
+      @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
       buffer.write_bytes(b", ")
-      write_uint_ascii(buffer, rgb.g().to_uint64())
+      @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
       buffer.write_bytes(b", ")
-      write_uint_ascii(buffer, rgb.b().to_uint64())
+      @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
       buffer.write_bytes(b");")
     }
   }
@@ -1296,6 +1311,6 @@ fn formatter_all_modes() -> Array[Mode] {
 fn write_hex_byte(buffer : @buffer.Buffer, value : Byte) -> Unit {
   let high = (value >> 4).to_int()
   let low = (value & 0xF).to_int()
-  buffer.write_byte(hex_digit_upper(high))
-  buffer.write_byte(hex_digit_upper(low))
+  buffer.write_byte(@ascii.hex_digit_upper(high))
+  buffer.write_byte(@ascii.hex_digit_upper(low))
 }

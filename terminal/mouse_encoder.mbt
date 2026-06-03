@@ -348,11 +348,14 @@ fn encode_mouse_sgr(
 ) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[<")
-  write_uint_ascii(buffer, button_code.to_uint64())
+  @ascii.write_uint_ascii(buffer, button_code.to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.y().reinterpret_as_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(
+    buffer,
+    (cell.y().reinterpret_as_int() + 1).to_uint64(),
+  )
   buffer.write_byte(mouse_action_final_byte(action))
   buffer.contents()
 }
@@ -361,11 +364,14 @@ fn encode_mouse_sgr(
 fn encode_mouse_urxvt(button_code : Int, cell : Coordinate) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
-  write_uint_ascii(buffer, (32 + button_code).to_uint64())
+  @ascii.write_uint_ascii(buffer, (32 + button_code).to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(buffer, (cell.x().to_int() + 1).to_uint64())
   buffer.write_byte(b';')
-  write_uint_ascii(buffer, (cell.y().reinterpret_as_int() + 1).to_uint64())
+  @ascii.write_uint_ascii(
+    buffer,
+    (cell.y().reinterpret_as_int() + 1).to_uint64(),
+  )
   buffer.write_byte(b'M')
   buffer.contents()
 }
@@ -378,7 +384,7 @@ fn encode_mouse_sgr_pixels(
 ) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[<")
-  write_uint_ascii(buffer, button_code.to_uint64())
+  @ascii.write_uint_ascii(buffer, button_code.to_uint64())
   buffer.write_byte(b';')
   write_signed_ascii(buffer, pixels.x)
   buffer.write_byte(b';')
@@ -409,10 +415,10 @@ fn write_codepoint_utf8(buffer : @buffer.Buffer, codepoint : Int) -> Unit {
 fn write_signed_ascii(buffer : @buffer.Buffer, value : Int) -> Unit {
   if value < 0 {
     buffer.write_byte(b'-')
-    write_uint_ascii(buffer, (0 - value).to_uint64())
+    @ascii.write_uint_ascii(buffer, (0 - value).to_uint64())
     return
   }
-  write_uint_ascii(buffer, value.to_uint64())
+  @ascii.write_uint_ascii(buffer, value.to_uint64())
 }
 
 ///|

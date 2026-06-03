@@ -1,8 +1,14 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/ghostty/terminal/ascii"
 
+import {
+  "moonbitlang/core/buffer",
+}
+
 // Values
 pub fn find_byte(Array[Byte], Int, Int, Byte) -> Int?
+
+pub fn hex_digit_upper(Int) -> Byte
 
 pub fn parse_i32_ascii(Array[Byte], Int, Int) -> Int?
 
@@ -13,6 +19,10 @@ pub fn parse_kitty_graphics_u32(Array[Byte]) -> UInt?
 pub fn parse_u32_ascii(Array[Byte], Int, Int) -> UInt?
 
 pub fn slice_equals_ascii(Array[Byte], Int, Int, String) -> Bool
+
+pub fn write_hex8(@buffer.Buffer, UInt) -> Unit
+
+pub fn write_uint_ascii(@buffer.Buffer, UInt64) -> Unit
 
 // Errors
 
