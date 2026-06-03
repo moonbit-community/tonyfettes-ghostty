@@ -111,7 +111,7 @@ test "terminal screen state/zero max scrollback trim and resets" {
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 0)
   scrollback.capture_full_screen_scroll_down(grid, 0)
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
-  scrollback.trim_history()
+  scrollback.trim_history() |> ignore
   guard scrollback.scrollback_rows() == 0U else {
     fail("expected zero max scrollback to drop history")
   }
