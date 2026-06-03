@@ -734,7 +734,7 @@ fn captured_command(capturing : Bool, command : Command) -> Command? {
 
 ///|
 fn parse_hyperlink_command(buffer : Array[Byte]) -> Command? {
-  let params_end = match find_byte(buffer, 0, buffer.length(), b';') {
+  let params_end = match @ascii.find_byte(buffer, 0, buffer.length(), b';') {
     Some(index) => index
     None => return None
   }
@@ -758,14 +758,14 @@ fn parse_hyperlink_id(buffer : Array[Byte], end_ : Int) -> String? {
   let mut result : String? = None
   let mut start = 0
   while start <= end_ {
-    let segment_end = match find_byte(buffer, start, end_, b':') {
+    let segment_end = match @ascii.find_byte(buffer, start, end_, b':') {
       Some(index) => index
       None => end_
     }
 
-    match find_byte(buffer, start, segment_end, b'=') {
+    match @ascii.find_byte(buffer, start, segment_end, b'=') {
       Some(eq_index) =>
-        if slice_equals_ascii(buffer, start, eq_index, "id") &&
+        if @ascii.slice_equals_ascii(buffer, start, eq_index, "id") &&
           eq_index + 1 < segment_end {
           result = Some(
             captured_string(copy_bytes_range(buffer, eq_index + 1, segment_end)),

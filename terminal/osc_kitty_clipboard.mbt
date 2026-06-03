@@ -125,7 +125,7 @@ fn parse_kitty_clipboard_command(
   buffer : Array[Byte],
   terminator_ch : Byte?,
 ) -> Command {
-  let separator = find_byte(buffer, 0, buffer.length(), b';')
+  let separator = @ascii.find_byte(buffer, 0, buffer.length(), b';')
   let metadata_end = match separator {
     Some(index) => index
     None => buffer.length()
@@ -167,7 +167,7 @@ fn kitty_clipboard_option_value(
     }
 
     if !slice_starts_with_bytes(metadata, pos, key) {
-      pos = match find_byte(metadata, pos, metadata.length(), b':') {
+      pos = match @ascii.find_byte(metadata, pos, metadata.length(), b':') {
         Some(index) => index + 1
         None => return None
       }
@@ -183,7 +183,8 @@ fn kitty_clipboard_option_value(
       return None
     }
 
-    let value_end = match find_byte(metadata, pos, metadata.length(), b':') {
+    let value_end = match
+      @ascii.find_byte(metadata, pos, metadata.length(), b':') {
       Some(index) => index
       None => metadata.length()
     }
@@ -202,7 +203,7 @@ fn kitty_clipboard_option_value(
 fn kitty_clipboard_location_from_bytes(
   value : Array[Byte],
 ) -> KittyClipboardLocation? {
-  if slice_equals_ascii(value, 0, value.length(), "primary") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "primary") {
     Some(KittyClipboardPrimary)
   } else {
     None
@@ -213,16 +214,16 @@ fn kitty_clipboard_location_from_bytes(
 fn kitty_clipboard_operation_from_bytes(
   value : Array[Byte],
 ) -> KittyClipboardOperation? {
-  if slice_equals_ascii(value, 0, value.length(), "read") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "read") {
     return Some(KittyClipboardRead)
   }
-  if slice_equals_ascii(value, 0, value.length(), "walias") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "walias") {
     return Some(KittyClipboardWalias)
   }
-  if slice_equals_ascii(value, 0, value.length(), "wdata") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "wdata") {
     return Some(KittyClipboardWdata)
   }
-  if slice_equals_ascii(value, 0, value.length(), "write") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "write") {
     return Some(KittyClipboardWrite)
   }
   None
@@ -232,28 +233,28 @@ fn kitty_clipboard_operation_from_bytes(
 fn kitty_clipboard_status_from_bytes(
   value : Array[Byte],
 ) -> KittyClipboardStatus? {
-  if slice_equals_ascii(value, 0, value.length(), "DATA") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "DATA") {
     return Some(KittyClipboardData)
   }
-  if slice_equals_ascii(value, 0, value.length(), "DONE") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "DONE") {
     return Some(KittyClipboardDone)
   }
-  if slice_equals_ascii(value, 0, value.length(), "EBUSY") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "EBUSY") {
     return Some(KittyClipboardEbusy)
   }
-  if slice_equals_ascii(value, 0, value.length(), "EINVAL") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "EINVAL") {
     return Some(KittyClipboardEinval)
   }
-  if slice_equals_ascii(value, 0, value.length(), "EIO") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "EIO") {
     return Some(KittyClipboardEio)
   }
-  if slice_equals_ascii(value, 0, value.length(), "ENOSYS") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "ENOSYS") {
     return Some(KittyClipboardEnosys)
   }
-  if slice_equals_ascii(value, 0, value.length(), "EPERM") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "EPERM") {
     return Some(KittyClipboardEperm)
   }
-  if slice_equals_ascii(value, 0, value.length(), "OK") {
+  if @ascii.slice_equals_ascii(value, 0, value.length(), "OK") {
     return Some(KittyClipboardOk)
   }
   None

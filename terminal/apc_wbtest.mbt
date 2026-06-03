@@ -140,7 +140,7 @@ test "apc/private helper branches and parser states" {
     fail("expected identify-without-bytes end to return none")
   }
 
-  guard parse_i32_ascii([], 0, 0) == None else {
+  guard @ascii.parse_i32_ascii([], 0, 0) == None else {
     fail("expected empty i32 slice to return none")
   }
 
@@ -152,16 +152,16 @@ test "apc/private helper branches and parser states" {
     fail("expected inactive end to return none")
   }
 
-  guard parse_kitty_graphics_u32([b'4', b'2']) == Some(42U) else {
+  guard @ascii.parse_kitty_graphics_u32([b'4', b'2']) == Some(42U) else {
     fail("expected valid u32 parse")
   }
-  guard parse_kitty_graphics_u32([b'a']) == None else {
+  guard @ascii.parse_kitty_graphics_u32([b'a']) == None else {
     fail("expected invalid u32 digit to fail")
   }
-  guard parse_kitty_graphics_i32([b'-', b'1']) == Some(-1) else {
+  guard @ascii.parse_kitty_graphics_i32([b'-', b'1']) == Some(-1) else {
     fail("expected negative i32 parse")
   }
-  guard parse_kitty_graphics_i32([b'a']) == None else {
+  guard @ascii.parse_kitty_graphics_i32([b'a']) == None else {
     fail("expected invalid i32 digit to fail")
   }
   guard decode_kitty_graphics_base64([b'Q', b'U', b'F', b'B']) == Some(b"AAA") else {

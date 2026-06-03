@@ -402,10 +402,10 @@ fn kitty_graphics_value_is_valid(value : Array[Byte]) -> Bool {
   if value.length() == 1 && (value[0] < b'0' || value[0] > b'9') {
     return true
   }
-  if parse_kitty_graphics_u32(value) is Some(_) {
+  if @ascii.parse_kitty_graphics_u32(value) is Some(_) {
     return true
   }
-  parse_kitty_graphics_i32(value) is Some(_)
+  @ascii.parse_kitty_graphics_i32(value) is Some(_)
 }
 
 ///|
@@ -845,7 +845,7 @@ fn kitty_graphics_pair_u32(
   key : Byte,
 ) -> UInt? {
   match kitty_graphics_pair_value(pairs, key) {
-    Some(value) => parse_kitty_graphics_u32(value)
+    Some(value) => @ascii.parse_kitty_graphics_u32(value)
     None => None
   }
 }
@@ -856,7 +856,7 @@ fn kitty_graphics_pair_i32(
   key : Byte,
 ) -> Int? {
   match kitty_graphics_pair_value(pairs, key) {
-    Some(value) => parse_kitty_graphics_i32(value)
+    Some(value) => @ascii.parse_kitty_graphics_i32(value)
     None => None
   }
 }
@@ -871,7 +871,7 @@ fn kitty_graphics_pair_u8(
       if value.length() == 1 && (value[0] < b'0' || value[0] > b'9') {
         Some(value[0])
       } else {
-        match parse_kitty_graphics_u32(value) {
+        match @ascii.parse_kitty_graphics_u32(value) {
           Some(parsed) =>
             if parsed <= 255U {
               Some(parsed.to_byte())
@@ -882,73 +882,6 @@ fn kitty_graphics_pair_u8(
         }
       }
     None => None
-  }
-}
-
-///|
-fn parse_kitty_graphics_u32(bytes : Array[Byte]) -> UInt? {
-  if bytes.length() == 0 {
-    return None
-  }
-
-  let mut value : UInt = 0U
-  let limit = 4294967295U
-  let mut index = 0
-  while index < bytes.length() {
-    let byte = bytes[index]
-    if byte < b'0' || byte > b'9' {
-      return None
-    }
-
-    let digit = (byte.to_int() - b'0'.to_int()).reinterpret_as_uint()
-    if value > limit / 10U || (value == limit / 10U && digit > limit % 10U) {
-      return None
-    }
-
-    value = value * 10U + digit
-    index += 1
-  }
-  Some(value)
-}
-
-///|
-fn parse_kitty_graphics_i32(bytes : Array[Byte]) -> Int? {
-  if bytes.length() == 0 {
-    return None
-  }
-
-  let negative = bytes[0] == b'-'
-  let start = if negative { 1 } else { 0 }
-  if start >= bytes.length() {
-    return None
-  }
-
-  let mut value : UInt = 0U
-  let limit = if negative { 2147483648U } else { 2147483647U }
-  let mut index = start
-  while index < bytes.length() {
-    let byte = bytes[index]
-    if byte < b'0' || byte > b'9' {
-      return None
-    }
-
-    let digit = (byte.to_int() - b'0'.to_int()).reinterpret_as_uint()
-    if value > limit / 10U || (value == limit / 10U && digit > limit % 10U) {
-      return None
-    }
-
-    value = value * 10U + digit
-    index += 1
-  }
-
-  if negative {
-    if value == 2147483648U {
-      Some(-2147483648)
-    } else {
-      Some(-value.reinterpret_as_int())
-    }
-  } else {
-    Some(value.reinterpret_as_int())
   }
 }
 

@@ -162,7 +162,7 @@ fn desktop_notification_command(buffer : Array[Byte]) -> Command {
 
 ///|
 fn conemu_sleep_from_bytes(buffer : Array[Byte], start : Int) -> ConEmuSleep {
-  match parse_u32_ascii(buffer, start, buffer.length()) {
+  match @ascii.parse_u32_ascii(buffer, start, buffer.length()) {
     Some(value) =>
       if value >= ConEmuSleepMaxMs.to_uint() {
         ConEmuSleep::new(ConEmuSleepMaxMs)
@@ -258,7 +258,7 @@ fn conemu_progress_or_notification(buffer : Array[Byte]) -> Command {
     return ConEmuProgressReport(report)
   }
 
-  match parse_u32_ascii(buffer, 4, buffer.length()) {
+  match @ascii.parse_u32_ascii(buffer, 4, buffer.length()) {
     Some(value) =>
       if value >= ConEmuProgressMax {
         ConEmuProgressReport(
