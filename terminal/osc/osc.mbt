@@ -225,7 +225,10 @@ pub enum OscParserState {
 } derive(Debug)
 
 ///|
-pub struct OscParser {
+/// Abstract (no `pub`): the parser package builds one via `OscParser::new` and
+/// drives it through `next`/`end`/`reset`/`deinit`, so its capture state stays
+/// sealed across the package boundary.
+struct OscParser {
   mut state : OscParserState
   mut capturing : Bool
   mut buffer : Array[Byte]

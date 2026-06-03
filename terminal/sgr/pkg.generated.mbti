@@ -47,11 +47,7 @@ pub(all) enum SgrAttribute {
   Color256Fg(Byte)
 } derive(Eq, @debug.Debug)
 
-pub struct SgrParser {
-  mut params : Array[UInt16]
-  mut params_sep : @parser.SepList
-  mut idx : Int
-} derive(@debug.Debug)
+type SgrParser derive(@debug.Debug)
 pub fn SgrParser::from_params(Array[UInt16], @parser.SepList) -> Self
 pub fn SgrParser::new() -> Self
 pub fn SgrParser::next(Self) -> SgrAttribute?

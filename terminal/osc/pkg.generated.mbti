@@ -292,12 +292,7 @@ pub(all) enum KittyTextSizingVerticalAlign {
   KittyTextSizingVCenter
 } derive(Eq, @debug.Debug)
 
-pub struct OscParser {
-  mut state : OscParserState
-  mut capturing : Bool
-  mut buffer : Array[Byte]
-  mut command : Command
-} derive(@debug.Debug)
+type OscParser derive(@debug.Debug)
 pub fn OscParser::deinit(Self) -> Unit
 pub fn OscParser::end(Self, Byte?) -> Command?
 pub fn OscParser::new() -> Self

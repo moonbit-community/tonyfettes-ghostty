@@ -53,7 +53,10 @@ pub(all) enum SgrAttribute {
 } derive(Eq, Debug)
 
 ///|
-pub struct SgrParser {
+/// Abstract (no `pub`): callers build one via `SgrParser::from_params` / `new`
+/// and drive it through `set_params`/`next`/`reset`, so its cursor state stays
+/// sealed across the package boundary.
+struct SgrParser {
   mut params : Array[UInt16]
   mut params_sep : @parser.SepList
   mut idx : Int
