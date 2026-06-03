@@ -105,7 +105,7 @@ pub(all) enum StreamAction {
   StreamDeleteChars(UInt16)
   StreamEraseChars(UInt16)
   StreamInsertLines(UInt16)
-  StreamSetAttribute(SgrAttribute)
+  StreamSetAttribute(@sgr.SgrAttribute)
   StreamCursorStyle(CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
@@ -353,7 +353,7 @@ fn[H : StreamHandler] Stream::emit_sgr(
   params : Array[UInt16],
   params_sep : @parser.SepList,
 ) -> Unit {
-  let parser : SgrParser = { params, params_sep, idx: 0 }
+  let parser = @sgr.SgrParser::from_params(params, params_sep)
   while parser.next() is Some(attribute) {
     self.emit(StreamSetAttribute(attribute))
   }

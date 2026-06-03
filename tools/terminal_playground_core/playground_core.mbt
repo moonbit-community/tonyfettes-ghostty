@@ -488,7 +488,7 @@ fn page_cell_wide_json(value : @terminal.PageCellWide) -> Json {
 }
 
 ///|
-fn sgr_underline_json(value : @terminal.SgrUnderline) -> Json {
+fn sgr_underline_json(value : @sgr.SgrUnderline) -> Json {
   Json::string(
     match value {
       None => "none"

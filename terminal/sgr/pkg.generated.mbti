@@ -1,0 +1,78 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/sgr"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/parser",
+  "tonyfettes/ghostty/terminal/result_code",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum SgrAttribute {
+  Unset
+  Unknown(SgrUnknown)
+  Bold
+  ResetBold
+  Italic
+  ResetItalic
+  Faint
+  Underline(SgrUnderline)
+  UnderlineColor(@color.RGB)
+  Color256Underline(Byte)
+  ResetUnderlineColor
+  Overline
+  ResetOverline
+  Blink
+  ResetBlink
+  Inverse
+  ResetInverse
+  Invisible
+  ResetInvisible
+  Strikethrough
+  ResetStrikethrough
+  DirectColorFg(@color.RGB)
+  DirectColorBg(@color.RGB)
+  Color8Bg(@color.Name)
+  Color8Fg(@color.Name)
+  ResetFg
+  ResetBg
+  BrightColor8Bg(@color.Name)
+  BrightColor8Fg(@color.Name)
+  Color256Bg(Byte)
+  Color256Fg(Byte)
+} derive(Eq, @debug.Debug)
+
+pub struct SgrParser {
+  mut params : Array[UInt16]
+  mut params_sep : @parser.SepList
+  mut idx : Int
+} derive(@debug.Debug)
+pub fn SgrParser::from_params(Array[UInt16], @parser.SepList) -> Self
+pub fn SgrParser::new() -> Self
+pub fn SgrParser::next(Self) -> SgrAttribute?
+pub fn SgrParser::reset(Self) -> Unit
+pub fn SgrParser::set_params(Self, Array[UInt16], Array[Byte]) -> @result_code.TerminalResultCode
+
+pub(all) enum SgrUnderline {
+  None
+  Single
+  Double
+  Curly
+  Dotted
+  Dashed
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SgrUnknown {
+  full : Array[UInt16]
+  partial : Array[UInt16]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

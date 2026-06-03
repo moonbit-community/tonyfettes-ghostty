@@ -133,7 +133,7 @@ test "ghostty terminal adapter direct cell style branches" {
 
 ///|
 test "ghostty terminal adapter underline style variants" {
-  for underline in [@terminal.SgrUnderline::Double, Curly, Dotted, Dashed] {
+  for underline in [@sgr.SgrUnderline::Double, Curly, Dotted, Dashed] {
     let style = @terminal.CellStyle::new()
     style.apply_attribute(Underline(underline))
     guard text_decoration(style) is Some(_) else {

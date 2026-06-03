@@ -53,7 +53,7 @@ pub(all) enum SgrAttribute {
 } derive(Eq, Debug)
 
 ///|
-struct SgrParser {
+pub struct SgrParser {
   mut params : Array[UInt16]
   mut params_sep : @parser.SepList
   mut idx : Int
@@ -62,6 +62,17 @@ struct SgrParser {
 ///|
 fn SgrParser::empty() -> SgrParser {
   { params: [], params_sep: @parser.SepList::init_empty(), idx: 0 }
+}
+
+///|
+/// Build a parser over already-collected CSI parameters and their separator
+/// set. Boundary factory so callers in other packages do not construct the
+/// SgrParser record directly.
+pub fn SgrParser::from_params(
+  params : Array[UInt16],
+  params_sep : @parser.SepList,
+) -> SgrParser {
+  { params, params_sep, idx: 0 }
 }
 
 ///|

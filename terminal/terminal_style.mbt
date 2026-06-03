@@ -54,7 +54,7 @@ struct CellStyle {
   mut invisible : Bool
   mut strikethrough : Bool
   mut overline : Bool
-  mut underline : SgrUnderline
+  mut underline : @sgr.SgrUnderline
 } derive(Eq, Debug)
 
 ///|
@@ -152,14 +152,14 @@ pub fn CellStyle::overline(self : CellStyle) -> Bool {
 }
 
 ///|
-pub fn CellStyle::underline(self : CellStyle) -> SgrUnderline {
+pub fn CellStyle::underline(self : CellStyle) -> @sgr.SgrUnderline {
   self.underline
 }
 
 ///|
 pub fn CellStyle::apply_attribute(
   self : CellStyle,
-  attr : SgrAttribute,
+  attr : @sgr.SgrAttribute,
 ) -> Unit {
   match attr {
     Unset => self.reset()
