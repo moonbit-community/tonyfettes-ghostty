@@ -58,7 +58,7 @@ fn DcsHandler::deinit(self : DcsHandler) -> Unit {
 }
 
 ///|
-fn DcsHandler::hook(self : DcsHandler, dcs : Dcs) -> DcsCommand? {
+fn DcsHandler::hook(self : DcsHandler, dcs : @parser.Dcs) -> DcsCommand? {
   guard self.state == Inactive else {
     abort("DCS hook requires inactive state")
   }
@@ -116,7 +116,7 @@ fn DcsHandler::discard(self : DcsHandler) -> Unit {
 }
 
 ///|
-fn DcsHandler::try_hook(_self : DcsHandler, dcs : Dcs) -> HookResult? {
+fn DcsHandler::try_hook(_self : DcsHandler, dcs : @parser.Dcs) -> HookResult? {
   match dcs.intermediates.length() {
     0 =>
       match dcs.final_byte {
@@ -206,14 +206,17 @@ fn to_upper_ascii(value : Byte) -> Byte {
 }
 
 ///|
-fn make_plain_dcs(final_byte : Byte) -> Dcs {
+fn make_plain_dcs(final_byte : Byte) -> @parser.Dcs {
   let intermediates : Array[Byte] = []
   let params : Array[UInt16] = []
   { intermediates, params, final_byte }
 }
 
 ///|
-fn make_intermediate_dcs(intermediates : Array[Byte], final_byte : Byte) -> Dcs {
+fn make_intermediate_dcs(
+  intermediates : Array[Byte],
+  final_byte : Byte,
+) -> @parser.Dcs {
   let params : Array[UInt16] = []
   { intermediates, params, final_byte }
 }

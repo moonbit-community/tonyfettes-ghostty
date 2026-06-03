@@ -5,6 +5,7 @@ import {
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
   "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/parser",
   "tonyfettes/ghostty/terminal/utf8_decoder",
 }
 

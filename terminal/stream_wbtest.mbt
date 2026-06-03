@@ -23,7 +23,7 @@ fn new_whitebox_stream() -> (Stream[WhiteboxRecorder], Array[StreamAction]) {
 ///|
 test "stream/private non-utf8 print branch emits stream print" {
   let (stream, actions) = new_whitebox_stream()
-  stream.parser.state = Ground
+  stream.parser.reset_ground()
   stream.next_non_utf8(b'x')
   guard actions == [StreamPrint(b'x'.to_uint())] else {
     fail("expected next_non_utf8 print branch to emit stream print")

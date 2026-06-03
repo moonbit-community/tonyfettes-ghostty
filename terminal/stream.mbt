@@ -37,22 +37,22 @@ struct DcsHookPayload {
 } derive(Eq, Debug)
 
 ///|
-fn DcsHookPayload::from_dcs(dcs : Dcs) -> DcsHookPayload {
+fn DcsHookPayload::from_dcs(dcs : @parser.Dcs) -> DcsHookPayload {
   {
-    intermediates: clone_bytes(dcs.intermediates),
-    params: clone_params(dcs.params),
+    intermediates: @parser.clone_bytes(dcs.intermediates),
+    params: @parser.clone_params(dcs.params),
     final_byte: dcs.final_byte,
   }
 }
 
 ///|
 pub fn DcsHookPayload::intermediates(self : DcsHookPayload) -> Array[Byte] {
-  clone_bytes(self.intermediates)
+  @parser.clone_bytes(self.intermediates)
 }
 
 ///|
 pub fn DcsHookPayload::params(self : DcsHookPayload) -> Array[UInt16] {
-  clone_params(self.params)
+  @parser.clone_params(self.params)
 }
 
 ///|
@@ -166,7 +166,7 @@ pub(open) trait StreamHandler {
 ///|
 struct Stream[H] {
   handler : H
-  parser : Parser
+  parser : @parser.Parser
   utf8decoder : @utf8_decoder.Utf8Decoder
 }
 
@@ -174,7 +174,7 @@ struct Stream[H] {
 pub fn[H] Stream::new(handler : H) -> Stream[H] {
   {
     handler,
-    parser: Parser::new(),
+    parser: @parser.Parser::new(),
     utf8decoder: @utf8_decoder.Utf8Decoder::new(),
   }
 }
@@ -219,14 +219,14 @@ fn[H : StreamHandler] Stream::next_slice_capped(
   offset += self.consume_all_escapes(input, offset)
 
   while offset < input.length() {
-    if self.parser.state == Ground {
+    if self.parser.is_ground() {
       self.next_utf8(input[offset])
       offset += 1
     } else {
       offset += self.consume_until_ground(input, offset)
     }
 
-    if offset < input.length() && self.parser.state == Ground {
+    if offset < input.length() && self.parser.is_ground() {
       offset += self.consume_all_escapes(input, offset)
     }
   }
@@ -240,8 +240,7 @@ fn[H : StreamHandler] Stream::consume_all_escapes(
 ) -> Int {
   let mut offset = start
   while offset < input.length() && input[offset] == 0x1B {
-    self.parser.state = Escape
-    self.parser.clear()
+    self.parser.enter_escape()
     offset += 1
     offset += self.consume_until_ground(input, offset)
   }
@@ -255,7 +254,7 @@ fn[H : StreamHandler] Stream::consume_until_ground(
   start : Int,
 ) -> Int {
   let mut offset = start
-  while self.parser.state != Ground {
+  while !self.parser.is_ground() {
     if offset >= input.length() {
       return input.length() - start
     }
@@ -267,7 +266,7 @@ fn[H : StreamHandler] Stream::consume_until_ground(
 
 ///|
 pub fn[H : StreamHandler] Stream::next(self : Stream[H], byte : Byte) -> Unit {
-  if self.parser.state == Ground {
+  if self.parser.is_ground() {
     self.next_utf8(byte)
   } else {
     self.next_non_utf8(byte)
@@ -304,8 +303,7 @@ fn[H : StreamHandler] Stream::handle_codepoint(
   }
 
   if codepoint == 0x1BU {
-    self.parser.state = Escape
-    self.parser.clear()
+    self.parser.enter_escape()
     return
   }
 
@@ -353,7 +351,7 @@ fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit 
 fn[H : StreamHandler] Stream::emit_sgr(
   self : Stream[H],
   params : Array[UInt16],
-  params_sep : SepList,
+  params_sep : @parser.SepList,
 ) -> Unit {
   let parser : SgrParser = { params, params_sep, idx: 0 }
   while parser.next() is Some(attribute) {
@@ -387,7 +385,7 @@ fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
 ///|
 fn[H : StreamHandler] Stream::csi_dispatch(
   self : Stream[H],
-  _csi : Csi,
+  _csi : @parser.Csi,
 ) -> Unit {
   match _csi.final_byte {
     b'A' | b'k' =>
@@ -697,7 +695,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
 ///|
 fn[H : StreamHandler] Stream::esc_dispatch(
   self : Stream[H],
-  _esc : Esc,
+  _esc : @parser.Esc,
 ) -> Unit {
   match _esc.final_byte {
     b'B' => self.configure_charset(_esc.intermediates, Ascii)
@@ -799,7 +797,10 @@ fn[H : StreamHandler] Stream::osc_dispatch(
 }
 
 ///|
-fn[H : StreamHandler] Stream::dcs_hook(self : Stream[H], dcs : Dcs) -> Unit {
+fn[H : StreamHandler] Stream::dcs_hook(
+  self : Stream[H],
+  dcs : @parser.Dcs,
+) -> Unit {
   self.emit(StreamDcsHook(DcsHookPayload::from_dcs(dcs)))
 }
 

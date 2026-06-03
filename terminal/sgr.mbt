@@ -55,13 +55,13 @@ pub(all) enum SgrAttribute {
 ///|
 struct SgrParser {
   mut params : Array[UInt16]
-  mut params_sep : SepList
+  mut params_sep : @parser.SepList
   mut idx : Int
 } derive(Debug)
 
 ///|
 fn SgrParser::empty() -> SgrParser {
-  { params: [], params_sep: SepList::init_empty(), idx: 0 }
+  { params: [], params_sep: @parser.SepList::init_empty(), idx: 0 }
 }
 
 ///|
@@ -88,8 +88,8 @@ pub fn SgrParser::set_params(
     return InvalidValue
   }
 
-  self.params = clone_params(params)
-  self.params_sep = SepList::init_empty()
+  self.params = @parser.clone_params(params)
+  self.params_sep = @parser.SepList::init_empty()
   for index in 0..<separators.length() {
     if separators[index] == b':' {
       self.params_sep.set(index)
@@ -129,7 +129,7 @@ pub fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
         }
         return Some(
           Unknown({
-            full: clone_params(self.params),
+            full: @parser.clone_params(self.params),
             partial: clone_param_range(self.params, current, consumed_end),
           }),
         )
@@ -336,7 +336,7 @@ fn SgrParser::consume_unknown_colon(self : SgrParser) -> Unit {
 ///|
 fn SgrParser::unknown_from(self : SgrParser, current : Int) -> SgrAttribute {
   Unknown({
-    full: clone_params(self.params),
+    full: @parser.clone_params(self.params),
     partial: clone_param_range(self.params, current, self.params.length()),
   })
 }

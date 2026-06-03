@@ -1,0 +1,10 @@
+import {
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+  "tonyfettes/ghostty/terminal/osc",
+}
+
+import {
+  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/osc",
+} for "test"
