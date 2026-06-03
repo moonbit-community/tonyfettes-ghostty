@@ -34,7 +34,7 @@ pub(all) enum SemanticPromptRedraw {
 } derive(Eq, Debug)
 
 ///|
-pub(all) suberror SemanticPromptDecodeError {
+pub suberror SemanticPromptDecodeError {
   DecodeError
 } derive(Eq, Debug)
 

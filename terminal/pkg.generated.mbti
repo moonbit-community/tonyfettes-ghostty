@@ -62,11 +62,11 @@ pub fn terminator_init(Byte?) -> Terminator
 pub fn x11_color_lookup(String) -> RGB?
 
 // Errors
-pub(all) suberror ColorParseError {
+pub suberror ColorParseError {
   InvalidFormat
 } derive(Eq, @debug.Debug)
 
-pub(all) suberror SemanticPromptDecodeError {
+pub suberror SemanticPromptDecodeError {
   DecodeError
 } derive(Eq, @debug.Debug)
 
@@ -231,7 +231,7 @@ pub(all) enum ConEmuProgressState {
 type ConEmuSleep derive(Eq, @debug.Debug)
 pub fn ConEmuSleep::duration_ms(Self) -> UInt16
 
-pub(all) enum ConEmuTabTitleChange {
+pub enum ConEmuTabTitleChange {
   ConEmuTabTitleReset
   ConEmuTabTitleValue(String)
 } derive(Eq, @debug.Debug)
@@ -262,12 +262,12 @@ pub(all) enum ConformanceLevel {
 } derive(Eq, @debug.Debug)
 pub fn ConformanceLevel::code(Self) -> UInt16
 
-pub(all) enum ContextSignalAction {
+pub enum ContextSignalAction {
   ContextSignalStart
   ContextSignalEnd
 } derive(Eq, @debug.Debug)
 
-pub(all) enum ContextSignalExitStatus {
+pub enum ContextSignalExitStatus {
   ContextSignalExitSuccess
   ContextSignalExitFailure
   ContextSignalExitCrash
@@ -297,7 +297,7 @@ pub fn ContextSignalOsc::targetuser(Self) -> String?
 pub fn ContextSignalOsc::user(Self) -> String?
 pub fn ContextSignalOsc::vm(Self) -> String?
 
-pub(all) enum ContextSignalType {
+pub enum ContextSignalType {
   ContextSignalBoot
   ContextSignalContainer
   ContextSignalVm
@@ -721,11 +721,11 @@ pub fn KeyMods::with_super_(Self, Bool) -> Self
 pub fn KeyMods::with_super_side(Self, KeyModSide) -> Self
 pub fn KeyMods::without_locks(Self) -> Self
 
-pub(all) enum KittyClipboardLocation {
+pub enum KittyClipboardLocation {
   KittyClipboardPrimary
 } derive(Eq, @debug.Debug)
 
-pub(all) enum KittyClipboardOperation {
+pub enum KittyClipboardOperation {
   KittyClipboardRead
   KittyClipboardWalias
   KittyClipboardWdata
@@ -745,7 +745,7 @@ pub fn KittyClipboardOsc::pw(Self) -> String?
 pub fn KittyClipboardOsc::status(Self) -> KittyClipboardStatus?
 pub fn KittyClipboardOsc::terminator(Self) -> Terminator
 
-pub(all) enum KittyClipboardStatus {
+pub enum KittyClipboardStatus {
   KittyClipboardData
   KittyClipboardDone
   KittyClipboardEbusy
@@ -881,7 +881,7 @@ type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
 pub fn KittyPlacementViewportPosition::col(Self) -> Int
 pub fn KittyPlacementViewportPosition::row(Self) -> Int
 
-pub(all) enum KittyTextSizingHorizontalAlign {
+pub enum KittyTextSizingHorizontalAlign {
   KittyTextSizingHLeft
   KittyTextSizingHRight
   KittyTextSizingHCenter
@@ -897,7 +897,7 @@ pub fn KittyTextSizingOsc::text(Self) -> String
 pub fn KittyTextSizingOsc::valign(Self) -> KittyTextSizingVerticalAlign
 pub fn KittyTextSizingOsc::width(Self) -> Byte
 
-pub(all) enum KittyTextSizingVerticalAlign {
+pub enum KittyTextSizingVerticalAlign {
   KittyTextSizingVTop
   KittyTextSizingVBottom
   KittyTextSizingVCenter

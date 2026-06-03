@@ -1,5 +1,5 @@
 ///|
-pub(all) suberror ColorParseError {
+pub suberror ColorParseError {
   InvalidFormat
 } derive(Eq, Debug)
 

@@ -1,5 +1,5 @@
 ///|
-pub(all) enum ConEmuTabTitleChange {
+pub enum ConEmuTabTitleChange {
   ConEmuTabTitleReset
   ConEmuTabTitleValue(String)
 } derive(Eq, Debug)

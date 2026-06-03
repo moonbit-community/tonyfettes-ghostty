@@ -1,10 +1,10 @@
 ///|
-pub(all) enum KittyClipboardLocation {
+pub enum KittyClipboardLocation {
   KittyClipboardPrimary
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum KittyClipboardOperation {
+pub enum KittyClipboardOperation {
   KittyClipboardRead
   KittyClipboardWalias
   KittyClipboardWdata
@@ -12,7 +12,7 @@ pub(all) enum KittyClipboardOperation {
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum KittyClipboardStatus {
+pub enum KittyClipboardStatus {
   KittyClipboardData
   KittyClipboardDone
   KittyClipboardEbusy

@@ -2,13 +2,13 @@
 const ContextSignalMaxIdLength : Int = 64
 
 ///|
-pub(all) enum ContextSignalAction {
+pub enum ContextSignalAction {
   ContextSignalStart
   ContextSignalEnd
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum ContextSignalType {
+pub enum ContextSignalType {
   ContextSignalBoot
   ContextSignalContainer
   ContextSignalVm
@@ -24,7 +24,7 @@ pub(all) enum ContextSignalType {
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum ContextSignalExitStatus {
+pub enum ContextSignalExitStatus {
   ContextSignalExitSuccess
   ContextSignalExitFailure
   ContextSignalExitCrash

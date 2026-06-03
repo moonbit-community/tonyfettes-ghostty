@@ -2,14 +2,14 @@
 const KittyTextSizingPayloadLimit : Int = 4096
 
 ///|
-pub(all) enum KittyTextSizingVerticalAlign {
+pub enum KittyTextSizingVerticalAlign {
   KittyTextSizingVTop
   KittyTextSizingVBottom
   KittyTextSizingVCenter
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum KittyTextSizingHorizontalAlign {
+pub enum KittyTextSizingHorizontalAlign {
   KittyTextSizingHLeft
   KittyTextSizingHRight
   KittyTextSizingHCenter
