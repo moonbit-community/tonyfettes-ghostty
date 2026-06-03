@@ -292,7 +292,7 @@ fn PageList::capture_top_scroll_region_up(
   if self.max_rows > 0 {
     let mut row_idx = 0
     while row_idx < count {
-      let row = snapshot_scrollback_row(grid, row_idx)
+      let row = harvest_scrollback_row(grid, row_idx)
       self.move_pins_for_row(
         self.active_node,
         row_idx.to_uint16(),
@@ -1769,6 +1769,27 @@ fn snapshot_scrollback_row(
 }
 
 ///|
+/// Move a soon-to-be-scrolled-off grid row into a history row, taking its cells
+/// by reference instead of deep-copying them (unlike `snapshot_scrollback_row`).
+///
+/// Safe only because every caller (`capture_top_scroll_region_up`) is
+/// immediately followed by the grid shift that overwrites `grid.lines[row_idx]`
+/// with the row below — capture is guarded to top_margin==0 full-width and
+/// harvests exactly the `count` top rows that the shift then vacates, so once
+/// this returns nothing in the active grid aliases these cells. Render snapshots
+/// deep-copy and pins track by node identity, so neither aliases them either.
+fn harvest_scrollback_row(grid : ScreenGridState, row_idx : Int) -> PageListRow {
+  let line = grid.lines[row_idx]
+  make_pinned_row_owned(
+    line.desc,
+    line.cells,
+    grid.cols,
+    line.desc.wrap(),
+    line.desc.wrap_continuation(),
+  )
+}
+
+///|
 fn PageList::trim_trailing_blank_rows(
   self : PageList,
   rows : Array[PageListRow],
@@ -1864,6 +1885,27 @@ fn make_pinned_row(
     row.semantic_prompt() == Prompt {
     row.set_semantic_prompt(PromptContinuation)
   }
+  apply_cell_flags_to_row(row, cells)
+  let node = PageListNode::new({ rows: 1, cols, lines: [{ desc: row, cells }] })
+  { row, cells, node, y: 0 }
+}
+
+///|
+/// Like `make_pinned_row`, but takes ownership of `cells` by reference instead
+/// of deep-copying each cell. `cells` must already be exactly `cols` wide. Used
+/// only by the scroll-off capture hot path, where the source row is about to be
+/// overwritten by the grid shift — see `harvest_scrollback_row`. Eliminates the
+/// per-cell copy (and its style/array allocation) that dominated scroll cost.
+fn make_pinned_row_owned(
+  row_template : PageRowState,
+  cells : Array[PageCellState],
+  cols : CellCountInt,
+  wrap : Bool,
+  wrap_continuation : Bool,
+) -> PageListRow {
+  let row = copy_scrollback_row(row_template)
+  row.set_wrap(wrap)
+  row.set_wrap_continuation(wrap_continuation)
   apply_cell_flags_to_row(row, cells)
   let node = PageListNode::new({ rows: 1, cols, lines: [{ desc: row, cells }] })
   { row, cells, node, y: 0 }
