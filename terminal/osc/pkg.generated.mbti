@@ -299,56 +299,6 @@ pub fn OscParser::new() -> Self
 pub fn OscParser::next(Self, Byte) -> Unit
 pub fn OscParser::reset(Self) -> Unit
 
-pub enum OscParserState {
-  Start
-  Invalid
-  Prefix0
-  Prefix1
-  Prefix2
-  Prefix3
-  Prefix30
-  Prefix300
-  Prefix3008
-  Prefix21
-  Prefix4
-  Prefix5
-  Prefix55
-  Prefix52
-  Prefix552
-  Prefix5522
-  Prefix6
-  Prefix66
-  Prefix7
-  Prefix77
-  Prefix777
-  Prefix8
-  Prefix9
-  Prefix10
-  Prefix11
-  Prefix12
-  Prefix13
-  Prefix133
-  Prefix1337
-  Prefix14
-  Prefix15
-  Prefix16
-  Prefix17
-  Prefix18
-  Prefix19
-  Prefix22
-  Prefix104
-  Prefix110
-  Prefix111
-  Prefix112
-  Prefix113
-  Prefix114
-  Prefix115
-  Prefix116
-  Prefix117
-  Prefix118
-  Prefix119
-} derive(@debug.Debug)
-
 pub struct SemanticPrompt {
   action : SemanticPromptAction
   options_unvalidated : Array[Byte]

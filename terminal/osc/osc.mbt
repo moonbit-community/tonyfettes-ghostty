@@ -174,7 +174,7 @@ pub(all) enum Command {
 } derive(Eq, Debug)
 
 ///|
-pub enum OscParserState {
+priv enum OscParserState {
   Start
   Invalid
   Prefix0

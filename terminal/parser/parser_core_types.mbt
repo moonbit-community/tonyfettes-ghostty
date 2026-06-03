@@ -1,5 +1,5 @@
 ///|
-pub enum ParserState {
+priv enum ParserState {
   Ground
   Escape
   EscapeIntermediate
