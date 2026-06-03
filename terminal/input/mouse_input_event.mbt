@@ -28,7 +28,10 @@ pub(all) struct MousePosition {
 } derive(Eq, Debug)
 
 ///|
-pub(all) struct MouseInputEvent {
+/// Abstract (no `pub`): a host mouse event built with `new` + the `set_*`
+/// mutators and read through the getters, so callers can't assemble arbitrary
+/// action/button/modifier/position combinations as part of the ABI.
+struct MouseInputEvent {
   mut action : MouseAction
   mut button : MouseButton?
   mut mods : KeyMods

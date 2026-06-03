@@ -197,15 +197,7 @@ pub(all) enum KeyAction {
   Repeat
 } derive(Eq, @debug.Debug)
 
-pub(all) struct KeyEvent {
-  mut action : KeyAction
-  mut key : Key
-  mut mods : KeyMods
-  mut consumed_mods : KeyMods
-  mut composing : Bool
-  mut utf8 : Bytes
-  mut unshifted_codepoint : UInt
-} derive(Eq, @debug.Debug)
+type KeyEvent derive(Eq, @debug.Debug)
 pub fn KeyEvent::action(Self) -> KeyAction
 pub fn KeyEvent::composing(Self) -> Bool
 pub fn KeyEvent::consumed_mods(Self) -> KeyMods
@@ -292,12 +284,7 @@ pub(all) enum MouseFormat {
   SgrPixels
 } derive(Eq, @debug.Debug)
 
-pub(all) struct MouseInputEvent {
-  mut action : MouseAction
-  mut button : MouseButton?
-  mut mods : KeyMods
-  mut position : MousePosition
-} derive(Eq, @debug.Debug)
+type MouseInputEvent derive(Eq, @debug.Debug)
 pub fn MouseInputEvent::action(Self) -> MouseAction
 pub fn MouseInputEvent::button(Self) -> MouseButton?
 pub fn MouseInputEvent::clear_button(Self) -> Unit

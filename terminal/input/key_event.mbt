@@ -231,7 +231,11 @@ pub(all) enum Key {
 } derive(Eq, Debug)
 
 ///|
-pub(all) struct KeyEvent {
+/// Abstract (no `pub`): a host key event whose fields are consumed together by
+/// `KeyEncoder` (a `key` that disagrees with `utf8`/`unshifted_codepoint`
+/// encodes nonsense). Build one with `new` + the `set_*` mutators and read it
+/// through the getters, so malformed field combinations aren't part of the ABI.
+struct KeyEvent {
   mut action : KeyAction
   mut key : Key
   mut mods : KeyMods
