@@ -31,11 +31,7 @@ pub(all) enum Dynamic {
 pub fn Dynamic::code(Self) -> UInt16
 pub fn Dynamic::next(Self) -> Self?
 
-pub struct DynamicPalette {
-  mut current : Array[RGB]
-  mut original : Array[RGB]
-  mut mask : Array[Bool]
-} derive(Eq, @debug.Debug)
+type DynamicPalette derive(Eq, @debug.Debug)
 pub fn DynamicPalette::change_default(Self, Array[RGB]) -> Unit
 pub fn DynamicPalette::color(Self, Byte) -> RGB
 pub fn DynamicPalette::new() -> Self
@@ -91,12 +87,7 @@ pub(all) enum Special {
 } derive(Eq, @debug.Debug)
 pub fn Special::osc4(Self) -> UInt16
 
-pub struct TerminalColors {
-  background : DynamicRGB
-  foreground : DynamicRGB
-  cursor : DynamicRGB
-  palette : DynamicPalette
-} derive(Eq, @debug.Debug)
+type TerminalColors derive(Eq, @debug.Debug)
 pub fn TerminalColors::background(Self) -> RGB?
 pub fn TerminalColors::change_default_palette(Self, Array[RGB]) -> Unit
 pub fn TerminalColors::cursor(Self) -> RGB?

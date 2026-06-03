@@ -478,7 +478,12 @@ fn DynamicRGB::set_default(self : DynamicRGB, color : RGB?) -> Unit {
 }
 
 ///|
-pub struct DynamicPalette {
+/// Abstract (no `pub`): the three arrays carry a 256-entry palette invariant
+/// that `color`/`set`/`change_default` rely on when indexing. Callers go
+/// through the constructor + accessor/mutator methods, so keep the storage
+/// sealed rather than letting another package replace an array with the wrong
+/// length.
+struct DynamicPalette {
   mut current : Array[RGB]
   mut original : Array[RGB]
   mut mask : Array[Bool]
@@ -542,7 +547,11 @@ pub fn DynamicPalette::change_default(
 }
 
 ///|
-pub struct TerminalColors {
+/// Abstract (no `pub`): the terminal's dynamic color state, built via `new` and
+/// driven through its accessor/mutator methods (`foreground`/`set_default_*`/
+/// …). Its storage — including the invariant-bearing `DynamicPalette` — stays
+/// sealed across the package boundary.
+struct TerminalColors {
   background : DynamicRGB
   foreground : DynamicRGB
   cursor : DynamicRGB
