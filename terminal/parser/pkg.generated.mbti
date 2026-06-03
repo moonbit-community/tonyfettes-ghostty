@@ -46,15 +46,7 @@ pub(all) struct Esc {
   final_byte : Byte
 }
 
-pub struct Parser {
-  mut state : ParserState
-  mut intermediates : Array[Byte]
-  mut params : Array[UInt16]
-  mut params_sep : SepList
-  mut param_acc : UInt16
-  mut param_acc_idx : Int
-  osc_parser : @osc.OscParser
-}
+type Parser
 pub fn Parser::deinit(Self) -> Unit
 pub fn Parser::enter_escape(Self) -> Unit
 pub fn Parser::is_ground(Self) -> Bool

@@ -81,7 +81,12 @@ pub(all) enum Action {
 pub type ActionList = FixedArray[Action?]
 
 ///|
-pub struct Parser {
+/// Abstract (no `pub`): the type name crosses the package boundary but its
+/// mutable transition state stays opaque. The stream layer drives the parser
+/// only through `new`/`next`/`is_ground`/`enter_escape`/`reset_ground`/`deinit`,
+/// so the state-machine invariants enforced by `next()`/`clear()` cannot be
+/// bypassed by assigning fields from another package.
+struct Parser {
   mut state : ParserState
   mut intermediates : Array[Byte]
   mut params : Array[UInt16]
