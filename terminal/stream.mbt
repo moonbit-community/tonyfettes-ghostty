@@ -167,12 +167,16 @@ pub(open) trait StreamHandler {
 struct Stream[H] {
   handler : H
   parser : Parser
-  utf8decoder : Utf8Decoder
+  utf8decoder : @utf8_decoder.Utf8Decoder
 }
 
 ///|
 pub fn[H] Stream::new(handler : H) -> Stream[H] {
-  { handler, parser: Parser::new(), utf8decoder: Utf8Decoder::new() }
+  {
+    handler,
+    parser: Parser::new(),
+    utf8decoder: @utf8_decoder.Utf8Decoder::new(),
+  }
 }
 
 ///|
@@ -196,7 +200,7 @@ fn[H : StreamHandler] Stream::next_slice_capped(
 ) -> Unit {
   let mut offset = 0
 
-  while self.utf8decoder.state != AcceptState {
+  while !self.utf8decoder.is_accept_state() {
     if offset >= input.length() {
       return
     }
@@ -272,7 +276,7 @@ pub fn[H : StreamHandler] Stream::next(self : Stream[H], byte : Byte) -> Unit {
 
 ///|
 fn[H : StreamHandler] Stream::next_utf8(self : Stream[H], byte : Byte) -> Unit {
-  if self.utf8decoder.state == AcceptState && byte >= 0x80 && byte <= 0x9F {
+  if self.utf8decoder.is_accept_state() && byte >= 0x80 && byte <= 0x9F {
     self.execute(byte)
     return
   }

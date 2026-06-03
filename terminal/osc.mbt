@@ -826,7 +826,7 @@ fn copy_bytes_range(
 
 ///|
 fn captured_string(buffer : Array[Byte]) -> String {
-  let decoder = Utf8Decoder::new()
+  let decoder = @utf8_decoder.Utf8Decoder::new()
   let builder = StringBuilder::new(size_hint=buffer.length())
   for byte in buffer {
     let mut consumed = false

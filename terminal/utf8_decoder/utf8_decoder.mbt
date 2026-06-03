@@ -29,7 +29,7 @@ const AcceptState : Byte = 0
 const RejectState : Byte = 12
 
 ///|
-struct Utf8Decoder {
+pub struct Utf8Decoder {
   mut accumulator : UInt
   mut state : Byte
 } derive(Eq, Debug)
@@ -37,6 +37,14 @@ struct Utf8Decoder {
 ///|
 pub fn Utf8Decoder::new() -> Utf8Decoder {
   { accumulator: 0, state: AcceptState }
+}
+
+///|
+/// Whether the decoder is at the accept (ground) state, i.e. not mid-sequence.
+/// Read-only boundary accessor for stream's ground-state fast path, so callers
+/// in other packages do not need access to the private `state` field.
+pub fn Utf8Decoder::is_accept_state(self : Utf8Decoder) -> Bool {
+  self.state == AcceptState
 }
 
 ///|
