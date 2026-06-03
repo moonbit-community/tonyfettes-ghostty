@@ -17,7 +17,7 @@ fn ScreenGridState::cell(
     col_idx >= self.cols.to_int() {
     None
   } else {
-    Some(self.cells[self.cell_index(row_idx, col_idx)])
+    Some(self.lines[row_idx].cells[col_idx])
   }
 }
 

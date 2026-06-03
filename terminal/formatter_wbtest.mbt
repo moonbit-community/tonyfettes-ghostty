@@ -47,7 +47,7 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     rectangle: false,
   }
 
-  state.grid = { rows: 24, cols: 0, row_states: [], cells: [] }
+  state.grid = { rows: 24, cols: 0, lines: [] }
   guard formatter_selection_bounds(formatter, state, 1U) is None else {
     fail("expected zero-column guard to reject formatting")
   }
@@ -109,7 +109,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   }
   state.grid = ScreenGridState::new(2, 2)
   state.scrollback = PageList::new(2, 2, 0)
-  state.grid.cells[3].set_wide(SpacerHead)
+  state.grid.lines[1].cells[1].set_wide(SpacerHead)
   let spacer_head_bounds : FormatterSelectionBounds = {
     start: Coordinate::new(1, 1U),
     end_: Coordinate::new(1, 1U),
@@ -365,7 +365,7 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
 test "formatter helpers/cover explicit empty format guard" {
   let terminal = StreamTerminal::new()
   let state = terminal.bridge()
-  state.grid = { rows: 0, cols: 0, row_states: [], cells: [] }
+  state.grid = { rows: 0, cols: 0, lines: [] }
   state.scrollback = PageList::new(0, 0, 0)
   let formatter = plain_formatter(terminal)
   guard formatter.format() == b"" else {
