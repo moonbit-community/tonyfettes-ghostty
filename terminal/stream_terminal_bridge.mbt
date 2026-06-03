@@ -2886,7 +2886,14 @@ fn saturated_request(value : Int) -> CellCountInt {
 
 ///|
 fn codepoint_width(codepoint : UInt) -> Int {
-  if codepoint == 0U || is_zero_width(codepoint) {
+  // Fast path: the lowest zero-width range starts at U+0300 and the lowest wide
+  // range at U+1100, so any codepoint below U+0300 is narrow (width 1), except
+  // NUL. This skips the range tables entirely for ASCII/Latin text, the
+  // overwhelmingly common case.
+  if codepoint < 0x300U {
+    return if codepoint == 0U { 0 } else { 1 }
+  }
+  if is_zero_width(codepoint) {
     0
   } else if is_wide_codepoint(codepoint) {
     2
@@ -3323,17 +3330,22 @@ fn codepoint_in_ranges(
   codepoint : UInt,
   ranges : ArrayView[(UInt, UInt)],
 ) -> Bool {
-  for range in ranges {
-    if codepoint_in_range(codepoint, range.0, range.1) {
+  // `ranges` is sorted ascending and non-overlapping, so binary search the
+  // interval table instead of scanning all entries.
+  let mut lo = 0
+  let mut hi = ranges.length() - 1
+  while lo <= hi {
+    let mid = lo + (hi - lo) / 2
+    let (start, end_) = ranges[mid]
+    if codepoint < start {
+      hi = mid - 1
+    } else if codepoint > end_ {
+      lo = mid + 1
+    } else {
       return true
     }
   }
   false
-}
-
-///|
-fn codepoint_in_range(codepoint : UInt, start : UInt, end_ : UInt) -> Bool {
-  codepoint >= start && codepoint <= end_
 }
 
 ///|

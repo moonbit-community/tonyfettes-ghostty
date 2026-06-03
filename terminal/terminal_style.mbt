@@ -22,7 +22,7 @@ fn style_color_rgb(rgb : @color.RGB) -> StyleColor {
 
 ///|
 pub fn StyleColor::is_default(self : StyleColor) -> Bool {
-  self == None
+  self is None
 }
 
 ///|
@@ -93,7 +93,18 @@ pub fn CellStyle::reset(self : CellStyle) -> Unit {
 
 ///|
 pub fn CellStyle::is_default(self : CellStyle) -> Bool {
-  self == CellStyle::new()
+  self.fg_color is None &&
+  self.bg_color is None &&
+  self.underline_color is None &&
+  !self.bold &&
+  !self.italic &&
+  !self.faint &&
+  !self.blink &&
+  !self.inverse &&
+  !self.invisible &&
+  !self.strikethrough &&
+  !self.overline &&
+  self.underline is None
 }
 
 ///|
