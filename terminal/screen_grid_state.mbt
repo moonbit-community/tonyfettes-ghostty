@@ -14,11 +14,28 @@ priv enum ScreenEraseDisplayMode {
 }
 
 ///|
+/// A screen line: its row descriptor plus the cells it owns. Replaces the old
+/// flat `cells` array indexed by `row*cols+col`, so a scroll moves whole line
+/// objects (descriptor + cells together) instead of copying cell-by-cell.
+priv struct GridLine {
+  mut desc : PageRowState
+  cells : Array[PageCellState]
+}
+
+///|
+fn GridLine::new(cols : Int) -> GridLine {
+  let cells : Array[PageCellState] = []
+  for _ in 0..<cols {
+    cells.push(PageCellState::new())
+  }
+  { desc: PageRowState::new(), cells }
+}
+
+///|
 priv struct ScreenGridState {
   rows : CellCountInt
   cols : CellCountInt
-  row_states : Array[PageRowState]
-  cells : Array[PageCellState]
+  lines : Array[GridLine]
 }
 
 ///|
@@ -28,15 +45,11 @@ fn ScreenGridState::new(
 ) -> ScreenGridState {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
-  let row_states : Array[PageRowState] = []
-  let cells : Array[PageCellState] = []
+  let lines : Array[GridLine] = []
   for _ in 0..<actual_rows.to_int() {
-    row_states.push(PageRowState::new())
+    lines.push(GridLine::new(actual_cols.to_int()))
   }
-  for _ in 0..<(actual_rows.to_int() * actual_cols.to_int()) {
-    cells.push(PageCellState::new())
-  }
-  { rows: actual_rows, cols: actual_cols, row_states, cells }
+  { rows: actual_rows, cols: actual_cols, lines }
 }
 
 ///|
@@ -48,7 +61,7 @@ fn ScreenGridState::row(
   if idx < 0 || idx >= self.rows.to_int() {
     None
   } else {
-    Some(self.row_states[idx])
+    Some(self.lines[idx].desc)
   }
 }
 
@@ -107,7 +120,7 @@ fn ScreenGridState::print(
 
           self.apply_row_prompt(cursor.y.to_int(), row_prompt)
           if right_limit == self.cols.to_int() {
-            self.row_states[cursor.y.to_int()].set_wrap(true)
+            self.lines[cursor.y.to_int()].desc.set_wrap(true)
             self.print_cell(
               cursor,
               0U,
@@ -221,13 +234,13 @@ fn ScreenGridState::insert_blanks(
 
   let row_idx = cursor.y.to_int()
   let blank_style = style
-  let cell = self.cells[self.cell_index(row_idx, x)]
+  let cell = self.lines[row_idx].cells[x]
   if cell.wide() == SpacerTail && x > 0 {
     self.clear_row_range(row_idx, x - 1, x + 1, blank_style, false)
   }
 
   let rem = right - x + 1
-  let right_cell = self.cells[self.cell_index(row_idx, right)]
+  let right_cell = self.lines[row_idx].cells[right]
   if right_cell.wide() == Wide && right + 1 < self.cols.to_int() {
     self.clear_row_range(row_idx, right, right + 2, blank_style, false)
   }
@@ -236,7 +249,7 @@ fn ScreenGridState::insert_blanks(
   let scroll_amount = rem - adjusted_count
   if scroll_amount > 0 {
     let end_col = x + scroll_amount - 1
-    let end_cell = self.cells[self.cell_index(row_idx, end_col)]
+    let end_cell = self.lines[row_idx].cells[end_col]
     if end_cell.wide() == Wide && end_col + 1 < self.cols.to_int() {
       self.clear_row_range(row_idx, end_col, end_col + 2, blank_style, false)
     }
@@ -246,7 +259,7 @@ fn ScreenGridState::insert_blanks(
       self.set_cell(
         row_idx,
         col + adjusted_count,
-        self.cells[self.cell_index(row_idx, col)],
+        self.lines[row_idx].cells[col],
       )
       if col == x {
         break
@@ -289,11 +302,7 @@ fn ScreenGridState::delete_chars(
     let mut col = x
     let last = x + scroll_amount - 1
     while col <= last {
-      self.set_cell(
-        row_idx,
-        col,
-        self.cells[self.cell_index(row_idx, col + count)],
-      )
+      self.set_cell(row_idx, col, self.lines[row_idx].cells[col + count])
       col += 1
     }
   }
@@ -317,7 +326,7 @@ fn ScreenGridState::erase_chars(
   let mut count = min_int(remaining, requested)
   if count != remaining {
     let last_col = x + count - 1
-    let last = self.cells[self.cell_index(cursor.y.to_int(), last_col)]
+    let last = self.lines[cursor.y.to_int()].cells[last_col]
     if last.wide() == Wide {
       count += 1
     }
@@ -355,7 +364,7 @@ fn ScreenGridState::erase_line(
     Right => {
       self.cursor_reset_wrap(cursor, style)
       (
-        if x > 0 && self.cells[self.cell_index(row_idx, x)].wide() == SpacerTail {
+        if x > 0 && self.lines[row_idx].cells[x].wide() == SpacerTail {
           x - 1
         } else {
           x
@@ -366,7 +375,7 @@ fn ScreenGridState::erase_line(
     Left =>
       (
         start,
-        if self.cells[self.cell_index(row_idx, x)].wide() == Wide {
+        if self.lines[row_idx].cells[x].wide() == Wide {
           x + 2
         } else {
           x + 1
@@ -529,7 +538,7 @@ fn ScreenGridState::decaln(self : ScreenGridState, style : CellStyle) -> Unit {
       )
       col_idx += 1
     }
-    self.row_states[row_idx].set_dirty(true)
+    self.lines[row_idx].desc.set_dirty(true)
     row_idx += 1
   }
 }
@@ -539,18 +548,9 @@ fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
   let mut row_idx = 0
   while row_idx < self.rows.to_int() {
     self.clear_full_row(row_idx, CellStyle::new(), false)
-    self.row_states[row_idx].set_dirty(false)
+    self.lines[row_idx].desc.set_dirty(false)
     row_idx += 1
   }
-}
-
-///|
-fn ScreenGridState::cell_index(
-  self : ScreenGridState,
-  row_idx : Int,
-  col_idx : Int,
-) -> Int {
-  row_idx * self.cols.to_int() + col_idx
 }
 
 ///|
@@ -566,7 +566,7 @@ fn ScreenGridState::print_cell(
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   let col_idx = cursor.x.to_int()
-  let current = self.cells[self.cell_index(row_idx, col_idx)]
+  let current = self.lines[row_idx].cells[col_idx]
   if current.wide() != wide {
     match current.wide() {
       Narrow => ()
@@ -606,17 +606,17 @@ fn ScreenGridState::print_wrap(
   let row_idx = cursor.y.to_int()
   let mark_wrap = cursor.x.to_int() == self.cols.to_int() - 1
   if mark_wrap {
-    self.row_states[row_idx].set_wrap(true)
+    self.lines[row_idx].desc.set_wrap(true)
   }
 
   cursor.pending_wrap = false
   self.index(cursor, style)
   cursor.x = cursor.left_margin
   if semantic_content == Prompt {
-    self.row_states[cursor.y.to_int()].set_semantic_prompt(PromptContinuation)
+    self.lines[cursor.y.to_int()].desc.set_semantic_prompt(PromptContinuation)
   }
   if mark_wrap {
-    self.row_states[cursor.y.to_int()].set_wrap_continuation(true)
+    self.lines[cursor.y.to_int()].desc.set_wrap_continuation(true)
   }
 }
 
@@ -665,14 +665,14 @@ fn ScreenGridState::shift_region_down(
         self.copy_row_region(src, row_idx, left, right)
       }
     } else if full_width {
-      self.clear_full_row(row_idx, style, false)
+      self.lines[row_idx] = blank_grid_line(self.cols.to_int(), style)
     } else {
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
     if !full_width {
       self.recompute_row_flags(row_idx)
     }
-    self.row_states[row_idx].set_dirty(true)
+    self.lines[row_idx].desc.set_dirty(true)
     if row_idx == start_y {
       break
     }
@@ -705,14 +705,14 @@ fn ScreenGridState::shift_region_up(
         self.copy_row_region(src, row_idx, left, right)
       }
     } else if full_width {
-      self.clear_full_row(row_idx, style, false)
+      self.lines[row_idx] = blank_grid_line(self.cols.to_int(), style)
     } else {
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
     if !full_width {
       self.recompute_row_flags(row_idx)
     }
-    self.row_states[row_idx].set_dirty(true)
+    self.lines[row_idx].desc.set_dirty(true)
     row_idx += 1
   }
 }
@@ -727,7 +727,7 @@ fn ScreenGridState::row_will_be_shifted(
 ) -> Unit {
   let mut changed = false
   if right == self.cols.to_int() - 1 || left < 2 {
-    let end_cell = self.cells[self.cell_index(row_idx, self.cols.to_int() - 1)]
+    let end_cell = self.lines[row_idx].cells[self.cols.to_int() - 1]
     if end_cell.wide() == SpacerHead {
       self.clear_row_range(
         row_idx,
@@ -740,13 +740,13 @@ fn ScreenGridState::row_will_be_shifted(
     }
   }
 
-  let left_cell = self.cells[self.cell_index(row_idx, left)]
+  let left_cell = self.lines[row_idx].cells[left]
   if left > 0 && left_cell.wide() == SpacerTail {
     self.clear_row_range(row_idx, left - 1, left + 1, style, false)
     changed = true
   }
 
-  let right_cell = self.cells[self.cell_index(row_idx, right)]
+  let right_cell = self.lines[row_idx].cells[right]
   if right + 1 < self.cols.to_int() && right_cell.wide() == Wide {
     self.clear_row_range(row_idx, right, right + 2, style, false)
     changed = true
@@ -765,11 +765,11 @@ fn ScreenGridState::split_cell_boundary(
   style : CellStyle,
 ) -> Unit {
   if x == self.cols.to_int() {
-    if !self.row_states[row_idx].wrap() {
+    if !self.lines[row_idx].desc.wrap() {
       return
     }
 
-    let end_cell = self.cells[self.cell_index(row_idx, self.cols.to_int() - 1)]
+    let end_cell = self.lines[row_idx].cells[self.cols.to_int() - 1]
     if end_cell.wide() == SpacerHead {
       self.clear_row_range(
         row_idx,
@@ -783,9 +783,9 @@ fn ScreenGridState::split_cell_boundary(
   }
 
   if (x == 0 || x == 1) &&
-    self.row_states[row_idx].wrap_continuation() &&
+    self.lines[row_idx].desc.wrap_continuation() &&
     row_idx > 0 {
-    let first = self.cells[self.cell_index(row_idx, 0)]
+    let first = self.lines[row_idx].cells[0]
     if first.wide() == Wide {
       self.clear_prev_row_spacer_head(row_idx, style)
     }
@@ -795,7 +795,7 @@ fn ScreenGridState::split_cell_boundary(
     return
   }
 
-  let left_cell = self.cells[self.cell_index(row_idx, x - 1)]
+  let left_cell = self.lines[row_idx].cells[x - 1]
   if left_cell.wide() == Wide {
     self.clear_row_range(row_idx, x - 1, x + 1, style, false)
   }
@@ -809,11 +809,11 @@ fn ScreenGridState::cursor_reset_wrap(
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   cursor.pending_wrap = false
-  self.row_states[row_idx].set_wrap(false)
+  self.lines[row_idx].desc.set_wrap(false)
   if row_idx + 1 < self.rows.to_int() {
-    self.row_states[row_idx + 1].set_wrap_continuation(false)
+    self.lines[row_idx + 1].desc.set_wrap_continuation(false)
   }
-  let end_cell = self.cells[self.cell_index(row_idx, self.cols.to_int() - 1)]
+  let end_cell = self.lines[row_idx].cells[self.cols.to_int() - 1]
   if end_cell.wide() == SpacerHead {
     self.clear_row_range(
       row_idx,
@@ -830,7 +830,7 @@ fn ScreenGridState::cursor_mark_dirty(
   self : ScreenGridState,
   cursor : TerminalCursorState,
 ) -> Unit {
-  self.row_states[cursor.y.to_int()].set_dirty(true)
+  self.lines[cursor.y.to_int()].desc.set_dirty(true)
 }
 
 ///|
@@ -840,7 +840,7 @@ fn ScreenGridState::apply_row_prompt(
   row_prompt : RowSemanticPrompt,
 ) -> Unit {
   if row_prompt != None {
-    self.row_states[row_idx].set_semantic_prompt(row_prompt)
+    self.lines[row_idx].desc.set_semantic_prompt(row_prompt)
   }
 }
 
@@ -874,9 +874,9 @@ fn ScreenGridState::clear_full_row(
       self.set_cell(row_idx, col_idx, blank_cell(style))
       col_idx += 1
     }
-    self.row_states[row_idx].full_reset()
+    self.lines[row_idx].desc.full_reset()
   }
-  self.row_states[row_idx].set_dirty(true)
+  self.lines[row_idx].desc.set_dirty(true)
 }
 
 ///|
@@ -891,7 +891,7 @@ fn ScreenGridState::clear_row_range(
   let mut col_idx = clamp_int(start_col, 0, self.cols.to_int())
   let limit = clamp_int(end_col, 0, self.cols.to_int())
   while col_idx < limit {
-    let cell = self.cells[self.cell_index(row_idx, col_idx)]
+    let cell = self.lines[row_idx].cells[col_idx]
     if !respect_protected || !cell.is_protected() {
       self.set_cell(row_idx, col_idx, blank_cell(style))
     }
@@ -906,19 +906,16 @@ fn ScreenGridState::copy_full_row_for_shift(
   src_row : Int,
   dst_row : Int,
 ) -> Unit {
-  let copied = copy_page_row(self.row_states[src_row])
-  copied.set_wrap(false)
-  copied.set_wrap_continuation(false)
-  self.row_states[dst_row] = copied
-  let mut col_idx = 0
-  while col_idx < self.cols.to_int() {
-    self.set_cell(
-      dst_row,
-      col_idx,
-      self.cells[self.cell_index(src_row, col_idx)],
-    )
-    col_idx += 1
-  }
+  // Move the whole source line (descriptor + its cells) by reference. The
+  // active grid owns its lines exclusively — scrollback capture deep-copies
+  // rows out (snapshot_scrollback_row / make_pinned_row), so nothing outside
+  // aliases them — and a full-width shift consumes each source slot exactly
+  // once, so no two destination slots can alias the same line. This is an O(1)
+  // line-object move, not an O(cols) per-cell copy.
+  let line = self.lines[src_row]
+  line.desc.set_wrap(false)
+  line.desc.set_wrap_continuation(false)
+  self.lines[dst_row] = line
 }
 
 ///|
@@ -931,11 +928,7 @@ fn ScreenGridState::copy_row_region(
 ) -> Unit {
   let mut col_idx = left
   while col_idx <= right {
-    self.set_cell(
-      dst_row,
-      col_idx,
-      self.cells[self.cell_index(src_row, col_idx)],
-    )
+    self.set_cell(dst_row, col_idx, self.lines[src_row].cells[col_idx])
     col_idx += 1
   }
 }
@@ -948,7 +941,7 @@ fn ScreenGridState::clear_prev_row_spacer_head(
 ) -> Unit {
   let prev_row = row_idx - 1
   let last_col = self.cols.to_int() - 1
-  let head = self.cells[self.cell_index(prev_row, last_col)]
+  let head = self.lines[prev_row].cells[last_col]
   if head.wide() == SpacerHead {
     self.clear_row_range(prev_row, last_col, self.cols.to_int(), style, false)
   }
@@ -973,7 +966,7 @@ fn ScreenGridState::write_cell(
   cell.set_protected(protected_flag)
   cell.set_hyperlink(hyperlink)
   cell.set_semantic_content(semantic_content)
-  self.cells[self.cell_index(row_idx, col_idx)] = cell
+  self.lines[row_idx].cells[col_idx] = cell
 }
 
 ///|
@@ -983,7 +976,7 @@ fn ScreenGridState::set_cell(
   col_idx : Int,
   source : PageCellState,
 ) -> Unit {
-  self.cells[self.cell_index(row_idx, col_idx)] = copy_page_cell(source)
+  self.lines[row_idx].cells[col_idx] = copy_page_cell(source)
 }
 
 ///|
@@ -991,13 +984,13 @@ fn ScreenGridState::recompute_row_flags(
   self : ScreenGridState,
   row_idx : Int,
 ) -> Unit {
-  let row = self.row_states[row_idx]
+  let row = self.lines[row_idx].desc
   let mut grapheme = false
   let mut styled = false
   let mut hyperlink = false
   let mut col_idx = 0
   while col_idx < self.cols.to_int() {
-    let cell = self.cells[self.cell_index(row_idx, col_idx)]
+    let cell = self.lines[row_idx].cells[col_idx]
     if cell.has_grapheme() {
       grapheme = true
     }
@@ -1075,17 +1068,16 @@ fn blank_cell(style : CellStyle) -> PageCellState {
 }
 
 ///|
-fn copy_page_row(row : PageRowState) -> PageRowState {
-  {
-    wrap: row.wrap,
-    wrap_continuation: row.wrap_continuation,
-    grapheme: row.grapheme,
-    styled: row.styled,
-    hyperlink: row.hyperlink,
-    semantic_prompt: row.semantic_prompt,
-    kitty_virtual_placeholder: row.kitty_virtual_placeholder,
-    dirty: row.dirty,
+/// A fresh blank line for a full-width scroll: a new descriptor and `cols`
+/// blank cells. Used as the scrolled-in row so it is a *distinct* GridLine —
+/// the moved rows above may transiently alias their source slot, and a fresh
+/// object breaks that alias instead of clearing a shared line in place.
+fn blank_grid_line(cols : Int, style : CellStyle) -> GridLine {
+  let cells : Array[PageCellState] = []
+  for _ in 0..<cols {
+    cells.push(blank_cell(style))
   }
+  { desc: PageRowState::new(), cells }
 }
 
 ///|
