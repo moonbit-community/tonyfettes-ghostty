@@ -906,17 +906,25 @@ fn ScreenGridState::copy_full_row_for_shift(
   src_row : Int,
   dst_row : Int,
 ) -> Unit {
-  let copied = copy_page_row(self.row_states[src_row])
-  copied.set_wrap(false)
-  copied.set_wrap_continuation(false)
-  self.row_states[dst_row] = copied
+  // Move the source row's descriptor and cell references rather than
+  // deep-copying every cell. The active grid owns its cells exclusively —
+  // scrollback capture deep-copies rows out (snapshot_scrollback_row /
+  // make_pinned_row), so nothing outside aliases these objects — and a
+  // full-width shift consumes each source slot exactly once, so no two
+  // destination slots can end up aliasing the same object. This turns an
+  // O(cols) allocate+deep-copy per row (a PageCellState + CellStyle per cell)
+  // into O(cols) pointer moves with no allocation, which is the dominant cost
+  // of scrolling the screen.
+  let row = self.row_states[src_row]
+  row.set_wrap(false)
+  row.set_wrap_continuation(false)
+  self.row_states[dst_row] = row
+  let src_base = self.cell_index(src_row, 0)
+  let dst_base = self.cell_index(dst_row, 0)
+  let width = self.cols.to_int()
   let mut col_idx = 0
-  while col_idx < self.cols.to_int() {
-    self.set_cell(
-      dst_row,
-      col_idx,
-      self.cells[self.cell_index(src_row, col_idx)],
-    )
+  while col_idx < width {
+    self.cells[dst_base + col_idx] = self.cells[src_base + col_idx]
     col_idx += 1
   }
 }
@@ -1072,20 +1080,6 @@ fn blank_cell(style : CellStyle) -> PageCellState {
     Rgb(rgb) => cell.set_background_rgb(rgb)
   }
   cell
-}
-
-///|
-fn copy_page_row(row : PageRowState) -> PageRowState {
-  {
-    wrap: row.wrap,
-    wrap_continuation: row.wrap_continuation,
-    grapheme: row.grapheme,
-    styled: row.styled,
-    hyperlink: row.hyperlink,
-    semantic_prompt: row.semantic_prompt,
-    kitty_virtual_placeholder: row.kitty_virtual_placeholder,
-    dirty: row.dirty,
-  }
 }
 
 ///|
