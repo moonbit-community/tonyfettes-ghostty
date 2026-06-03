@@ -180,7 +180,7 @@ priv struct StreamTerminalBridgeState {
   apc_handler : ApcHandler
   protected_state : ScreenProtectedState
   display_state : TerminalDisplayState
-  colors : TerminalColors
+  colors : @color.TerminalColors
   modes : ModeState
   mut cursor : TerminalCursorState
   input_flags : TerminalInputFlags
@@ -225,7 +225,7 @@ fn StreamTerminalBridgeState::with_effects(
     apc_handler: ApcHandler::new(),
     protected_state: ScreenProtectedState::new(),
     display_state: TerminalDisplayState::new(),
-    colors: TerminalColors::new(),
+    colors: @color.TerminalColors::new(),
     modes: ModeState::new(),
     cursor: primary_storage.cursor,
     input_flags: TerminalInputFlags::new(),
@@ -419,7 +419,7 @@ fn StreamTerminalBridgeState::set_pwd(
 ///|
 fn StreamTerminalBridgeState::set_default_foreground_color(
   self : StreamTerminalBridgeState,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.colors.set_default_foreground(color)
   self.palette_dirty = true
@@ -428,7 +428,7 @@ fn StreamTerminalBridgeState::set_default_foreground_color(
 ///|
 fn StreamTerminalBridgeState::set_default_background_color(
   self : StreamTerminalBridgeState,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.colors.set_default_background(color)
   self.palette_dirty = true
@@ -437,7 +437,7 @@ fn StreamTerminalBridgeState::set_default_background_color(
 ///|
 fn StreamTerminalBridgeState::set_default_cursor_color(
   self : StreamTerminalBridgeState,
-  color : RGB?,
+  color : @color.RGB?,
 ) -> Unit {
   self.colors.set_default_cursor(color)
   self.palette_dirty = true
@@ -446,7 +446,7 @@ fn StreamTerminalBridgeState::set_default_cursor_color(
 ///|
 fn StreamTerminalBridgeState::set_default_palette(
   self : StreamTerminalBridgeState,
-  palette : Array[RGB]?,
+  palette : Array[@color.RGB]?,
 ) -> TerminalResultCode {
   if !self.colors.set_default_palette(palette) {
     return InvalidValue
@@ -592,56 +592,56 @@ fn StreamTerminalBridgeState::height_px(
 ///|
 fn StreamTerminalBridgeState::foreground_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.foreground()
 }
 
 ///|
 fn StreamTerminalBridgeState::background_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.background()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.cursor()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_foreground_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.default_foreground()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_background_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.default_background()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_cursor_color(
   self : StreamTerminalBridgeState,
-) -> RGB? {
+) -> @color.RGB? {
   self.colors.default_cursor()
 }
 
 ///|
 fn StreamTerminalBridgeState::palette(
   self : StreamTerminalBridgeState,
-) -> Array[RGB] {
+) -> Array[@color.RGB] {
   self.colors.palette_snapshot()
 }
 
 ///|
 fn StreamTerminalBridgeState::default_palette(
   self : StreamTerminalBridgeState,
-) -> Array[RGB] {
+) -> Array[@color.RGB] {
   self.colors.default_palette_snapshot()
 }
 
@@ -2701,8 +2701,8 @@ fn StreamTerminalBridgeState::apply_color_query(
 ///|
 fn StreamTerminalBridgeState::dynamic_color_query(
   self : StreamTerminalBridgeState,
-  dynamic : Dynamic,
-) -> RGB? {
+  dynamic : @color.Dynamic,
+) -> @color.RGB? {
   match dynamic {
     Foreground =>
       match self.colors.foreground() {
@@ -2730,7 +2730,7 @@ fn StreamTerminalBridgeState::dynamic_color_query(
 }
 
 ///|
-fn write_osc_rgb(buffer : @buffer.Buffer, color : RGB) -> Unit {
+fn write_osc_rgb(buffer : @buffer.Buffer, color : @color.RGB) -> Unit {
   buffer.write_bytes(b"rgb:")
   write_hex_byte(buffer, color.r())
   buffer.write_byte(b'/')

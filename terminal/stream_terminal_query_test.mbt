@@ -1,5 +1,5 @@
 ///|
-fn expect_rgb(actual : RGB?, expected : RGB?) -> Unit raise {
+fn expect_rgb(actual : @color.RGB?, expected : @color.RGB?) -> Unit raise {
   guard actual == expected else { fail("expected RGB snapshot") }
 }
 
@@ -96,9 +96,9 @@ test "stream terminal query/exposes visibility mouse and kitty keyboard state" {
 ///|
 test "stream terminal query/exposes current and default colors" {
   let terminal = StreamTerminal::new()
-  let default_fg = RGB::new(0xAA, 0xBB, 0xCC)
-  let default_bg = RGB::new(0x11, 0x22, 0x33)
-  let default_cursor = RGB::new(0xFF, 0x00, 0x88)
+  let default_fg = @color.RGB::new(0xAA, 0xBB, 0xCC)
+  let default_bg = @color.RGB::new(0x11, 0x22, 0x33)
+  let default_cursor = @color.RGB::new(0xFF, 0x00, 0x88)
 
   expect_rgb(terminal.foreground_color(), None)
   expect_rgb(terminal.background_color(), None)
@@ -125,9 +125,9 @@ test "stream terminal query/exposes current and default colors" {
   terminal.next_slice(
     b"\x1B]10;rgb:00/00/00\x07\x1B]11;rgb:01/02/03\x07\x1B]12;rgb:04/05/06\x07",
   )
-  expect_rgb(terminal.foreground_color(), Some(RGB::new(0, 0, 0)))
-  expect_rgb(terminal.background_color(), Some(RGB::new(1, 2, 3)))
-  expect_rgb(terminal.cursor_color(), Some(RGB::new(4, 5, 6)))
+  expect_rgb(terminal.foreground_color(), Some(@color.RGB::new(0, 0, 0)))
+  expect_rgb(terminal.background_color(), Some(@color.RGB::new(1, 2, 3)))
+  expect_rgb(terminal.cursor_color(), Some(@color.RGB::new(4, 5, 6)))
   expect_rgb(terminal.default_foreground_color(), Some(default_fg))
   expect_rgb(terminal.default_background_color(), Some(default_bg))
   expect_rgb(terminal.default_cursor_color(), Some(default_cursor))
@@ -150,8 +150,8 @@ test "stream terminal query/exposes current and default colors" {
 ///|
 test "stream terminal query/exposes current and default palette snapshots" {
   let terminal = StreamTerminal::new()
-  let custom = default_palette()
-  custom[0] = RGB::new(0x12, 0x34, 0x56)
+  let custom = @color.default_palette()
+  custom[0] = @color.RGB::new(0x12, 0x34, 0x56)
 
   guard terminal.set_default_palette(Some(custom)) == Success else {
     fail("expected default palette update")
@@ -161,28 +161,29 @@ test "stream terminal query/exposes current and default palette snapshots" {
   }
   terminal.clear_palette_dirty()
 
-  guard terminal.palette()[0] == RGB::new(0x12, 0x34, 0x56) &&
-    terminal.default_palette()[0] == RGB::new(0x12, 0x34, 0x56) else {
+  guard terminal.palette()[0] == @color.RGB::new(0x12, 0x34, 0x56) &&
+    terminal.default_palette()[0] == @color.RGB::new(0x12, 0x34, 0x56) else {
     fail("expected default palette snapshot")
   }
 
   terminal.next_slice(b"\x1B]4;0;rgb:ff/ff/ff\x07")
-  guard terminal.palette()[0] == RGB::new(0xFF, 0xFF, 0xFF) &&
-    terminal.default_palette()[0] == RGB::new(0x12, 0x34, 0x56) else {
+  guard terminal.palette()[0] == @color.RGB::new(0xFF, 0xFF, 0xFF) &&
+    terminal.default_palette()[0] == @color.RGB::new(0x12, 0x34, 0x56) else {
     fail("expected current palette override without losing defaults")
   }
 
-  guard terminal.set_default_palette(Some([RGB::new(1, 2, 3)])) == InvalidValue else {
+  guard terminal.set_default_palette(Some([@color.RGB::new(1, 2, 3)])) ==
+    InvalidValue else {
     fail("expected invalid palette length to be rejected")
   }
-  guard terminal.default_palette()[0] == RGB::new(0x12, 0x34, 0x56) else {
+  guard terminal.default_palette()[0] == @color.RGB::new(0x12, 0x34, 0x56) else {
     fail("expected invalid palette update to leave defaults untouched")
   }
 
   guard terminal.set_default_palette(None) == Success else {
     fail("expected palette reset to builtin defaults")
   }
-  guard terminal.default_palette()[0] == default_palette()[0] else {
+  guard terminal.default_palette()[0] == @color.default_palette()[0] else {
     fail("expected builtin default palette after reset")
   }
 

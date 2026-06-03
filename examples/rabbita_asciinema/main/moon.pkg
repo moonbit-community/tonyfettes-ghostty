@@ -9,6 +9,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "tonyfettes/ghostty/terminal",
+  "tonyfettes/ghostty/terminal/color",
 }
 
 supported_targets = "js"

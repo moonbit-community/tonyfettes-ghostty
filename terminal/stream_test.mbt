@@ -893,7 +893,7 @@ test "stream/csi sgr subset" {
       StreamSetAttribute(Unset),
       StreamSetAttribute(Bold),
       StreamSetAttribute(Underline(Curly)),
-      StreamSetAttribute(DirectColorFg(RGB::new(1, 2, 3))),
+      StreamSetAttribute(DirectColorFg(@color.RGB::new(1, 2, 3))),
       StreamSetAttribute(Unknown({ full: [1, 2], partial: [1, 2] })),
       StreamSetAttribute(Color256Underline(9)),
     ] else {

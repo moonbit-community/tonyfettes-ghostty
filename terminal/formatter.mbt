@@ -675,7 +675,7 @@ fn formatter_write_newlines(
 ///|
 fn formatter_write_palette(
   emit : Format,
-  palette : Array[RGB],
+  palette : Array[@color.RGB],
   buffer : @buffer.Buffer,
 ) -> Unit {
   match emit {

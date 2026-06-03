@@ -2,6 +2,7 @@ import {
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
   "tonyfettes/ghostty/terminal/charsets",
+  "tonyfettes/ghostty/terminal/color",
 }
 
 options(

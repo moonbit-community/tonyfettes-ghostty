@@ -403,7 +403,7 @@ fn json_string_or_null(value : String?) -> Json {
 }
 
 ///|
-fn json_rgb(value : @terminal.RGB?) -> Json {
+fn json_rgb(value : @color.RGB?) -> Json {
   match value {
     Some(rgb) =>
       { "r": rgb.r().to_int(), "g": rgb.g().to_int(), "b": rgb.b().to_int() }

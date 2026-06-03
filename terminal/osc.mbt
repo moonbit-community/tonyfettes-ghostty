@@ -45,18 +45,21 @@ pub(all) enum ColorOperation {
 ///|
 pub(all) enum ColorTarget {
   Palette(Byte)
-  Special(Special)
-  Dynamic(Dynamic)
+  Special(@color.Special)
+  Dynamic(@color.Dynamic)
 } derive(Eq, Debug)
 
 ///|
 struct ColoredTarget {
   target : ColorTarget
-  color : RGB
+  color : @color.RGB
 } derive(Eq, Debug)
 
 ///|
-pub fn ColoredTarget::new(target : ColorTarget, color : RGB) -> ColoredTarget {
+pub fn ColoredTarget::new(
+  target : ColorTarget,
+  color : @color.RGB,
+) -> ColoredTarget {
   { target, color }
 }
 
@@ -66,7 +69,7 @@ pub fn ColoredTarget::target(self : ColoredTarget) -> ColorTarget {
 }
 
 ///|
-pub fn ColoredTarget::color(self : ColoredTarget) -> RGB {
+pub fn ColoredTarget::color(self : ColoredTarget) -> @color.RGB {
   self.color
 }
 
@@ -938,7 +941,7 @@ fn parse_get_set_ansi_color(
     if spec == "?" {
       result.push(Query(target))
     } else {
-      let rgb = try RGB::parse(spec) catch {
+      let rgb = try @color.RGB::parse(spec) catch {
         _ => return result
       } noraise {
         rgb => rgb
@@ -982,7 +985,7 @@ fn parse_reset_ansi_color(
 
 ///|
 fn parse_get_set_dynamic_color(
-  start : Dynamic,
+  start : @color.Dynamic,
   body : String,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
@@ -1000,7 +1003,7 @@ fn parse_get_set_dynamic_color(
     if spec == "?" {
       result.push(Query(Dynamic(dynamic)))
     } else {
-      let rgb = try RGB::parse(spec) catch {
+      let rgb = try @color.RGB::parse(spec) catch {
         _ => return result
       } noraise {
         rgb => rgb
@@ -1014,7 +1017,7 @@ fn parse_get_set_dynamic_color(
 
 ///|
 fn parse_reset_dynamic_color(
-  dynamic : Dynamic,
+  dynamic : @color.Dynamic,
   body : String,
 ) -> Array[ColorRequest] {
   let parts = body.split(";").map(part => part.to_owned()).collect()
@@ -1055,7 +1058,7 @@ fn ansi_target_from_index(op : ColorOperation, value : Int) -> ColorTarget? {
 }
 
 ///|
-fn special_from_int(value : Int) -> Special? {
+fn special_from_int(value : Int) -> @color.Special? {
   match value {
     0 => Some(Bold)
     1 => Some(Underline)

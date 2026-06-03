@@ -19,11 +19,14 @@ pub(all) enum KittyColorKind {
 ///|
 struct KittyColorSet {
   key : KittyColorKind
-  color : RGB
+  color : @color.RGB
 } derive(Eq, Debug)
 
 ///|
-fn KittyColorSet::new(key : KittyColorKind, color : RGB) -> KittyColorSet {
+fn KittyColorSet::new(
+  key : KittyColorKind,
+  color : @color.RGB,
+) -> KittyColorSet {
   { key, color }
 }
 
@@ -33,7 +36,7 @@ pub fn KittyColorSet::key(self : KittyColorSet) -> KittyColorKind {
 }
 
 ///|
-pub fn KittyColorSet::color(self : KittyColorSet) -> RGB {
+pub fn KittyColorSet::color(self : KittyColorSet) -> @color.RGB {
   self.color
 }
 
@@ -136,7 +139,7 @@ fn kitty_color_append_request(
   let spec = captured_string(
     copy_bytes_range(buffer, trimmed_start, trimmed_end),
   )
-  let color = try RGB::parse(spec) catch {
+  let color = try @color.RGB::parse(spec) catch {
     _ => return
   } noraise {
     color => color

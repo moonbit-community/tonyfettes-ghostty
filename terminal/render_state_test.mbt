@@ -5,8 +5,8 @@ test "render state/new defaults and manual dirty setter" {
   guard state.rows() == 0 &&
     state.columns() == 0 &&
     state.dirty() == False &&
-    state.background_color() == RGB::new(0, 0, 0) &&
-    state.foreground_color() == RGB::new(0xFF, 0xFF, 0xFF) &&
+    state.background_color() == @color.RGB::new(0, 0, 0) &&
+    state.foreground_color() == @color.RGB::new(0xFF, 0xFF, 0xFF) &&
     state.cursor_color() == None &&
     state.cursor_visual_style() == Block &&
     state.cursor_visible() &&
@@ -29,9 +29,9 @@ test "render state/new defaults and manual dirty setter" {
 ///|
 test "render state/update captures terminal snapshot and reverse colors" {
   let terminal = StreamTerminal::new()
-  let background = RGB::new(1, 2, 3)
-  let foreground = RGB::new(4, 5, 6)
-  let cursor = RGB::new(7, 8, 9)
+  let background = @color.RGB::new(1, 2, 3)
+  let foreground = @color.RGB::new(4, 5, 6)
+  let cursor = @color.RGB::new(7, 8, 9)
 
   terminal.set_default_background_color(Some(background))
   terminal.set_default_foreground_color(Some(foreground))
@@ -66,7 +66,7 @@ test "render state/palette snapshot is cloned" {
 
   let palette = state.palette()
   let original = state.palette()[0]
-  palette[0] = RGB::new(0xAA, 0xBB, 0xCC)
+  palette[0] = @color.RGB::new(0xAA, 0xBB, 0xCC)
 
   guard state.palette()[0] == original else {
     fail("expected cloned palette snapshots")

@@ -516,8 +516,8 @@ test "screen grid/char editing edge branches and helper math" {
   }
 
   let rgb_style = CellStyle::new()
-  rgb_style.apply_attribute(DirectColorBg(RGB::new(1, 2, 3)))
-  guard blank_cell(rgb_style).background_rgb() == Some(RGB::new(1, 2, 3)) else {
+  rgb_style.apply_attribute(DirectColorBg(@color.RGB::new(1, 2, 3)))
+  guard blank_cell(rgb_style).background_rgb() == Some(@color.RGB::new(1, 2, 3)) else {
     fail("expected rgb blank cell")
   }
 }
@@ -1006,7 +1006,7 @@ test "screen grid/decaln and full reset" {
   guard expect_cell(grid, 0, 0).codepoint() == b'E'.to_uint() &&
     expect_cell(grid, 1, 2).codepoint() == b'E'.to_uint() &&
     expect_cell(grid, 0, 0).style().fg_color().palette_index() ==
-    Some(Name::Red.code()) &&
+    Some(@color.Name::Red.code()) &&
     expect_cell(grid, 0, 0).style().bg_color().palette_index() == Some(2) &&
     expect_row(grid, 0).dirty() &&
     expect_row(grid, 1).dirty() else {

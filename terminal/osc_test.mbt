@@ -42,7 +42,7 @@ test "osc parser/exposes color operation payload through command enum" {
   }
   guard command.op() == Osc4 else { fail("expected osc4 color op") }
   guard command.requests() ==
-    [Set(ColoredTarget::new(Palette(1), RGB::new(1, 3, 5)))] else {
+    [Set(ColoredTarget::new(Palette(1), @color.RGB::new(1, 3, 5)))] else {
     fail("expected color request payload from public command enum")
   }
   guard command.terminator() == Bel else {

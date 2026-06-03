@@ -27,7 +27,7 @@ pub(all) enum SgrAttribute {
   ResetItalic
   Faint
   Underline(SgrUnderline)
-  UnderlineColor(RGB)
+  UnderlineColor(@color.RGB)
   Color256Underline(Byte)
   ResetUnderlineColor
   Overline
@@ -40,14 +40,14 @@ pub(all) enum SgrAttribute {
   ResetInvisible
   Strikethrough
   ResetStrikethrough
-  DirectColorFg(RGB)
-  DirectColorBg(RGB)
-  Color8Bg(Name)
-  Color8Fg(Name)
+  DirectColorFg(@color.RGB)
+  DirectColorBg(@color.RGB)
+  Color8Bg(@color.Name)
+  Color8Fg(@color.Name)
   ResetFg
   ResetBg
-  BrightColor8Bg(Name)
-  BrightColor8Fg(Name)
+  BrightColor8Bg(@color.Name)
+  BrightColor8Fg(@color.Name)
   Color256Bg(Byte)
   Color256Fg(Byte)
 } derive(Eq, Debug)
@@ -270,7 +270,7 @@ fn SgrParser::parse_direct_color(
   self : SgrParser,
   current : Int,
   colon : Bool,
-) -> RGB? {
+) -> @color.RGB? {
   if remaining_len(self, current) < 5 {
     return None
   }
@@ -360,7 +360,7 @@ fn remaining_len(parser : SgrParser, current : Int) -> Int {
 }
 
 ///|
-fn name_from_code(code : Byte) -> Name {
+fn name_from_code(code : Byte) -> @color.Name {
   match code {
     0 => Black
     1 => Red

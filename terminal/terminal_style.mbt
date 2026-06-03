@@ -2,7 +2,7 @@
 enum StyleColor {
   None
   Palette(Byte)
-  Rgb(RGB)
+  Rgb(@color.RGB)
 } derive(Eq, Debug)
 
 ///|
@@ -16,7 +16,7 @@ fn style_color_palette(index : Byte) -> StyleColor {
 }
 
 ///|
-fn style_color_rgb(rgb : RGB) -> StyleColor {
+fn style_color_rgb(rgb : @color.RGB) -> StyleColor {
   Rgb(rgb)
 }
 
@@ -34,7 +34,7 @@ pub fn StyleColor::palette_index(self : StyleColor) -> Byte? {
 }
 
 ///|
-pub fn StyleColor::rgb_value(self : StyleColor) -> RGB? {
+pub fn StyleColor::rgb_value(self : StyleColor) -> @color.RGB? {
   match self {
     Rgb(value) => Some(value)
     None | Palette(_) => None

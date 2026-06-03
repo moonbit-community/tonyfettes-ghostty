@@ -13,10 +13,10 @@ struct RenderState {
   mut dirty : RenderDirty
   mut screen : TerminalScreen
   mut viewport_origin : Coordinate?
-  mut background : RGB
-  mut foreground : RGB
-  mut cursor_color : RGB?
-  mut palette : Array[RGB]
+  mut background : @color.RGB
+  mut foreground : @color.RGB
+  mut cursor_color : @color.RGB?
+  mut palette : Array[@color.RGB]
   mut cursor_visual_style : CursorVisualStyle
   mut cursor_visible : Bool
   mut cursor_blinking : Bool
@@ -39,7 +39,7 @@ pub fn RenderState::new() -> RenderState {
     background: default_render_background(),
     foreground: default_render_foreground(),
     cursor_color: None,
-    palette: clone_render_palette(default_palette()),
+    palette: clone_render_palette(@color.default_palette()),
     cursor_visual_style: Block,
     cursor_visible: true,
     cursor_blinking: false,
@@ -72,22 +72,22 @@ pub fn RenderState::set_dirty(self : RenderState, dirty : RenderDirty) -> Unit {
 }
 
 ///|
-pub fn RenderState::background_color(self : RenderState) -> RGB {
+pub fn RenderState::background_color(self : RenderState) -> @color.RGB {
   self.background
 }
 
 ///|
-pub fn RenderState::foreground_color(self : RenderState) -> RGB {
+pub fn RenderState::foreground_color(self : RenderState) -> @color.RGB {
   self.foreground
 }
 
 ///|
-pub fn RenderState::cursor_color(self : RenderState) -> RGB? {
+pub fn RenderState::cursor_color(self : RenderState) -> @color.RGB? {
   self.cursor_color
 }
 
 ///|
-pub fn RenderState::palette(self : RenderState) -> Array[RGB] {
+pub fn RenderState::palette(self : RenderState) -> Array[@color.RGB] {
   clone_render_palette(self.palette)
 }
 
@@ -257,7 +257,7 @@ fn resolve_viewport_origin(
 fn resolved_render_background(
   terminal : StreamTerminal,
   reverse_colors : Bool,
-) -> RGB {
+) -> @color.RGB {
   let background = resolve_terminal_background(terminal)
   let foreground = resolve_terminal_foreground(terminal)
   if reverse_colors {
@@ -271,7 +271,7 @@ fn resolved_render_background(
 fn resolved_render_foreground(
   terminal : StreamTerminal,
   reverse_colors : Bool,
-) -> RGB {
+) -> @color.RGB {
   let background = resolve_terminal_background(terminal)
   let foreground = resolve_terminal_foreground(terminal)
   if reverse_colors {
@@ -437,7 +437,7 @@ fn render_cell_background_color_at(
   state : RenderState,
   row_idx : Int,
   col_idx : Int,
-) -> RGB? {
+) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
     Some(cell) => render_cell_background_color(cell, state.palette)
     None => None
@@ -449,7 +449,7 @@ fn render_cell_foreground_color_at(
   state : RenderState,
   row_idx : Int,
   col_idx : Int,
-) -> RGB? {
+) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
     Some(cell) => render_cell_foreground_color(cell, state.palette)
     None => None
@@ -459,8 +459,8 @@ fn render_cell_foreground_color_at(
 ///|
 fn render_cell_background_color(
   cell : PageCellState,
-  palette : Array[RGB],
-) -> RGB? {
+  palette : Array[@color.RGB],
+) -> @color.RGB? {
   match cell.content_tag {
     BackgroundPalette => Some(palette[cell.palette_index.to_int()])
     BackgroundRgb => Some(cell.bg_rgb)
@@ -472,13 +472,16 @@ fn render_cell_background_color(
 ///|
 fn render_cell_foreground_color(
   cell : PageCellState,
-  palette : Array[RGB],
-) -> RGB? {
+  palette : Array[@color.RGB],
+) -> @color.RGB? {
   style_color_to_rgb(cell.style.fg_color, palette)
 }
 
 ///|
-fn style_color_to_rgb(color : StyleColor, palette : Array[RGB]) -> RGB? {
+fn style_color_to_rgb(
+  color : StyleColor,
+  palette : Array[@color.RGB],
+) -> @color.RGB? {
   match color {
     None => None
     Palette(index) => Some(palette[index.to_int()])
@@ -487,8 +490,8 @@ fn style_color_to_rgb(color : StyleColor, palette : Array[RGB]) -> RGB? {
 }
 
 ///|
-fn clone_render_palette(source : Array[RGB]) -> Array[RGB] {
-  let result : Array[RGB] = []
+fn clone_render_palette(source : Array[@color.RGB]) -> Array[@color.RGB] {
+  let result : Array[@color.RGB] = []
   for color in source {
     result.push(color)
   }
@@ -496,7 +499,10 @@ fn clone_render_palette(source : Array[RGB]) -> Array[RGB] {
 }
 
 ///|
-fn render_palette_equals(left : Array[RGB], right : Array[RGB]) -> Bool {
+fn render_palette_equals(
+  left : Array[@color.RGB],
+  right : Array[@color.RGB],
+) -> Bool {
   if left.length() != right.length() {
     return false
   }
@@ -512,7 +518,7 @@ fn render_palette_equals(left : Array[RGB], right : Array[RGB]) -> Bool {
 }
 
 ///|
-fn resolve_terminal_background(terminal : StreamTerminal) -> RGB {
+fn resolve_terminal_background(terminal : StreamTerminal) -> @color.RGB {
   match terminal.background_color() {
     Some(color) => color
     None =>
@@ -524,7 +530,7 @@ fn resolve_terminal_background(terminal : StreamTerminal) -> RGB {
 }
 
 ///|
-fn resolve_terminal_foreground(terminal : StreamTerminal) -> RGB {
+fn resolve_terminal_foreground(terminal : StreamTerminal) -> @color.RGB {
   match terminal.foreground_color() {
     Some(color) => color
     None =>
@@ -536,11 +542,11 @@ fn resolve_terminal_foreground(terminal : StreamTerminal) -> RGB {
 }
 
 ///|
-fn default_render_background() -> RGB {
-  RGB::new(0, 0, 0)
+fn default_render_background() -> @color.RGB {
+  @color.RGB::new(0, 0, 0)
 }
 
 ///|
-fn default_render_foreground() -> RGB {
-  RGB::new(0xFF, 0xFF, 0xFF)
+fn default_render_foreground() -> @color.RGB {
+  @color.RGB::new(0xFF, 0xFF, 0xFF)
 }

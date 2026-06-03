@@ -92,8 +92,8 @@ test "ghostty terminal adapter direct cell style branches" {
   style.apply_attribute(Inverse)
   style.apply_attribute(Strikethrough)
   style.apply_attribute(Overline)
-  style.apply_attribute(DirectColorFg(@terminal.RGB::new(1, 2, 3)))
-  style.apply_attribute(DirectColorBg(@terminal.RGB::new(4, 5, 6)))
+  style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
+  style.apply_attribute(DirectColorBg(@color.RGB::new(4, 5, 6)))
   styled.set_style(style)
   let css = terminal.cell_style(0, 0, styled).join(";")
   guard css.contains("font-weight") &&
@@ -115,7 +115,7 @@ test "ghostty terminal adapter direct cell style branches" {
   }
 
   let rgb_cell = @terminal.PageCellState::new()
-  rgb_cell.set_background_rgb(@terminal.RGB::new(8, 9, 10))
+  rgb_cell.set_background_rgb(@color.RGB::new(8, 9, 10))
   guard terminal.cell_style(0, 0, rgb_cell).join(";").contains("rgb(8, 9, 10)") else {
     fail("expected rgb background")
   }

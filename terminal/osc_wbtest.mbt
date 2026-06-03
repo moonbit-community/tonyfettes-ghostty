@@ -89,11 +89,11 @@ fn expect_osc_command(bytes : Bytes, terminator : Byte?) -> Command raise {
 
 ///|
 test "osc/color payload constructors and accessors" {
-  let target = ColoredTarget::new(Palette(3), RGB::new(1, 2, 3))
+  let target = ColoredTarget::new(Palette(3), @color.RGB::new(1, 2, 3))
   guard target.target() == Palette(3) else {
     fail("expected colored target palette")
   }
-  guard target.color() == RGB::new(1, 2, 3) else {
+  guard target.color() == @color.RGB::new(1, 2, 3) else {
     fail("expected colored target rgb")
   }
 
@@ -109,11 +109,14 @@ test "osc/color payload constructors and accessors" {
 
 ///|
 test "osc/kitty color constructors and accessors" {
-  let set = KittyColorSet::new(KittySpecial(KittyForeground), RGB::new(1, 2, 3))
+  let set = KittyColorSet::new(
+    KittySpecial(KittyForeground),
+    @color.RGB::new(1, 2, 3),
+  )
   guard set.key() == KittySpecial(KittyForeground) else {
     fail("expected kitty color key")
   }
-  guard set.color() == RGB::new(1, 2, 3) else {
+  guard set.color() == @color.RGB::new(1, 2, 3) else {
     fail("expected kitty color value")
   }
 }
@@ -706,13 +709,13 @@ test "osc/kitty color protocol parses query set reset and trim rules" {
       KittySet(
         KittyColorSet::new(
           KittySpecial(KittyBackground),
-          RGB::new(0xF0, 0xF8, 0xFF),
+          @color.RGB::new(0xF0, 0xF8, 0xFF),
         ),
       ),
       KittySet(
         KittyColorSet::new(
           KittySpecial(KittyCursor),
-          RGB::new(0xF0, 0xF8, 0xFF),
+          @color.RGB::new(0xF0, 0xF8, 0xFF),
         ),
       ),
       KittyReset(KittySpecial(KittyCursorText)),
@@ -721,11 +724,13 @@ test "osc/kitty color protocol parses query set reset and trim rules" {
       KittySet(
         KittyColorSet::new(
           KittySpecial(KittySelectionBackground),
-          RGB::new(0xAA, 0xBB, 0xCC),
+          @color.RGB::new(0xAA, 0xBB, 0xCC),
         ),
       ),
       KittyQuery(KittyPalette(2)),
-      KittySet(KittyColorSet::new(KittyPalette(3), RGB::new(0xFF, 0xFF, 0xFF))),
+      KittySet(
+        KittyColorSet::new(KittyPalette(3), @color.RGB::new(0xFF, 0xFF, 0xFF)),
+      ),
     ] else {
     fail("unexpected kitty color requests")
   }
@@ -749,7 +754,7 @@ test "osc/kitty color protocol accepts empty body and spaced values" {
   guard spaced.requests() ==
     [
       KittyQuery(KittySpecial(KittySecondTransparentBackground)),
-      KittySet(KittyColorSet::new(KittyPalette(255), RGB::new(1, 2, 3))),
+      KittySet(KittyColorSet::new(KittyPalette(255), @color.RGB::new(1, 2, 3))),
     ] else {
     fail("expected trimmed kitty color requests")
   }
@@ -1954,7 +1959,7 @@ test "osc/color palette set parses rgb payload" {
   guard color_command.op() == Osc4 else { fail("expected OSC 4 operation") }
   guard color_command.terminator() == St else { fail("expected ST terminator") }
   guard color_command.requests() ==
-    [Set(ColoredTarget::new(Palette(1), RGB::new(255, 0, 0)))] else {
+    [Set(ColoredTarget::new(Palette(1), @color.RGB::new(255, 0, 0)))] else {
     fail("expected palette set request")
   }
 }

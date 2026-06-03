@@ -4,6 +4,7 @@ package "tonyfettes/ghostty/terminal"
 import {
   "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/charsets",
+  "tonyfettes/ghostty/terminal/color",
 }
 
 // Values
@@ -12,8 +13,6 @@ pub fn build_info() -> BuildInfo
 pub fn c0_from_byte(Byte) -> C0?
 
 pub fn cursor_style_from_int(Int) -> CursorStyle?
-
-pub fn default_palette() -> Array[RGB]
 
 pub fn device_status_request_from_int(UInt16, Bool) -> DeviceStatusRequest?
 
@@ -59,13 +58,7 @@ pub fn terminal_system_set_log((SystemLogLevel, Bytes, Bytes) -> Unit) -> Unit
 
 pub fn terminator_init(Byte?) -> Terminator
 
-pub fn x11_color_lookup(String) -> RGB?
-
 // Errors
-pub suberror ColorParseError {
-  InvalidFormat
-} derive(Eq, @debug.Debug)
-
 pub suberror SemanticPromptDecodeError {
   DecodeError
 } derive(Eq, @debug.Debug)
@@ -179,13 +172,13 @@ pub(all) enum ColorScheme {
 
 pub(all) enum ColorTarget {
   Palette(Byte)
-  Special(Special)
-  Dynamic(Dynamic)
+  Special(@color.Special)
+  Dynamic(@color.Dynamic)
 } derive(Eq, @debug.Debug)
 
 type ColoredTarget derive(Eq, @debug.Debug)
-pub fn ColoredTarget::color(Self) -> RGB
-pub fn ColoredTarget::new(ColorTarget, RGB) -> Self
+pub fn ColoredTarget::color(Self) -> @color.RGB
+pub fn ColoredTarget::new(ColorTarget, @color.RGB) -> Self
 pub fn ColoredTarget::target(Self) -> ColorTarget
 
 pub(all) enum Command {
@@ -390,36 +383,6 @@ pub(all) enum DeviceType {
   Vt525
 } derive(Eq, @debug.Debug)
 pub fn DeviceType::code(Self) -> UInt16
-
-pub(all) enum Dynamic {
-  Foreground
-  Background
-  Cursor
-  PointerForeground
-  PointerBackground
-  TektronixForeground
-  TektronixBackground
-  HighlightBackground
-  TektronixCursor
-  HighlightForeground
-} derive(Eq, @debug.Debug)
-pub fn Dynamic::code(Self) -> UInt16
-pub fn Dynamic::next(Self) -> Self?
-
-type DynamicPalette derive(Eq, @debug.Debug)
-pub fn DynamicPalette::change_default(Self, Array[RGB]) -> Unit
-pub fn DynamicPalette::color(Self, Byte) -> RGB
-pub fn DynamicPalette::new() -> Self
-pub fn DynamicPalette::reset(Self, Byte) -> Unit
-pub fn DynamicPalette::reset_all(Self) -> Unit
-pub fn DynamicPalette::set(Self, Byte, RGB) -> Unit
-
-type DynamicRGB derive(Eq, @debug.Debug)
-pub fn DynamicRGB::get(Self) -> RGB?
-pub fn DynamicRGB::init(RGB) -> Self
-pub fn DynamicRGB::reset(Self) -> Unit
-pub fn DynamicRGB::set(Self, RGB) -> Unit
-pub fn DynamicRGB::unset() -> Self
 
 pub(all) enum FocusEvent {
   Gained
@@ -772,7 +735,7 @@ pub(all) enum KittyColorRequest {
 } derive(Eq, @debug.Debug)
 
 type KittyColorSet derive(Eq, @debug.Debug)
-pub fn KittyColorSet::color(Self) -> RGB
+pub fn KittyColorSet::color(Self) -> @color.RGB
 pub fn KittyColorSet::key(Self) -> KittyColorKind
 
 pub(all) enum KittyColorSpecial {
@@ -1102,27 +1065,6 @@ pub(all) enum MouseShape {
 } derive(Eq, @debug.Debug)
 pub fn MouseShape::from_string(String) -> Self?
 
-pub(all) enum Name {
-  Black
-  Red
-  Green
-  Yellow
-  Blue
-  Magenta
-  Cyan
-  White
-  BrightBlack
-  BrightRed
-  BrightGreen
-  BrightYellow
-  BrightBlue
-  BrightMagenta
-  BrightCyan
-  BrightWhite
-} derive(Eq, @debug.Debug)
-pub fn Name::code(Self) -> Byte
-pub fn Name::default_rgb(Self) -> RGB
-
 pub(all) enum OptimizeMode {
   Debug
   ReleaseSafe
@@ -1151,7 +1093,7 @@ pub(all) enum PageCellContentTag {
 } derive(Eq, @debug.Debug)
 
 type PageCellState derive(Eq, @debug.Debug)
-pub fn PageCellState::background_rgb(Self) -> RGB?
+pub fn PageCellState::background_rgb(Self) -> @color.RGB?
 pub fn PageCellState::codepoint(Self) -> UInt
 pub fn PageCellState::content_tag(Self) -> PageCellContentTag
 pub fn PageCellState::full_reset(Self) -> Unit
@@ -1168,7 +1110,7 @@ pub fn PageCellState::new() -> Self
 pub fn PageCellState::palette_index(Self) -> Byte?
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::set_background_palette(Self, Byte) -> Unit
-pub fn PageCellState::set_background_rgb(Self, RGB) -> Unit
+pub fn PageCellState::set_background_rgb(Self, @color.RGB) -> Unit
 pub fn PageCellState::set_codepoint(Self, UInt, Bool) -> Unit
 pub fn PageCellState::set_hyperlink(Self, CellHyperlink?) -> Unit
 pub fn PageCellState::set_protected(Self, Bool) -> Unit
@@ -1253,13 +1195,6 @@ pub(all) enum ProtectedMode {
   Dec
 } derive(Eq, @debug.Debug)
 
-type RGB derive(Eq, @debug.Debug)
-pub fn RGB::b(Self) -> Byte
-pub fn RGB::g(Self) -> Byte
-pub fn RGB::new(Byte, Byte, Byte) -> Self
-pub fn RGB::parse(String) -> Self raise ColorParseError
-pub fn RGB::r(Self) -> Byte
-
 pub(all) enum RenderDirty {
   False
   Partial
@@ -1267,9 +1202,9 @@ pub(all) enum RenderDirty {
 } derive(Eq)
 
 type RenderRowCells
-pub fn RenderRowCells::background_color(Self) -> RGB?
+pub fn RenderRowCells::background_color(Self) -> @color.RGB?
 pub fn RenderRowCells::cell(Self) -> PageCellState?
-pub fn RenderRowCells::foreground_color(Self) -> RGB?
+pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
 pub fn RenderRowCells::next(Self) -> Bool
 pub fn RenderRowCells::select(Self, UInt16) -> Bool
 pub fn RenderRowCells::x(Self) -> UInt16?
@@ -1283,20 +1218,20 @@ pub fn RenderRowIterator::set_dirty(Self, Bool) -> Bool
 pub fn RenderRowIterator::y(Self) -> UInt16?
 
 type RenderState
-pub fn RenderState::background_color(Self) -> RGB
+pub fn RenderState::background_color(Self) -> @color.RGB
 pub fn RenderState::columns(Self) -> UInt16
 pub fn RenderState::cursor_blinking(Self) -> Bool
-pub fn RenderState::cursor_color(Self) -> RGB?
+pub fn RenderState::cursor_color(Self) -> @color.RGB?
 pub fn RenderState::cursor_password_input(Self) -> Bool
 pub fn RenderState::cursor_viewport(Self) -> Coordinate?
 pub fn RenderState::cursor_viewport_wide_tail(Self) -> Bool
 pub fn RenderState::cursor_visible(Self) -> Bool
 pub fn RenderState::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn RenderState::dirty(Self) -> RenderDirty
-pub fn RenderState::foreground_color(Self) -> RGB
+pub fn RenderState::foreground_color(Self) -> @color.RGB
 pub fn RenderState::format_vt_framebuffer(Self) -> Bytes
 pub fn RenderState::new() -> Self
-pub fn RenderState::palette(Self) -> Array[RGB]
+pub fn RenderState::palette(Self) -> Array[@color.RGB]
 pub fn RenderState::row_iterator(Self) -> RenderRowIterator
 pub fn RenderState::rows(Self) -> UInt16
 pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
@@ -1469,7 +1404,7 @@ pub(all) enum SgrAttribute {
   ResetItalic
   Faint
   Underline(SgrUnderline)
-  UnderlineColor(RGB)
+  UnderlineColor(@color.RGB)
   Color256Underline(Byte)
   ResetUnderlineColor
   Overline
@@ -1482,14 +1417,14 @@ pub(all) enum SgrAttribute {
   ResetInvisible
   Strikethrough
   ResetStrikethrough
-  DirectColorFg(RGB)
-  DirectColorBg(RGB)
-  Color8Bg(Name)
-  Color8Fg(Name)
+  DirectColorFg(@color.RGB)
+  DirectColorBg(@color.RGB)
+  Color8Bg(@color.Name)
+  Color8Fg(@color.Name)
   ResetFg
   ResetBg
-  BrightColor8Bg(Name)
-  BrightColor8Fg(Name)
+  BrightColor8Bg(@color.Name)
+  BrightColor8Fg(@color.Name)
   Color256Bg(Byte)
   Color256Fg(Byte)
 } derive(Eq, @debug.Debug)
@@ -1527,15 +1462,6 @@ pub(all) enum SizeReportStyle {
   Csi18t
   Csi21t
 } derive(Eq, @debug.Debug)
-
-pub(all) enum Special {
-  Bold
-  Underline
-  Blink
-  Reverse
-  Italic
-} derive(Eq, @debug.Debug)
-pub fn Special::osc4(Self) -> UInt16
 
 pub(all) enum StatusDisplay {
   Main
@@ -1654,7 +1580,7 @@ pub(all) enum StreamAction {
 
 type StreamTerminal
 pub fn StreamTerminal::active_screen(Self) -> TerminalScreen
-pub fn StreamTerminal::background_color(Self) -> RGB?
+pub fn StreamTerminal::background_color(Self) -> @color.RGB?
 pub fn StreamTerminal::clear_bell(Self) -> Unit
 pub fn StreamTerminal::clear_color_scheme(Self) -> Unit
 pub fn StreamTerminal::clear_device_attributes(Self) -> Unit
@@ -1666,7 +1592,7 @@ pub fn StreamTerminal::clear_write_pty(Self) -> Unit
 pub fn StreamTerminal::clear_xtversion(Self) -> Unit
 pub fn StreamTerminal::columns(Self) -> UInt16
 pub fn StreamTerminal::cursor_bottom_margin(Self) -> UInt16
-pub fn StreamTerminal::cursor_color(Self) -> RGB?
+pub fn StreamTerminal::cursor_color(Self) -> @color.RGB?
 pub fn StreamTerminal::cursor_left_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_pending_wrap(Self) -> Bool
 pub fn StreamTerminal::cursor_right_margin(Self) -> UInt16
@@ -1675,12 +1601,12 @@ pub fn StreamTerminal::cursor_visible(Self) -> Bool
 pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
-pub fn StreamTerminal::default_background_color(Self) -> RGB?
-pub fn StreamTerminal::default_cursor_color(Self) -> RGB?
-pub fn StreamTerminal::default_foreground_color(Self) -> RGB?
-pub fn StreamTerminal::default_palette(Self) -> Array[RGB]
+pub fn StreamTerminal::default_background_color(Self) -> @color.RGB?
+pub fn StreamTerminal::default_cursor_color(Self) -> @color.RGB?
+pub fn StreamTerminal::default_foreground_color(Self) -> @color.RGB?
+pub fn StreamTerminal::default_palette(Self) -> Array[@color.RGB]
 pub fn StreamTerminal::deinit(Self) -> Unit
-pub fn StreamTerminal::foreground_color(Self) -> RGB?
+pub fn StreamTerminal::foreground_color(Self) -> @color.RGB?
 pub fn StreamTerminal::height_px(Self) -> UInt
 pub fn StreamTerminal::kitty_graphics(Self) -> KittyGraphics
 pub fn StreamTerminal::kitty_keyboard_flags(Self) -> KittyKeyboardFlags
@@ -1690,7 +1616,7 @@ pub fn StreamTerminal::mouse_tracking(Self) -> Bool
 pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> ColorScheme?, device_attributes? : () -> DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
-pub fn StreamTerminal::palette(Self) -> Array[RGB]
+pub fn StreamTerminal::palette(Self) -> Array[@color.RGB]
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
 pub fn StreamTerminal::pin(Self, Point) -> Pin?
 pub fn StreamTerminal::point_from_pin(Self, Pin, Tag) -> Coordinate?
@@ -1708,10 +1634,10 @@ pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
 pub fn StreamTerminal::selection(Self, Point, Point, Bool) -> Selection?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
-pub fn StreamTerminal::set_default_background_color(Self, RGB?) -> Unit
-pub fn StreamTerminal::set_default_cursor_color(Self, RGB?) -> Unit
-pub fn StreamTerminal::set_default_foreground_color(Self, RGB?) -> Unit
-pub fn StreamTerminal::set_default_palette(Self, Array[RGB]?) -> TerminalResultCode
+pub fn StreamTerminal::set_default_background_color(Self, @color.RGB?) -> Unit
+pub fn StreamTerminal::set_default_cursor_color(Self, @color.RGB?) -> Unit
+pub fn StreamTerminal::set_default_foreground_color(Self, @color.RGB?) -> Unit
+pub fn StreamTerminal::set_default_palette(Self, Array[@color.RGB]?) -> TerminalResultCode
 pub fn StreamTerminal::set_device_attributes(Self, () -> DeviceAttributes?) -> Unit
 pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
 pub fn StreamTerminal::set_pwd(Self, String) -> Unit
@@ -1737,7 +1663,7 @@ pub(all) enum Style {
 type StyleColor derive(Eq, @debug.Debug)
 pub fn StyleColor::is_default(Self) -> Bool
 pub fn StyleColor::palette_index(Self) -> Byte?
-pub fn StyleColor::rgb_value(Self) -> RGB?
+pub fn StyleColor::rgb_value(Self) -> @color.RGB?
 
 type SystemImage derive(Eq, @debug.Debug)
 pub fn SystemImage::data(Self) -> Bytes
@@ -1758,23 +1684,6 @@ pub(all) enum Tag {
   Screen
   History
 } derive(Eq, @debug.Debug)
-
-type TerminalColors derive(Eq, @debug.Debug)
-pub fn TerminalColors::background(Self) -> RGB?
-pub fn TerminalColors::change_default_palette(Self, Array[RGB]) -> Unit
-pub fn TerminalColors::cursor(Self) -> RGB?
-pub fn TerminalColors::foreground(Self) -> RGB?
-pub fn TerminalColors::new() -> Self
-pub fn TerminalColors::palette_color(Self, Byte) -> RGB
-pub fn TerminalColors::reset_background(Self) -> Unit
-pub fn TerminalColors::reset_cursor(Self) -> Unit
-pub fn TerminalColors::reset_foreground(Self) -> Unit
-pub fn TerminalColors::reset_palette(Self) -> Unit
-pub fn TerminalColors::reset_palette_color(Self, Byte) -> Unit
-pub fn TerminalColors::set_background(Self, RGB) -> Unit
-pub fn TerminalColors::set_cursor(Self, RGB) -> Unit
-pub fn TerminalColors::set_foreground(Self, RGB) -> Unit
-pub fn TerminalColors::set_palette_color(Self, Byte, RGB) -> Unit
 
 type TerminalCursorState derive(Eq, @debug.Debug)
 pub fn TerminalCursorState::apply_cursor_style(Self, CursorStyle) -> Bool
