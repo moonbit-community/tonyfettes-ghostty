@@ -185,7 +185,7 @@ pub fn StreamTerminal::resize(
   rows : CellCountInt,
   cell_width_px : UInt,
   cell_height_px : UInt,
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   self.bridge().resize(columns, rows, cell_width_px, cell_height_px)
 }
 
@@ -323,7 +323,7 @@ pub fn StreamTerminal::set_default_cursor_color(
 pub fn StreamTerminal::set_default_palette(
   self : StreamTerminal,
   palette : Array[@color.RGB]?,
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   self.bridge().set_default_palette(palette)
 }
 

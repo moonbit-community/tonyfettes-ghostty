@@ -6,6 +6,7 @@ import {
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
   "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/result_code",
 }
 
 // Values
@@ -40,8 +41,6 @@ pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
 pub fn status_display_from_int(Int) -> StatusDisplay?
 
 pub fn status_line_type_from_int(UInt16) -> StatusLineType?
-
-pub fn terminal_result_code_from_int(Int) -> TerminalResultCode?
 
 pub fn terminal_surface_type(String) -> TerminalSurfaceTypeInfo?
 
@@ -1127,7 +1126,7 @@ type SgrParser derive(@debug.Debug)
 pub fn SgrParser::new() -> Self
 pub fn SgrParser::next(Self) -> SgrAttribute?
 pub fn SgrParser::reset(Self) -> Unit
-pub fn SgrParser::set_params(Self, Array[UInt16], Array[Byte]) -> TerminalResultCode
+pub fn SgrParser::set_params(Self, Array[UInt16], Array[Byte]) -> @result_code.TerminalResultCode
 
 pub(all) enum SgrUnderline {
   None
@@ -1316,7 +1315,7 @@ pub fn StreamTerminal::pin(Self, Point) -> Pin?
 pub fn StreamTerminal::point_from_pin(Self, Pin, Tag) -> Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
-pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> TerminalResultCode
+pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> PageRowState?
@@ -1331,7 +1330,7 @@ pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
 pub fn StreamTerminal::set_default_background_color(Self, @color.RGB?) -> Unit
 pub fn StreamTerminal::set_default_cursor_color(Self, @color.RGB?) -> Unit
 pub fn StreamTerminal::set_default_foreground_color(Self, @color.RGB?) -> Unit
-pub fn StreamTerminal::set_default_palette(Self, Array[@color.RGB]?) -> TerminalResultCode
+pub fn StreamTerminal::set_default_palette(Self, Array[@color.RGB]?) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::set_device_attributes(Self, () -> DeviceAttributes?) -> Unit
 pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
 pub fn StreamTerminal::set_pwd(Self, String) -> Unit
@@ -1419,15 +1418,6 @@ pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, @osc.SemanticPrompt
 pub fn TerminalMetadataState::set_title(Self, String) -> Unit
 pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> @osc.SemanticPromptRedraw
 pub fn TerminalMetadataState::title(Self) -> String?
-
-pub(all) enum TerminalResultCode {
-  Success
-  OutOfMemory
-  InvalidValue
-  OutOfSpace
-  NoValue
-} derive(Eq, @debug.Debug)
-pub fn TerminalResultCode::code(Self) -> Int
 
 pub(all) enum TerminalScreen {
   Primary

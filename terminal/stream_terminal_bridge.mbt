@@ -447,7 +447,7 @@ fn StreamTerminalBridgeState::set_default_cursor_color(
 fn StreamTerminalBridgeState::set_default_palette(
   self : StreamTerminalBridgeState,
   palette : Array[@color.RGB]?,
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   if !self.colors.set_default_palette(palette) {
     return InvalidValue
   }
@@ -794,7 +794,7 @@ fn StreamTerminalBridgeState::resize(
   rows : CellCountInt,
   cell_width_px : UInt,
   cell_height_px : UInt,
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   if columns == 0 || rows == 0 {
     return InvalidValue
   }

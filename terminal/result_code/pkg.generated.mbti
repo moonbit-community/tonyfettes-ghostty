@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/result_code"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn terminal_result_code_from_int(Int) -> TerminalResultCode?
+
+// Errors
+
+// Types and methods
+pub(all) enum TerminalResultCode {
+  Success
+  OutOfMemory
+  InvalidValue
+  OutOfSpace
+  NoValue
+} derive(Eq, @debug.Debug)
+pub fn TerminalResultCode::code(Self) -> Int
+
+// Type aliases
+
+// Traits
+

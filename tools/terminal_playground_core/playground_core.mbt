@@ -147,7 +147,7 @@ pub fn playground_resize(handle : Int, columns : Int, rows : Int) -> Int {
         DefaultCellHeightPx,
       )
       .code()
-    None => @terminal.TerminalResultCode::InvalidValue.code()
+    None => @result_code.TerminalResultCode::InvalidValue.code()
   }
 }
 

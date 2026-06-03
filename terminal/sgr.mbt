@@ -79,7 +79,7 @@ pub fn SgrParser::set_params(
   self : SgrParser,
   params : Array[UInt16],
   separators : Array[Byte],
-) -> TerminalResultCode {
+) -> @result_code.TerminalResultCode {
   if params.length() > SgrSeparatorCapacity ||
     separators.length() > SgrSeparatorCapacity {
     return InvalidValue
