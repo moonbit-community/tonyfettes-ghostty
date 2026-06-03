@@ -789,7 +789,15 @@ fn ScreenGridState::shift_region_up(
   let full_width = left == 0 && right == self.cols.to_int() - 1
   let mut row_idx = start_y
   while row_idx <= bottom {
-    self.row_will_be_shifted(row_idx, left, right, style)
+    // For a full-width scroll the destination row is always fully replaced below
+    // (moved source ref or a fresh blank), so its pre-shift wide-char fragment
+    // cleanup would be wasted work — and worse, the top `count` rows have just
+    // been harvested into history sharing this exact cell array, so clearing a
+    // trailing SpacerHead in place would corrupt the captured scrollback row.
+    // Only partial-width destinations keep cells and need cleaning.
+    if !full_width {
+      self.row_will_be_shifted(row_idx, left, right, style)
+    }
     if row_idx + count <= bottom {
       let src = row_idx + count
       self.row_will_be_shifted(src, left, right, style)
