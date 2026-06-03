@@ -10,10 +10,7 @@ import {
 // Errors
 
 // Types and methods
-pub struct Utf8Decoder {
-  mut accumulator : UInt
-  mut state : Byte
-} derive(Eq, @debug.Debug)
+type Utf8Decoder derive(Eq, @debug.Debug)
 pub fn Utf8Decoder::is_accept_state(Self) -> Bool
 pub fn Utf8Decoder::new() -> Self
 pub fn Utf8Decoder::next(Self, Byte) -> (UInt?, Bool)

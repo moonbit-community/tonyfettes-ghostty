@@ -71,9 +71,7 @@ pub enum ParserState {
   SosPmApcString
 } derive(Eq)
 
-pub struct SepList {
-  mut bits : UInt64
-} derive(@debug.Debug)
+type SepList derive(@debug.Debug)
 pub fn SepList::count(Self) -> Int
 pub fn SepList::init_empty() -> Self
 pub fn SepList::is_set(Self, Int) -> Bool

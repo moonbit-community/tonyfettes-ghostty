@@ -11,7 +11,10 @@ const MaxParamDigits : Int = 255
 const MaxParamValue : UInt16 = 65535
 
 ///|
-pub struct SepList {
+/// Abstract (no `pub`): a colon-vs-semicolon separator bitset built and read
+/// only through `init_empty`/`set`/`is_set`/`count`, so its backing word stays
+/// sealed across the package boundary.
+struct SepList {
   mut bits : UInt64
 } derive(Debug)
 

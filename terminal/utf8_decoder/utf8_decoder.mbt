@@ -29,7 +29,10 @@ const AcceptState : Byte = 0
 const RejectState : Byte = 12
 
 ///|
-pub struct Utf8Decoder {
+/// Abstract (no `pub`): the DFA's `state` indexes the transition table, so an
+/// out-of-range value assigned from outside would make `next()` read past it.
+/// Callers use `new`/`next`/`is_accept_state` only, so keep the storage sealed.
+struct Utf8Decoder {
   mut accumulator : UInt
   mut state : Byte
 } derive(Eq, Debug)
