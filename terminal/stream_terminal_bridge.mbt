@@ -1541,7 +1541,7 @@ fn StreamTerminalBridgeState::full_reset(
 ///|
 fn StreamTerminalBridgeState::apply_semantic_prompt(
   self : StreamTerminalBridgeState,
-  prompt : SemanticPrompt,
+  prompt : @osc.SemanticPrompt,
 ) -> Unit {
   match prompt.action() {
     FreshLine => self.semantic_prompt_fresh_line()
@@ -2644,7 +2644,7 @@ fn StreamTerminalBridgeState::cursor_left(
 ///|
 fn StreamTerminalBridgeState::apply_color_operation(
   self : StreamTerminalBridgeState,
-  command : ColorCommand,
+  command : @osc.ColorCommand,
 ) -> Unit {
   let requests = command.requests()
   if requests.length() == 0 {
@@ -2668,8 +2668,8 @@ fn StreamTerminalBridgeState::apply_color_operation(
 ///|
 fn StreamTerminalBridgeState::apply_color_query(
   self : StreamTerminalBridgeState,
-  target : ColorTarget,
-  terminator : Terminator,
+  target : @osc.ColorTarget,
+  terminator : @osc.Terminator,
 ) -> Unit {
   match target {
     Palette(index) => {
@@ -2742,7 +2742,7 @@ fn write_osc_rgb(buffer : @buffer.Buffer, color : @color.RGB) -> Unit {
 ///|
 fn write_osc_terminator(
   buffer : @buffer.Buffer,
-  terminator : Terminator,
+  terminator : @osc.Terminator,
 ) -> Unit {
   match terminator {
     Bel => buffer.write_byte(b'\x07')
@@ -2753,7 +2753,7 @@ fn write_osc_terminator(
 ///|
 fn StreamTerminalBridgeState::apply_kitty_color_report(
   self : StreamTerminalBridgeState,
-  command : KittyColorOsc,
+  command : @osc.KittyColorOsc,
 ) -> Unit {
   for request in command.requests() {
     match request {
@@ -2801,7 +2801,7 @@ fn StreamTerminalBridgeState::apply_kitty_color_report(
 ///|
 fn StreamTerminalBridgeState::apply_color_set(
   self : StreamTerminalBridgeState,
-  set : ColoredTarget,
+  set : @osc.ColoredTarget,
 ) -> Unit {
   match set.target() {
     Palette(index) => {
@@ -2828,7 +2828,7 @@ fn StreamTerminalBridgeState::apply_color_set(
 ///|
 fn StreamTerminalBridgeState::apply_color_reset(
   self : StreamTerminalBridgeState,
-  target : ColorTarget,
+  target : @osc.ColorTarget,
 ) -> Unit {
   match target {
     Palette(index) => {

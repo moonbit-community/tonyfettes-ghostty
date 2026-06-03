@@ -268,7 +268,9 @@ test "parser/osc kitty color dispatch" {
   guard command.requests() ==
     [
       KittyQuery(KittySpecial(KittyForeground)),
-      KittySet(KittyColorSet::new(KittyPalette(255), @color.RGB::new(1, 2, 3))),
+      KittySet(
+        @osc.KittyColorSet::new(KittyPalette(255), @color.RGB::new(1, 2, 3)),
+      ),
     ] else {
     fail("expected kitty color payload")
   }

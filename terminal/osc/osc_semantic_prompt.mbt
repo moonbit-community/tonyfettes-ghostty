@@ -39,13 +39,13 @@ pub suberror SemanticPromptDecodeError {
 } derive(Eq, Debug)
 
 ///|
-struct SemanticPrompt {
+pub struct SemanticPrompt {
   action : SemanticPromptAction
   options_unvalidated : Array[Byte]
 } derive(Eq, Debug)
 
 ///|
-fn SemanticPrompt::new(
+pub fn SemanticPrompt::new(
   action : SemanticPromptAction,
   options_unvalidated : Array[Byte],
 ) -> SemanticPrompt {

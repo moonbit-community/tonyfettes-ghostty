@@ -14,7 +14,7 @@ pub(all) enum ConEmuProgressState {
 } derive(Eq, Debug)
 
 ///|
-struct DesktopNotification {
+pub struct DesktopNotification {
   title : String
   body : String
 } derive(Eq, Debug)
@@ -53,7 +53,7 @@ pub fn ConEmuSleep::duration_ms(self : ConEmuSleep) -> UInt16 {
 }
 
 ///|
-struct ConEmuProgressReport {
+pub struct ConEmuProgressReport {
   state : ConEmuProgressState
   progress : Byte?
 } derive(Eq, Debug)

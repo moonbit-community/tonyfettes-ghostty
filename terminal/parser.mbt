@@ -68,7 +68,7 @@ priv enum Action {
   Execute(Byte)
   CsiDispatch(Csi)
   EscDispatch(Esc)
-  OscDispatch(Command)
+  OscDispatch(@osc.Command)
   DcsHook(Dcs)
   DcsPut(Byte)
   DcsUnhook
@@ -88,7 +88,7 @@ priv struct Parser {
   mut params_sep : SepList
   mut param_acc : UInt16
   mut param_acc_idx : Int
-  osc_parser : OscParser
+  osc_parser : @osc.OscParser
 }
 
 ///|
@@ -100,7 +100,7 @@ fn Parser::new() -> Parser {
     params_sep: SepList::init_empty(),
     param_acc: 0,
     param_acc_idx: 0,
-    osc_parser: OscParser::new(),
+    osc_parser: @osc.OscParser::new(),
   }
 }
 

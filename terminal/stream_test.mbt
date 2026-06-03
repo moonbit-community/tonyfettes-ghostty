@@ -186,7 +186,9 @@ test "stream/osc report pwd mouse shape and color operation subset" {
     [
       StreamReportPwd("file:///tmp"),
       StreamMouseShape(Pointer),
-      StreamColorOperation(ColorCommand::new(Osc4, [Query(Palette(1))], St)),
+      StreamColorOperation(
+        @osc.ColorCommand::new(Osc4, [Query(Palette(1))], St),
+      ),
     ] else {
     fail("expected report-pwd, mouse-shape, and color-operation actions")
   }

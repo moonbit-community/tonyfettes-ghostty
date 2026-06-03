@@ -109,7 +109,7 @@ fn StreamTerminalBridgeState::semantic_row_prompt(
 ///|
 fn StreamTerminalBridgeState::shell_redraws_prompt(
   self : StreamTerminalBridgeState,
-) -> SemanticPromptRedraw {
+) -> @osc.SemanticPromptRedraw {
   self.metadata.shell_redraws_prompt()
 }
 
@@ -445,8 +445,8 @@ test "stream terminal bridge/covers reverse index and safe none branches" {
   state.sync_current_row_prompt()
   state.semantic.start_input(false)
   state.apply_semantic_after_newline()
-  state.apply_semantic_prompt(SemanticPrompt::new(EndInputStartOutput, []))
-  state.apply_semantic_prompt(SemanticPrompt::new(PromptStart, []))
+  state.apply_semantic_prompt(@osc.SemanticPrompt::new(EndInputStartOutput, []))
+  state.apply_semantic_prompt(@osc.SemanticPrompt::new(PromptStart, []))
 
   state.previous_char = Some(0U)
   state.print_repeat(1)
@@ -1589,17 +1589,24 @@ test "stream terminal bridge/covers cursor movement edge branches" {
 ///|
 test "stream terminal bridge/applies color set operations and ignores non-terminal targets" {
   let state = StreamTerminalBridgeState::new()
-  let command = ColorCommand::new(
+  let command = @osc.ColorCommand::new(
     Osc4,
     [
-      Set(ColoredTarget::new(Palette(1), @color.RGB::new(9, 8, 7))),
-      Set(ColoredTarget::new(Dynamic(Foreground), @color.RGB::new(1, 2, 3))),
-      Set(ColoredTarget::new(Dynamic(Background), @color.RGB::new(4, 5, 6))),
-      Set(ColoredTarget::new(Dynamic(Cursor), @color.RGB::new(7, 8, 9))),
+      Set(@osc.ColoredTarget::new(Palette(1), @color.RGB::new(9, 8, 7))),
       Set(
-        ColoredTarget::new(Dynamic(PointerForeground), @color.RGB::new(9, 9, 9)),
+        @osc.ColoredTarget::new(Dynamic(Foreground), @color.RGB::new(1, 2, 3)),
       ),
-      Set(ColoredTarget::new(Special(Bold), @color.RGB::new(6, 6, 6))),
+      Set(
+        @osc.ColoredTarget::new(Dynamic(Background), @color.RGB::new(4, 5, 6)),
+      ),
+      Set(@osc.ColoredTarget::new(Dynamic(Cursor), @color.RGB::new(7, 8, 9))),
+      Set(
+        @osc.ColoredTarget::new(
+          Dynamic(PointerForeground),
+          @color.RGB::new(9, 9, 9),
+        ),
+      ),
+      Set(@osc.ColoredTarget::new(Special(Bold), @color.RGB::new(6, 6, 6))),
     ],
     St,
   )
@@ -1629,14 +1636,26 @@ test "stream terminal bridge/applies color resets and reset palette" {
   let state = StreamTerminalBridgeState::new()
   guard state.apply(
     StreamColorOperation(
-      ColorCommand::new(
+      @osc.ColorCommand::new(
         Osc4,
         [
-          Set(ColoredTarget::new(Palette(1), @color.RGB::new(10, 11, 12))),
-          Set(ColoredTarget::new(Palette(2), @color.RGB::new(20, 21, 22))),
-          Set(ColoredTarget::new(Dynamic(Foreground), @color.RGB::new(1, 2, 3))),
-          Set(ColoredTarget::new(Dynamic(Background), @color.RGB::new(4, 5, 6))),
-          Set(ColoredTarget::new(Dynamic(Cursor), @color.RGB::new(7, 8, 9))),
+          Set(@osc.ColoredTarget::new(Palette(1), @color.RGB::new(10, 11, 12))),
+          Set(@osc.ColoredTarget::new(Palette(2), @color.RGB::new(20, 21, 22))),
+          Set(
+            @osc.ColoredTarget::new(
+              Dynamic(Foreground),
+              @color.RGB::new(1, 2, 3),
+            ),
+          ),
+          Set(
+            @osc.ColoredTarget::new(
+              Dynamic(Background),
+              @color.RGB::new(4, 5, 6),
+            ),
+          ),
+          Set(
+            @osc.ColoredTarget::new(Dynamic(Cursor), @color.RGB::new(7, 8, 9)),
+          ),
         ],
         St,
       ),
@@ -1648,7 +1667,7 @@ test "stream terminal bridge/applies color resets and reset palette" {
   state.clear_palette_dirty()
   guard state.apply(
     StreamColorOperation(
-      ColorCommand::new(
+      @osc.ColorCommand::new(
         Osc104,
         [
           Reset(Palette(1)),
@@ -1678,7 +1697,7 @@ test "stream terminal bridge/applies color resets and reset palette" {
 
   state.clear_palette_dirty()
   guard state.apply(
-    StreamColorOperation(ColorCommand::new(Osc104, [ResetPalette], St)),
+    StreamColorOperation(@osc.ColorCommand::new(Osc104, [ResetPalette], St)),
   ) else {
     fail("expected reset palette operation")
   }
@@ -1693,13 +1712,17 @@ test "stream terminal bridge/applies color resets and reset palette" {
 ///|
 test "stream terminal bridge/empty and query color operations are handled without mutation" {
   let state = StreamTerminalBridgeState::new()
-  guard state.apply(StreamColorOperation(ColorCommand::new(Osc4, [], St))) else {
+  guard state.apply(StreamColorOperation(@osc.ColorCommand::new(Osc4, [], St))) else {
     fail("expected empty color operation to be handled")
   }
 
   guard state.apply(
     StreamColorOperation(
-      ColorCommand::new(Osc4, [Query(Palette(1)), Reset(Special(Bold))], St),
+      @osc.ColorCommand::new(
+        Osc4,
+        [Query(Palette(1)), Reset(Special(Bold))],
+        St,
+      ),
     ),
   ) else {
     fail("expected query-only color operation to be handled")

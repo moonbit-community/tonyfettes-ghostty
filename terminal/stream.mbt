@@ -130,16 +130,16 @@ pub(all) enum StreamAction {
   StreamTitlePop(UInt16)
   StreamXtversion
   StreamWindowTitle(String)
-  StreamClipboardContents(ClipboardContents)
+  StreamClipboardContents(@osc.ClipboardContents)
   StreamReportPwd(String)
-  StreamShowDesktopNotification(DesktopNotification)
-  StreamProgressReport(ConEmuProgressReport)
-  StreamStartHyperlink(HyperlinkStart)
+  StreamShowDesktopNotification(@osc.DesktopNotification)
+  StreamProgressReport(@osc.ConEmuProgressReport)
+  StreamStartHyperlink(@osc.HyperlinkStart)
   StreamEndHyperlink
   StreamMouseShape(MouseShape)
-  StreamKittyColorReport(KittyColorOsc)
-  StreamColorOperation(ColorCommand)
-  StreamSemanticPrompt(SemanticPrompt)
+  StreamKittyColorReport(@osc.KittyColorOsc)
+  StreamColorOperation(@osc.ColorCommand)
+  StreamSemanticPrompt(@osc.SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
@@ -762,7 +762,7 @@ fn[H : StreamHandler] Stream::esc_dispatch(
 ///|
 fn[H : StreamHandler] Stream::osc_dispatch(
   self : Stream[H],
-  command : Command,
+  command : @osc.Command,
 ) -> Unit {
   match command {
     ChangeWindowTitle(title) => self.emit(StreamWindowTitle(title))

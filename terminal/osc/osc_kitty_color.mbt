@@ -17,13 +17,13 @@ pub(all) enum KittyColorKind {
 } derive(Eq, Debug)
 
 ///|
-struct KittyColorSet {
+pub struct KittyColorSet {
   key : KittyColorKind
   color : @color.RGB
 } derive(Eq, Debug)
 
 ///|
-fn KittyColorSet::new(
+pub fn KittyColorSet::new(
   key : KittyColorKind,
   color : @color.RGB,
 ) -> KittyColorSet {
@@ -48,7 +48,7 @@ pub(all) enum KittyColorRequest {
 } derive(Eq, Debug)
 
 ///|
-struct KittyColorOsc {
+pub struct KittyColorOsc {
   requests : Array[KittyColorRequest]
   terminator : Terminator
 } derive(Eq, Debug)

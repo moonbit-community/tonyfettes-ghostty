@@ -50,7 +50,7 @@ pub(all) enum ColorTarget {
 } derive(Eq, Debug)
 
 ///|
-struct ColoredTarget {
+pub struct ColoredTarget {
   target : ColorTarget
   color : @color.RGB
 } derive(Eq, Debug)
@@ -82,7 +82,7 @@ pub(all) enum ColorRequest {
 } derive(Eq, Debug)
 
 ///|
-struct ColorCommand {
+pub struct ColorCommand {
   op : ColorOperation
   requests : Array[ColorRequest]
   terminator : Terminator
@@ -113,7 +113,7 @@ pub fn ColorCommand::terminator(self : ColorCommand) -> Terminator {
 }
 
 ///|
-struct HyperlinkStart {
+pub struct HyperlinkStart {
   uri : String
   id : String?
 } derive(Eq, Debug)
@@ -129,7 +129,7 @@ pub fn HyperlinkStart::id(self : HyperlinkStart) -> String? {
 }
 
 ///|
-struct ClipboardContents {
+pub struct ClipboardContents {
   kind : Byte
   data : String
 } derive(Eq, Debug)
@@ -174,7 +174,7 @@ pub(all) enum Command {
 } derive(Eq, Debug)
 
 ///|
-priv enum OscParserState {
+pub enum OscParserState {
   Start
   Invalid
   Prefix0
@@ -225,7 +225,7 @@ priv enum OscParserState {
 } derive(Debug)
 
 ///|
-struct OscParser {
+pub struct OscParser {
   mut state : OscParserState
   mut capturing : Bool
   mut buffer : Array[Byte]
@@ -238,7 +238,7 @@ pub fn OscParser::new() -> OscParser {
 }
 
 ///|
-fn OscParser::deinit(self : OscParser) -> Unit {
+pub fn OscParser::deinit(self : OscParser) -> Unit {
   self.reset()
 }
 

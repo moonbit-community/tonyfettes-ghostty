@@ -5,6 +5,7 @@ import {
   "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/osc",
 }
 
 // Values
@@ -56,12 +57,7 @@ pub fn terminal_system_set_decode_png((Bytes) -> SystemImage?) -> Unit
 
 pub fn terminal_system_set_log((SystemLogLevel, Bytes, Bytes) -> Unit) -> Unit
 
-pub fn terminator_init(Byte?) -> Terminator
-
 // Errors
-pub suberror SemanticPromptDecodeError {
-  DecodeError
-} derive(Eq, @debug.Debug)
 
 // Types and methods
 type BuildInfo derive(Eq, @debug.Debug)
@@ -122,116 +118,10 @@ pub fn CellStyle::strikethrough(Self) -> Bool
 pub fn CellStyle::underline(Self) -> SgrUnderline
 pub fn CellStyle::underline_color(Self) -> StyleColor
 
-type ClipboardContents derive(Eq, @debug.Debug)
-pub fn ClipboardContents::data(Self) -> String
-pub fn ClipboardContents::kind(Self) -> Byte
-
-type ColorCommand derive(Eq, @debug.Debug)
-pub fn ColorCommand::new(ColorOperation, Array[ColorRequest], Terminator) -> Self
-pub fn ColorCommand::op(Self) -> ColorOperation
-pub fn ColorCommand::requests(Self) -> Array[ColorRequest]
-pub fn ColorCommand::terminator(Self) -> Terminator
-
-pub(all) enum ColorOperation {
-  Osc4
-  Osc5
-  Osc10
-  Osc11
-  Osc12
-  Osc13
-  Osc14
-  Osc15
-  Osc16
-  Osc17
-  Osc18
-  Osc19
-  Osc104
-  Osc110
-  Osc111
-  Osc112
-  Osc113
-  Osc114
-  Osc115
-  Osc116
-  Osc117
-  Osc118
-  Osc119
-} derive(Eq, @debug.Debug)
-
-pub(all) enum ColorRequest {
-  Set(ColoredTarget)
-  Query(ColorTarget)
-  Reset(ColorTarget)
-  ResetPalette
-} derive(Eq, @debug.Debug)
-
 pub(all) enum ColorScheme {
   Light
   Dark
 } derive(Eq, @debug.Debug)
-
-pub(all) enum ColorTarget {
-  Palette(Byte)
-  Special(@color.Special)
-  Dynamic(@color.Dynamic)
-} derive(Eq, @debug.Debug)
-
-type ColoredTarget derive(Eq, @debug.Debug)
-pub fn ColoredTarget::color(Self) -> @color.RGB
-pub fn ColoredTarget::new(ColorTarget, @color.RGB) -> Self
-pub fn ColoredTarget::target(Self) -> ColorTarget
-
-pub(all) enum Command {
-  Invalid
-  ChangeWindowTitle(String)
-  ChangeWindowIcon(String)
-  ClipboardContents(ClipboardContents)
-  KittyClipboardProtocol(KittyClipboardOsc)
-  KittyColorProtocol(KittyColorOsc)
-  KittyTextSizing(KittyTextSizingOsc)
-  ShowDesktopNotification(DesktopNotification)
-  HyperlinkStart(HyperlinkStart)
-  HyperlinkEnd
-  ConEmuSleep(ConEmuSleep)
-  ConEmuShowMessageBox(String)
-  ConEmuChangeTabTitle(ConEmuTabTitleChange)
-  ConEmuProgressReport(ConEmuProgressReport)
-  ConEmuWaitInput
-  ConEmuGuiMacro(String)
-  ConEmuRunProcess(String)
-  ConEmuOutputEnvironmentVariable(String)
-  ConEmuXtermEmulation(ConEmuXtermEmulation)
-  ConEmuComment(String)
-  ContextSignal(ContextSignalOsc)
-  SemanticPrompt(SemanticPrompt)
-  ReportPwd(String)
-  MouseShape(String)
-  ColorOperation(ColorCommand)
-} derive(Eq, @debug.Debug)
-
-type ConEmuProgressReport derive(Eq, @debug.Debug)
-pub fn ConEmuProgressReport::progress(Self) -> Byte?
-pub fn ConEmuProgressReport::state(Self) -> ConEmuProgressState
-
-pub(all) enum ConEmuProgressState {
-  ConEmuProgressRemove
-  ConEmuProgressSet
-  ConEmuProgressError
-  ConEmuProgressIndeterminate
-  ConEmuProgressPause
-} derive(Eq, @debug.Debug)
-
-type ConEmuSleep derive(Eq, @debug.Debug)
-pub fn ConEmuSleep::duration_ms(Self) -> UInt16
-
-pub enum ConEmuTabTitleChange {
-  ConEmuTabTitleReset
-  ConEmuTabTitleValue(String)
-} derive(Eq, @debug.Debug)
-
-type ConEmuXtermEmulation derive(Eq, @debug.Debug)
-pub fn ConEmuXtermEmulation::keyboard(Self) -> Bool?
-pub fn ConEmuXtermEmulation::output(Self) -> Bool?
 
 pub(all) struct ConfigureCharsetAction {
   slot : @charsets.Slots
@@ -254,56 +144,6 @@ pub(all) enum ConformanceLevel {
   Vt525
 } derive(Eq, @debug.Debug)
 pub fn ConformanceLevel::code(Self) -> UInt16
-
-pub enum ContextSignalAction {
-  ContextSignalStart
-  ContextSignalEnd
-} derive(Eq, @debug.Debug)
-
-pub enum ContextSignalExitStatus {
-  ContextSignalExitSuccess
-  ContextSignalExitFailure
-  ContextSignalExitCrash
-  ContextSignalExitInterrupt
-} derive(Eq, @debug.Debug)
-
-type ContextSignalOsc derive(Eq, @debug.Debug)
-pub fn ContextSignalOsc::action(Self) -> ContextSignalAction
-pub fn ContextSignalOsc::bootid(Self) -> String?
-pub fn ContextSignalOsc::cmdline(Self) -> String?
-pub fn ContextSignalOsc::comm(Self) -> String?
-pub fn ContextSignalOsc::container(Self) -> String?
-pub fn ContextSignalOsc::context_type(Self) -> ContextSignalType?
-pub fn ContextSignalOsc::cwd(Self) -> String?
-pub fn ContextSignalOsc::exit_status(Self) -> ContextSignalExitStatus?
-pub fn ContextSignalOsc::hostname(Self) -> String?
-pub fn ContextSignalOsc::id(Self) -> String
-pub fn ContextSignalOsc::machineid(Self) -> String?
-pub fn ContextSignalOsc::metadata(Self) -> String
-pub fn ContextSignalOsc::pid(Self) -> UInt64?
-pub fn ContextSignalOsc::pidfdid(Self) -> UInt64?
-pub fn ContextSignalOsc::sessionid(Self) -> String?
-pub fn ContextSignalOsc::signal(Self) -> String?
-pub fn ContextSignalOsc::status(Self) -> UInt64?
-pub fn ContextSignalOsc::targethost(Self) -> String?
-pub fn ContextSignalOsc::targetuser(Self) -> String?
-pub fn ContextSignalOsc::user(Self) -> String?
-pub fn ContextSignalOsc::vm(Self) -> String?
-
-pub enum ContextSignalType {
-  ContextSignalBoot
-  ContextSignalContainer
-  ContextSignalVm
-  ContextSignalElevate
-  ContextSignalChpriv
-  ContextSignalSubcontext
-  ContextSignalRemote
-  ContextSignalShell
-  ContextSignalCommand
-  ContextSignalApp
-  ContextSignalService
-  ContextSignalSession
-} derive(Eq, @debug.Debug)
 
 type Coordinate derive(Eq, @debug.Debug)
 pub fn Coordinate::new(UInt16, UInt) -> Self
@@ -338,10 +178,6 @@ type DcsHookPayload derive(Eq, @debug.Debug)
 pub fn DcsHookPayload::final_byte(Self) -> Byte
 pub fn DcsHookPayload::intermediates(Self) -> Array[Byte]
 pub fn DcsHookPayload::params(Self) -> Array[UInt16]
-
-type DesktopNotification derive(Eq, @debug.Debug)
-pub fn DesktopNotification::body(Self) -> String
-pub fn DesktopNotification::title(Self) -> String
 
 pub(all) enum DeviceAttributeRequest {
   Primary
@@ -414,10 +250,6 @@ pub fn FormatterTerminalExtra::all() -> Self
 pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
-
-type HyperlinkStart derive(Eq, @debug.Debug)
-pub fn HyperlinkStart::id(Self) -> String?
-pub fn HyperlinkStart::uri(Self) -> String
 
 pub(all) struct InvokeCharsetAction {
   bank : @charsets.ActiveSlot
@@ -684,71 +516,6 @@ pub fn KeyMods::with_super_(Self, Bool) -> Self
 pub fn KeyMods::with_super_side(Self, KeyModSide) -> Self
 pub fn KeyMods::without_locks(Self) -> Self
 
-pub enum KittyClipboardLocation {
-  KittyClipboardPrimary
-} derive(Eq, @debug.Debug)
-
-pub enum KittyClipboardOperation {
-  KittyClipboardRead
-  KittyClipboardWalias
-  KittyClipboardWdata
-  KittyClipboardWrite
-} derive(Eq, @debug.Debug)
-
-type KittyClipboardOsc derive(Eq, @debug.Debug)
-pub fn KittyClipboardOsc::id(Self) -> String?
-pub fn KittyClipboardOsc::location(Self) -> KittyClipboardLocation?
-pub fn KittyClipboardOsc::metadata(Self) -> String
-pub fn KittyClipboardOsc::mime(Self) -> String?
-pub fn KittyClipboardOsc::name(Self) -> String?
-pub fn KittyClipboardOsc::operation(Self) -> KittyClipboardOperation?
-pub fn KittyClipboardOsc::password(Self) -> String?
-pub fn KittyClipboardOsc::payload(Self) -> String?
-pub fn KittyClipboardOsc::pw(Self) -> String?
-pub fn KittyClipboardOsc::status(Self) -> KittyClipboardStatus?
-pub fn KittyClipboardOsc::terminator(Self) -> Terminator
-
-pub enum KittyClipboardStatus {
-  KittyClipboardData
-  KittyClipboardDone
-  KittyClipboardEbusy
-  KittyClipboardEinval
-  KittyClipboardEio
-  KittyClipboardEnosys
-  KittyClipboardEperm
-  KittyClipboardOk
-} derive(Eq, @debug.Debug)
-
-pub(all) enum KittyColorKind {
-  KittyPalette(Byte)
-  KittySpecial(KittyColorSpecial)
-} derive(Eq, @debug.Debug)
-
-type KittyColorOsc derive(Eq, @debug.Debug)
-pub fn KittyColorOsc::requests(Self) -> Array[KittyColorRequest]
-pub fn KittyColorOsc::terminator(Self) -> Terminator
-
-pub(all) enum KittyColorRequest {
-  KittyQuery(KittyColorKind)
-  KittySet(KittyColorSet)
-  KittyReset(KittyColorKind)
-} derive(Eq, @debug.Debug)
-
-type KittyColorSet derive(Eq, @debug.Debug)
-pub fn KittyColorSet::color(Self) -> @color.RGB
-pub fn KittyColorSet::key(Self) -> KittyColorKind
-
-pub(all) enum KittyColorSpecial {
-  KittyForeground
-  KittyBackground
-  KittySelectionForeground
-  KittySelectionBackground
-  KittyCursor
-  KittyCursorText
-  KittyVisualBell
-  KittySecondTransparentBackground
-} derive(Eq, @debug.Debug)
-
 type KittyGraphics
 pub fn KittyGraphics::image(Self, UInt) -> KittyImage?
 pub fn KittyGraphics::image_storage_limit(Self) -> UInt
@@ -843,28 +610,6 @@ pub fn KittyPlacementSourceRect::y(Self) -> UInt
 type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
 pub fn KittyPlacementViewportPosition::col(Self) -> Int
 pub fn KittyPlacementViewportPosition::row(Self) -> Int
-
-pub enum KittyTextSizingHorizontalAlign {
-  KittyTextSizingHLeft
-  KittyTextSizingHRight
-  KittyTextSizingHCenter
-} derive(Eq, @debug.Debug)
-
-type KittyTextSizingOsc derive(Eq, @debug.Debug)
-pub fn KittyTextSizingOsc::denominator(Self) -> Byte
-pub fn KittyTextSizingOsc::halign(Self) -> KittyTextSizingHorizontalAlign
-pub fn KittyTextSizingOsc::numerator(Self) -> Byte
-pub fn KittyTextSizingOsc::scale(Self) -> Byte
-pub fn KittyTextSizingOsc::terminator(Self) -> Terminator
-pub fn KittyTextSizingOsc::text(Self) -> String
-pub fn KittyTextSizingOsc::valign(Self) -> KittyTextSizingVerticalAlign
-pub fn KittyTextSizingOsc::width(Self) -> Byte
-
-pub enum KittyTextSizingVerticalAlign {
-  KittyTextSizingVTop
-  KittyTextSizingVBottom
-  KittyTextSizingVCenter
-} derive(Eq, @debug.Debug)
 
 pub(all) struct Margin {
   top_left : UInt16
@@ -1078,12 +823,6 @@ pub(all) enum OptionAsAlt {
   Right
   True
 } derive(Eq, @debug.Debug)
-
-type OscParser derive(@debug.Debug)
-pub fn OscParser::end(Self, Byte?) -> Command?
-pub fn OscParser::new() -> Self
-pub fn OscParser::next(Self, Byte) -> Unit
-pub fn OscParser::reset(Self) -> Unit
 
 pub(all) enum PageCellContentTag {
   Codepoint
@@ -1311,8 +1050,8 @@ pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
 pub fn ScreenSavedCursorState::save(Self, TerminalCursorState, CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
 
 type ScreenSemanticState derive(Eq, @debug.Debug)
-pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, SemanticPrompt) -> Unit
-pub fn ScreenSemanticState::apply_prompt_start(Self, SemanticPrompt) -> Unit
+pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPrompt) -> Unit
+pub fn ScreenSemanticState::apply_prompt_start(Self, @osc.SemanticPrompt) -> Unit
 pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
 pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
 pub fn ScreenSemanticState::cursor_content(Self) -> SemanticContent
@@ -1341,58 +1080,13 @@ pub fn Selection::start(Self) -> Pin
 pub(all) enum SemanticClickMode {
   None
   ClickEvents
-  Cl(SemanticPromptClick)
+  Cl(@osc.SemanticPromptClick)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum SemanticContent {
   Output
   Input
   Prompt
-} derive(Eq, @debug.Debug)
-
-type SemanticPrompt derive(Eq, @debug.Debug)
-pub fn SemanticPrompt::action(Self) -> SemanticPromptAction
-pub fn SemanticPrompt::aid(Self) -> String?
-pub fn SemanticPrompt::cl(Self) -> SemanticPromptClick?
-pub fn SemanticPrompt::click_events(Self) -> Bool?
-pub fn SemanticPrompt::cmdline(Self) -> String?
-pub fn SemanticPrompt::cmdline_url(Self) -> String?
-pub fn SemanticPrompt::decoded_command_line(Self) -> String? raise SemanticPromptDecodeError
-pub fn SemanticPrompt::err(Self) -> String?
-pub fn SemanticPrompt::exit_code(Self) -> Int?
-pub fn SemanticPrompt::prompt_kind(Self) -> SemanticPromptKind?
-pub fn SemanticPrompt::redraw(Self) -> SemanticPromptRedraw?
-pub fn SemanticPrompt::special_key(Self) -> Bool?
-
-pub(all) enum SemanticPromptAction {
-  FreshLine
-  FreshLineNewPrompt
-  NewCommand
-  PromptStart
-  EndPromptStartInput
-  EndPromptStartInputTerminateEol
-  EndInputStartOutput
-  EndCommand
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SemanticPromptClick {
-  Line
-  Multiple
-  ConservativeVertical
-  SmartVertical
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SemanticPromptKind {
-  Initial
-  Right
-  Continuation
-  Secondary
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SemanticPromptRedraw {
-  Enabled
-  Disabled
-  Last
 } derive(Eq, @debug.Debug)
 
 pub(all) enum SgrAttribute {
@@ -1551,16 +1245,16 @@ pub(all) enum StreamAction {
   StreamTitlePop(UInt16)
   StreamXtversion
   StreamWindowTitle(String)
-  StreamClipboardContents(ClipboardContents)
+  StreamClipboardContents(@osc.ClipboardContents)
   StreamReportPwd(String)
-  StreamShowDesktopNotification(DesktopNotification)
-  StreamProgressReport(ConEmuProgressReport)
-  StreamStartHyperlink(HyperlinkStart)
+  StreamShowDesktopNotification(@osc.DesktopNotification)
+  StreamProgressReport(@osc.ConEmuProgressReport)
+  StreamStartHyperlink(@osc.HyperlinkStart)
   StreamEndHyperlink
   StreamMouseShape(MouseShape)
-  StreamKittyColorReport(KittyColorOsc)
-  StreamColorOperation(ColorCommand)
-  StreamSemanticPrompt(SemanticPrompt)
+  StreamKittyColorReport(@osc.KittyColorOsc)
+  StreamColorOperation(@osc.ColorCommand)
+  StreamSemanticPrompt(@osc.SemanticPrompt)
   StreamDeviceAttributes(DeviceAttributeRequest)
   StreamDeviceStatus(DeviceStatusRequest)
   StreamActiveStatusDisplay(StatusDisplay)
@@ -1721,9 +1415,9 @@ pub fn TerminalInputFlags::set_mouse_shift_capture(Self, Bool) -> Unit
 type TerminalMetadataState derive(Eq, @debug.Debug)
 pub fn TerminalMetadataState::full_reset(Self) -> Unit
 pub fn TerminalMetadataState::new() -> Self
-pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, SemanticPromptRedraw) -> Unit
+pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, @osc.SemanticPromptRedraw) -> Unit
 pub fn TerminalMetadataState::set_title(Self, String) -> Unit
-pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> SemanticPromptRedraw
+pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> @osc.SemanticPromptRedraw
 pub fn TerminalMetadataState::title(Self) -> String?
 
 pub(all) enum TerminalResultCode {
@@ -1764,11 +1458,6 @@ pub fn TerminalTabstopsState::new(UInt16) -> Self
 pub fn TerminalTabstopsState::reset(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::set(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
-
-pub(all) enum Terminator {
-  St
-  Bel
-} derive(Eq, @debug.Debug)
 
 type TertiaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn TertiaryDeviceAttributes::default() -> Self
