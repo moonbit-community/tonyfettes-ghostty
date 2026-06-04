@@ -5,8 +5,12 @@
 #include <string.h>
 
 #if defined(_WIN32)
-#include <shellapi.h>
 #include <windows.h>
+// shellapi.h (CommandLineToArgvW) depends on the base Win32 types and macros
+// from windows.h, so it must be included after it.
+#include <shellapi.h>
+// CommandLineToArgvW lives in shell32; MSVC needs it linked explicitly.
+#pragma comment(lib, "shell32.lib")
 #elif defined(__APPLE__)
 #include <crt_externs.h>
 #include <fcntl.h>
