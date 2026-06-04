@@ -585,16 +585,16 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
 
 ///|
 fn formatter_cell_style(cell : PageCellState) -> CellStyle {
-  match cell.content_tag() {
-    Codepoint | CodepointGrapheme => cell.style()
-    BackgroundPalette => {
+  match cell.content() {
+    Codepoint(_) | CodepointGrapheme(_, _) => cell.style()
+    BackgroundPalette(index) => {
       let style = CellStyle::new()
-      style.bg_color = style_color_palette(cell.palette_index().unwrap())
+      style.bg_color = style_color_palette(index)
       style
     }
-    BackgroundRgb => {
+    BackgroundRgb(rgb) => {
       let style = CellStyle::new()
-      style.bg_color = style_color_rgb(cell.background_rgb().unwrap())
+      style.bg_color = style_color_rgb(rgb)
       style
     }
   }

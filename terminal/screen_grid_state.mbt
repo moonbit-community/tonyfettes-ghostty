@@ -1228,24 +1228,20 @@ fn blank_grid_line(cols : Int, style : CellStyle) -> GridLine {
 ///|
 fn copy_page_cell(cell : PageCellState) -> PageCellState {
   {
-    content_tag: cell.content_tag,
-    codepoint: cell.codepoint,
-    palette_index: cell.palette_index,
-    bg_rgb: cell.bg_rgb,
+    content: match cell.content {
+      CodepointGrapheme(base, extras) => {
+        let copy : Array[UInt] = []
+        for cp in extras {
+          copy.push(cp)
+        }
+        CodepointGrapheme(base, copy)
+      }
+      other => other
+    },
     style: copy_cell_style(cell.style),
     wide: cell.wide,
     protected_flag: cell.protected_flag,
     hyperlink: cell.hyperlink,
     semantic_content: cell.semantic_content,
-    grapheme_extras: match cell.grapheme_extras {
-      None => None
-      Some(extras) => {
-        let copy : Array[UInt] = []
-        for cp in extras {
-          copy.push(cp)
-        }
-        Some(copy)
-      }
-    },
   }
 }

@@ -464,13 +464,16 @@ fn semantic_content_json(value : @terminal.SemanticContent) -> Json {
 }
 
 ///|
-fn cell_content_tag_json(value : @terminal.PageCellContentTag) -> Json {
+fn cell_content_tag_json(cell : @terminal.PageCellState) -> Json {
   Json::string(
-    match value {
-      Codepoint => "codepoint"
-      CodepointGrapheme => "codepoint_grapheme"
-      BackgroundPalette => "background_palette"
-      BackgroundRgb => "background_rgb"
+    if cell.palette_index() is Some(_) {
+      "background_palette"
+    } else if cell.background_rgb() is Some(_) {
+      "background_rgb"
+    } else if cell.has_grapheme() {
+      "codepoint_grapheme"
+    } else {
+      "codepoint"
     },
   )
 }
@@ -527,7 +530,7 @@ fn json_cell_state(cell : @terminal.PageCellState?) -> Json {
       let style = cell.style()
       {
         "codepoint": uint_to_int(cell.codepoint()),
-        "contentTag": cell_content_tag_json(cell.content_tag()),
+        "contentTag": cell_content_tag_json(cell),
         "gridWidth": cell.grid_width(),
         "hasGrapheme": cell.has_grapheme(),
         "hasStyling": cell.has_styling(),

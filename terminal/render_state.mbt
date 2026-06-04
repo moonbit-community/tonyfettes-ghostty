@@ -461,10 +461,10 @@ fn render_cell_background_color(
   cell : PageCellState,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
-  match cell.content_tag {
-    BackgroundPalette => Some(palette[cell.palette_index.to_int()])
-    BackgroundRgb => Some(cell.bg_rgb)
-    Codepoint | CodepointGrapheme =>
+  match cell.content() {
+    BackgroundPalette(index) => Some(palette[index.to_int()])
+    BackgroundRgb(rgb) => Some(rgb)
+    Codepoint(_) | CodepointGrapheme(_, _) =>
       style_color_to_rgb(cell.style.bg_color, palette)
   }
 }

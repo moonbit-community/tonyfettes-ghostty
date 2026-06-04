@@ -55,8 +55,7 @@ test "page row state/flags semantic prompt and full reset" {
 ///|
 test "page cell state/defaults and zero helpers" {
   let cell = PageCellState::new()
-  guard cell.content_tag() == Codepoint &&
-    cell.codepoint() == 0U &&
+  guard cell.codepoint() == 0U &&
     cell.palette_index() == None &&
     cell.background_rgb() == None &&
     cell.style().is_default() &&
@@ -77,8 +76,7 @@ test "page cell state/defaults and zero helpers" {
 ///|
 test "page cell state/codepoint grapheme and wide helpers" {
   let cell = PageCellState::init(0x41U)
-  guard cell.content_tag() == Codepoint &&
-    cell.codepoint() == 0x41U &&
+  guard cell.codepoint() == 0x41U &&
     cell.has_text() &&
     !cell.has_grapheme() &&
     cell.grapheme_codepoints() == [] &&
@@ -88,8 +86,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
 
   cell.set_codepoint(0x62U, true)
   cell.set_wide(Wide)
-  guard cell.content_tag() == CodepointGrapheme &&
-    cell.codepoint() == 0x62U &&
+  guard cell.codepoint() == 0x62U &&
     cell.has_text() &&
     cell.has_grapheme() &&
     cell.grapheme_codepoints() == [] &&
@@ -124,8 +121,7 @@ test "page cell state/background content reports no text and preserves payloads"
   let cell = PageCellState::new()
   let rgb = @color.RGB::new(1, 2, 3)
   cell.set_background_palette(7)
-  guard cell.content_tag() == BackgroundPalette &&
-    cell.palette_index() == Some(7) &&
+  guard cell.palette_index() == Some(7) &&
     cell.background_rgb() == None &&
     !cell.has_text() &&
     !cell.is_empty() &&
@@ -134,8 +130,7 @@ test "page cell state/background content reports no text and preserves payloads"
   }
 
   cell.set_background_rgb(rgb)
-  guard cell.content_tag() == BackgroundRgb &&
-    cell.palette_index() == None &&
+  guard cell.palette_index() == None &&
     cell.background_rgb() == Some(rgb) &&
     !cell.has_text() &&
     !cell.is_empty() else {
@@ -170,8 +165,7 @@ test "page cell state/style hyperlink semantic and full reset" {
   }
 
   cell.full_reset()
-  guard cell.content_tag() == Codepoint &&
-    cell.codepoint() == 0U &&
+  guard cell.codepoint() == 0U &&
     cell.palette_index() == None &&
     cell.background_rgb() == None &&
     cell.style().is_default() &&

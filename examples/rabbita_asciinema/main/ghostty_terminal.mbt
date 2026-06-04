@@ -398,11 +398,13 @@ fn cell_background_css(
   palette : Array[@color.RGB],
   style : @terminal.CellStyle,
 ) -> String? {
-  match cell.content_tag() {
-    BackgroundPalette =>
-      cell.palette_index().map(index => rgb_css(palette[index.to_int()]))
-    BackgroundRgb => cell.background_rgb().map(rgb => rgb_css(rgb))
-    Codepoint | CodepointGrapheme => style_color_css(style.bg_color(), palette)
+  match cell.palette_index() {
+    Some(index) => Some(rgb_css(palette[index.to_int()]))
+    None =>
+      match cell.background_rgb() {
+        Some(rgb) => Some(rgb_css(rgb))
+        None => style_color_css(style.bg_color(), palette)
+      }
   }
 }
 

@@ -2005,10 +2005,16 @@ fn copy_scrollback_row(row : PageRowState) -> PageRowState {
 ///|
 fn copy_scrollback_cell(cell : PageCellState) -> PageCellState {
   {
-    content_tag: cell.content_tag,
-    codepoint: cell.codepoint,
-    palette_index: cell.palette_index,
-    bg_rgb: cell.bg_rgb,
+    content: match cell.content {
+      CodepointGrapheme(base, extras) => {
+        let copy : Array[UInt] = []
+        for cp in extras {
+          copy.push(cp)
+        }
+        CodepointGrapheme(base, copy)
+      }
+      other => other
+    },
     style: copy_scrollback_style(cell.style),
     wide: cell.wide,
     protected_flag: cell.protected_flag,
@@ -2017,16 +2023,6 @@ fn copy_scrollback_cell(cell : PageCellState) -> PageCellState {
       None => None
     },
     semantic_content: cell.semantic_content,
-    grapheme_extras: match cell.grapheme_extras {
-      None => None
-      Some(extras) => {
-        let copy : Array[UInt] = []
-        for cp in extras {
-          copy.push(cp)
-        }
-        Some(copy)
-      }
-    },
   }
 }
 

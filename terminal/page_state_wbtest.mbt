@@ -36,7 +36,7 @@ test "page cell state/full_reset clears grapheme extras" {
   cell.full_reset()
   guard !cell.has_grapheme() &&
     cell.grapheme_codepoints() == [] &&
-    cell.content_tag() == Codepoint else {
+    cell.content() is Codepoint(_) else {
     fail("expected full_reset to clear grapheme extras")
   }
 }
