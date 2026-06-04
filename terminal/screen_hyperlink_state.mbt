@@ -7,6 +7,7 @@ struct ScreenHyperlinkState {
   mut explicit_id : String?
   mut implicit_id : Int?
   mut next_implicit_id : Int
+  mut cell : CellHyperlink?
 } derive(Eq, Debug)
 
 ///|
@@ -16,6 +17,7 @@ pub fn ScreenHyperlinkState::new() -> ScreenHyperlinkState {
     explicit_id: None,
     implicit_id: None,
     next_implicit_id: FirstImplicitHyperlinkId,
+    cell: None,
   }
 }
 
@@ -59,10 +61,12 @@ pub fn ScreenHyperlinkState::start(
     Some(value) => {
       self.explicit_id = Some(value)
       self.implicit_id = None
+      self.cell = Some(CellHyperlink::explicit(uri, value))
     }
     None => {
       self.explicit_id = None
       self.implicit_id = Some(self.next_implicit_id)
+      self.cell = Some(CellHyperlink::implicit(uri, self.next_implicit_id))
       self.next_implicit_id += 1
     }
   }
@@ -73,6 +77,14 @@ pub fn ScreenHyperlinkState::end(self : ScreenHyperlinkState) -> Unit {
   self.uri = None
   self.explicit_id = None
   self.implicit_id = None
+  self.cell = None
+}
+
+///|
+pub fn ScreenHyperlinkState::cell_hyperlink(
+  self : ScreenHyperlinkState,
+) -> CellHyperlink? {
+  self.cell
 }
 
 ///|

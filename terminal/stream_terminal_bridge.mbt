@@ -1644,18 +1644,7 @@ fn StreamTerminalBridgeState::cursor_outside_scroll_region(
 fn StreamTerminalBridgeState::active_hyperlink(
   self : StreamTerminalBridgeState,
 ) -> CellHyperlink? {
-  match self.hyperlink.uri() {
-    Some(uri) =>
-      match self.hyperlink.explicit_id() {
-        Some(id) => Some(CellHyperlink::explicit(uri, id))
-        None =>
-          match self.hyperlink.implicit_id() {
-            Some(id) => Some(CellHyperlink::implicit(uri, id))
-            None => None
-          }
-      }
-    None => None
-  }
+  self.hyperlink.cell_hyperlink()
 }
 
 ///|
