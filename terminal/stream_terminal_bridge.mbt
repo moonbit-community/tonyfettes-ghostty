@@ -473,6 +473,64 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
 }
 
 ///|
+// Return the [start, end] viewport row range of the semantic zone containing
+// `row`. A semantic zone is a maximal run of rows with compatible prompt state:
+//   - None rows form an output zone
+//   - A Prompt row followed by zero or more PromptContinuation rows form a
+//     prompt zone
+// Returns None when no OSC 133 sequences have been seen yet.
+fn StreamTerminalBridgeState::semantic_prompt_row_range(
+  self : StreamTerminalBridgeState,
+  row : CellCountInt,
+) -> (CellCountInt, CellCountInt)? {
+  guard self.semantic.seen() else { return None }
+  let prompt = match self.scrollback.row(self.grid, row) {
+    None => return None
+    Some(r) => r.semantic_prompt()
+  }
+  let total = self.rows()
+  // Walk backward to find start of zone.
+  let mut start = row
+  while start.to_int() > 0 {
+    let prev = (start.to_int() - 1).to_uint16()
+    let prev_prompt = match self.scrollback.row(self.grid, prev) {
+      None => break
+      Some(r) => r.semantic_prompt()
+    }
+    let cont = match (prompt, prev_prompt) {
+      (None, None) => true
+      (PromptContinuation, Prompt) | (PromptContinuation, PromptContinuation) =>
+        true
+      _ => false
+    }
+    if !cont {
+      break
+    }
+    start = prev
+  }
+  // Walk forward to find end of zone.
+  let mut end = row
+  while end.to_int() + 1 < total.to_int() {
+    let next = (end.to_int() + 1).to_uint16()
+    let next_prompt = match self.scrollback.row(self.grid, next) {
+      None => break
+      Some(r) => r.semantic_prompt()
+    }
+    let cont = match (prompt, next_prompt) {
+      (None, None) => true
+      (Prompt, PromptContinuation) | (PromptContinuation, PromptContinuation) =>
+        true
+      _ => false
+    }
+    if !cont {
+      break
+    }
+    end = next
+  }
+  Some((start, end))
+}
+
+///|
 fn StreamTerminalBridgeState::point_from_point(
   self : StreamTerminalBridgeState,
   point : Point,
@@ -1571,6 +1629,7 @@ fn StreamTerminalBridgeState::apply_semantic_prompt(
     EndPromptStartInputTerminateEol => self.semantic.start_input(true)
     EndInputStartOutput => {
       self.semantic.set_output()
+      self.semantic.clear_row_prompt()
       if self.cursor.x() == 0 {
         match self.grid.row(self.cursor.y()) {
           Some(row) => row.set_semantic_prompt(None)

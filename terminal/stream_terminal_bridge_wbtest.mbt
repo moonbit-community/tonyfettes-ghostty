@@ -2239,3 +2239,30 @@ test "stream terminal bridge/kitty graphics display and delete edge branches" {
     fail("expected unimplemented delete selectors to stay no-op")
   }
 }
+
+///|
+test "stream terminal bridge/semantic_prompt_row_range row layout" {
+  let state = StreamTerminalBridgeState::new()
+
+  guard state.resize(80, 5, 0U, 0U) == Success else { fail("resize") }
+
+  guard apply_stream_bytes(state, b"\x1B]133;A\x07prompt>") else { fail("A") }
+  guard apply_stream_bytes(state, b"\x1B]133;C\x07\r\n") else { fail("C") }
+  guard apply_stream_bytes(state, b"output line 1\r\n") else { fail("o1") }
+  guard apply_stream_bytes(state, b"output line 2\r\n") else { fail("o2") }
+  guard apply_stream_bytes(state, b"\x1B]133;A\x07$ ") else { fail("A2") }
+
+  let r0 = expect_bridge_row(state, 0).semantic_prompt()
+  let r1 = expect_bridge_row(state, 1).semantic_prompt()
+  let r2 = expect_bridge_row(state, 2).semantic_prompt()
+  let r3 = expect_bridge_row(state, 3).semantic_prompt()
+  guard r0 == Prompt else { fail("row 0 should be Prompt") }
+  guard r1 == (None : RowSemanticPrompt) else { fail("row 1 should be None") }
+  guard r2 == (None : RowSemanticPrompt) else { fail("row 2 should be None") }
+  guard r3 == Prompt else { fail("row 3 should be Prompt") }
+
+  let range1 = state.semantic_prompt_row_range(1)
+  let range2 = state.semantic_prompt_row_range(2)
+  guard range1 == Some((1, 2)) else { fail("range(1) should be (1,2)") }
+  guard range2 == Some((1, 2)) else { fail("range(2) should be (1,2)") }
+}

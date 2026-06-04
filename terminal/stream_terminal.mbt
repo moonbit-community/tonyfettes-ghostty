@@ -336,6 +336,14 @@ pub fn StreamTerminal::screen_row_snapshot(
 }
 
 ///|
+pub fn StreamTerminal::semantic_prompt_row_range(
+  self : StreamTerminal,
+  row : CellCountInt,
+) -> (CellCountInt, CellCountInt)? {
+  self.bridge().semantic_prompt_row_range(row)
+}
+
+///|
 pub fn StreamTerminal::pin(self : StreamTerminal, point : Point) -> Pin? {
   self.bridge().pin(point)
 }
