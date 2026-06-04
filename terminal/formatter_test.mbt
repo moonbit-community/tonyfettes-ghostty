@@ -69,6 +69,21 @@ test "formatter/plain preserves combining marks" {
 }
 
 ///|
+test "formatter/plain keeps space-based grapheme out of blank trimming" {
+  let terminal = StreamTerminal::new()
+  let formatter = plain_formatter(terminal)
+
+  // A space carrying a combining mark is a real grapheme: blank-run trimming
+  // must not treat it as padding and drop the mark.
+  terminal.next_slice(@utf8.encode(" \u{0301}X"))
+  guard formatter.format() == @utf8.encode(" \u{0301}X") else {
+    fail("expected space+combining-mark grapheme to survive blank trimming")
+  }
+
+  terminal.deinit()
+}
+
+///|
 test "formatter/plain owned bytes keep exact formatted length" {
   let terminal = StreamTerminal::new()
   let formatter = plain_formatter(terminal)

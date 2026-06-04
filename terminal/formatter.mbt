@@ -569,7 +569,10 @@ fn formatter_cell_is_blank(formatter : Formatter, cell : PageCellState) -> Bool 
   if !cell.has_text() {
     return true
   }
-  formatter.opts.trim && cell.codepoint() == b' '.to_uint()
+  // A space carrying combining marks is a real grapheme, not blank padding.
+  formatter.opts.trim &&
+  cell.codepoint() == b' '.to_uint() &&
+  !cell.has_grapheme()
 }
 
 ///|
@@ -580,7 +583,8 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
   if !cell.has_text() {
     return true
   }
-  cell.codepoint() == b' '.to_uint()
+  // A space carrying combining marks is a real grapheme, not blank padding.
+  cell.codepoint() == b' '.to_uint() && !cell.has_grapheme()
 }
 
 ///|
