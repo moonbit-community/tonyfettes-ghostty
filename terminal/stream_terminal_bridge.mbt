@@ -1421,11 +1421,13 @@ fn StreamTerminalBridgeState::print(
 
   let width = codepoint_width(codepoint)
   if width <= 0 {
-    // Mode 2027 (grapheme cluster): the VTE layer owns clustering, so the
-    // terminal must not double-combine zero-width codepoints.
-    if !self.modes.get(GraphemeCluster) {
-      self.grid.append_grapheme(self.cursor, codepoint)
-    }
+    // A zero-width codepoint combines onto the previous cell as part of its
+    // grapheme cluster. This holds whether or not mode 2027 (GraphemeCluster)
+    // is enabled: upstream Ghostty appends combining marks to the prior cell in
+    // both the legacy (wcwidth) path and the 2027 grapheme-segmentation path.
+    // (Full 2027 support would also cluster width>0 codepoints via Unicode
+    // grapheme breaks; that is not yet implemented.)
+    self.grid.append_grapheme(self.cursor, codepoint)
     return
   }
 

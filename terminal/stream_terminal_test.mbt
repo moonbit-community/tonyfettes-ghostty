@@ -335,20 +335,22 @@ test "stream terminal/semantic_prompt_row_range covers prompt and output zones" 
 }
 
 ///|
-test "stream terminal/mode 2027 suppresses combining codepoint append" {
+test "stream terminal/mode 2027 still combines zero-width codepoints" {
   let terminal = StreamTerminal::new()
 
-  // Enable grapheme cluster mode (2027): zero-width codepoints must be dropped.
+  // With grapheme cluster mode (2027) enabled, a zero-width combining mark must
+  // still attach to its base cell — upstream Ghostty appends it in the 2027
+  // grapheme-segmentation path just as in the legacy path.
   terminal.mode_set(GraphemeCluster, true)
   terminal.next_slice(@utf8.encode("e\u{0301}"))
   let cell = expect_terminal_cell(terminal, 0, 0)
   guard cell.codepoint() == b'e'.to_uint() &&
-    !cell.has_grapheme() &&
-    cell.grapheme_codepoints() == [] else {
-    fail("expected combining codepoint dropped when mode 2027 is on")
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x301U] else {
+    fail("expected combining codepoint combined when mode 2027 is on")
   }
 
-  // Disable mode 2027: combining codepoints should be appended again.
+  // Same behavior with mode 2027 disabled.
   terminal.mode_set(GraphemeCluster, false)
   terminal.next_slice(@utf8.encode("e\u{0301}"))
   let cell2 = expect_terminal_cell(terminal, 0, 1)

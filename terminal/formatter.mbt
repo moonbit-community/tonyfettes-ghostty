@@ -612,6 +612,11 @@ fn formatter_write_cell_text(
   }
 
   formatter_write_codepoint(emit, buffer, cell.codepoint())
+  // Emit combining marks so graphemes (é, 👍🏽, ZWJ sequences) survive
+  // copy/format and VT-framebuffer serialization.
+  for cp in cell.grapheme_codepoints() {
+    formatter_write_codepoint(emit, buffer, cp)
+  }
 }
 
 ///|
