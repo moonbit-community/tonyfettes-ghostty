@@ -2011,6 +2011,16 @@ fn copy_scrollback_cell(cell : PageCellState) -> PageCellState {
       None => None
     },
     semantic_content: cell.semantic_content,
+    grapheme_extras: match cell.grapheme_extras {
+      None => None
+      Some(extras) => {
+        let copy : Array[UInt] = []
+        for cp in extras {
+          copy.push(cp)
+        }
+        Some(copy)
+      }
+    },
   }
 }
 

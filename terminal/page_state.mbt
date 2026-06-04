@@ -189,6 +189,9 @@ struct PageCellState {
   mut protected_flag : Bool
   mut hyperlink : CellHyperlink?
   mut semantic_content : SemanticContent
+  // Additional combining codepoints beyond the base codepoint; non-None only
+  // when content_tag == CodepointGrapheme.
+  mut grapheme_extras : Array[UInt]?
 } derive(Eq, Debug)
 
 ///|
@@ -203,6 +206,7 @@ pub fn PageCellState::new() -> PageCellState {
     protected_flag: false,
     hyperlink: None,
     semantic_content: Output,
+    grapheme_extras: None,
   }
 }
 
@@ -226,6 +230,7 @@ pub fn PageCellState::set_codepoint(
 ) -> Unit {
   self.content_tag = if grapheme { CodepointGrapheme } else { Codepoint }
   self.codepoint = codepoint
+  self.grapheme_extras = None
 }
 
 ///|
@@ -372,6 +377,29 @@ pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
 }
 
 ///|
+// Append a combining codepoint to this cell's grapheme sequence.
+// Sets content_tag to CodepointGrapheme and allocates grapheme_extras on first
+// call. Only call when the cell has_text().
+fn PageCellState::append_grapheme(
+  self : PageCellState,
+  codepoint : UInt,
+) -> Unit {
+  self.content_tag = CodepointGrapheme
+  match self.grapheme_extras {
+    None => self.grapheme_extras = Some([codepoint])
+    Some(extras) => extras.push(codepoint)
+  }
+}
+
+///|
+pub fn PageCellState::grapheme_codepoints(self : PageCellState) -> Array[UInt] {
+  match self.grapheme_extras {
+    None => []
+    Some(extras) => extras
+  }
+}
+
+///|
 pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
   self.content_tag = Codepoint
   self.codepoint = 0U
@@ -382,6 +410,7 @@ pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
   self.protected_flag = false
   self.hyperlink = None
   self.semantic_content = Output
+  self.grapheme_extras = None
 }
 
 ///|

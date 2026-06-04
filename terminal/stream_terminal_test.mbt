@@ -251,3 +251,85 @@ test "stream terminal/scrollback viewport tracks active screen rows" {
 
   terminal.deinit()
 }
+
+///|
+test "stream terminal/combining codepoints accumulate as grapheme extras" {
+  let terminal = StreamTerminal::new()
+
+  // 'e' (U+0065) followed by combining acute accent (U+0301) → é
+  // The accent (U+0301) is zero-width and should be combined onto 'e'.
+  terminal.next_slice(@utf8.encode("e\u{0301}"))
+  let cell = expect_terminal_cell(terminal, 0, 0)
+  guard cell.codepoint() == 0x65U &&
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x301U] else {
+    fail(
+      "expected combining accent to be stored as grapheme extra on the base cell",
+    )
+  }
+
+  // Second combining codepoint appended to same base cell
+  terminal.next_slice(@utf8.encode("\u{0300}"))
+  let cell2 = expect_terminal_cell(terminal, 0, 0)
+  guard cell2.codepoint() == 0x65U &&
+    cell2.grapheme_codepoints() == [0x301U, 0x300U] else {
+    fail("expected second combining codepoint to accumulate")
+  }
+
+  // A new printable character at the next column has no grapheme extras
+  terminal.next_slice(b"a")
+  let cell3 = expect_terminal_cell(terminal, 0, 1)
+  guard !cell3.has_grapheme() && cell3.grapheme_codepoints() == [] else {
+    fail("expected adjacent plain cell to have no grapheme extras")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/mode 2027 suppresses combining codepoint append" {
+  let terminal = StreamTerminal::new()
+
+  // Enable grapheme cluster mode (2027): zero-width codepoints must be dropped.
+  terminal.mode_set(GraphemeCluster, true)
+  terminal.next_slice(@utf8.encode("e\u{0301}"))
+  let cell = expect_terminal_cell(terminal, 0, 0)
+  guard cell.codepoint() == b'e'.to_uint() &&
+    !cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [] else {
+    fail("expected combining codepoint dropped when mode 2027 is on")
+  }
+
+  // Disable mode 2027: combining codepoints should be appended again.
+  terminal.mode_set(GraphemeCluster, false)
+  terminal.next_slice(@utf8.encode("e\u{0301}"))
+  let cell2 = expect_terminal_cell(terminal, 0, 1)
+  guard cell2.has_grapheme() && cell2.grapheme_codepoints() == [0x301U] else {
+    fail("expected combining codepoint appended when mode 2027 is off")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/grapheme_codepoints visible through row iterator" {
+  let terminal = StreamTerminal::new()
+  let render = RenderState::new()
+
+  // Write 'n' + combining tilde (U+0303) → ñ
+  terminal.next_slice(@utf8.encode("n\u{0303}"))
+  render.update(terminal)
+
+  let iter = render.row_iterator()
+  guard iter.next() else { fail("expected at least one row") }
+  let cells = iter.cells().unwrap()
+  guard cells.next() else { fail("expected at least one cell") }
+  let cell = cells.cell().unwrap()
+  guard cell.codepoint() == b'n'.to_uint() &&
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x303U] else {
+    fail("expected grapheme codepoints accessible through render row iterator")
+  }
+
+  terminal.deinit()
+}

@@ -1363,6 +1363,11 @@ fn StreamTerminalBridgeState::print(
 
   let width = codepoint_width(codepoint)
   if width <= 0 {
+    // Mode 2027 (grapheme cluster): the VTE layer owns clustering, so the
+    // terminal must not double-combine zero-width codepoints.
+    if !self.modes.get(GraphemeCluster) {
+      self.grid.append_grapheme(self.cursor, codepoint)
+    }
     return
   }
 
