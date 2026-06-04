@@ -81,7 +81,7 @@ pub fn ScreenHyperlinkState::end(self : ScreenHyperlinkState) -> Unit {
 }
 
 ///|
-pub fn ScreenHyperlinkState::cell_hyperlink(
+fn ScreenHyperlinkState::cell_hyperlink(
   self : ScreenHyperlinkState,
 ) -> CellHyperlink? {
   self.cell

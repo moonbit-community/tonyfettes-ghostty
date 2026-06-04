@@ -688,7 +688,6 @@ pub fn ScreenCharsetState::single_shift(Self) -> @charsets.Slots?
 
 type ScreenHyperlinkState derive(Eq, @debug.Debug)
 pub fn ScreenHyperlinkState::active(Self) -> Bool
-pub fn ScreenHyperlinkState::cell_hyperlink(Self) -> CellHyperlink?
 pub fn ScreenHyperlinkState::end(Self) -> Unit
 pub fn ScreenHyperlinkState::explicit_id(Self) -> String?
 pub fn ScreenHyperlinkState::full_reset(Self) -> Unit
