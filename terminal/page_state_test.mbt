@@ -81,6 +81,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
     cell.codepoint() == 0x41U &&
     cell.has_text() &&
     !cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [] &&
     cell.is_empty() == false else {
     fail("expected basic codepoint cell")
   }
@@ -91,6 +92,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
     cell.codepoint() == 0x62U &&
     cell.has_text() &&
     cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [] &&
     cell.grid_width() == 2 else {
     fail("expected grapheme and wide state")
   }
@@ -99,6 +101,21 @@ test "page cell state/codepoint grapheme and wide helpers" {
   cell.set_wide(SpacerHead)
   guard !cell.is_empty() && cell.grid_width() == 1 else {
     fail("expected spacer head to remain non-empty")
+  }
+}
+
+///|
+test "page cell state/set_codepoint clears grapheme extras" {
+  // When set_codepoint is called with a new codepoint, grapheme_codepoints
+  // should return [] regardless of the grapheme flag.
+  let cell = PageCellState::init(0x65U)
+  cell.set_codepoint(0x65U, true) // flag grapheme but no extras yet
+  guard cell.has_grapheme() && cell.grapheme_codepoints() == [] else {
+    fail("expected empty grapheme_codepoints when flagged but no extras")
+  }
+  cell.set_codepoint(0x61U, false) // overwrite: clears flag and extras
+  guard !cell.has_grapheme() && cell.grapheme_codepoints() == [] else {
+    fail("expected grapheme cleared after set_codepoint(_, false)")
   }
 }
 

@@ -507,6 +507,7 @@ pub fn PageCellState::background_rgb(Self) -> @color.RGB?
 pub fn PageCellState::codepoint(Self) -> UInt
 pub fn PageCellState::content_tag(Self) -> PageCellContentTag
 pub fn PageCellState::full_reset(Self) -> Unit
+pub fn PageCellState::grapheme_codepoints(Self) -> Array[UInt]
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
 pub fn PageCellState::has_styling(Self) -> Bool

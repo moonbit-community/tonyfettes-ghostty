@@ -260,6 +260,45 @@ fn ScreenGridState::print_repeat(
 }
 
 ///|
+// Combine a zero-width codepoint onto the preceding logical cell.
+// When cursor.pending_wrap is set the last-printed cell is at cursor.x;
+// otherwise it is at cursor.x - 1. Skips SpacerTail to find the Wide base.
+// Silently discards the codepoint when there is no preceding cell on this row.
+fn ScreenGridState::append_grapheme(
+  self : ScreenGridState,
+  cursor : TerminalCursorState,
+  codepoint : UInt,
+) -> Unit {
+  let row_idx = cursor.y.to_int()
+  if row_idx < 0 || row_idx >= self.lines.length() {
+    return
+  }
+  let prev_x = if cursor.pending_wrap {
+    cursor.x.to_int()
+  } else if cursor.x.to_int() > 0 {
+    cursor.x.to_int() - 1
+  } else {
+    return
+  }
+  if prev_x >= self.cols.to_int() {
+    return
+  }
+  // Resolve SpacerTail → Wide base cell one column to the left.
+  let target_x = if prev_x > 0 &&
+    self.lines[row_idx].cells[prev_x].wide() == SpacerTail {
+    prev_x - 1
+  } else {
+    prev_x
+  }
+  let cell = self.lines[row_idx].cells[target_x]
+  if cell.has_text() {
+    cell.append_grapheme(codepoint)
+    self.lines[row_idx].desc.set_grapheme(true)
+    self.lines[row_idx].desc.set_dirty(true)
+  }
+}
+
+///|
 fn ScreenGridState::insert_blanks(
   self : ScreenGridState,
   cursor : TerminalCursorState,
@@ -1198,5 +1237,15 @@ fn copy_page_cell(cell : PageCellState) -> PageCellState {
     protected_flag: cell.protected_flag,
     hyperlink: cell.hyperlink,
     semantic_content: cell.semantic_content,
+    grapheme_extras: match cell.grapheme_extras {
+      None => None
+      Some(extras) => {
+        let copy : Array[UInt] = []
+        for cp in extras {
+          copy.push(cp)
+        }
+        Some(copy)
+      }
+    },
   }
 }
