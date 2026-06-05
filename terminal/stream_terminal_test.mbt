@@ -329,3 +329,40 @@ test "stream terminal/semantic_prompt_row_range spans prompt continuation rows" 
 
   terminal.deinit()
 }
+
+///|
+test "stream terminal/semantic_prompt_row_range is screen-local" {
+  let terminal = StreamTerminal::new()
+  guard terminal.resize(80, 5, 0U, 0U) == Success else {
+    fail("expected resize success")
+  }
+
+  // Primary screen sees an OSC 133 prompt → it has a semantic zone.
+  terminal.next_slice(b"\x1B]133;A\x07prompt>")
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 0)) else {
+    fail("expected primary prompt zone")
+  }
+
+  // Enter the alternate screen (fullscreen app). It received no OSC 133, so it
+  // must not inherit the primary screen's terminal-wide semantic state: every
+  // row query is None rather than a leaked full-screen output zone.
+  terminal.next_slice(b"\x1B[?1049h")
+  guard terminal.active_screen() == Alternate else {
+    fail("expected alternate screen after 1049h")
+  }
+  guard terminal.semantic_prompt_row_range(0) == None &&
+    terminal.semantic_prompt_row_range(4) == None else {
+    fail("expected no semantic zone leaked onto the alternate screen")
+  }
+
+  // Returning to the primary screen restores its semantic state intact.
+  terminal.next_slice(b"\x1B[?1049l")
+  guard terminal.active_screen() == Primary else {
+    fail("expected primary screen after 1049l")
+  }
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 0)) else {
+    fail("expected primary semantic zone to survive the alt-screen round trip")
+  }
+
+  terminal.deinit()
+}

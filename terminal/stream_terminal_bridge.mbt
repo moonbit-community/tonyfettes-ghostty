@@ -187,7 +187,7 @@ priv struct StreamTerminalBridgeState {
   kitty_keyboard : KittyKeyboardState
   mut tabstops : TerminalTabstopsState
   hyperlink : ScreenHyperlinkState
-  semantic : ScreenSemanticState
+  mut semantic : ScreenSemanticState
   metadata : TerminalMetadataState
   mut grid : ScreenGridState
   mut scrollback : PageList
@@ -232,7 +232,7 @@ fn StreamTerminalBridgeState::with_effects(
     kitty_keyboard: KittyKeyboardState::new(),
     tabstops: TerminalTabstopsState::new(DefaultColumns),
     hyperlink: ScreenHyperlinkState::new(),
-    semantic: ScreenSemanticState::new(),
+    semantic: primary_storage.semantic,
     metadata: TerminalMetadataState::new(),
     grid: primary_storage.grid,
     scrollback: primary_storage.scrollback,
@@ -2298,12 +2298,14 @@ fn StreamTerminalBridgeState::store_active_screen(
       self.primary_storage.cursor = self.cursor
       self.primary_storage.scrollback = self.scrollback
       self.primary_storage.kitty_graphics = self.kitty_graphics
+      self.primary_storage.semantic = self.semantic
     }
     Alternate => {
       self.alternate_storage.grid = self.grid
       self.alternate_storage.cursor = self.cursor
       self.alternate_storage.scrollback = self.scrollback
       self.alternate_storage.kitty_graphics = self.kitty_graphics
+      self.alternate_storage.semantic = self.semantic
     }
   }
 }
@@ -2319,12 +2321,14 @@ fn StreamTerminalBridgeState::load_active_screen(
       self.cursor = self.primary_storage.cursor
       self.scrollback = self.primary_storage.scrollback
       self.kitty_graphics = self.primary_storage.kitty_graphics
+      self.semantic = self.primary_storage.semantic
     }
     Alternate => {
       self.grid = self.alternate_storage.grid
       self.cursor = self.alternate_storage.cursor
       self.scrollback = self.alternate_storage.scrollback
       self.kitty_graphics = self.alternate_storage.kitty_graphics
+      self.semantic = self.alternate_storage.semantic
     }
   }
   self.active_screen = screen
