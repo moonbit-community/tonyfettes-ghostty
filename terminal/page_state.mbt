@@ -401,10 +401,14 @@ pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
 
 ///|
 // The cell's combining codepoints (empty when the cell is not a grapheme
-// cluster). The returned array is shared with the cell's internal storage, not
-// copied; callers must treat it as read-only — mutating it corrupts the cell
-// without updating row flags. Callers that need to retain it should copy.
-pub fn PageCellState::grapheme_codepoints(self : PageCellState) -> Array[UInt] {
+// cluster). Returns a read-only `ArrayView` over the cell's internal storage —
+// no copy on the render hot path, and the view exposes no `push`/element-set,
+// so callers cannot resize or mutate the cell's grapheme run (which would
+// desync `PageRowState::grapheme`/dirty flags). Callers that need to retain or
+// edit the codepoints should `.to_array()` first.
+pub fn PageCellState::grapheme_codepoints(
+  self : PageCellState,
+) -> ArrayView[UInt] {
   match self.content {
     CodepointGrapheme(_, extras) => extras
     _ => []

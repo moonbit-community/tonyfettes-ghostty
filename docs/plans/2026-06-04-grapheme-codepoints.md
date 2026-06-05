@@ -98,13 +98,16 @@ grapheme rather than trimmable padding.
 ### Public API addition
 
 ```
-pub fn PageCellState::grapheme_codepoints(Self) -> Array[UInt]
+pub fn PageCellState::grapheme_codepoints(Self) -> ArrayView[UInt]
 ```
 
 Returns the additional combining codepoints when `has_grapheme()` is true,
-`[]` otherwise. The returned array is the cell's internal storage (not a
-defensive copy), documented read-only — callers must not mutate it, and the
-render hot path stays allocation-free. The `PageCellContent` enum and the
+empty otherwise. The result is a read-only `ArrayView` over the cell's internal
+storage (no defensive copy, so the render hot path stays allocation-free).
+`ArrayView` exposes no `push` or element-set, so callers structurally cannot
+resize or mutate the cell's grapheme run — which would otherwise desync
+`PageRowState::grapheme`/dirty flags. Callers that need to retain or edit the
+codepoints call `.to_array()` first. The `PageCellContent` enum and the
 `content()` accessor are package-private; external callers use the existing
 `codepoint()` / `palette_index()` / `background_rgb()` / `has_grapheme()` /
 `grapheme_codepoints()` accessors, so the storage layout stays an
@@ -120,7 +123,7 @@ implementation detail.
 | `terminal/stream_terminal_bridge.mbt` | Route `width <= 0` to `append_grapheme` instead of early-return (no 2027 guard) |
 | `terminal/formatter.mbt` | Emit `grapheme_codepoints()` after the base codepoint; exclude grapheme-bearing spaces from blank trimming |
 | `terminal/render_state.mbt` | Match `PageCellContent` for background color resolution |
-| `terminal/pkg.generated.mbti` | Add `pub fn PageCellState::grapheme_codepoints(Self) -> Array[UInt]`; `PageCellContent` appears only as an abstract type |
+| `terminal/pkg.generated.mbti` | Add `pub fn PageCellState::grapheme_codepoints(Self) -> ArrayView[UInt]`; `PageCellContent` appears only as an abstract type |
 | `terminal/*_test.mbt` | Grapheme accumulation, mode-2027 combining, render-iterator visibility, formatter combining-mark + space-grapheme preservation |
 
 ## Validation
