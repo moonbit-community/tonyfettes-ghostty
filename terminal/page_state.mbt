@@ -3,7 +3,7 @@
 // callers query via codepoint()/palette_index()/background_rgb()/has_grapheme()
 // /grapheme_codepoints() rather than matching on this enum, so the storage
 // layout stays an implementation detail.
-enum PageCellContent {
+priv enum PageCellContent {
   Codepoint(UInt)
   CodepointGrapheme(UInt, Array[UInt])
   BackgroundPalette(Byte)
