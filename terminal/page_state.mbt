@@ -377,11 +377,14 @@ pub fn PageCellState::grid_width(self : PageCellState) -> Int {
 
 ///|
 pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
-  // Every unstyled cell shares the `default_cell_style` singleton (set_style /
-  // full_reset / new / copy_page_cell all preserve this), so "is this cell
-  // styled?" is an O(1) identity check rather than a field-by-field
-  // is_default() — the same shortcut as Ghostty's `style_id != default_id`.
-  !physical_equal(self.style, default_cell_style)
+  // Fast path: cells written on the active grid share the `default_cell_style`
+  // singleton for unstyled text (set_style / full_reset / new), so the identity
+  // check resolves the hot print path in O(1), like Ghostty's
+  // `style_id != default_id`. The scrollback/reflow copy paths build a
+  // fresh-but-equal default style, so when the identity test misses, fall back
+  // to the structural is_default() — keeping the answer exact regardless of how
+  // the cell was constructed.
+  !physical_equal(self.style, default_cell_style) && !self.style.is_default()
 }
 
 ///|
