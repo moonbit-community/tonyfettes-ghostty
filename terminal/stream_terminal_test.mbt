@@ -251,3 +251,149 @@ test "stream terminal/scrollback viewport tracks active screen rows" {
 
   terminal.deinit()
 }
+
+///|
+test "stream terminal/semantic_prompt_row_range returns None without OSC 133" {
+  let terminal = StreamTerminal::new()
+
+  // No semantic sequences sent — range should be None for any row.
+  guard terminal.semantic_prompt_row_range(0) == None &&
+    terminal.semantic_prompt_row_range(1) == None else {
+    fail("expected None when no OSC 133 seen")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/semantic_prompt_row_range covers prompt and output zones" {
+  let terminal = StreamTerminal::new()
+
+  guard terminal.resize(80, 5, 0U, 0U) == Success else {
+    fail("expected resize success")
+  }
+
+  // Row 0: prompt start.
+  terminal.next_slice(b"\x1B]133;A\x07prompt>")
+  // Switch to output mode (cursor.x != 0 so no row override), then \r\n
+  // advances to row 1 with cursor_content=Output — apply_semantic_after_newline
+  // returns early and row 1 keeps its initial None state.
+  terminal.next_slice(b"\x1B]133;C\x07\r\n")
+  // Rows 1 and 2: output, each \r\n keeps cursor_content=Output → rows stay None.
+  terminal.next_slice(b"output line 1\r\n")
+  terminal.next_slice(b"output line 2\r\n")
+  // Row 3: second prompt.
+  terminal.next_slice(b"\x1B]133;A\x07$ ")
+
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 0)) else {
+    fail("expected prompt row to map to its own zone")
+  }
+  // Rows 1 and 2 are both None — one output zone.
+  guard terminal.semantic_prompt_row_range(1) == Some((1, 2)) &&
+    terminal.semantic_prompt_row_range(2) == Some((1, 2)) else {
+    fail("expected output rows to share the same zone")
+  }
+  guard terminal.semantic_prompt_row_range(3) == Some((3, 3)) else {
+    fail("expected second prompt row to map to its own zone")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/semantic_prompt_row_range spans prompt continuation rows" {
+  let terminal = StreamTerminal::new()
+
+  // 3 rows: row 0 = Prompt, row 1 = PromptContinuation, row 2 = output (None).
+  guard terminal.resize(80, 3, 0U, 0U) == Success else {
+    fail("expected resize success")
+  }
+
+  // Row 0: prompt start; \r\n with cursor_content=Prompt triggers
+  // apply_semantic_after_newline → row 1 = PromptContinuation.
+  terminal.next_slice(b"\x1B]133;A\x07line1\r\n")
+  // Row 1: explicit continuation marker.
+  terminal.next_slice(b"\x1B]133;A;k=c\x07line2\r\n")
+  // Row 2: output at column 0 — EndInputStartOutput with x=0 overrides row 2
+  // back to None.
+  terminal.next_slice(b"\x1B]133;C\x07output")
+
+  // Rows 0 and 1 share one prompt zone.
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 1)) &&
+    terminal.semantic_prompt_row_range(1) == Some((0, 1)) else {
+    fail("expected prompt and continuation to share zone")
+  }
+  guard terminal.semantic_prompt_row_range(2) == Some((2, 2)) else {
+    fail("expected output row to be its own zone")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/semantic_prompt_row_range is screen-local" {
+  let terminal = StreamTerminal::new()
+  guard terminal.resize(80, 5, 0U, 0U) == Success else {
+    fail("expected resize success")
+  }
+
+  // Primary screen sees an OSC 133 prompt → it has a semantic zone.
+  terminal.next_slice(b"\x1B]133;A\x07prompt>")
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 0)) else {
+    fail("expected primary prompt zone")
+  }
+
+  // Enter the alternate screen (fullscreen app). It received no OSC 133, so it
+  // must not inherit the primary screen's terminal-wide semantic state: every
+  // row query is None rather than a leaked full-screen output zone.
+  terminal.next_slice(b"\x1B[?1049h")
+  guard terminal.active_screen() == Alternate else {
+    fail("expected alternate screen after 1049h")
+  }
+  guard terminal.semantic_prompt_row_range(0) == None &&
+    terminal.semantic_prompt_row_range(4) == None else {
+    fail("expected no semantic zone leaked onto the alternate screen")
+  }
+
+  // Returning to the primary screen restores its semantic state intact.
+  terminal.next_slice(b"\x1B[?1049l")
+  guard terminal.active_screen() == Primary else {
+    fail("expected primary screen after 1049l")
+  }
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 0)) else {
+    fail("expected primary semantic zone to survive the alt-screen round trip")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/clearing alternate screen resets its semantic state" {
+  let terminal = StreamTerminal::new()
+  guard terminal.resize(80, 5, 0U, 0U) == Success else {
+    fail("expected resize success")
+  }
+
+  // Enter the alternate screen and let it emit its own OSC 133 prompt: the
+  // alternate screen legitimately has a semantic zone of its own.
+  terminal.next_slice(b"\x1B[?1049h")
+  terminal.next_slice(b"\x1B]133;A\x07prompt>")
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 0)) else {
+    fail("expected alternate screen to track its own prompt zone")
+  }
+
+  // Leave and re-enter: ?1049h clears the alternate screen, which wipes its
+  // per-row markers. The reused, now-blank alternate session must not keep the
+  // previous session's seen()=true and report a phantom output zone.
+  terminal.next_slice(b"\x1B[?1049l")
+  terminal.next_slice(b"\x1B[?1049h")
+  guard terminal.active_screen() == Alternate else {
+    fail("expected alternate screen after re-entry")
+  }
+  guard terminal.semantic_prompt_row_range(0) == None &&
+    terminal.semantic_prompt_row_range(4) == None else {
+    fail("expected cleared alternate screen to carry no semantic zone")
+  }
+
+  terminal.deinit()
+}

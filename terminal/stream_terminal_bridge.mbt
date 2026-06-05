@@ -187,7 +187,7 @@ priv struct StreamTerminalBridgeState {
   kitty_keyboard : KittyKeyboardState
   mut tabstops : TerminalTabstopsState
   hyperlink : ScreenHyperlinkState
-  semantic : ScreenSemanticState
+  mut semantic : ScreenSemanticState
   metadata : TerminalMetadataState
   mut grid : ScreenGridState
   mut scrollback : PageList
@@ -232,7 +232,7 @@ fn StreamTerminalBridgeState::with_effects(
     kitty_keyboard: KittyKeyboardState::new(),
     tabstops: TerminalTabstopsState::new(DefaultColumns),
     hyperlink: ScreenHyperlinkState::new(),
-    semantic: ScreenSemanticState::new(),
+    semantic: primary_storage.semantic,
     metadata: TerminalMetadataState::new(),
     grid: primary_storage.grid,
     scrollback: primary_storage.scrollback,
@@ -470,6 +470,64 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
   col : CellCountInt,
 ) -> PageCellState? {
   self.scrollback.cell(self.grid, row, col)
+}
+
+///|
+// Return the [start, end] viewport row range of the semantic zone containing
+// `row`. A semantic zone is a maximal run of rows with compatible prompt state:
+//   - None rows form an output zone
+//   - A Prompt row followed by zero or more PromptContinuation rows form a
+//     prompt zone
+// Returns None when no OSC 133 sequences have been seen yet.
+fn StreamTerminalBridgeState::semantic_prompt_row_range(
+  self : StreamTerminalBridgeState,
+  row : CellCountInt,
+) -> (CellCountInt, CellCountInt)? {
+  guard self.semantic.seen() else { return None }
+  let prompt = match self.scrollback.row(self.grid, row) {
+    None => return None
+    Some(r) => r.semantic_prompt()
+  }
+  let total = self.rows()
+  // Walk backward to find start of zone.
+  let mut start = row
+  while start.to_int() > 0 {
+    let prev = (start.to_int() - 1).to_uint16()
+    let prev_prompt = match self.scrollback.row(self.grid, prev) {
+      None => break
+      Some(r) => r.semantic_prompt()
+    }
+    let cont = match (prompt, prev_prompt) {
+      (None, None) => true
+      (PromptContinuation, Prompt) | (PromptContinuation, PromptContinuation) =>
+        true
+      _ => false
+    }
+    if !cont {
+      break
+    }
+    start = prev
+  }
+  // Walk forward to find end of zone.
+  let mut end = row
+  while end.to_int() + 1 < total.to_int() {
+    let next = (end.to_int() + 1).to_uint16()
+    let next_prompt = match self.scrollback.row(self.grid, next) {
+      None => break
+      Some(r) => r.semantic_prompt()
+    }
+    let cont = match (prompt, next_prompt) {
+      (None, None) => true
+      (Prompt, PromptContinuation) | (PromptContinuation, PromptContinuation) =>
+        true
+      _ => false
+    }
+    if !cont {
+      break
+    }
+    end = next
+  }
+  Some((start, end))
 }
 
 ///|
@@ -1571,6 +1629,7 @@ fn StreamTerminalBridgeState::apply_semantic_prompt(
     EndPromptStartInputTerminateEol => self.semantic.start_input(true)
     EndInputStartOutput => {
       self.semantic.set_output()
+      self.semantic.clear_row_prompt()
       if self.cursor.x() == 0 {
         match self.grid.row(self.cursor.y()) {
           Some(row) => row.set_semantic_prompt(None)
@@ -2239,12 +2298,14 @@ fn StreamTerminalBridgeState::store_active_screen(
       self.primary_storage.cursor = self.cursor
       self.primary_storage.scrollback = self.scrollback
       self.primary_storage.kitty_graphics = self.kitty_graphics
+      self.primary_storage.semantic = self.semantic
     }
     Alternate => {
       self.alternate_storage.grid = self.grid
       self.alternate_storage.cursor = self.cursor
       self.alternate_storage.scrollback = self.scrollback
       self.alternate_storage.kitty_graphics = self.kitty_graphics
+      self.alternate_storage.semantic = self.semantic
     }
   }
 }
@@ -2260,12 +2321,14 @@ fn StreamTerminalBridgeState::load_active_screen(
       self.cursor = self.primary_storage.cursor
       self.scrollback = self.primary_storage.scrollback
       self.kitty_graphics = self.primary_storage.kitty_graphics
+      self.semantic = self.primary_storage.semantic
     }
     Alternate => {
       self.grid = self.alternate_storage.grid
       self.cursor = self.alternate_storage.cursor
       self.scrollback = self.alternate_storage.scrollback
       self.kitty_graphics = self.alternate_storage.kitty_graphics
+      self.semantic = self.alternate_storage.semantic
     }
   }
   self.active_screen = screen
@@ -2322,6 +2385,10 @@ fn StreamTerminalBridgeState::clear_active_screen(
   self.kitty_graphics.full_reset(self.scrollback)
   self.grid.full_reset()
   self.scrollback.full_reset(self.grid.rows)
+  // Wiping the screen also wipes the per-row OSC 133 markers, so the active
+  // screen's semantic state machine must reset too — otherwise a reused
+  // alternate screen keeps seen()=true and reports a phantom output zone.
+  self.semantic.full_reset()
 }
 
 ///|

@@ -943,6 +943,7 @@ pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
 pub fn StreamTerminal::scrollback_rows(Self) -> UInt
 pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
 pub fn StreamTerminal::selection(Self, Point, Point, Bool) -> Selection?
+pub fn StreamTerminal::semantic_prompt_row_range(Self, UInt16) -> (UInt16, UInt16)?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
 pub fn StreamTerminal::set_default_background_color(Self, @color.RGB?) -> Unit
