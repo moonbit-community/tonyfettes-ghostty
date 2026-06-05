@@ -2385,6 +2385,10 @@ fn StreamTerminalBridgeState::clear_active_screen(
   self.kitty_graphics.full_reset(self.scrollback)
   self.grid.full_reset()
   self.scrollback.full_reset(self.grid.rows)
+  // Wiping the screen also wipes the per-row OSC 133 markers, so the active
+  // screen's semantic state machine must reset too — otherwise a reused
+  // alternate screen keeps seen()=true and reports a phantom output zone.
+  self.semantic.full_reset()
 }
 
 ///|

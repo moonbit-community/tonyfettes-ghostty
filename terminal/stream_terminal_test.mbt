@@ -366,3 +366,34 @@ test "stream terminal/semantic_prompt_row_range is screen-local" {
 
   terminal.deinit()
 }
+
+///|
+test "stream terminal/clearing alternate screen resets its semantic state" {
+  let terminal = StreamTerminal::new()
+  guard terminal.resize(80, 5, 0U, 0U) == Success else {
+    fail("expected resize success")
+  }
+
+  // Enter the alternate screen and let it emit its own OSC 133 prompt: the
+  // alternate screen legitimately has a semantic zone of its own.
+  terminal.next_slice(b"\x1B[?1049h")
+  terminal.next_slice(b"\x1B]133;A\x07prompt>")
+  guard terminal.semantic_prompt_row_range(0) == Some((0, 0)) else {
+    fail("expected alternate screen to track its own prompt zone")
+  }
+
+  // Leave and re-enter: ?1049h clears the alternate screen, which wipes its
+  // per-row markers. The reused, now-blank alternate session must not keep the
+  // previous session's seen()=true and report a phantom output zone.
+  terminal.next_slice(b"\x1B[?1049l")
+  terminal.next_slice(b"\x1B[?1049h")
+  guard terminal.active_screen() == Alternate else {
+    fail("expected alternate screen after re-entry")
+  }
+  guard terminal.semantic_prompt_row_range(0) == None &&
+    terminal.semantic_prompt_row_range(4) == None else {
+    fail("expected cleared alternate screen to carry no semantic zone")
+  }
+
+  terminal.deinit()
+}
