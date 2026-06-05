@@ -292,6 +292,18 @@ fn ScreenGridState::append_grapheme(
   }
   let cell = self.lines[row_idx].cells[target_x]
   if cell.has_text() {
+    // Variation selectors retroactively request emoji (U+FE0F → wide) or text
+    // (U+FE0E → narrow) presentation for the base cluster. We don't re-width a
+    // cell that's already been placed, so keep a selector only when it agrees
+    // with the base's current width; otherwise the emitted grapheme would be
+    // wider/narrower than its grid cell and overlap neighbours on a formatter
+    // round-trip. (Full VS-driven re-width is part of the deferred
+    // grapheme-width work.)
+    let base_is_wide = cell.wide() == Wide
+    if (codepoint == 0xFE0FU && !base_is_wide) ||
+      (codepoint == 0xFE0EU && base_is_wide) {
+      return
+    }
     cell.append_grapheme(codepoint)
     self.lines[row_idx].desc.set_grapheme(true)
     self.lines[row_idx].desc.set_dirty(true)

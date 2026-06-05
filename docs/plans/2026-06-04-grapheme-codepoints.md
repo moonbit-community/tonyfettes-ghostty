@@ -80,6 +80,14 @@ the base emoji, e.g. 👍 + 🏽 → 👍🏽) — it combines rather than print
 3. Mark the row dirty and set `PageRowState::grapheme = true`.
 4. If there is no preceding cell (cursor at column 0, no pending_wrap), discard
    the codepoint — same as upstream.
+5. A variation selector (U+FE0E text / U+FE0F emoji presentation) is only kept
+   when it agrees with the base cell's current width — U+FE0F onto a `Wide`
+   base, U+FE0E onto a narrow one. A width-changing selector (the common
+   `❤`+U+FE0F case) is dropped instead of appended: the base was already placed
+   at its wcwidth, and we do not retroactively re-width a cell, so keeping the
+   selector would make the emitted grapheme wider than its grid cell and overlap
+   neighbours on a formatter round-trip. Proper VS-driven re-width is part of the
+   deferred grapheme-width work.
 
 This combining happens **regardless of DEC mode 2027 (`GraphemeCluster`)**.
 Upstream Ghostty appends combining marks to the prior cell in both the legacy

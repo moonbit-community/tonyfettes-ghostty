@@ -527,3 +527,25 @@ test "stream terminal/emoji skin-tone modifier combines onto base emoji" {
 
   terminal.deinit()
 }
+
+///|
+test "stream terminal/emoji variation selector does not widen a narrow base" {
+  let terminal = StreamTerminal::new()
+
+  // ❤ (U+2764, narrow) + VS16 (U+FE0F, emoji presentation) + X. VS16 would make
+  // the cluster render width-2, but we do not re-width an already-placed narrow
+  // cell; dropping the selector keeps the grid cell and the emitted text the
+  // same width, so a formatter round-trip cannot overlap the next column.
+  terminal.next_slice(@utf8.encode("\u{2764}\u{FE0F}X"))
+  let base = expect_terminal_cell(terminal, 0, 0)
+  guard base.codepoint() == 0x2764U && !base.has_grapheme() else {
+    fail("expected the width-changing VS16 to be dropped on a narrow base")
+  }
+
+  // The base consumed a single column, so X is its immediate neighbour.
+  guard expect_terminal_cell(terminal, 0, 1).codepoint() == b'X'.to_uint() else {
+    fail("expected X adjacent to the narrow base")
+  }
+
+  terminal.deinit()
+}
