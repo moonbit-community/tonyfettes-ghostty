@@ -1061,14 +1061,18 @@ fn ScreenGridState::write_cell(
   semantic_content : SemanticContent,
   hyperlink : CellHyperlink?,
 ) -> Unit {
-  let cell = PageCellState::new()
+  // Mutate the existing cell object in place rather than allocating a fresh
+  // PageCellState per printed character. Active-grid cells are never aliased
+  // (each column is its own object; clears copy, row shifts move whole lines),
+  // so in-place mutation is safe and avoids an alloc + refcount-drop per cell —
+  // the dominant cost on the print hot path.
+  let cell = self.lines[row_idx].cells[col_idx]
   cell.set_codepoint(codepoint, false)
   cell.set_style(style)
   cell.set_wide(wide)
   cell.set_protected(protected_flag)
   cell.set_hyperlink(hyperlink)
   cell.set_semantic_content(semantic_content)
-  self.lines[row_idx].cells[col_idx] = cell
 }
 
 ///|
