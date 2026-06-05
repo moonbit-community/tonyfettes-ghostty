@@ -569,7 +569,10 @@ fn formatter_cell_is_blank(formatter : Formatter, cell : PageCellState) -> Bool 
   if !cell.has_text() {
     return true
   }
-  formatter.opts.trim && cell.codepoint() == b' '.to_uint()
+  // A space carrying combining marks is a real grapheme, not blank padding.
+  formatter.opts.trim &&
+  cell.codepoint() == b' '.to_uint() &&
+  !cell.has_grapheme()
 }
 
 ///|
@@ -580,21 +583,22 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
   if !cell.has_text() {
     return true
   }
-  cell.codepoint() == b' '.to_uint()
+  // A space carrying combining marks is a real grapheme, not blank padding.
+  cell.codepoint() == b' '.to_uint() && !cell.has_grapheme()
 }
 
 ///|
 fn formatter_cell_style(cell : PageCellState) -> CellStyle {
-  match cell.content_tag() {
-    Codepoint | CodepointGrapheme => cell.style()
-    BackgroundPalette => {
+  match cell.content() {
+    Codepoint(_) | CodepointGrapheme(_, _) => cell.style()
+    BackgroundPalette(index) => {
       let style = CellStyle::new()
-      style.bg_color = style_color_palette(cell.palette_index().unwrap())
+      style.bg_color = style_color_palette(index)
       style
     }
-    BackgroundRgb => {
+    BackgroundRgb(rgb) => {
       let style = CellStyle::new()
-      style.bg_color = style_color_rgb(cell.background_rgb().unwrap())
+      style.bg_color = style_color_rgb(rgb)
       style
     }
   }
@@ -612,6 +616,11 @@ fn formatter_write_cell_text(
   }
 
   formatter_write_codepoint(emit, buffer, cell.codepoint())
+  // Emit combining marks so graphemes (é, 👍🏽, ZWJ sequences) survive
+  // copy/format and VT-framebuffer serialization.
+  for cp in cell.grapheme_codepoints() {
+    formatter_write_codepoint(emit, buffer, cp)
+  }
 }
 
 ///|

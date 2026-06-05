@@ -495,18 +495,11 @@ pub(all) enum OptionAsAlt {
   True
 } derive(Eq, @debug.Debug)
 
-pub(all) enum PageCellContentTag {
-  Codepoint
-  CodepointGrapheme
-  BackgroundPalette
-  BackgroundRgb
-} derive(Eq, @debug.Debug)
-
 type PageCellState derive(Eq, @debug.Debug)
 pub fn PageCellState::background_rgb(Self) -> @color.RGB?
 pub fn PageCellState::codepoint(Self) -> UInt
-pub fn PageCellState::content_tag(Self) -> PageCellContentTag
 pub fn PageCellState::full_reset(Self) -> Unit
+pub fn PageCellState::grapheme_codepoints(Self) -> ArrayView[UInt]
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
 pub fn PageCellState::has_styling(Self) -> Bool

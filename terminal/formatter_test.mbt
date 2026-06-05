@@ -55,6 +55,35 @@ test "formatter/plain formats content and reflects terminal changes" {
 }
 
 ///|
+test "formatter/plain preserves combining marks" {
+  let terminal = StreamTerminal::new()
+  let formatter = plain_formatter(terminal)
+
+  // 'e' + combining acute (U+0301) + combining grave (U+0300) on one cell.
+  terminal.next_slice(@utf8.encode("e\u{0301}\u{0300}X"))
+  guard formatter.format() == @utf8.encode("e\u{0301}\u{0300}X") else {
+    fail("expected formatter to emit base codepoint and all combining marks")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "formatter/plain keeps space-based grapheme out of blank trimming" {
+  let terminal = StreamTerminal::new()
+  let formatter = plain_formatter(terminal)
+
+  // A space carrying a combining mark is a real grapheme: blank-run trimming
+  // must not treat it as padding and drop the mark.
+  terminal.next_slice(@utf8.encode(" \u{0301}X"))
+  guard formatter.format() == @utf8.encode(" \u{0301}X") else {
+    fail("expected space+combining-mark grapheme to survive blank trimming")
+  }
+
+  terminal.deinit()
+}
+
+///|
 test "formatter/plain owned bytes keep exact formatted length" {
   let terminal = StreamTerminal::new()
   let formatter = plain_formatter(terminal)

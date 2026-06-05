@@ -266,6 +266,40 @@ test "stream terminal/semantic_prompt_row_range returns None without OSC 133" {
 }
 
 ///|
+test "stream terminal/combining codepoints accumulate as grapheme extras" {
+  let terminal = StreamTerminal::new()
+
+  // 'e' (U+0065) followed by combining acute accent (U+0301) → é
+  // The accent (U+0301) is zero-width and should be combined onto 'e'.
+  terminal.next_slice(@utf8.encode("e\u{0301}"))
+  let cell = expect_terminal_cell(terminal, 0, 0)
+  guard cell.codepoint() == 0x65U &&
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x301U] else {
+    fail(
+      "expected combining accent to be stored as grapheme extra on the base cell",
+    )
+  }
+
+  // Second combining codepoint appended to same base cell
+  terminal.next_slice(@utf8.encode("\u{0300}"))
+  let cell2 = expect_terminal_cell(terminal, 0, 0)
+  guard cell2.codepoint() == 0x65U &&
+    cell2.grapheme_codepoints() == [0x301U, 0x300U] else {
+    fail("expected second combining codepoint to accumulate")
+  }
+
+  // A new printable character at the next column has no grapheme extras
+  terminal.next_slice(b"a")
+  let cell3 = expect_terminal_cell(terminal, 0, 1)
+  guard !cell3.has_grapheme() && cell3.grapheme_codepoints() == [] else {
+    fail("expected adjacent plain cell to have no grapheme extras")
+  }
+
+  terminal.deinit()
+}
+
+///|
 test "stream terminal/semantic_prompt_row_range covers prompt and output zones" {
   let terminal = StreamTerminal::new()
 
@@ -295,6 +329,33 @@ test "stream terminal/semantic_prompt_row_range covers prompt and output zones" 
   }
   guard terminal.semantic_prompt_row_range(3) == Some((3, 3)) else {
     fail("expected second prompt row to map to its own zone")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/mode 2027 still combines zero-width codepoints" {
+  let terminal = StreamTerminal::new()
+
+  // With grapheme cluster mode (2027) enabled, a zero-width combining mark must
+  // still attach to its base cell — upstream Ghostty appends it in the 2027
+  // grapheme-segmentation path just as in the legacy path.
+  terminal.mode_set(GraphemeCluster, true)
+  terminal.next_slice(@utf8.encode("e\u{0301}"))
+  let cell = expect_terminal_cell(terminal, 0, 0)
+  guard cell.codepoint() == b'e'.to_uint() &&
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x301U] else {
+    fail("expected combining codepoint combined when mode 2027 is on")
+  }
+
+  // Same behavior with mode 2027 disabled.
+  terminal.mode_set(GraphemeCluster, false)
+  terminal.next_slice(@utf8.encode("e\u{0301}"))
+  let cell2 = expect_terminal_cell(terminal, 0, 1)
+  guard cell2.has_grapheme() && cell2.grapheme_codepoints() == [0x301U] else {
+    fail("expected combining codepoint appended when mode 2027 is off")
   }
 
   terminal.deinit()
@@ -414,6 +475,76 @@ test "stream terminal/copied default cell is not reported as styled" {
   let bold = expect_terminal_cell(terminal, 0, 1)
   guard !plain.has_styling() && bold.has_styling() else {
     fail("expected copied default cell unstyled and bold cell styled")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/grapheme_codepoints visible through row iterator" {
+  let terminal = StreamTerminal::new()
+  let render = RenderState::new()
+
+  // Write 'n' + combining tilde (U+0303) → ñ
+  terminal.next_slice(@utf8.encode("n\u{0303}"))
+  render.update(terminal)
+
+  let iter = render.row_iterator()
+  guard iter.next() else { fail("expected at least one row") }
+  let cells = iter.cells().unwrap()
+  guard cells.next() else { fail("expected at least one cell") }
+  let cell = cells.cell().unwrap()
+  guard cell.codepoint() == b'n'.to_uint() &&
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x303U] else {
+    fail("expected grapheme codepoints accessible through render row iterator")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/emoji skin-tone modifier combines onto base emoji" {
+  let terminal = StreamTerminal::new()
+
+  // 👍 (U+1F44D, wide) + 🏽 (U+1F3FD, skin-tone modifier). wcwidth reports the
+  // modifier as wide, but it must extend the base emoji's grapheme cluster, not
+  // land in its own cell.
+  terminal.next_slice(@utf8.encode("👍🏽"))
+  let cell = expect_terminal_cell(terminal, 0, 0)
+  guard cell.codepoint() == 0x1F44DU &&
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x1F3FDU] else {
+    fail("expected skin-tone modifier combined onto the base emoji")
+  }
+
+  // The modifier consumed no cell of its own: the next character lands at
+  // column 2 (after the wide emoji + its spacer tail), not column 4.
+  terminal.next_slice(b"X")
+  guard expect_terminal_cell(terminal, 0, 2).codepoint() == b'X'.to_uint() else {
+    fail("expected the skin-tone modifier not to occupy its own cell")
+  }
+
+  terminal.deinit()
+}
+
+///|
+test "stream terminal/emoji variation selector does not widen a narrow base" {
+  let terminal = StreamTerminal::new()
+
+  // ❤ (U+2764, narrow) + VS16 (U+FE0F, emoji presentation) + X. VS16 would make
+  // the cluster render width-2, but we do not re-width an already-placed narrow
+  // cell; dropping the selector keeps the grid cell and the emitted text the
+  // same width, so a formatter round-trip cannot overlap the next column.
+  terminal.next_slice(@utf8.encode("\u{2764}\u{FE0F}X"))
+  let base = expect_terminal_cell(terminal, 0, 0)
+  guard base.codepoint() == 0x2764U && !base.has_grapheme() else {
+    fail("expected the width-changing VS16 to be dropped on a narrow base")
+  }
+
+  // The base consumed a single column, so X is its immediate neighbour.
+  guard expect_terminal_cell(terminal, 0, 1).codepoint() == b'X'.to_uint() else {
+    fail("expected X adjacent to the narrow base")
   }
 
   terminal.deinit()

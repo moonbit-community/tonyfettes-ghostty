@@ -1,9 +1,13 @@
 ///|
-pub(all) enum PageCellContentTag {
-  Codepoint
-  CodepointGrapheme
-  BackgroundPalette
-  BackgroundRgb
+// Internal representation of a cell's content. Kept package-private: external
+// callers query via codepoint()/palette_index()/background_rgb()/has_grapheme()
+// /grapheme_codepoints() rather than matching on this enum, so the storage
+// layout stays an implementation detail.
+priv enum PageCellContent {
+  Codepoint(UInt)
+  CodepointGrapheme(UInt, Array[UInt])
+  BackgroundPalette(Byte)
+  BackgroundRgb(@color.RGB)
 } derive(Eq, Debug)
 
 ///|
@@ -180,10 +184,7 @@ pub fn PageRowState::full_reset(self : PageRowState) -> Unit {
 
 ///|
 struct PageCellState {
-  mut content_tag : PageCellContentTag
-  mut codepoint : UInt
-  mut palette_index : Byte
-  mut bg_rgb : @color.RGB
+  mut content : PageCellContent
   mut style : CellStyle
   mut wide : PageCellWide
   mut protected_flag : Bool
@@ -194,10 +195,7 @@ struct PageCellState {
 ///|
 pub fn PageCellState::new() -> PageCellState {
   {
-    content_tag: Codepoint,
-    codepoint: 0U,
-    palette_index: 0,
-    bg_rgb: @color.RGB::new(0, 0, 0),
+    content: Codepoint(0U),
     style: default_cell_style,
     wide: Narrow,
     protected_flag: false,
@@ -214,8 +212,8 @@ pub fn PageCellState::init(codepoint : UInt) -> PageCellState {
 }
 
 ///|
-pub fn PageCellState::content_tag(self : PageCellState) -> PageCellContentTag {
-  self.content_tag
+fn PageCellState::content(self : PageCellState) -> PageCellContent {
+  self.content
 }
 
 ///|
@@ -224,8 +222,11 @@ pub fn PageCellState::set_codepoint(
   codepoint : UInt,
   grapheme : Bool,
 ) -> Unit {
-  self.content_tag = if grapheme { CodepointGrapheme } else { Codepoint }
-  self.codepoint = codepoint
+  self.content = if grapheme {
+    CodepointGrapheme(codepoint, [])
+  } else {
+    Codepoint(codepoint)
+  }
 }
 
 ///|
@@ -233,8 +234,7 @@ pub fn PageCellState::set_background_palette(
   self : PageCellState,
   index : Byte,
 ) -> Unit {
-  self.content_tag = BackgroundPalette
-  self.palette_index = index
+  self.content = BackgroundPalette(index)
 }
 
 ///|
@@ -242,31 +242,30 @@ pub fn PageCellState::set_background_rgb(
   self : PageCellState,
   rgb : @color.RGB,
 ) -> Unit {
-  self.content_tag = BackgroundRgb
-  self.bg_rgb = rgb
+  self.content = BackgroundRgb(rgb)
 }
 
 ///|
 pub fn PageCellState::codepoint(self : PageCellState) -> UInt {
-  match self.content_tag {
-    Codepoint | CodepointGrapheme => self.codepoint
-    BackgroundPalette | BackgroundRgb => 0U
+  match self.content {
+    Codepoint(cp) | CodepointGrapheme(cp, _) => cp
+    BackgroundPalette(_) | BackgroundRgb(_) => 0U
   }
 }
 
 ///|
 pub fn PageCellState::palette_index(self : PageCellState) -> Byte? {
-  match self.content_tag {
-    BackgroundPalette => Some(self.palette_index)
-    Codepoint | CodepointGrapheme | BackgroundRgb => None
+  match self.content {
+    BackgroundPalette(index) => Some(index)
+    _ => None
   }
 }
 
 ///|
 pub fn PageCellState::background_rgb(self : PageCellState) -> @color.RGB? {
-  match self.content_tag {
-    BackgroundRgb => Some(self.bg_rgb)
-    Codepoint | CodepointGrapheme | BackgroundPalette => None
+  match self.content {
+    BackgroundRgb(rgb) => Some(rgb)
+    _ => None
   }
 }
 
@@ -361,9 +360,9 @@ pub fn PageCellState::is_zero(self : PageCellState) -> Bool {
 
 ///|
 pub fn PageCellState::has_text(self : PageCellState) -> Bool {
-  match self.content_tag {
-    Codepoint | CodepointGrapheme => self.codepoint != 0U
-    BackgroundPalette | BackgroundRgb => false
+  match self.content {
+    Codepoint(cp) | CodepointGrapheme(cp, _) => cp != 0U
+    BackgroundPalette(_) | BackgroundRgb(_) => false
   }
 }
 
@@ -389,23 +388,51 @@ pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
 
 ///|
 pub fn PageCellState::is_empty(self : PageCellState) -> Bool {
-  match self.content_tag {
-    Codepoint | CodepointGrapheme => !self.has_text() && self.wide == Narrow
-    BackgroundPalette | BackgroundRgb => false
+  match self.content {
+    Codepoint(cp) | CodepointGrapheme(cp, _) => cp == 0U && self.wide == Narrow
+    BackgroundPalette(_) | BackgroundRgb(_) => false
   }
 }
 
 ///|
 pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
-  self.content_tag == CodepointGrapheme
+  self.content is CodepointGrapheme(_, _)
+}
+
+///|
+// The cell's combining codepoints (empty when the cell is not a grapheme
+// cluster). Returns a read-only `ArrayView` over the cell's internal storage —
+// no copy on the render hot path, and the view exposes no `push`/element-set,
+// so callers cannot resize or mutate the cell's grapheme run (which would
+// desync `PageRowState::grapheme`/dirty flags). Callers that need to retain or
+// edit the codepoints should `.to_array()` first.
+pub fn PageCellState::grapheme_codepoints(
+  self : PageCellState,
+) -> ArrayView[UInt] {
+  match self.content {
+    CodepointGrapheme(_, extras) => extras
+    _ => []
+  }
+}
+
+///|
+// Append a combining codepoint onto this cell. Upgrades Codepoint to
+// CodepointGrapheme on first call; subsequent calls push onto the existing
+// extras. Only meaningful when the cell has text.
+fn PageCellState::append_grapheme(
+  self : PageCellState,
+  codepoint : UInt,
+) -> Unit {
+  match self.content {
+    Codepoint(base) => self.content = CodepointGrapheme(base, [codepoint])
+    CodepointGrapheme(_, extras) => extras.push(codepoint)
+    _ => ()
+  }
 }
 
 ///|
 pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
-  self.content_tag = Codepoint
-  self.codepoint = 0U
-  self.palette_index = 0
-  self.bg_rgb = @color.RGB::new(0, 0, 0)
+  self.content = Codepoint(0U)
   // Re-point to the shared default rather than mutating the style in place:
   // the field may alias the shared default singleton (see `default_cell_style`).
   self.style = default_cell_style
