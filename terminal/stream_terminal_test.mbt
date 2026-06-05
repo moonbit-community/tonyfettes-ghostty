@@ -502,3 +502,28 @@ test "stream terminal/grapheme_codepoints visible through row iterator" {
 
   terminal.deinit()
 }
+
+///|
+test "stream terminal/emoji skin-tone modifier combines onto base emoji" {
+  let terminal = StreamTerminal::new()
+
+  // 👍 (U+1F44D, wide) + 🏽 (U+1F3FD, skin-tone modifier). wcwidth reports the
+  // modifier as wide, but it must extend the base emoji's grapheme cluster, not
+  // land in its own cell.
+  terminal.next_slice(@utf8.encode("👍🏽"))
+  let cell = expect_terminal_cell(terminal, 0, 0)
+  guard cell.codepoint() == 0x1F44DU &&
+    cell.has_grapheme() &&
+    cell.grapheme_codepoints() == [0x1F3FDU] else {
+    fail("expected skin-tone modifier combined onto the base emoji")
+  }
+
+  // The modifier consumed no cell of its own: the next character lands at
+  // column 2 (after the wide emoji + its spacer tail), not column 4.
+  terminal.next_slice(b"X")
+  guard expect_terminal_cell(terminal, 0, 2).codepoint() == b'X'.to_uint() else {
+    fail("expected the skin-tone modifier not to occupy its own cell")
+  }
+
+  terminal.deinit()
+}

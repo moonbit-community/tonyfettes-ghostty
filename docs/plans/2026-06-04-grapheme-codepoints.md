@@ -64,7 +64,10 @@ received after a printable one.
 
 ### Combining rule
 
-When the bridge's `print()` receives a zero-width codepoint (`width <= 0`):
+When the bridge's `print()` receives a codepoint that extends the preceding
+grapheme cluster — a zero-width codepoint (`width <= 0`), or an emoji skin-tone
+modifier U+1F3FB–U+1F3FF (which wcwidth reports as *wide* but which attaches to
+the base emoji, e.g. 👍 + 🏽 → 👍🏽) — it combines rather than printing a cell:
 
 1. Find the preceding logical cell:
    - If `cursor.pending_wrap`: the cell is at `(cursor.y, cursor.x)` — the
@@ -81,9 +84,11 @@ When the bridge's `print()` receives a zero-width codepoint (`width <= 0`):
 This combining happens **regardless of DEC mode 2027 (`GraphemeCluster`)**.
 Upstream Ghostty appends combining marks to the prior cell in both the legacy
 (wcwidth) path and the 2027 grapheme-segmentation path; an early-return guarded
-on 2027 would drop accents whenever an application enables the mode. (Full 2027
-support would additionally cluster width>0 codepoints via Unicode grapheme
-breaks — not yet implemented; tracked as a follow-up.)
+on 2027 would drop accents whenever an application enables the mode. Emoji
+skin-tone modifiers are clustered the same way. (General width>0 clustering via
+Unicode grapheme breaks — e.g. ZWJ-joined emoji like 👨‍👩‍👧, where the joined
+emoji each have width 2 — is still a follow-up; only the skin-tone modifiers are
+special-cased today.)
 
 ### Formatted output
 

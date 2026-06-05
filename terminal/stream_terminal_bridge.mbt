@@ -1420,13 +1420,16 @@ fn StreamTerminalBridgeState::print(
   }
 
   let width = codepoint_width(codepoint)
-  if width <= 0 {
-    // A zero-width codepoint combines onto the previous cell as part of its
-    // grapheme cluster. This holds whether or not mode 2027 (GraphemeCluster)
-    // is enabled: upstream Ghostty appends combining marks to the prior cell in
-    // both the legacy (wcwidth) path and the 2027 grapheme-segmentation path.
-    // (Full 2027 support would also cluster width>0 codepoints via Unicode
-    // grapheme breaks; that is not yet implemented.)
+  if width <= 0 || is_emoji_modifier(codepoint) {
+    // Combine this codepoint onto the previous cell as part of its grapheme
+    // cluster instead of giving it a cell of its own. This covers two cases:
+    //   - zero-width codepoints (combining marks, ZWJ, variant selectors); and
+    //   - emoji skin-tone modifiers U+1F3FB–U+1F3FF, which wcwidth reports as
+    //     *wide* but which extend the preceding emoji (e.g. 👍 + 🏽 → 👍🏽).
+    // Holds whether or not mode 2027 (GraphemeCluster) is enabled: upstream
+    // Ghostty appends to the prior cell in both the legacy (wcwidth) and 2027
+    // grapheme-segmentation paths. (General width>0 clustering via Unicode
+    // grapheme breaks — e.g. ZWJ-joined emoji — is still a follow-up.)
     self.grid.append_grapheme(self.cursor, codepoint)
     return
   }
@@ -2945,6 +2948,14 @@ fn saturated_request(value : Int) -> CellCountInt {
   } else {
     value.to_uint16()
   }
+}
+
+///|
+// Emoji skin-tone modifiers (EMOJI MODIFIER FITZPATRICK TYPE-1-2 … TYPE-6).
+// wcwidth classifies these as wide, but they extend the preceding emoji rather
+// than occupying their own cell, so the print path clusters them.
+fn is_emoji_modifier(codepoint : UInt) -> Bool {
+  codepoint >= 0x1F3FBU && codepoint <= 0x1F3FFU
 }
 
 ///|
