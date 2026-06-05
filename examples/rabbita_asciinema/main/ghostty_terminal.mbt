@@ -320,7 +320,13 @@ fn GhosttyTerminal::cell_text(
   ignore(self)
   ignore(row)
   ignore(col)
-  codepoints_to_string([cell.codepoint()])
+  // Base codepoint followed by any stored grapheme extras (combining marks,
+  // emoji skin-tone modifiers, …) so the rendered text keeps the full cluster.
+  let codepoints = [cell.codepoint()]
+  for cp in cell.grapheme_codepoints() {
+    codepoints.push(cp)
+  }
+  codepoints_to_string(codepoints)
 }
 
 ///|
