@@ -1193,7 +1193,13 @@ fn copy_page_cell(cell : PageCellState) -> PageCellState {
     codepoint: cell.codepoint,
     palette_index: cell.palette_index,
     bg_rgb: cell.bg_rgb,
-    style: copy_cell_style(cell.style),
+    // Preserve the "default style ⇒ shared singleton" invariant has_styling()
+    // relies on: an unstyled source stays the singleton, a styled one is copied.
+    style: if physical_equal(cell.style, default_cell_style) {
+      default_cell_style
+    } else {
+      copy_cell_style(cell.style)
+    },
     wide: cell.wide,
     protected_flag: cell.protected_flag,
     hyperlink: cell.hyperlink,

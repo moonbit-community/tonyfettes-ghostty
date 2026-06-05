@@ -198,7 +198,7 @@ pub fn PageCellState::new() -> PageCellState {
     codepoint: 0U,
     palette_index: 0,
     bg_rgb: @color.RGB::new(0, 0, 0),
-    style: CellStyle::new(),
+    style: default_cell_style,
     wide: Narrow,
     protected_flag: false,
     hyperlink: None,
@@ -276,11 +276,33 @@ pub fn PageCellState::style(self : PageCellState) -> CellStyle {
 }
 
 ///|
+// The default cell style, shared by every cell that has no SGR styling.
+//
+// Analogous to upstream Ghostty's `style.default_id`: the overwhelmingly common
+// style needs neither per-cell storage nor a copy. The singleton is treated as
+// immutable — `set_style` shares it by reference, `full_reset` re-points to it,
+// and the only in-place mutator a cell had (`full_reset`'s `style.reset()`) now
+// replaces the field instead. Reads go through `PageCellState::style()`, which
+// returns a copy, so no caller can mutate the shared instance.
+let default_cell_style : CellStyle = CellStyle::new()
+
+///|
 pub fn PageCellState::set_style(
   self : PageCellState,
   style : CellStyle,
 ) -> Unit {
-  self.style = copy_page_cell_style(style)
+  // Share the default singleton (no allocation) for unstyled cells — the hot
+  // path for plain text; copy only when the style actually carries SGR state.
+  if style.is_default() {
+    // Skip the assignment when the cell already points at the singleton, so the
+    // common "overwrite an unstyled cell with unstyled text" case touches no
+    // reference counts at all.
+    if !physical_equal(self.style, default_cell_style) {
+      self.style = default_cell_style
+    }
+  } else {
+    self.style = copy_page_cell_style(style)
+  }
 }
 
 ///|
@@ -355,7 +377,11 @@ pub fn PageCellState::grid_width(self : PageCellState) -> Int {
 
 ///|
 pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
-  !self.style.is_default()
+  // Every unstyled cell shares the `default_cell_style` singleton (set_style /
+  // full_reset / new / copy_page_cell all preserve this), so "is this cell
+  // styled?" is an O(1) identity check rather than a field-by-field
+  // is_default() — the same shortcut as Ghostty's `style_id != default_id`.
+  !physical_equal(self.style, default_cell_style)
 }
 
 ///|
@@ -377,7 +403,9 @@ pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
   self.codepoint = 0U
   self.palette_index = 0
   self.bg_rgb = @color.RGB::new(0, 0, 0)
-  self.style.reset()
+  // Re-point to the shared default rather than mutating the style in place:
+  // the field may alias the shared default singleton (see `default_cell_style`).
+  self.style = default_cell_style
   self.wide = Narrow
   self.protected_flag = false
   self.hyperlink = None
