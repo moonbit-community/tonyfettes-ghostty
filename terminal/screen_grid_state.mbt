@@ -80,16 +80,17 @@ fn ScreenGridState::recycle_row_cells(
 /// instead of clearing a shared line in place.
 fn ScreenGridState::blank_line(
   self : ScreenGridState,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> GridLine {
   match self.cell_pool.pop() {
     Some(cells) => {
       for cell in cells {
         cell.full_reset()
-        match style.bg_color() {
-          None => ()
-          Palette(index) => cell.set_background_palette(index)
-          Rgb(rgb) => cell.set_background_rgb(rgb)
+        let bg = style.bg_color()
+        if bg.palette_index() is Some(index) {
+          cell.set_background_palette(index)
+        } else if bg.rgb_value() is Some(rgb) {
+          cell.set_background_rgb(rgb)
         }
       }
       { desc: PageRowState::new(), cells }
@@ -117,7 +118,7 @@ fn ScreenGridState::print(
   cursor : TerminalCursorState,
   codepoint : UInt,
   width : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : SemanticContent,
   row_prompt : RowSemanticPrompt,
@@ -241,7 +242,7 @@ fn ScreenGridState::print_repeat(
   cursor : TerminalCursorState,
   codepoint : UInt,
   width : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : SemanticContent,
   row_prompt : RowSemanticPrompt,
@@ -314,7 +315,7 @@ fn ScreenGridState::append_grapheme(
 fn ScreenGridState::insert_blanks(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
   cursor.pending_wrap = false
@@ -373,7 +374,7 @@ fn ScreenGridState::insert_blanks(
 fn ScreenGridState::delete_chars(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   count_req : UInt16,
 ) -> Unit {
   if count_req == 0 {
@@ -413,7 +414,7 @@ fn ScreenGridState::delete_chars(
 fn ScreenGridState::erase_chars(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   protected_mode : ProtectedMode,
   count_req : UInt16,
 ) -> Unit {
@@ -448,7 +449,7 @@ fn ScreenGridState::erase_chars(
 fn ScreenGridState::erase_line(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   mode : ScreenEraseLineMode,
   protected_mode : ProtectedMode,
   protected_req : Bool,
@@ -493,7 +494,7 @@ fn ScreenGridState::erase_line(
 fn ScreenGridState::erase_display(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   mode : ScreenEraseDisplayMode,
   protected_mode : ProtectedMode,
   protected_req : Bool,
@@ -530,7 +531,7 @@ fn ScreenGridState::erase_display(
 fn ScreenGridState::insert_lines(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
   if count == 0 {
@@ -557,7 +558,7 @@ fn ScreenGridState::insert_lines(
 fn ScreenGridState::delete_lines(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
   if count == 0 {
@@ -584,7 +585,7 @@ fn ScreenGridState::delete_lines(
 fn ScreenGridState::scroll_down(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
   let old_x = cursor.x
@@ -602,7 +603,7 @@ fn ScreenGridState::scroll_down(
 fn ScreenGridState::scroll_up(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
   let old_x = cursor.x
@@ -617,10 +618,13 @@ fn ScreenGridState::scroll_up(
 }
 
 ///|
-fn ScreenGridState::decaln(self : ScreenGridState, style : CellStyle) -> Unit {
+fn ScreenGridState::decaln(
+  self : ScreenGridState,
+  style : @style.CellStyle,
+) -> Unit {
   let mut row_idx = 0
   while row_idx < self.rows.to_int() {
-    self.clear_full_row(row_idx, CellStyle::new(), false)
+    self.clear_full_row(row_idx, @style.CellStyle::new(), false)
     let mut col_idx = 0
     while col_idx < self.cols.to_int() {
       self.write_cell(
@@ -644,7 +648,7 @@ fn ScreenGridState::decaln(self : ScreenGridState, style : CellStyle) -> Unit {
 fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
   let mut row_idx = 0
   while row_idx < self.rows.to_int() {
-    self.clear_full_row(row_idx, CellStyle::new(), false)
+    self.clear_full_row(row_idx, @style.CellStyle::new(), false)
     self.lines[row_idx].desc.set_dirty(false)
     row_idx += 1
   }
@@ -656,7 +660,7 @@ fn ScreenGridState::print_cell(
   cursor : TerminalCursorState,
   codepoint : UInt,
   wide : PageCellWide,
-  style : CellStyle,
+  style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : SemanticContent,
   hyperlink : CellHyperlink?,
@@ -745,7 +749,7 @@ fn ScreenGridState::update_row_flags_after_write(
 fn ScreenGridState::print_wrap(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   semantic_content : SemanticContent,
 ) -> Unit {
   let row_idx = cursor.y.to_int()
@@ -769,7 +773,7 @@ fn ScreenGridState::print_wrap(
 fn ScreenGridState::index(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   if cursor.y == cursor.bottom_margin {
     self.shift_region_up(
@@ -793,7 +797,7 @@ fn ScreenGridState::shift_region_down(
   left : Int,
   right : Int,
   count_req : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   let rem = bottom - start_y + 1
   let count = min_int(count_req, rem)
@@ -833,7 +837,7 @@ fn ScreenGridState::shift_region_up(
   left : Int,
   right : Int,
   count_req : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   let rem = bottom - start_y + 1
   let count = min_int(count_req, rem)
@@ -876,7 +880,7 @@ fn ScreenGridState::row_will_be_shifted(
   row_idx : Int,
   left : Int,
   right : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   let mut changed = false
   if right == self.cols.to_int() - 1 || left < 2 {
@@ -915,7 +919,7 @@ fn ScreenGridState::split_cell_boundary(
   self : ScreenGridState,
   row_idx : Int,
   x : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   if x == self.cols.to_int() {
     if !self.lines[row_idx].desc.wrap() {
@@ -958,7 +962,7 @@ fn ScreenGridState::split_cell_boundary(
 fn ScreenGridState::cursor_reset_wrap(
   self : ScreenGridState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   cursor.pending_wrap = false
@@ -1002,7 +1006,7 @@ fn ScreenGridState::clear_rows(
   self : ScreenGridState,
   start_row : Int,
   end_row : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
   respect_protected : Bool,
 ) -> Unit {
   let mut row_idx = start_row
@@ -1016,7 +1020,7 @@ fn ScreenGridState::clear_rows(
 fn ScreenGridState::clear_full_row(
   self : ScreenGridState,
   row_idx : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
   respect_protected : Bool,
 ) -> Unit {
   if respect_protected {
@@ -1038,7 +1042,7 @@ fn ScreenGridState::clear_row_range(
   row_idx : Int,
   start_col : Int,
   end_col : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
   respect_protected : Bool,
 ) -> Unit {
   let mut col_idx = clamp_int(start_col, 0, self.cols.to_int())
@@ -1090,7 +1094,7 @@ fn ScreenGridState::copy_row_region(
 fn ScreenGridState::clear_prev_row_spacer_head(
   self : ScreenGridState,
   row_idx : Int,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   let prev_row = row_idx - 1
   let last_col = self.cols.to_int() - 1
@@ -1107,7 +1111,7 @@ fn ScreenGridState::write_cell(
   col_idx : Int,
   codepoint : UInt,
   wide : PageCellWide,
-  style : CellStyle,
+  style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : SemanticContent,
   hyperlink : CellHyperlink?,
@@ -1214,12 +1218,13 @@ fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
 }
 
 ///|
-fn blank_cell(style : CellStyle) -> PageCellState {
+fn blank_cell(style : @style.CellStyle) -> PageCellState {
   let cell = PageCellState::new()
-  match style.bg_color() {
-    None => ()
-    Palette(index) => cell.set_background_palette(index)
-    Rgb(rgb) => cell.set_background_rgb(rgb)
+  let bg = style.bg_color()
+  if bg.palette_index() is Some(index) {
+    cell.set_background_palette(index)
+  } else if bg.rgb_value() is Some(rgb) {
+    cell.set_background_rgb(rgb)
   }
   cell
 }
@@ -1229,7 +1234,7 @@ fn blank_cell(style : CellStyle) -> PageCellState {
 /// blank cells. Used as the scrolled-in row so it is a *distinct* GridLine —
 /// the moved rows above may transiently alias their source slot, and a fresh
 /// object breaks that alias instead of clearing a shared line in place.
-fn blank_grid_line(cols : Int, style : CellStyle) -> GridLine {
+fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
   let cells : Array[PageCellState] = []
   for _ in 0..<cols {
     cells.push(blank_cell(style))

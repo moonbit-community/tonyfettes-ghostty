@@ -157,7 +157,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
 
 ///|
 test "formatter helpers/cover style and palette encoders" {
-  let style = CellStyle::new()
+  let style = @style.CellStyle::new()
   style.apply_attribute(Bold)
   style.apply_attribute(Faint)
   style.apply_attribute(Italic)
@@ -228,7 +228,7 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML newline helper")
   }
 
-  let double_style = CellStyle::new()
+  let double_style = @style.CellStyle::new()
   double_style.apply_attribute(Underline(Double))
   let vt_double = Buffer()
   formatter_write_vt_style_open(vt_double, double_style)
@@ -244,7 +244,7 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode double underline")
   }
 
-  let curly_style = CellStyle::new()
+  let curly_style = @style.CellStyle::new()
   curly_style.apply_attribute(Underline(Curly))
   let vt_curly = Buffer()
   formatter_write_vt_style_open(vt_curly, curly_style)
@@ -260,7 +260,7 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode curly underline")
   }
 
-  let dotted_style = CellStyle::new()
+  let dotted_style = @style.CellStyle::new()
   dotted_style.apply_attribute(Underline(Dotted))
   let vt_dotted = Buffer()
   formatter_write_vt_style_open(vt_dotted, dotted_style)
@@ -276,7 +276,7 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode dotted underline")
   }
 
-  let dashed_style = CellStyle::new()
+  let dashed_style = @style.CellStyle::new()
   dashed_style.apply_attribute(Underline(Dashed))
   let html_dashed = Buffer()
   formatter_write_html_style(html_dashed, dashed_style)

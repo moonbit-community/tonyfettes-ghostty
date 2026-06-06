@@ -84,7 +84,7 @@ test "ghostty terminal adapter direct cell style branches" {
   terminal.set_theme(background="#000000", foreground="#ffffff")
 
   let styled = @terminal.PageCellState::init(b'X'.to_uint())
-  let style = @terminal.CellStyle::new()
+  let style = @style.CellStyle::new()
   style.apply_attribute(Bold)
   style.apply_attribute(Italic)
   style.apply_attribute(Faint)
@@ -134,7 +134,7 @@ test "ghostty terminal adapter direct cell style branches" {
 ///|
 test "ghostty terminal adapter underline style variants" {
   for underline in [@sgr.SgrUnderline::Double, Curly, Dotted, Dashed] {
-    let style = @terminal.CellStyle::new()
+    let style = @style.CellStyle::new()
     style.apply_attribute(Underline(underline))
     guard text_decoration(style) is Some(_) else {
       fail("expected text decoration")

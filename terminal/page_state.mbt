@@ -185,7 +185,7 @@ pub fn PageRowState::full_reset(self : PageRowState) -> Unit {
 ///|
 struct PageCellState {
   mut content : PageCellContent
-  mut style : CellStyle
+  mut style : @style.CellStyle
   mut wide : PageCellWide
   mut protected_flag : Bool
   mut hyperlink : CellHyperlink?
@@ -270,7 +270,7 @@ pub fn PageCellState::background_rgb(self : PageCellState) -> @color.RGB? {
 }
 
 ///|
-pub fn PageCellState::style(self : PageCellState) -> CellStyle {
+pub fn PageCellState::style(self : PageCellState) -> @style.CellStyle {
   self.style.clone()
 }
 
@@ -283,12 +283,12 @@ pub fn PageCellState::style(self : PageCellState) -> CellStyle {
 // and the only in-place mutator a cell had (`full_reset`'s `style.reset()`) now
 // replaces the field instead. Reads go through `PageCellState::style()`, which
 // returns a copy, so no caller can mutate the shared instance.
-let default_cell_style : CellStyle = CellStyle::new()
+let default_cell_style : @style.CellStyle = @style.CellStyle::new()
 
 ///|
 pub fn PageCellState::set_style(
   self : PageCellState,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   // Share the default singleton (no allocation) for unstyled cells — the hot
   // path for plain text; copy only when the style actually carries SGR state.

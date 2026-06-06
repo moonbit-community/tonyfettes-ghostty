@@ -100,7 +100,7 @@ pub fn ScreenCharsetState::reset(self : ScreenCharsetState) -> Unit {
 struct ScreenSavedCursor {
   x : CellCountInt
   y : CellCountInt
-  style : CellStyle
+  style : @style.CellStyle
   cursor_protected : Bool
   pending_wrap : Bool
   origin : Bool
@@ -118,7 +118,7 @@ pub fn ScreenSavedCursor::y(self : ScreenSavedCursor) -> CellCountInt {
 }
 
 ///|
-pub fn ScreenSavedCursor::style(self : ScreenSavedCursor) -> CellStyle {
+pub fn ScreenSavedCursor::style(self : ScreenSavedCursor) -> @style.CellStyle {
   self.style.clone()
 }
 
@@ -163,7 +163,7 @@ pub fn ScreenSavedCursorState::has_saved(self : ScreenSavedCursorState) -> Bool 
 pub fn ScreenSavedCursorState::save(
   self : ScreenSavedCursorState,
   cursor : TerminalCursorState,
-  style : CellStyle,
+  style : @style.CellStyle,
   cursor_protected : Bool,
   origin : Bool,
   charset : ScreenCharsetState,
@@ -199,7 +199,7 @@ fn default_saved_cursor() -> ScreenSavedCursor {
   {
     x: 0,
     y: 0,
-    style: CellStyle::new(),
+    style: @style.CellStyle::new(),
     cursor_protected: false,
     pending_wrap: false,
     origin: false,

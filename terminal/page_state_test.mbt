@@ -141,7 +141,7 @@ test "page cell state/background content reports no text and preserves payloads"
 ///|
 test "page cell state/style hyperlink semantic and full reset" {
   let cell = PageCellState::new()
-  let style = CellStyle::new()
+  let style = @style.CellStyle::new()
   style.apply_attribute(Bold)
   let hyperlink = CellHyperlink::implicit("https://example.com", 3)
 

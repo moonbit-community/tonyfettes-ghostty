@@ -195,7 +195,7 @@ priv struct StreamTerminalBridgeState {
   mut primary_storage : TerminalScreenStorage
   mut alternate_storage : TerminalScreenStorage
   mut charset : ScreenCharsetState
-  mut current_style : CellStyle
+  mut current_style : @style.CellStyle
   mut previous_char : UInt?
   mut mouse_event : @input.MouseEvent
   mut mouse_format : @input.MouseFormat
@@ -240,7 +240,7 @@ fn StreamTerminalBridgeState::with_effects(
     primary_storage,
     alternate_storage,
     charset: ScreenCharsetState::new(),
-    current_style: CellStyle::new(),
+    current_style: @style.CellStyle::new(),
     previous_char: None,
     mouse_event: None,
     mouse_format: X10,
@@ -384,7 +384,7 @@ fn StreamTerminalBridgeState::mouse_tracking(
 ///|
 fn StreamTerminalBridgeState::current_style_snapshot(
   self : StreamTerminalBridgeState,
-) -> CellStyle {
+) -> @style.CellStyle {
   self.current_style.clone()
 }
 
@@ -1564,7 +1564,7 @@ fn StreamTerminalBridgeState::reverse_index(
 
 ///|
 fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
-  let style = CellStyle::new()
+  let style = @style.CellStyle::new()
   style.set_fg_color(self.current_style.fg_color())
   style.set_bg_color(self.current_style.bg_color())
   self.current_style = style.clone()

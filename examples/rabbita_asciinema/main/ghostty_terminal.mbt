@@ -402,7 +402,7 @@ fn codepoints_to_string(codepoints : Array[UInt]) -> String {
 fn cell_background_css(
   cell : @terminal.PageCellState,
   palette : Array[@color.RGB],
-  style : @terminal.CellStyle,
+  style : @style.CellStyle,
 ) -> String? {
   match cell.palette_index() {
     Some(index) => Some(rgb_css(palette[index.to_int()]))
@@ -416,7 +416,7 @@ fn cell_background_css(
 
 ///|
 fn style_color_css(
-  color : @terminal.StyleColor,
+  color : @style.StyleColor,
   palette : Array[@color.RGB],
 ) -> String? {
   match color.rgb_value() {
@@ -435,7 +435,7 @@ fn rgb_css(rgb : @color.RGB) -> String {
 }
 
 ///|
-fn text_decoration(style : @terminal.CellStyle) -> String? {
+fn text_decoration(style : @style.CellStyle) -> String? {
   let lines : Array[String] = []
   if style.underline() != None {
     lines.push("underline")
