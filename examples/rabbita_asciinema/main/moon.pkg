@@ -11,6 +11,7 @@ import {
   "tonyfettes/ghostty/terminal",
   "tonyfettes/ghostty/terminal/color",
   "tonyfettes/ghostty/terminal/sgr",
+  "tonyfettes/ghostty/terminal/style",
 }
 
 supported_targets = "js"

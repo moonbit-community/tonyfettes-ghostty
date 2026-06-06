@@ -3,7 +3,7 @@ fn fill_terminal_screen_row(
   grid : ScreenGridState,
   row : Int,
   chars : Array[Byte],
-  style : CellStyle,
+  style : @style.CellStyle,
   hyperlink : CellHyperlink?,
 ) -> Unit {
   for index in 0..<chars.length() {
@@ -24,8 +24,8 @@ fn fill_terminal_screen_row(
 ///|
 test "terminal screen state/scrollback snapshots and viewport movement" {
   let grid = ScreenGridState::new(2, 5)
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
   let hyperlink = CellHyperlink::explicit("https://example.com", "id")
   fill_terminal_screen_row(
     grid,
@@ -38,7 +38,7 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
     grid,
     1,
     [b'w', b'o', b'r', b'l', b'd'],
-    CellStyle::new(),
+    @style.CellStyle::new(),
     None,
   )
 
@@ -74,8 +74,20 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
 ///|
 test "terminal screen state/viewport top survives future scrollback" {
   let grid = ScreenGridState::new(2, 3)
-  fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
-  fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
+  fill_terminal_screen_row(
+    grid,
+    0,
+    [b'a', b'b', b'c'],
+    @style.CellStyle::new(),
+    None,
+  )
+  fill_terminal_screen_row(
+    grid,
+    1,
+    [b'd', b'e', b'f'],
+    @style.CellStyle::new(),
+    None,
+  )
 
   let scrollback = PageList::new(2, 3, 2)
   scrollback.scroll_top()
@@ -89,8 +101,20 @@ test "terminal screen state/viewport top survives future scrollback" {
 ///|
 test "terminal screen state/empty scrollback delta stays active" {
   let grid = ScreenGridState::new(2, 3)
-  fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
-  fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
+  fill_terminal_screen_row(
+    grid,
+    0,
+    [b'a', b'b', b'c'],
+    @style.CellStyle::new(),
+    None,
+  )
+  fill_terminal_screen_row(
+    grid,
+    1,
+    [b'd', b'e', b'f'],
+    @style.CellStyle::new(),
+    None,
+  )
 
   let scrollback = PageList::new(2, 3, 2)
   scrollback.scroll_delta(-1)
@@ -104,8 +128,20 @@ test "terminal screen state/empty scrollback delta stays active" {
 ///|
 test "terminal screen state/zero max scrollback trim and resets" {
   let grid = ScreenGridState::new(2, 3)
-  fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
-  fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
+  fill_terminal_screen_row(
+    grid,
+    0,
+    [b'a', b'b', b'c'],
+    @style.CellStyle::new(),
+    None,
+  )
+  fill_terminal_screen_row(
+    grid,
+    1,
+    [b'd', b'e', b'f'],
+    @style.CellStyle::new(),
+    None,
+  )
 
   let scrollback = PageList::new(2, 3, 0)
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 0)
@@ -134,8 +170,20 @@ test "terminal screen state/zero max scrollback trim and resets" {
 ///|
 test "terminal screen state/point helpers cover source mappings" {
   let grid = ScreenGridState::new(2, 3)
-  fill_terminal_screen_row(grid, 0, [b'a', b'b', b'c'], CellStyle::new(), None)
-  fill_terminal_screen_row(grid, 1, [b'd', b'e', b'f'], CellStyle::new(), None)
+  fill_terminal_screen_row(
+    grid,
+    0,
+    [b'a', b'b', b'c'],
+    @style.CellStyle::new(),
+    None,
+  )
+  fill_terminal_screen_row(
+    grid,
+    1,
+    [b'd', b'e', b'f'],
+    @style.CellStyle::new(),
+    None,
+  )
 
   let scrollback = PageList::new(2, 3, 2)
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)

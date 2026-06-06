@@ -38,7 +38,7 @@ fn fill_ascii(grid : ScreenGridState, row : Int, chars : Array[Byte]) -> Unit {
       i,
       chars[i].to_uint(),
       Narrow,
-      CellStyle::new(),
+      @style.CellStyle::new(),
       false,
       Output,
       None,
@@ -73,9 +73,9 @@ test "screen grid/new clamps zero dimensions and accessors" {
 test "screen grid/print stores metadata and repeat clamps zero count" {
   let grid = ScreenGridState::new(2, 5)
   let cursor = TerminalCursorState::new(2, 5)
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(Color256Bg(7))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(Color256Bg(7))
   let hyperlink = CellHyperlink::explicit("https://example.com", "link")
 
   grid.print(
@@ -139,7 +139,7 @@ test "screen grid/print wide wrap and one-column fallback" {
     cursor,
     0x4E2DU,
     2,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Prompt,
     Prompt,
@@ -165,7 +165,7 @@ test "screen grid/print wide wrap and one-column fallback" {
     skinny_cursor,
     0x4E2DU,
     2,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -189,7 +189,7 @@ test "screen grid/print edge branches and insert mode" {
     no_width_cursor,
     b'X'.to_uint(),
     0,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -209,7 +209,7 @@ test "screen grid/print edge branches and insert mode" {
     right_limit_cursor,
     b'R'.to_uint(),
     1,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -230,7 +230,7 @@ test "screen grid/print edge branches and insert mode" {
     wrap_cursor,
     b'W'.to_uint(),
     1,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -252,7 +252,7 @@ test "screen grid/print edge branches and insert mode" {
     insert_cursor,
     b'X'.to_uint(),
     1,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -273,7 +273,7 @@ test "screen grid/print edge branches and insert mode" {
     no_wrap_cursor,
     0x4E2DU,
     2,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -293,7 +293,7 @@ test "screen grid/print edge branches and insert mode" {
     partial_cursor,
     0x4E2DU,
     2,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -315,7 +315,7 @@ test "screen grid/print edge branches and insert mode" {
     default_width_cursor,
     b'Q'.to_uint(),
     3,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -332,8 +332,8 @@ test "screen grid/print edge branches and insert mode" {
 test "screen grid/insert delete and erase chars preserve backgrounds and protection" {
   let grid = ScreenGridState::new(2, 5)
   let cursor = TerminalCursorState::new(2, 5)
-  let bg_style = CellStyle::new()
-  bg_style.apply_attribute(Color256Bg(3))
+  let mut bg_style = @style.CellStyle::new()
+  bg_style = bg_style.apply_attribute(Color256Bg(3))
 
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D', b'E'])
   cursor.x = 1
@@ -351,7 +351,7 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   expect_row(grid, 0).set_wrap(true)
   expect_row(grid, 1).set_wrap_continuation(true)
   cursor.x = 1
-  grid.delete_chars(cursor, CellStyle::new(), 2)
+  grid.delete_chars(cursor, @style.CellStyle::new(), 2)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() &&
     expect_cell(grid, 0, 1).codepoint() == b'D'.to_uint() &&
     expect_cell(grid, 0, 2).codepoint() == b'E'.to_uint() &&
@@ -376,8 +376,8 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
 test "screen grid/char editing edge branches and helper math" {
   let grid = ScreenGridState::new(1, 5)
   let cursor = TerminalCursorState::new(1, 5)
-  let style = CellStyle::new()
-  style.apply_attribute(Color256Bg(5))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Color256Bg(5))
 
   cursor.pending_wrap = true
   grid.insert_blanks(cursor, style, 0)
@@ -399,23 +399,41 @@ test "screen grid/char editing edge branches and helper math" {
     0,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
   )
-  grid.write_cell(0, 1, 0U, SpacerTail, CellStyle::new(), false, Output, None)
+  grid.write_cell(
+    0,
+    1,
+    0U,
+    SpacerTail,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
   grid.write_cell(
     0,
     3,
     b'Z'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
   )
-  grid.write_cell(0, 4, 0U, SpacerTail, CellStyle::new(), false, Output, None)
+  grid.write_cell(
+    0,
+    4,
+    0U,
+    SpacerTail,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
   cursor.x = 1
   cursor.left_margin = 0
   cursor.right_margin = 3
@@ -436,7 +454,7 @@ test "screen grid/char editing edge branches and helper math" {
     3,
     b'Q'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -446,7 +464,7 @@ test "screen grid/char editing edge branches and helper math" {
     4,
     0U,
     SpacerTail,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -477,7 +495,7 @@ test "screen grid/char editing edge branches and helper math" {
     1,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -497,7 +515,7 @@ test "screen grid/char editing edge branches and helper math" {
     3,
     0U,
     SpacerHead,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -515,8 +533,8 @@ test "screen grid/char editing edge branches and helper math" {
     fail("expected helper math branches")
   }
 
-  let rgb_style = CellStyle::new()
-  rgb_style.apply_attribute(DirectColorBg(@color.RGB::new(1, 2, 3)))
+  let mut rgb_style = @style.CellStyle::new()
+  rgb_style = rgb_style.apply_attribute(DirectColorBg(@color.RGB::new(1, 2, 3)))
   guard blank_cell(rgb_style).background_rgb() == Some(@color.RGB::new(1, 2, 3)) else {
     fail("expected rgb blank cell")
   }
@@ -526,14 +544,14 @@ test "screen grid/char editing edge branches and helper math" {
 test "screen grid/erase line and display modes" {
   let right_grid = ScreenGridState::new(2, 4)
   let right_cursor = TerminalCursorState::new(2, 4)
-  let bg_style = CellStyle::new()
-  bg_style.apply_attribute(Color256Bg(4))
+  let mut bg_style = @style.CellStyle::new()
+  bg_style = bg_style.apply_attribute(Color256Bg(4))
   right_grid.write_cell(
     0,
     0,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -543,7 +561,7 @@ test "screen grid/erase line and display modes" {
     1,
     0U,
     SpacerTail,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -553,7 +571,7 @@ test "screen grid/erase line and display modes" {
     2,
     b'X'.to_uint(),
     Narrow,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -575,7 +593,7 @@ test "screen grid/erase line and display modes" {
     1,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -585,13 +603,13 @@ test "screen grid/erase line and display modes" {
     2,
     0U,
     SpacerTail,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
   )
   left_cursor.x = 1
-  left_grid.erase_line(left_cursor, CellStyle::new(), Left, Off, false)
+  left_grid.erase_line(left_cursor, @style.CellStyle::new(), Left, Off, false)
   guard expect_cell(left_grid, 0, 0).is_empty() &&
     expect_cell(left_grid, 0, 1).is_empty() &&
     expect_cell(left_grid, 0, 2).is_empty() &&
@@ -606,7 +624,7 @@ test "screen grid/erase line and display modes" {
   expect_row(complete_grid, 1).set_semantic_prompt(Prompt)
   complete_grid.erase_display(
     complete_cursor,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     Complete,
     Off,
     false,
@@ -637,7 +655,7 @@ test "screen grid/erase line and display modes" {
   fill_ascii(scroll_grid, 0, [b'X', b'Y', b'Z'])
   scroll_grid.erase_display(
     scroll_cursor,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     ScrollComplete,
     Off,
     false,
@@ -651,7 +669,7 @@ test "screen grid/erase line and display modes" {
   fill_ascii(line_complete_grid, 0, [b'Q', b'R', b'S'])
   line_complete_grid.erase_line(
     line_complete_cursor,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     Complete,
     Off,
     false,
@@ -683,7 +701,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
   fill_ascii(grid, 3, [b'D', b'3', b'3', b'3'])
 
   cursor.y = 1
-  grid.insert_lines(cursor, CellStyle::new(), 1)
+  grid.insert_lines(cursor, @style.CellStyle::new(), 1)
   guard expect_cell(grid, 1, 0).is_empty() &&
     expect_cell(grid, 2, 0).codepoint() == b'B'.to_uint() &&
     expect_cell(grid, 3, 0).codepoint() == b'C'.to_uint() &&
@@ -696,7 +714,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
   fill_ascii(grid, 2, [b'C', b'2', b'2', b'2'])
   fill_ascii(grid, 3, [b'D', b'3', b'3', b'3'])
   cursor.y = 1
-  grid.delete_lines(cursor, CellStyle::new(), 1)
+  grid.delete_lines(cursor, @style.CellStyle::new(), 1)
   guard expect_cell(grid, 1, 0).codepoint() == b'C'.to_uint() &&
     expect_cell(grid, 2, 0).codepoint() == b'D'.to_uint() &&
     expect_cell(grid, 3, 0).is_empty() else {
@@ -710,7 +728,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
   cursor.x = 2
   cursor.y = 2
   cursor.pending_wrap = true
-  grid.scroll_down(cursor, CellStyle::new(), 1)
+  grid.scroll_down(cursor, @style.CellStyle::new(), 1)
   guard cursor.x() == 2 &&
     cursor.y() == 2 &&
     cursor.pending_wrap() &&
@@ -726,7 +744,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
   cursor.x = 3
   cursor.y = 3
   cursor.pending_wrap = true
-  grid.scroll_up(cursor, CellStyle::new(), 1)
+  grid.scroll_up(cursor, @style.CellStyle::new(), 1)
   guard cursor.x() == 3 &&
     cursor.y() == 3 &&
     cursor.pending_wrap() &&
@@ -736,14 +754,14 @@ test "screen grid/line shifts scroll and helper boundaries" {
   }
 
   let boundary_grid = ScreenGridState::new(2, 4)
-  let style = CellStyle::new()
-  style.apply_attribute(Color256Bg(6))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Color256Bg(6))
   boundary_grid.write_cell(
     0,
     3,
     0U,
     SpacerHead,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -759,7 +777,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     3,
     0U,
     SpacerHead,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -769,7 +787,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     0,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -785,7 +803,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     0,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -795,7 +813,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     1,
     0U,
     SpacerTail,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -811,7 +829,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     0,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -821,7 +839,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     1,
     0U,
     SpacerTail,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -831,7 +849,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     2,
     b'Z'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -841,7 +859,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     3,
     0U,
     SpacerHead,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
@@ -863,8 +881,8 @@ test "screen grid/shift helpers partial regions and split early return" {
   fill_ascii(grid, 1, [b'E', b'F', b'G', b'H'])
   fill_ascii(grid, 2, [b'I', b'J', b'K', b'L'])
 
-  grid.insert_lines(cursor, CellStyle::new(), 0)
-  grid.delete_lines(cursor, CellStyle::new(), 0)
+  grid.insert_lines(cursor, @style.CellStyle::new(), 0)
+  grid.delete_lines(cursor, @style.CellStyle::new(), 0)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() else {
     fail("expected zero-count line edits to no-op")
   }
@@ -873,11 +891,11 @@ test "screen grid/shift helpers partial regions and split early return" {
   cursor.left_margin = 0
   cursor.right_margin = 2
   cursor.y = 0
-  grid.insert_lines(cursor, CellStyle::new(), 1)
+  grid.insert_lines(cursor, @style.CellStyle::new(), 1)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() else {
     fail("expected insert lines outside region to no-op")
   }
-  grid.delete_lines(cursor, CellStyle::new(), 1)
+  grid.delete_lines(cursor, @style.CellStyle::new(), 1)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() else {
     fail("expected delete lines outside region to no-op")
   }
@@ -885,7 +903,7 @@ test "screen grid/shift helpers partial regions and split early return" {
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D'])
   fill_ascii(grid, 1, [b'E', b'F', b'G', b'H'])
   fill_ascii(grid, 2, [b'I', b'J', b'K', b'L'])
-  grid.shift_region_down(1, 2, 1, 2, 1, CellStyle::new())
+  grid.shift_region_down(1, 2, 1, 2, 1, @style.CellStyle::new())
   guard expect_cell(grid, 1, 1).is_empty() &&
     expect_cell(grid, 2, 1).codepoint() == b'F'.to_uint() else {
     fail("expected partial shift down to use region copies")
@@ -894,7 +912,7 @@ test "screen grid/shift helpers partial regions and split early return" {
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D'])
   fill_ascii(grid, 1, [b'E', b'F', b'G', b'H'])
   fill_ascii(grid, 2, [b'I', b'J', b'K', b'L'])
-  grid.shift_region_up(0, 2, 1, 2, 1, CellStyle::new())
+  grid.shift_region_up(0, 2, 1, 2, 1, @style.CellStyle::new())
   guard expect_cell(grid, 0, 1).codepoint() == b'F'.to_uint() &&
     expect_cell(grid, 2, 1).is_empty() else {
     fail("expected partial shift up to use region copies")
@@ -905,14 +923,14 @@ test "screen grid/shift helpers partial regions and split early return" {
   fill_ascii(bottom_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(bottom_grid, 1, [b'D', b'E', b'F'])
   bottom_cursor.y = 1
-  bottom_grid.index(bottom_cursor, CellStyle::new())
+  bottom_grid.index(bottom_cursor, @style.CellStyle::new())
   guard expect_cell(bottom_grid, 0, 0).codepoint() == b'D'.to_uint() &&
     expect_cell(bottom_grid, 1, 0).is_empty() else {
     fail("expected index at bottom margin to scroll up")
   }
 
   expect_row(bottom_grid, 1).set_wrap(false)
-  bottom_grid.split_cell_boundary(1, 3, CellStyle::new())
+  bottom_grid.split_cell_boundary(1, 3, @style.CellStyle::new())
   guard expect_cell(bottom_grid, 1, 0).is_empty() else {
     fail(
       "expected split boundary at row end without wrap to leave data unchanged",
@@ -923,8 +941,8 @@ test "screen grid/shift helpers partial regions and split early return" {
 ///|
 test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let grid = ScreenGridState::new(1, 3)
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
   let cell = expect_cell(grid, 0, 0)
   cell.set_codepoint(b'G'.to_uint(), true)
   cell.set_style(style)
@@ -940,10 +958,19 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
 test "screen grid/print cell clears prior wide and spacer forms" {
   let grid = ScreenGridState::new(2, 4)
   let cursor = TerminalCursorState::new(2, 4)
-  let style = CellStyle::new()
-  style.apply_attribute(Color256Bg(8))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Color256Bg(8))
 
-  grid.write_cell(0, 3, 0U, SpacerHead, CellStyle::new(), false, Output, None)
+  grid.write_cell(
+    0,
+    3,
+    0U,
+    SpacerHead,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
   cursor.y = 1
   cursor.x = 1
   grid.write_cell(
@@ -951,12 +978,21 @@ test "screen grid/print cell clears prior wide and spacer forms" {
     1,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
   )
-  grid.write_cell(1, 2, 0U, SpacerTail, CellStyle::new(), false, Output, None)
+  grid.write_cell(
+    1,
+    2,
+    0U,
+    SpacerTail,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
   grid.print_cell(cursor, b'N'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 1).codepoint() == b'N'.to_uint() &&
     expect_cell(grid, 1, 2).palette_index() == Some(8) &&
@@ -966,18 +1002,36 @@ test "screen grid/print cell clears prior wide and spacer forms" {
     )
   }
 
-  grid.write_cell(0, 3, 0U, SpacerHead, CellStyle::new(), false, Output, None)
+  grid.write_cell(
+    0,
+    3,
+    0U,
+    SpacerHead,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
   grid.write_cell(
     1,
     0,
     b'W'.to_uint(),
     Wide,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,
   )
-  grid.write_cell(1, 1, 0U, SpacerTail, CellStyle::new(), false, Output, None)
+  grid.write_cell(
+    1,
+    1,
+    0U,
+    SpacerTail,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
   cursor.x = 1
   grid.print_cell(cursor, b'S'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 0).palette_index() == Some(8) &&
@@ -988,7 +1042,16 @@ test "screen grid/print cell clears prior wide and spacer forms" {
     )
   }
 
-  grid.write_cell(1, 1, 0U, SpacerHead, CellStyle::new(), false, Output, None)
+  grid.write_cell(
+    1,
+    1,
+    0U,
+    SpacerHead,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
   grid.print_cell(cursor, b'H'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 1).codepoint() == b'H'.to_uint() else {
     fail("expected print cell to overwrite prior spacer heads")
@@ -998,9 +1061,9 @@ test "screen grid/print cell clears prior wide and spacer forms" {
 ///|
 test "screen grid/decaln and full reset" {
   let grid = ScreenGridState::new(2, 3)
-  let fill_style = CellStyle::new()
-  fill_style.apply_attribute(Color8Fg(Red))
-  fill_style.apply_attribute(Color256Bg(2))
+  let mut fill_style = @style.CellStyle::new()
+  fill_style = fill_style.apply_attribute(Color8Fg(Red))
+  fill_style = fill_style.apply_attribute(Color256Bg(2))
 
   grid.decaln(fill_style)
   guard expect_cell(grid, 0, 0).codepoint() == b'E'.to_uint() &&

@@ -91,9 +91,9 @@ test "terminal saved cursor state/save captures snapshot values" {
   cursor.set_cursor_pos(5, 7, false)
   cursor.set_pending_wrap(true)
 
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(Color256Fg(9))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(Color256Fg(9))
 
   let charset = ScreenCharsetState::new()
   charset.configure(G1, DecSpecial)
@@ -106,7 +106,6 @@ test "terminal saved cursor state/save captures snapshot values" {
     fail("expected save to populate saved cursor state")
   }
 
-  style.reset()
   charset.reset()
   cursor.set_cursor_pos(1, 1, false)
   cursor.set_pending_wrap(false)
@@ -138,16 +137,16 @@ test "terminal saved cursor state/latest save wins and reset clears state" {
   let state = ScreenSavedCursorState::new()
 
   let first_cursor = TerminalCursorState::new(24, 80)
-  let first_style = CellStyle::new()
-  first_style.apply_attribute(Bold)
+  let mut first_style = @style.CellStyle::new()
+  first_style = first_style.apply_attribute(Bold)
   let first_charset = ScreenCharsetState::new()
   first_charset.configure(G1, DecSpecial)
   state.save(first_cursor, first_style, false, false, first_charset)
 
   let second_cursor = TerminalCursorState::new(24, 80)
   second_cursor.set_cursor_pos(2, 3, false)
-  let second_style = CellStyle::new()
-  second_style.apply_attribute(Italic)
+  let mut second_style = @style.CellStyle::new()
+  second_style = second_style.apply_attribute(Italic)
   let second_charset = ScreenCharsetState::new()
   second_charset.configure(G3, British)
   second_charset.invoke(Gr, G3, false)
@@ -172,7 +171,6 @@ test "terminal saved cursor state/latest save wins and reset clears state" {
     fail("expected most recent saved charset state")
   }
 
-  restored_style.reset()
   restored_charset.reset()
   let restored_again = state.restore()
   let restored_again_style = restored_again.style()

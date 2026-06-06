@@ -388,7 +388,7 @@ test "stream terminal bridge/switches screens and restores cursor modes" {
     0,
     b'Z'.to_uint(),
     Narrow,
-    CellStyle::new(),
+    @style.CellStyle::new(),
     false,
     Output,
     None,

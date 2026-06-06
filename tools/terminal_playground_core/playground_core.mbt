@@ -412,7 +412,7 @@ fn json_rgb(value : @color.RGB?) -> Json {
 }
 
 ///|
-fn json_style_color(value : @terminal.StyleColor) -> Json {
+fn json_style_color(value : @style.StyleColor) -> Json {
   match (value.palette_index(), value.rgb_value()) {
     (_, Some(rgb)) => { "kind": "rgb", "rgb": json_rgb(Some(rgb)) }
     (Some(index), None) => { "kind": "palette", "index": index.to_int() }

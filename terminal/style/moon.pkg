@@ -1,0 +1,4 @@
+import {
+  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/sgr",
+}

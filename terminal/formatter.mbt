@@ -261,18 +261,18 @@ priv struct FormatterRowBounds {
 
 ///|
 priv struct FormatterOutputState {
-  mut vt_style : CellStyle
+  mut vt_style : @style.CellStyle
   mut html_open : Bool
-  mut html_style : CellStyle
+  mut html_style : @style.CellStyle
   mut html_hyperlink : String?
 }
 
 ///|
 fn FormatterOutputState::new() -> FormatterOutputState {
   {
-    vt_style: CellStyle::new(),
+    vt_style: @style.CellStyle::new(),
     html_open: false,
-    html_style: CellStyle::new(),
+    html_style: @style.CellStyle::new(),
     html_hyperlink: None,
   }
 }
@@ -588,19 +588,13 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
 }
 
 ///|
-fn formatter_cell_style(cell : PageCellState) -> CellStyle {
+fn formatter_cell_style(cell : PageCellState) -> @style.CellStyle {
   match cell.content() {
     Codepoint(_) | CodepointGrapheme(_, _) => cell.style()
-    BackgroundPalette(index) => {
-      let style = CellStyle::new()
-      style.bg_color = style_color_palette(index)
-      style
-    }
-    BackgroundRgb(rgb) => {
-      let style = CellStyle::new()
-      style.bg_color = style_color_rgb(rgb)
-      style
-    }
+    BackgroundPalette(index) =>
+      @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(index))
+    BackgroundRgb(rgb) =>
+      @style.CellStyle::new().with_bg_color(@style.StyleColor::rgb(rgb))
   }
 }
 
@@ -910,7 +904,7 @@ fn formatter_write_vt_cup(
 ///|
 fn FormatterOutputState::sync_vt_style(
   self : FormatterOutputState,
-  next_style : CellStyle,
+  next_style : @style.CellStyle,
   buffer : @buffer.Buffer,
 ) -> Unit {
   if self.vt_style == next_style {
@@ -925,13 +919,13 @@ fn FormatterOutputState::sync_vt_style(
     formatter_write_vt_style_open(buffer, next_style)
   }
 
-  self.vt_style = formatter_copy_style(next_style)
+  self.vt_style = next_style
 }
 
 ///|
 fn FormatterOutputState::sync_html_run(
   self : FormatterOutputState,
-  next_style : CellStyle,
+  next_style : @style.CellStyle,
   next_hyperlink : String?,
   buffer : @buffer.Buffer,
 ) -> Unit {
@@ -944,7 +938,7 @@ fn FormatterOutputState::sync_html_run(
   if self.html_open {
     formatter_close_html_run(buffer, self.html_style, self.html_hyperlink)
     self.html_open = false
-    self.html_style = CellStyle::new()
+    self.html_style = @style.CellStyle::new()
     self.html_hyperlink = None
   }
 
@@ -954,7 +948,7 @@ fn FormatterOutputState::sync_html_run(
 
   formatter_open_html_run(buffer, next_style, next_hyperlink)
   self.html_open = true
-  self.html_style = formatter_copy_style(next_style)
+  self.html_style = next_style
   self.html_hyperlink = next_hyperlink
 }
 
@@ -969,13 +963,13 @@ fn FormatterOutputState::close(
     Vt =>
       if !self.vt_style.is_default() {
         buffer.write_bytes(VtStyleReset)
-        self.vt_style = CellStyle::new()
+        self.vt_style = @style.CellStyle::new()
       }
     Html =>
       if self.html_open {
         formatter_close_html_run(buffer, self.html_style, self.html_hyperlink)
         self.html_open = false
-        self.html_style = CellStyle::new()
+        self.html_style = @style.CellStyle::new()
         self.html_hyperlink = None
       }
   }
@@ -984,7 +978,7 @@ fn FormatterOutputState::close(
 ///|
 fn formatter_write_vt_style_open(
   buffer : @buffer.Buffer,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   buffer.write_bytes(VtStyleReset)
   if style.bold() {
@@ -1030,35 +1024,31 @@ fn formatter_write_vt_style_open(
 fn formatter_write_vt_style_color(
   buffer : @buffer.Buffer,
   prefix : UInt,
-  color : StyleColor,
+  color : @style.StyleColor,
 ) -> Unit {
-  match color {
-    None => ()
-    Palette(index) => {
-      buffer.write_bytes(b"\x1B[")
-      @ascii.write_uint_ascii(buffer, prefix.to_uint64())
-      buffer.write_bytes(b";5;")
-      @ascii.write_uint_ascii(buffer, index.to_uint64())
-      buffer.write_byte(b'm')
-    }
-    Rgb(rgb) => {
-      buffer.write_bytes(b"\x1B[")
-      @ascii.write_uint_ascii(buffer, prefix.to_uint64())
-      buffer.write_bytes(b";2;")
-      @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
-      buffer.write_byte(b';')
-      @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
-      buffer.write_byte(b';')
-      @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
-      buffer.write_byte(b'm')
-    }
+  if color.palette_index() is Some(index) {
+    buffer.write_bytes(b"\x1B[")
+    @ascii.write_uint_ascii(buffer, prefix.to_uint64())
+    buffer.write_bytes(b";5;")
+    @ascii.write_uint_ascii(buffer, index.to_uint64())
+    buffer.write_byte(b'm')
+  } else if color.rgb_value() is Some(rgb) {
+    buffer.write_bytes(b"\x1B[")
+    @ascii.write_uint_ascii(buffer, prefix.to_uint64())
+    buffer.write_bytes(b";2;")
+    @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
+    buffer.write_byte(b';')
+    @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
+    buffer.write_byte(b';')
+    @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
+    buffer.write_byte(b'm')
   }
 }
 
 ///|
 fn formatter_open_html_run(
   buffer : @buffer.Buffer,
-  style : CellStyle,
+  style : @style.CellStyle,
   hyperlink : String?,
 ) -> Unit {
   match hyperlink {
@@ -1080,7 +1070,7 @@ fn formatter_open_html_run(
 ///|
 fn formatter_close_html_run(
   buffer : @buffer.Buffer,
-  style : CellStyle,
+  style : @style.CellStyle,
   hyperlink : String?,
 ) -> Unit {
   if !style.is_default() {
@@ -1095,7 +1085,7 @@ fn formatter_close_html_run(
 ///|
 fn formatter_write_html_style(
   buffer : @buffer.Buffer,
-  style : CellStyle,
+  style : @style.CellStyle,
 ) -> Unit {
   formatter_write_html_color(buffer, "color", style.fg_color())
   formatter_write_html_color(buffer, "background-color", style.bg_color())
@@ -1156,26 +1146,22 @@ fn formatter_write_html_style(
 fn formatter_write_html_color(
   buffer : @buffer.Buffer,
   property : String,
-  color : StyleColor,
+  color : @style.StyleColor,
 ) -> Unit {
-  match color {
-    None => ()
-    Palette(index) => {
-      buffer.write_string_utf8(property)
-      buffer.write_bytes(b": var(--vt-palette-")
-      @ascii.write_uint_ascii(buffer, index.to_uint64())
-      buffer.write_bytes(b");")
-    }
-    Rgb(rgb) => {
-      buffer.write_string_utf8(property)
-      buffer.write_bytes(b": rgb(")
-      @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
-      buffer.write_bytes(b", ")
-      @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
-      buffer.write_bytes(b", ")
-      @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
-      buffer.write_bytes(b");")
-    }
+  if color.palette_index() is Some(index) {
+    buffer.write_string_utf8(property)
+    buffer.write_bytes(b": var(--vt-palette-")
+    @ascii.write_uint_ascii(buffer, index.to_uint64())
+    buffer.write_bytes(b");")
+  } else if color.rgb_value() is Some(rgb) {
+    buffer.write_string_utf8(property)
+    buffer.write_bytes(b": rgb(")
+    @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
+    buffer.write_bytes(b", ")
+    @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
+    buffer.write_bytes(b", ")
+    @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
+    buffer.write_bytes(b");")
   }
 }
 
@@ -1207,24 +1193,6 @@ fn formatter_charset_final(charset : @charsets.Charset) -> Byte {
     British => b'A'
     DecSpecial => b'0'
     Utf8 => b'B'
-  }
-}
-
-///|
-fn formatter_copy_style(style : CellStyle) -> CellStyle {
-  {
-    fg_color: style.fg_color,
-    bg_color: style.bg_color,
-    underline_color: style.underline_color,
-    bold: style.bold,
-    italic: style.italic,
-    faint: style.faint,
-    blink: style.blink,
-    inverse: style.inverse,
-    invisible: style.invisible,
-    strikethrough: style.strikethrough,
-    overline: style.overline,
-    underline: style.underline,
   }
 }
 

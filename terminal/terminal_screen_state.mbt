@@ -2015,7 +2015,7 @@ fn copy_scrollback_cell(cell : PageCellState) -> PageCellState {
       }
       other => other
     },
-    style: copy_scrollback_style(cell.style),
+    style: cell.style,
     wide: cell.wide,
     protected_flag: cell.protected_flag,
     hyperlink: match cell.hyperlink {
@@ -2023,24 +2023,6 @@ fn copy_scrollback_cell(cell : PageCellState) -> PageCellState {
       None => None
     },
     semantic_content: cell.semantic_content,
-  }
-}
-
-///|
-fn copy_scrollback_style(style : CellStyle) -> CellStyle {
-  {
-    fg_color: style.fg_color,
-    bg_color: style.bg_color,
-    underline_color: style.underline_color,
-    bold: style.bold,
-    italic: style.italic,
-    faint: style.faint,
-    blink: style.blink,
-    inverse: style.inverse,
-    invisible: style.invisible,
-    strikethrough: style.strikethrough,
-    overline: style.overline,
-    underline: style.underline,
   }
 }
 

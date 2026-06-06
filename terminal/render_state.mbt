@@ -464,8 +464,7 @@ fn render_cell_background_color(
   match cell.content() {
     BackgroundPalette(index) => Some(palette[index.to_int()])
     BackgroundRgb(rgb) => Some(rgb)
-    Codepoint(_) | CodepointGrapheme(_, _) =>
-      style_color_to_rgb(cell.style.bg_color, palette)
+    Codepoint(_) | CodepointGrapheme(_, _) => cell.style.bg_color_rgb(palette)
   }
 }
 
@@ -474,19 +473,7 @@ fn render_cell_foreground_color(
   cell : PageCellState,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
-  style_color_to_rgb(cell.style.fg_color, palette)
-}
-
-///|
-fn style_color_to_rgb(
-  color : StyleColor,
-  palette : Array[@color.RGB],
-) -> @color.RGB? {
-  match color {
-    None => None
-    Palette(index) => Some(palette[index.to_int()])
-    Rgb(rgb) => Some(rgb)
-  }
+  cell.style.fg_rgb(palette)
 }
 
 ///|

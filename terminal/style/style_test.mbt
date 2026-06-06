@@ -24,16 +24,16 @@ test "terminal style/default state" {
 
 ///|
 test "terminal style/apply sgr flags and resets" {
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(Faint)
-  style.apply_attribute(Italic)
-  style.apply_attribute(Blink)
-  style.apply_attribute(Inverse)
-  style.apply_attribute(Invisible)
-  style.apply_attribute(Strikethrough)
-  style.apply_attribute(Overline)
-  style.apply_attribute(Underline(Curly))
+  let mut style = CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(Faint)
+  style = style.apply_attribute(Italic)
+  style = style.apply_attribute(Blink)
+  style = style.apply_attribute(Inverse)
+  style = style.apply_attribute(Invisible)
+  style = style.apply_attribute(Strikethrough)
+  style = style.apply_attribute(Overline)
+  style = style.apply_attribute(Underline(Curly))
 
   guard style.bold() &&
     style.faint() &&
@@ -47,18 +47,18 @@ test "terminal style/apply sgr flags and resets" {
     fail("expected sgr flags to be applied")
   }
 
-  style.apply_attribute(ResetBold)
+  style = style.apply_attribute(ResetBold)
   guard !style.bold() && !style.faint() else {
     fail("expected reset bold to clear bold and faint")
   }
 
-  style.apply_attribute(ResetItalic)
-  style.apply_attribute(ResetBlink)
-  style.apply_attribute(ResetInverse)
-  style.apply_attribute(ResetInvisible)
-  style.apply_attribute(ResetStrikethrough)
-  style.apply_attribute(ResetOverline)
-  style.apply_attribute(Underline(None))
+  style = style.apply_attribute(ResetItalic)
+  style = style.apply_attribute(ResetBlink)
+  style = style.apply_attribute(ResetInverse)
+  style = style.apply_attribute(ResetInvisible)
+  style = style.apply_attribute(ResetStrikethrough)
+  style = style.apply_attribute(ResetOverline)
+  style = style.apply_attribute(Underline(None))
   guard !style.italic() &&
     !style.blink() &&
     !style.inverse() &&
@@ -72,12 +72,12 @@ test "terminal style/apply sgr flags and resets" {
 
 ///|
 test "terminal style/applies foreground background and underline colors" {
-  let style = CellStyle::new()
-  style.apply_attribute(Color8Fg(Red))
-  style.apply_attribute(Color8Bg(Blue))
-  style.apply_attribute(BrightColor8Bg(BrightBlue))
-  style.apply_attribute(BrightColor8Fg(BrightYellow))
-  style.apply_attribute(Color256Underline(17))
+  let mut style = CellStyle::new()
+  style = style.apply_attribute(Color8Fg(Red))
+  style = style.apply_attribute(Color8Bg(Blue))
+  style = style.apply_attribute(BrightColor8Bg(BrightBlue))
+  style = style.apply_attribute(BrightColor8Fg(BrightYellow))
+  style = style.apply_attribute(Color256Underline(17))
   guard style.bg_color().palette_index() == Some(@color.Name::BrightBlue.code()) else {
     fail("expected bright palette background color")
   }
@@ -89,8 +89,8 @@ test "terminal style/applies foreground background and underline colors" {
     fail("expected palette underline color")
   }
 
-  let palette_bg = CellStyle::new()
-  palette_bg.apply_attribute(Color8Bg(Blue))
+  let mut palette_bg = CellStyle::new()
+  palette_bg = palette_bg.apply_attribute(Color8Bg(Blue))
   guard palette_bg.bg_color().palette_index() == Some(@color.Name::Blue.code()) else {
     fail("expected base palette background color")
   }
@@ -98,9 +98,9 @@ test "terminal style/applies foreground background and underline colors" {
   let fg = @color.RGB::new(1, 2, 3)
   let bg = @color.RGB::new(4, 5, 6)
   let underline = @color.RGB::new(7, 8, 9)
-  style.apply_attribute(DirectColorFg(fg))
-  style.apply_attribute(DirectColorBg(bg))
-  style.apply_attribute(UnderlineColor(underline))
+  style = style.apply_attribute(DirectColorFg(fg))
+  style = style.apply_attribute(DirectColorBg(bg))
+  style = style.apply_attribute(UnderlineColor(underline))
   guard style.fg_color().rgb_value() == Some(fg) else {
     fail("expected rgb foreground color")
   }
@@ -111,8 +111,8 @@ test "terminal style/applies foreground background and underline colors" {
     fail("expected rgb underline color")
   }
 
-  style.apply_attribute(Color256Fg(99))
-  style.apply_attribute(Color256Bg(100))
+  style = style.apply_attribute(Color256Fg(99))
+  style = style.apply_attribute(Color256Bg(100))
   guard style.fg_color().palette_index() == Some(99) else {
     fail("expected 256-color foreground")
   }
@@ -120,9 +120,9 @@ test "terminal style/applies foreground background and underline colors" {
     fail("expected 256-color background")
   }
 
-  style.apply_attribute(ResetFg)
-  style.apply_attribute(ResetBg)
-  style.apply_attribute(ResetUnderlineColor)
+  style = style.apply_attribute(ResetFg)
+  style = style.apply_attribute(ResetBg)
+  style = style.apply_attribute(ResetUnderlineColor)
   guard style.fg_color().is_default() &&
     style.bg_color().is_default() &&
     style.underline_color().is_default() else {
@@ -132,11 +132,13 @@ test "terminal style/applies foreground background and underline colors" {
 
 ///|
 test "terminal style/unset resets whole style" {
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(DirectColorFg(@color.RGB::new(0xAA, 0xBB, 0xCC)))
-  style.apply_attribute(Underline(Dashed))
-  style.apply_attribute(Unset)
+  let mut style = CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(
+    DirectColorFg(@color.RGB::new(0xAA, 0xBB, 0xCC)),
+  )
+  style = style.apply_attribute(Underline(Dashed))
+  style = style.apply_attribute(Unset)
   guard style.is_default() else {
     fail("expected unset to restore default style")
   }
@@ -144,9 +146,9 @@ test "terminal style/unset resets whole style" {
 
 ///|
 test "terminal style/unknown sgr attribute is ignored" {
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(Unknown({ full: [999], partial: [999] }))
+  let mut style = CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(Unknown({ full: [999], partial: [999] }))
   guard style.bold() else {
     fail("expected unknown sgr attribute to leave existing style untouched")
   }

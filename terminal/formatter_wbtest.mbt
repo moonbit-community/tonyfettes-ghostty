@@ -157,19 +157,19 @@ test "formatter helpers/cover row bounds and sparse content paths" {
 
 ///|
 test "formatter helpers/cover style and palette encoders" {
-  let style = CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(Faint)
-  style.apply_attribute(Italic)
-  style.apply_attribute(Blink)
-  style.apply_attribute(Inverse)
-  style.apply_attribute(Invisible)
-  style.apply_attribute(Strikethrough)
-  style.apply_attribute(Overline)
-  style.apply_attribute(Underline(Single))
-  style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
-  style.apply_attribute(Color256Bg(4))
-  style.apply_attribute(UnderlineColor(@color.RGB::new(5, 6, 7)))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(Faint)
+  style = style.apply_attribute(Italic)
+  style = style.apply_attribute(Blink)
+  style = style.apply_attribute(Inverse)
+  style = style.apply_attribute(Invisible)
+  style = style.apply_attribute(Strikethrough)
+  style = style.apply_attribute(Overline)
+  style = style.apply_attribute(Underline(Single))
+  style = style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
+  style = style.apply_attribute(Color256Bg(4))
+  style = style.apply_attribute(UnderlineColor(@color.RGB::new(5, 6, 7)))
 
   let vt = Buffer()
   formatter_write_vt_style_open(vt, style)
@@ -228,8 +228,8 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML newline helper")
   }
 
-  let double_style = CellStyle::new()
-  double_style.apply_attribute(Underline(Double))
+  let mut double_style = @style.CellStyle::new()
+  double_style = double_style.apply_attribute(Underline(Double))
   let vt_double = Buffer()
   formatter_write_vt_style_open(vt_double, double_style)
   guard wb_bytes_contains(vt_double.contents(), b"\x1B[4:2m") else {
@@ -244,8 +244,8 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode double underline")
   }
 
-  let curly_style = CellStyle::new()
-  curly_style.apply_attribute(Underline(Curly))
+  let mut curly_style = @style.CellStyle::new()
+  curly_style = curly_style.apply_attribute(Underline(Curly))
   let vt_curly = Buffer()
   formatter_write_vt_style_open(vt_curly, curly_style)
   guard wb_bytes_contains(vt_curly.contents(), b"\x1B[4:3m") else {
@@ -260,8 +260,8 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode curly underline")
   }
 
-  let dotted_style = CellStyle::new()
-  dotted_style.apply_attribute(Underline(Dotted))
+  let mut dotted_style = @style.CellStyle::new()
+  dotted_style = dotted_style.apply_attribute(Underline(Dotted))
   let vt_dotted = Buffer()
   formatter_write_vt_style_open(vt_dotted, dotted_style)
   guard wb_bytes_contains(vt_dotted.contents(), b"\x1B[4:4m") else {
@@ -276,8 +276,8 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode dotted underline")
   }
 
-  let dashed_style = CellStyle::new()
-  dashed_style.apply_attribute(Underline(Dashed))
+  let mut dashed_style = @style.CellStyle::new()
+  dashed_style = dashed_style.apply_attribute(Underline(Dashed))
   let html_dashed = Buffer()
   formatter_write_html_style(html_dashed, dashed_style)
   guard wb_bytes_contains(

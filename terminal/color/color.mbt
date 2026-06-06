@@ -4,30 +4,30 @@ pub suberror ColorParseError {
 } derive(Eq, Debug)
 
 ///|
-pub(all) struct RGB {
-  r : Byte
-  g : Byte
-  b : Byte
-} derive(Eq, Debug)
+/// A 24-bit RGB color packed into a single `UInt`: bits 16-23 = r, 8-15 = g,
+/// 0-7 = b. Abstract (constructor-only): build with `RGB::new`, read via
+/// `r`/`g`/`b`. The newtype is a transparent scalar, so it stays unboxed and
+/// flat inside `Array[RGB]`, and can be carried as a `#valtype` enum payload.
+struct RGB(UInt) derive(Eq, Debug)
 
 ///|
 pub fn RGB::new(r : Byte, g : Byte, b : Byte) -> RGB {
-  { r, g, b }
+  RGB((r.to_uint() << 16) | (g.to_uint() << 8) | b.to_uint())
 }
 
 ///|
 pub fn RGB::r(self : RGB) -> Byte {
-  self.r
+  ((self.0 >> 16) & 0xFFU).to_byte()
 }
 
 ///|
 pub fn RGB::g(self : RGB) -> Byte {
-  self.g
+  ((self.0 >> 8) & 0xFFU).to_byte()
 }
 
 ///|
 pub fn RGB::b(self : RGB) -> Byte {
-  self.b
+  (self.0 & 0xFFU).to_byte()
 }
 
 ///|
@@ -75,22 +75,22 @@ pub fn Name::code(self : Name) -> Byte {
 ///|
 pub fn Name::default_rgb(self : Name) -> RGB {
   match self {
-    Black => { r: 0x1D, g: 0x1F, b: 0x21 }
-    Red => { r: 0xCC, g: 0x66, b: 0x66 }
-    Green => { r: 0xB5, g: 0xBD, b: 0x68 }
-    Yellow => { r: 0xF0, g: 0xC6, b: 0x74 }
-    Blue => { r: 0x81, g: 0xA2, b: 0xBE }
-    Magenta => { r: 0xB2, g: 0x94, b: 0xBB }
-    Cyan => { r: 0x8A, g: 0xBE, b: 0xB7 }
-    White => { r: 0xC5, g: 0xC8, b: 0xC6 }
-    BrightBlack => { r: 0x66, g: 0x66, b: 0x66 }
-    BrightRed => { r: 0xD5, g: 0x4E, b: 0x53 }
-    BrightGreen => { r: 0xB9, g: 0xCA, b: 0x4A }
-    BrightYellow => { r: 0xE7, g: 0xC5, b: 0x47 }
-    BrightBlue => { r: 0x7A, g: 0xA6, b: 0xDA }
-    BrightMagenta => { r: 0xC3, g: 0x97, b: 0xD8 }
-    BrightCyan => { r: 0x70, g: 0xC0, b: 0xB1 }
-    BrightWhite => { r: 0xEA, g: 0xEA, b: 0xEA }
+    Black => RGB::new(0x1D, 0x1F, 0x21)
+    Red => RGB::new(0xCC, 0x66, 0x66)
+    Green => RGB::new(0xB5, 0xBD, 0x68)
+    Yellow => RGB::new(0xF0, 0xC6, 0x74)
+    Blue => RGB::new(0x81, 0xA2, 0xBE)
+    Magenta => RGB::new(0xB2, 0x94, 0xBB)
+    Cyan => RGB::new(0x8A, 0xBE, 0xB7)
+    White => RGB::new(0xC5, 0xC8, 0xC6)
+    BrightBlack => RGB::new(0x66, 0x66, 0x66)
+    BrightRed => RGB::new(0xD5, 0x4E, 0x53)
+    BrightGreen => RGB::new(0xB9, 0xCA, 0x4A)
+    BrightYellow => RGB::new(0xE7, 0xC5, 0x47)
+    BrightBlue => RGB::new(0x7A, 0xA6, 0xDA)
+    BrightMagenta => RGB::new(0xC3, 0x97, 0xD8)
+    BrightCyan => RGB::new(0x70, 0xC0, 0xB1)
+    BrightWhite => RGB::new(0xEA, 0xEA, 0xEA)
   }
 }
 
@@ -794,29 +794,29 @@ pub fn RGB::parse(value : String) -> RGB raise ColorParseError {
 fn parse_hash_rgb(value : String) -> RGB raise ColorParseError {
   match value.length() {
     4 =>
-      {
-        r: parse_hex_component(value, 1, 2),
-        g: parse_hex_component(value, 2, 3),
-        b: parse_hex_component(value, 3, 4),
-      }
+      RGB::new(
+        parse_hex_component(value, 1, 2),
+        parse_hex_component(value, 2, 3),
+        parse_hex_component(value, 3, 4),
+      )
     7 =>
-      {
-        r: parse_hex_component(value, 1, 3),
-        g: parse_hex_component(value, 3, 5),
-        b: parse_hex_component(value, 5, 7),
-      }
+      RGB::new(
+        parse_hex_component(value, 1, 3),
+        parse_hex_component(value, 3, 5),
+        parse_hex_component(value, 5, 7),
+      )
     10 =>
-      {
-        r: parse_hex_component(value, 1, 4),
-        g: parse_hex_component(value, 4, 7),
-        b: parse_hex_component(value, 7, 10),
-      }
+      RGB::new(
+        parse_hex_component(value, 1, 4),
+        parse_hex_component(value, 4, 7),
+        parse_hex_component(value, 7, 10),
+      )
     13 =>
-      {
-        r: parse_hex_component(value, 1, 5),
-        g: parse_hex_component(value, 5, 9),
-        b: parse_hex_component(value, 9, 13),
-      }
+      RGB::new(
+        parse_hex_component(value, 1, 5),
+        parse_hex_component(value, 5, 9),
+        parse_hex_component(value, 9, 13),
+      )
     _ => raise InvalidFormat
   }
 }
@@ -854,17 +854,17 @@ fn parse_rgb_spec(value : String) -> RGB raise ColorParseError {
   guard find_char(value, second + 1, '/') == None else { raise InvalidFormat }
 
   if use_intensity {
-    {
-      r: parse_intensity_component(value, index, first),
-      g: parse_intensity_component(value, first + 1, second),
-      b: parse_intensity_component(value, second + 1, value.length()),
-    }
+    RGB::new(
+      parse_intensity_component(value, index, first),
+      parse_intensity_component(value, first + 1, second),
+      parse_intensity_component(value, second + 1, value.length()),
+    )
   } else {
-    {
-      r: parse_hex_component(value, index, first),
-      g: parse_hex_component(value, first + 1, second),
-      b: parse_hex_component(value, second + 1, value.length()),
-    }
+    RGB::new(
+      parse_hex_component(value, index, first),
+      parse_hex_component(value, first + 1, second),
+      parse_hex_component(value, second + 1, value.length()),
+    )
   }
 }
 

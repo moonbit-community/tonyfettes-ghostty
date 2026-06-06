@@ -195,7 +195,7 @@ priv struct StreamTerminalBridgeState {
   mut primary_storage : TerminalScreenStorage
   mut alternate_storage : TerminalScreenStorage
   mut charset : ScreenCharsetState
-  mut current_style : CellStyle
+  mut current_style : @style.CellStyle
   mut previous_char : UInt?
   mut mouse_event : @input.MouseEvent
   mut mouse_format : @input.MouseFormat
@@ -240,7 +240,7 @@ fn StreamTerminalBridgeState::with_effects(
     primary_storage,
     alternate_storage,
     charset: ScreenCharsetState::new(),
-    current_style: CellStyle::new(),
+    current_style: @style.CellStyle::new(),
     previous_char: None,
     mouse_event: None,
     mouse_format: X10,
@@ -384,8 +384,8 @@ fn StreamTerminalBridgeState::mouse_tracking(
 ///|
 fn StreamTerminalBridgeState::current_style_snapshot(
   self : StreamTerminalBridgeState,
-) -> CellStyle {
-  copy_cell_style(self.current_style)
+) -> @style.CellStyle {
+  self.current_style
 }
 
 ///|
@@ -1076,7 +1076,7 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamSetAttribute(attribute) => {
-      self.current_style.apply_attribute(attribute)
+      self.current_style = self.current_style.apply_attribute(attribute)
       true
     }
     StreamTabSet => {
@@ -1564,10 +1564,9 @@ fn StreamTerminalBridgeState::reverse_index(
 
 ///|
 fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
-  let style = CellStyle::new()
-  style.fg_color = self.current_style.fg_color
-  style.bg_color = self.current_style.bg_color
-  self.current_style = copy_cell_style(style)
+  self.current_style = @style.CellStyle::new()
+    .with_fg_color(self.current_style.fg_color())
+    .with_bg_color(self.current_style.bg_color())
   self.modes.set(Origin, false)
   self.cursor.full_reset()
   self.grid.decaln(self.current_style)
@@ -1598,7 +1597,7 @@ fn StreamTerminalBridgeState::full_reset(
   self.semantic.full_reset()
   self.metadata.full_reset()
   self.charset.reset()
-  self.current_style.reset()
+  self.current_style = @style.CellStyle::new()
   self.previous_char = None
   self.mouse_event = None
   self.mouse_format = X10
