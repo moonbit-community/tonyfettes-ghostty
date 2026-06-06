@@ -8,7 +8,7 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "upstream/ghostty/src/terminal/res/rgb.txt"
-TARGET = ROOT / "terminal/x11_color_tables.mbt"
+TARGET = ROOT / "terminal/color/x11_color_tables.mbt"
 LINE_RE = re.compile(r"^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*?)\s*$")
 
 
@@ -33,7 +33,7 @@ def render(entries: list[tuple[str, int, int, int]]) -> str:
     out.append("let x11_color_entries : ReadOnlyArray[(String, RGB)] = [")
     for name, r, g, b in entries:
         escaped = name.replace("\\", "\\\\").replace('"', '\\"')
-        out.append(f'  ("{escaped}", {{ r: {r}, g: {g}, b: {b} }}),')
+        out.append(f'  ("{escaped}", RGB::new({r}, {g}, {b})),')
     out.append("]")
     out.append("")
     return "\n".join(out)
