@@ -8,7 +8,7 @@ pub suberror ColorParseError {
 /// 0-7 = b. Abstract (constructor-only): build with `RGB::new`, read via
 /// `r`/`g`/`b`. The newtype is a transparent scalar, so it stays unboxed and
 /// flat inside `Array[RGB]`, and can be carried as a `#valtype` enum payload.
-struct RGB(UInt) derive(Eq, Debug)
+pub struct RGB(UInt) derive(Eq, Debug)
 
 ///|
 pub fn RGB::new(r : Byte, g : Byte, b : Byte) -> RGB {

@@ -1,4 +1,10 @@
 ///|
+/// A color carried by a cell style, tagged by source. `#valtype` keeps it
+/// unboxed: it stores inline in `CellStyle` (no per-color heap box) while
+/// staying a normal enum, so callers can still pattern-match
+/// `None`/`Palette`/`Rgb`. All payloads are scalar (`Byte`, and `RGB` is a
+/// transparent `UInt` newtype), which `#valtype` enums require.
+#valtype
 enum StyleColor {
   None
   Palette(Byte)
