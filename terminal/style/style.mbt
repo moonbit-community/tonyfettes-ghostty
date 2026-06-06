@@ -62,21 +62,83 @@ pub fn StyleColor::resolve(
   }
 }
 
+// On/off attributes plus the underline kind, packed into one `UInt` with the
+// same bit layout as upstream Ghostty's `Style.Flags` (`packed struct(u16)`):
+// bit 0 bold, 1 italic, 2 faint, 3 blink, 4 inverse, 5 invisible,
+// 6 strikethrough, 7 overline, bits 8-10 the underline kind (the
+// `SgrUnderline` ordinal, which matches Zig's `Underline` enum order).
+
+///|
+const FlagBold : UInt = 0x1
+
+///|
+const FlagItalic : UInt = 0x2
+
+///|
+const FlagFaint : UInt = 0x4
+
+///|
+const FlagBlink : UInt = 0x8
+
+///|
+const FlagInverse : UInt = 0x10
+
+///|
+const FlagInvisible : UInt = 0x20
+
+///|
+const FlagStrikethrough : UInt = 0x40
+
+///|
+const FlagOverline : UInt = 0x80
+
+///|
+const UnderlineShift : Int = 8
+
+///|
+const UnderlineMask : UInt = 0x700
+
+///|
+fn underline_encode(value : @sgr.SgrUnderline) -> UInt {
+  match value {
+    None => 0
+    Single => 1
+    Double => 2
+    Curly => 3
+    Dotted => 4
+    Dashed => 5
+  }
+}
+
+///|
+fn underline_decode(bits : UInt) -> @sgr.SgrUnderline {
+  match bits {
+    1 => Single
+    2 => Double
+    3 => Curly
+    4 => Dotted
+    5 => Dashed
+    _ => None
+  }
+}
+
 ///|
 struct CellStyle {
   mut fg_color : StyleColor
   mut bg_color : StyleColor
   mut underline_color : StyleColor
-  mut bold : Bool
-  mut italic : Bool
-  mut faint : Bool
-  mut blink : Bool
-  mut inverse : Bool
-  mut invisible : Bool
-  mut strikethrough : Bool
-  mut overline : Bool
-  mut underline : @sgr.SgrUnderline
+  mut flags : UInt
 } derive(Eq, Debug)
+
+///|
+fn CellStyle::has_flag(self : CellStyle, mask : UInt) -> Bool {
+  (self.flags & mask) != 0
+}
+
+///|
+fn CellStyle::set_flag(self : CellStyle, mask : UInt, value : Bool) -> Unit {
+  self.flags = if value { self.flags | mask } else { self.flags & mask.lnot() }
+}
 
 ///|
 pub fn CellStyle::new() -> CellStyle {
@@ -84,15 +146,7 @@ pub fn CellStyle::new() -> CellStyle {
     fg_color: StyleColor::none(),
     bg_color: StyleColor::none(),
     underline_color: StyleColor::none(),
-    bold: false,
-    italic: false,
-    faint: false,
-    blink: false,
-    inverse: false,
-    invisible: false,
-    strikethrough: false,
-    overline: false,
-    underline: None,
+    flags: 0,
   }
 }
 
@@ -101,15 +155,7 @@ pub fn CellStyle::reset(self : CellStyle) -> Unit {
   self.fg_color = StyleColor::none()
   self.bg_color = StyleColor::none()
   self.underline_color = StyleColor::none()
-  self.bold = false
-  self.italic = false
-  self.faint = false
-  self.blink = false
-  self.inverse = false
-  self.invisible = false
-  self.strikethrough = false
-  self.overline = false
-  self.underline = None
+  self.flags = 0
 }
 
 ///|
@@ -117,15 +163,7 @@ pub fn CellStyle::is_default(self : CellStyle) -> Bool {
   self.fg_color is None &&
   self.bg_color is None &&
   self.underline_color is None &&
-  !self.bold &&
-  !self.italic &&
-  !self.faint &&
-  !self.blink &&
-  !self.inverse &&
-  !self.invisible &&
-  !self.strikethrough &&
-  !self.overline &&
-  self.underline is None
+  self.flags == 0
 }
 
 ///|
@@ -145,47 +183,47 @@ pub fn CellStyle::underline_color(self : CellStyle) -> StyleColor {
 
 ///|
 pub fn CellStyle::bold(self : CellStyle) -> Bool {
-  self.bold
+  self.has_flag(FlagBold)
 }
 
 ///|
 pub fn CellStyle::italic(self : CellStyle) -> Bool {
-  self.italic
+  self.has_flag(FlagItalic)
 }
 
 ///|
 pub fn CellStyle::faint(self : CellStyle) -> Bool {
-  self.faint
+  self.has_flag(FlagFaint)
 }
 
 ///|
 pub fn CellStyle::blink(self : CellStyle) -> Bool {
-  self.blink
+  self.has_flag(FlagBlink)
 }
 
 ///|
 pub fn CellStyle::inverse(self : CellStyle) -> Bool {
-  self.inverse
+  self.has_flag(FlagInverse)
 }
 
 ///|
 pub fn CellStyle::invisible(self : CellStyle) -> Bool {
-  self.invisible
+  self.has_flag(FlagInvisible)
 }
 
 ///|
 pub fn CellStyle::strikethrough(self : CellStyle) -> Bool {
-  self.strikethrough
+  self.has_flag(FlagStrikethrough)
 }
 
 ///|
 pub fn CellStyle::overline(self : CellStyle) -> Bool {
-  self.overline
+  self.has_flag(FlagOverline)
 }
 
 ///|
 pub fn CellStyle::underline(self : CellStyle) -> @sgr.SgrUnderline {
-  self.underline
+  underline_decode((self.flags >> UnderlineShift) & 0x7)
 }
 
 ///|
@@ -197,15 +235,7 @@ pub fn CellStyle::clone(self : CellStyle) -> CellStyle {
     fg_color: self.fg_color,
     bg_color: self.bg_color,
     underline_color: self.underline_color,
-    bold: self.bold,
-    italic: self.italic,
-    faint: self.faint,
-    blink: self.blink,
-    inverse: self.inverse,
-    invisible: self.invisible,
-    strikethrough: self.strikethrough,
-    overline: self.overline,
-    underline: self.underline,
+    flags: self.flags,
   }
 }
 
@@ -248,29 +278,31 @@ pub fn CellStyle::apply_attribute(
   match attr {
     Unset => self.reset()
     Unknown(_) => ()
-    Bold => self.bold = true
+    Bold => self.set_flag(FlagBold, true)
     ResetBold => {
-      self.bold = false
-      self.faint = false
+      self.set_flag(FlagBold, false)
+      self.set_flag(FlagFaint, false)
     }
-    Italic => self.italic = true
-    ResetItalic => self.italic = false
-    Faint => self.faint = true
-    Underline(value) => self.underline = value
+    Italic => self.set_flag(FlagItalic, true)
+    ResetItalic => self.set_flag(FlagItalic, false)
+    Faint => self.set_flag(FlagFaint, true)
+    Underline(value) =>
+      self.flags = (self.flags & UnderlineMask.lnot()) |
+        (underline_encode(value) << UnderlineShift)
     UnderlineColor(rgb) => self.underline_color = StyleColor::rgb(rgb)
     Color256Underline(index) =>
       self.underline_color = StyleColor::palette(index)
     ResetUnderlineColor => self.underline_color = StyleColor::none()
-    Overline => self.overline = true
-    ResetOverline => self.overline = false
-    Blink => self.blink = true
-    ResetBlink => self.blink = false
-    Inverse => self.inverse = true
-    ResetInverse => self.inverse = false
-    Invisible => self.invisible = true
-    ResetInvisible => self.invisible = false
-    Strikethrough => self.strikethrough = true
-    ResetStrikethrough => self.strikethrough = false
+    Overline => self.set_flag(FlagOverline, true)
+    ResetOverline => self.set_flag(FlagOverline, false)
+    Blink => self.set_flag(FlagBlink, true)
+    ResetBlink => self.set_flag(FlagBlink, false)
+    Inverse => self.set_flag(FlagInverse, true)
+    ResetInverse => self.set_flag(FlagInverse, false)
+    Invisible => self.set_flag(FlagInvisible, true)
+    ResetInvisible => self.set_flag(FlagInvisible, false)
+    Strikethrough => self.set_flag(FlagStrikethrough, true)
+    ResetStrikethrough => self.set_flag(FlagStrikethrough, false)
     DirectColorFg(rgb) => self.fg_color = StyleColor::rgb(rgb)
     DirectColorBg(rgb) => self.bg_color = StyleColor::rgb(rgb)
     Color8Bg(name) => self.bg_color = StyleColor::palette(name.code())
