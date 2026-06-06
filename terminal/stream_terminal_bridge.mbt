@@ -181,7 +181,7 @@ priv struct StreamTerminalBridgeState {
   protected_state : ScreenProtectedState
   display_state : TerminalDisplayState
   colors : @color.TerminalColors
-  modes : ModeState
+  mut modes : ModeState
   mut cursor : TerminalCursorState
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
@@ -865,7 +865,7 @@ fn StreamTerminalBridgeState::resize(
   self.tabstops = TerminalTabstopsState::new(columns)
   self.width_px = saturated_dimension(columns, cell_width_px)
   self.height_px = saturated_dimension(rows, cell_height_px)
-  self.modes.set(SynchronizedOutput, false)
+  self.modes = self.modes.set(SynchronizedOutput, false)
   if self.modes.get(InBandSizeReports) {
     self.write_pty(
       encode(Mode2048, Size::new(rows, columns, cell_width_px, cell_height_px)),
@@ -996,11 +996,11 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamSaveMode(mode) => {
-      self.modes.save(mode)
+      self.modes = self.modes.save(mode)
       true
     }
     StreamRestoreMode(mode) => {
-      self.set_mode(mode, self.modes.restore(mode))
+      self.set_mode(mode, self.modes.saved_value(mode))
       true
     }
     StreamRequestMode(mode) => {
@@ -1072,7 +1072,10 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamCursorStyle(style) => {
-      self.modes.set(CursorBlinking, self.cursor.apply_cursor_style(style))
+      self.modes = self.modes.set(
+        CursorBlinking,
+        self.cursor.apply_cursor_style(style),
+      )
       true
     }
     StreamSetAttribute(attribute) => {
@@ -1403,7 +1406,7 @@ fn StreamTerminalBridgeState::restore_cursor(
   }
   self.current_style = saved.style()
   self.charset = saved.charset()
-  self.modes.set(Origin, saved.origin())
+  self.modes = self.modes.set(Origin, saved.origin())
   self.cursor.set_pending_wrap(saved.pending_wrap())
   self.protected_state.set_cursor_protected(saved.cursor_protected())
   self.cursor.set_cursor_pos(saved.y() + 1, saved.x() + 1, false)
@@ -1567,7 +1570,7 @@ fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
   self.current_style = @style.CellStyle::new()
     .with_fg_color(self.current_style.fg_color())
     .with_bg_color(self.current_style.bg_color())
-  self.modes.set(Origin, false)
+  self.modes = self.modes.set(Origin, false)
   self.cursor.full_reset()
   self.grid.decaln(self.current_style)
   self.cursor.set_cursor_pos(1, 1, false)
@@ -1589,7 +1592,7 @@ fn StreamTerminalBridgeState::full_reset(
   self.load_active_screen(Primary)
   self.protected_state.reset()
   self.display_state.full_reset()
-  self.modes.reset()
+  self.modes = ModeState::new()
   self.input_flags.full_reset()
   self.kitty_keyboard.reset()
   self.tabstops = TerminalTabstopsState::new(cols)
@@ -2444,7 +2447,7 @@ fn StreamTerminalBridgeState::set_mode(
   mode : Mode,
   enabled : Bool,
 ) -> Unit {
-  self.modes.set(mode, enabled)
+  self.modes = self.modes.set(mode, enabled)
   match mode {
     Origin => self.cursor.set_cursor_pos(1, 1, self.modes.get(Origin))
     EnableLeftAndRightMargin =>

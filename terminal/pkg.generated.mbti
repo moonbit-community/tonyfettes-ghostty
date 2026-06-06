@@ -411,16 +411,14 @@ type ModePacked derive(Eq, @debug.Debug)
 pub fn ModePacked::default() -> Self
 pub fn ModePacked::empty() -> Self
 pub fn ModePacked::get(Self, Mode) -> Bool
-pub fn ModePacked::set(Self, Mode, Bool) -> Unit
+pub fn ModePacked::set(Self, Mode, Bool) -> Self
 
 type ModeState derive(Eq, @debug.Debug)
 pub fn ModeState::get(Self, Mode) -> Bool
 pub fn ModeState::get_report(Self, ModeTag) -> Report
 pub fn ModeState::new() -> Self
-pub fn ModeState::reset(Self) -> Unit
-pub fn ModeState::restore(Self, Mode) -> Bool
-pub fn ModeState::save(Self, Mode) -> Unit
-pub fn ModeState::set(Self, Mode, Bool) -> Unit
+pub fn ModeState::save(Self, Mode) -> Self
+pub fn ModeState::set(Self, Mode, Bool) -> Self
 
 type ModeTag derive(Eq, @debug.Debug)
 pub fn ModeTag::ansi(Self) -> Bool

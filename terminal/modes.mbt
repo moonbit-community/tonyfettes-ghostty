@@ -275,31 +275,20 @@ pub fn ModePacked::set(
 }
 
 ///|
+#valtype
 struct ModeState {
-  mut values : ModePacked
-  mut saved : ModePacked
-  default : ModePacked
+  values : ModePacked
+  saved : ModePacked
 } derive(Eq, Debug)
 
 ///|
 pub fn ModeState::new() -> ModeState {
-  let defaults = ModePacked::default()
-  { values: defaults, saved: ModePacked::empty(), default: defaults }
+  { values: ModePacked::default(), saved: ModePacked::empty() }
 }
 
 ///|
-pub fn ModeState::reset(self : ModeState) -> Unit {
-  self.values = self.default
-  self.saved = ModePacked::empty()
-}
-
-///|
-pub fn ModeState::set(
-  self : ModeState,
-  mode : Mode,
-  value : Bool,
-) -> Unit {
-  self.values = self.values.set(mode, value)
+pub fn ModeState::set(self : ModeState, mode : Mode, value : Bool) -> ModeState {
+  { ..self, values: self.values.set(mode, value) }
 }
 
 ///|
@@ -308,15 +297,16 @@ pub fn ModeState::get(self : ModeState, mode : Mode) -> Bool {
 }
 
 ///|
-pub fn ModeState::save(self : ModeState, mode : Mode) -> Unit {
-  self.saved = self.saved.set(mode, self.values.get(mode))
+pub fn ModeState::save(self : ModeState, mode : Mode) -> ModeState {
+  { ..self, saved: self.saved.set(mode, self.values.get(mode)) }
 }
 
 ///|
-pub fn ModeState::restore(self : ModeState, mode : Mode) -> Bool {
-  let value = self.saved.get(mode)
-  self.values = self.values.set(mode, value)
-  value
+/// Reads the value captured for `mode` by the most recent `save`. Kept
+/// package-private: it exposes the saved-mode bit, which is an internal
+/// detail of the save/restore representation, not part of the public API.
+fn ModeState::saved_value(self : ModeState, mode : Mode) -> Bool {
+  self.saved.get(mode)
 }
 
 ///|

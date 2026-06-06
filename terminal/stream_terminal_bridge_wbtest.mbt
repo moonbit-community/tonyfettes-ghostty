@@ -451,7 +451,7 @@ test "stream terminal bridge/covers reverse index and safe none branches" {
   state.previous_char = Some(0U)
   state.print_repeat(1)
 
-  state.modes.set(ReverseWrap, true)
+  state.modes = state.modes.set(ReverseWrap, true)
   state.cursor.x = 0
   state.cursor.y = state.grid.rows + 1
   state.cursor_left(CursorMovement(2))
