@@ -2005,16 +2005,9 @@ fn copy_scrollback_row(row : PageRowState) -> PageRowState {
 ///|
 fn copy_scrollback_cell(cell : PageCellState) -> PageCellState {
   {
-    content: match cell.content {
-      CodepointGrapheme(base, extras) => {
-        let copy : Array[UInt] = []
-        for cp in extras {
-          copy.push(cp)
-        }
-        CodepointGrapheme(base, copy)
-      }
-      other => other
-    },
+    // `content` is an inline #valtype enum, so this is a value copy.
+    content: cell.content,
+    grapheme_extras: copy_grapheme_extras(cell.grapheme_extras),
     style: cell.style,
     wide: cell.wide,
     protected_flag: cell.protected_flag,

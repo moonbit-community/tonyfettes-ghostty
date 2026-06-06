@@ -466,7 +466,7 @@ fn render_cell_background_color(
   match cell.content() {
     BackgroundPalette(index) => Some(palette[index.to_int()])
     BackgroundRgb(rgb) => Some(rgb)
-    Codepoint(_) | CodepointGrapheme(_, _) => cell.style.bg_color_rgb(palette)
+    Codepoint(_) => cell.style.bg_color_rgb(palette)
   }
 }
 
