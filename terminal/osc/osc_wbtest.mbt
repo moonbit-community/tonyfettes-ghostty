@@ -2010,7 +2010,7 @@ test "osc/color ansi operations handle special targets queries and invalid bodie
     Some(0x07),
     Osc5,
     [
-      Set({ target: Special(Italic), color: { r: 255, g: 0, b: 0 } }),
+      Set({ target: Special(Italic), color: @color.RGB::new(255, 0, 0) }),
       Query(Special(Underline)),
     ],
     Bel,
@@ -2028,7 +2028,7 @@ test "osc/color ansi operations handle special targets queries and invalid bodie
     b"4;1;red;bogus;blue",
     Some(0x07),
     Osc4,
-    [Set({ target: Palette(1), color: { r: 255, g: 0, b: 0 } })],
+    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0) })],
     Bel,
   )
 
@@ -2061,7 +2061,7 @@ test "osc/dynamic color get set query and truncation behave per prefix" {
     b"11;red",
     Some(0x07),
     Osc11,
-    [Set({ target: Dynamic(Background), color: { r: 255, g: 0, b: 0 } })],
+    [Set({ target: Dynamic(Background), color: @color.RGB::new(255, 0, 0) })],
     Bel,
   )
   expect_color_command(
@@ -2075,7 +2075,12 @@ test "osc/dynamic color get set query and truncation behave per prefix" {
     b"13;red",
     Some(0x07),
     Osc13,
-    [Set({ target: Dynamic(PointerForeground), color: { r: 255, g: 0, b: 0 } })],
+    [
+      Set({
+        target: Dynamic(PointerForeground),
+        color: @color.RGB::new(255, 0, 0),
+      }),
+    ],
     Bel,
   )
   expect_color_command(
@@ -2092,7 +2097,7 @@ test "osc/dynamic color get set query and truncation behave per prefix" {
     [
       Set({
         target: Dynamic(TektronixForeground),
-        color: { r: 255, g: 0, b: 0 },
+        color: @color.RGB::new(255, 0, 0),
       }),
     ],
     Bel,
@@ -2111,7 +2116,7 @@ test "osc/dynamic color get set query and truncation behave per prefix" {
     [
       Set({
         target: Dynamic(HighlightBackground),
-        color: { r: 255, g: 0, b: 0 },
+        color: @color.RGB::new(255, 0, 0),
       }),
     ],
     Bel,
@@ -2130,7 +2135,7 @@ test "osc/dynamic color get set query and truncation behave per prefix" {
     [
       Set({
         target: Dynamic(HighlightForeground),
-        color: { r: 255, g: 0, b: 0 },
+        color: @color.RGB::new(255, 0, 0),
       }),
     ],
     Bel,

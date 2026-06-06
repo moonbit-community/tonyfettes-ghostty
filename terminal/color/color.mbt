@@ -4,7 +4,12 @@ pub suberror ColorParseError {
 } derive(Eq, Debug)
 
 ///|
-pub(all) struct RGB {
+/// A 24-bit RGB color. Abstract (constructor-only): build with `RGB::new` and
+/// read via `r`/`g`/`b`, so the internal representation can change without
+/// touching external callers. `#valtype` keeps it unboxed (stack-allocated and
+/// flat inside `Array[RGB]`).
+#valtype
+struct RGB {
   r : Byte
   g : Byte
   b : Byte

@@ -291,21 +291,25 @@ fn SgrParser::parse_direct_color(
 
   if !colon {
     self.idx += 4
-    return Some({
-      r: self.params[current + 2].to_byte(),
-      g: self.params[current + 3].to_byte(),
-      b: self.params[current + 4].to_byte(),
-    })
+    return Some(
+      @color.RGB::new(
+        self.params[current + 2].to_byte(),
+        self.params[current + 3].to_byte(),
+        self.params[current + 4].to_byte(),
+      ),
+    )
   }
 
   match self.count_colon() {
     3 => {
       self.idx += 4
-      Some({
-        r: self.params[current + 2].to_byte(),
-        g: self.params[current + 3].to_byte(),
-        b: self.params[current + 4].to_byte(),
-      })
+      Some(
+        @color.RGB::new(
+          self.params[current + 2].to_byte(),
+          self.params[current + 3].to_byte(),
+          self.params[current + 4].to_byte(),
+        ),
+      )
     }
     4 =>
       if remaining_len(self, current) < 6 {
@@ -313,11 +317,13 @@ fn SgrParser::parse_direct_color(
         None
       } else {
         self.idx += 5
-        Some({
-          r: self.params[current + 3].to_byte(),
-          g: self.params[current + 4].to_byte(),
-          b: self.params[current + 5].to_byte(),
-        })
+        Some(
+          @color.RGB::new(
+            self.params[current + 3].to_byte(),
+            self.params[current + 4].to_byte(),
+            self.params[current + 5].to_byte(),
+          ),
+        )
       }
     _ => {
       self.consume_unknown_colon()

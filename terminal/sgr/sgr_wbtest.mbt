@@ -50,12 +50,12 @@ test "sgr/parser basic direct colors and empty input" {
   expect_attr_eq(test_parse([0]), Unset, "expected sgr 0 to unset")
 
   guard test_parse([38, 2, 40, 44, 52]) is DirectColorFg(rgb) &&
-    rgb == { r: 40, g: 44, b: 52 } else {
+    rgb == @color.RGB::new(40, 44, 52) else {
     fail("expected direct fg color")
   }
 
   guard test_parse([48, 2, 40, 44, 52]) is DirectColorBg(rgb) &&
-    rgb == { r: 40, g: 44, b: 52 } else {
+    rgb == @color.RGB::new(40, 44, 52) else {
     fail("expected direct bg color")
   }
 }
@@ -69,7 +69,7 @@ test "sgr/parser multiple next calls and null termination" {
   }
   expect_next_eq(parser, Unset, "expected first value to unset")
   guard parser.next() is Some(DirectColorFg(rgb)) &&
-    rgb == { r: 40, g: 44, b: 52 } else {
+    rgb == @color.RGB::new(40, 44, 52) else {
     fail("expected direct fg color on second item")
   }
   expect_none(parser, "expected parser to finish after direct fg")
@@ -302,19 +302,19 @@ test "sgr/256-color selectors" {
 test "sgr/direct and underline colors in colon forms" {
   guard parser_with_colons([48, 2, 1, 2, 3], [0, 1, 2, 3]).next()
     is Some(DirectColorBg(rgb0)) &&
-    rgb0 == { r: 1, g: 2, b: 3 } else {
+    rgb0 == @color.RGB::new(1, 2, 3) else {
     fail("expected colon direct bg")
   }
 
   guard parser_with_colons([58, 2, 1, 2, 3], [0, 1, 2, 3]).next()
     is Some(UnderlineColor(rgb1)) &&
-    rgb1 == { r: 1, g: 2, b: 3 } else {
+    rgb1 == @color.RGB::new(1, 2, 3) else {
     fail("expected colon underline color")
   }
 
   guard parser_with_colons([58, 2, 0, 1, 2, 3], [0, 1, 2, 3, 4]).next()
     is Some(UnderlineColor(rgb2)) &&
-    rgb2 == { r: 1, g: 2, b: 3 } else {
+    rgb2 == @color.RGB::new(1, 2, 3) else {
     fail("expected colon underline color with colorspace")
   }
 
@@ -334,11 +334,11 @@ test "sgr/underline fg and bg mixed sequence" {
   }
   expect_next_eq(parser, Underline(Single), "expected first underline")
   guard parser.next() is Some(DirectColorFg(fg)) &&
-    fg == { r: 255, g: 247, b: 219 } else {
+    fg == @color.RGB::new(255, 247, 219) else {
     fail("expected direct fg")
   }
   guard parser.next() is Some(DirectColorBg(bg)) &&
-    bg == { r: 242, g: 93, b: 147 } else {
+    bg == @color.RGB::new(242, 93, 147) else {
     fail("expected direct bg")
   }
   expect_next_eq(parser, Underline(Single), "expected final underline")
@@ -365,30 +365,30 @@ test "sgr/missing selector payloads degrade to unknown instead of crashing" {
 test "sgr/direct color colorspace handling matches upstream" {
   guard parser_with_colons([38, 2, 0, 1, 2, 3], [0, 1, 2, 3, 4]).next()
     is Some(DirectColorFg(rgb0)) &&
-    rgb0 == { r: 1, g: 2, b: 3 } else {
+    rgb0 == @color.RGB::new(1, 2, 3) else {
     fail("expected colon direct fg with colorspace")
   }
   guard parser_with_colons([48, 2, 0, 1, 2, 3], [0, 1, 2, 3, 4]).next()
     is Some(DirectColorBg(rgb1)) &&
-    rgb1 == { r: 1, g: 2, b: 3 } else {
+    rgb1 == @color.RGB::new(1, 2, 3) else {
     fail("expected colon direct bg with colorspace")
   }
   guard parser_with_colons([58, 2, 0, 1, 2, 3], [0, 1, 2, 3, 4]).next()
     is Some(UnderlineColor(rgb2)) &&
-    rgb2 == { r: 1, g: 2, b: 3 } else {
+    rgb2 == @color.RGB::new(1, 2, 3) else {
     fail("expected colon underline with colorspace")
   }
 
   guard test_parse([38, 2, 0, 1, 2, 3]) is DirectColorFg(rgb3) &&
-    rgb3 == { r: 0, g: 1, b: 2 } else {
+    rgb3 == @color.RGB::new(0, 1, 2) else {
     fail("expected semicolon direct fg to treat colorspace slot as red")
   }
   guard test_parse([48, 2, 0, 1, 2, 3]) is DirectColorBg(rgb4) &&
-    rgb4 == { r: 0, g: 1, b: 2 } else {
+    rgb4 == @color.RGB::new(0, 1, 2) else {
     fail("expected semicolon direct bg to treat colorspace slot as red")
   }
   guard test_parse([58, 2, 0, 1, 2, 3]) is UnderlineColor(rgb5) &&
-    rgb5 == { r: 0, g: 1, b: 2 } else {
+    rgb5 == @color.RGB::new(0, 1, 2) else {
     fail("expected semicolon underline to treat colorspace slot as red")
   }
 }
@@ -399,7 +399,7 @@ test "sgr/direct-color colon continuation and malformed runs" {
     0, 1, 2, 3, 4,
   ])
   guard extra_colorspace.next() is Some(DirectColorFg(rgb0)) &&
-    rgb0 == { r: 1, g: 2, b: 3 } else {
+    rgb0 == @color.RGB::new(1, 2, 3) else {
     fail("expected direct fg with colorspace and extra param")
   }
   expect_next_eq(
@@ -413,7 +413,7 @@ test "sgr/direct-color colon continuation and malformed runs" {
 
   let extra_plain = parser_with_colons([38, 2, 1, 2, 3, 1], [0, 1, 2, 3])
   guard extra_plain.next() is Some(DirectColorFg(rgb1)) &&
-    rgb1 == { r: 1, g: 2, b: 3 } else {
+    rgb1 == @color.RGB::new(1, 2, 3) else {
     fail("expected direct fg without colorspace and extra param")
   }
   expect_next_eq(extra_plain, Bold, "expected bold after plain direct fg")
@@ -438,11 +438,11 @@ test "sgr/kakoune and trailing-colon regressions stay non-panicking" {
   expect_next_eq(kakoune, Unset, "expected kakoune unset")
   expect_next_eq(kakoune, Underline(Curly), "expected kakoune underline")
   guard kakoune.next() is Some(DirectColorFg(fg)) &&
-    fg == { r: 175, g: 175, b: 215 } else {
+    fg == @color.RGB::new(175, 175, 215) else {
     fail("expected kakoune direct fg")
   }
   guard kakoune.next() is Some(UnderlineColor(ul)) &&
-    ul == { r: 190, g: 80, b: 70 } else {
+    ul == @color.RGB::new(190, 80, 70) else {
     fail("expected kakoune underline color")
   }
 
@@ -456,15 +456,15 @@ test "sgr/kakoune and trailing-colon regressions stay non-panicking" {
     "expected second kakoune underline",
   )
   guard kakoune2.next() is Some(DirectColorFg(fg2)) &&
-    fg2 == { r: 51, g: 51, b: 51 } else {
+    fg2 == @color.RGB::new(51, 51, 51) else {
     fail("expected second kakoune direct fg")
   }
   guard kakoune2.next() is Some(DirectColorBg(bg2)) &&
-    bg2 == { r: 170, g: 170, b: 170 } else {
+    bg2 == @color.RGB::new(170, 170, 170) else {
     fail("expected second kakoune direct bg")
   }
   guard kakoune2.next() is Some(UnderlineColor(ul2)) &&
-    ul2 == { r: 255, g: 97, b: 136 } else {
+    ul2 == @color.RGB::new(255, 97, 136) else {
     fail("expected second kakoune underline color")
   }
   expect_none(kakoune2, "expected second kakoune parser to finish")
