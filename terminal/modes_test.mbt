@@ -101,28 +101,13 @@ test "modes/defaults preserve upstream true flags" {
 }
 
 ///|
-test "modes/state set get save restore" {
-  let state = ModeState::new()
+test "modes/state set and get" {
+  let mut state = ModeState::new()
   guard !state.get(CursorKeys) else { fail("expected unset cursor_keys") }
-  state.set(CursorKeys, true)
+  state = state.set(CursorKeys, true)
   guard state.get(CursorKeys) else { fail("expected set cursor_keys") }
-  state.save(CursorKeys)
-  state.set(CursorKeys, false)
+  state = state.set(CursorKeys, false)
   guard !state.get(CursorKeys) else { fail("expected cleared cursor_keys") }
-  guard state.restore(CursorKeys) else { fail("expected restore to true") }
-  guard state.get(CursorKeys) else { fail("expected restored cursor_keys") }
-}
-
-///|
-test "modes/reset restores original defaults after mutation" {
-  let state = ModeState::new()
-  state.set(CursorVisible, false)
-  state.set(BracketedPaste, true)
-
-  state.reset()
-  guard state.get(CursorVisible) && !state.get(BracketedPaste) else {
-    fail("expected reset to restore the original defaults")
-  }
 }
 
 ///|
@@ -136,8 +121,7 @@ test "modes/get report for known dec mode" {
 
 ///|
 test "modes/get report for known ansi mode and unknown mode" {
-  let state = ModeState::new()
-  state.set(Insert, true)
+  let state = ModeState::new().set(Insert, true)
   let ansi_report = state.get_report(mode_tag(4, true))
   guard ansi_report.state() == Set else { fail("expected set report") }
   assert_eq(ansi_report.tag().ansi(), true)
@@ -150,8 +134,7 @@ test "modes/get report for known ansi mode and unknown mode" {
 
 ///|
 test "modes/report encode" {
-  let state = ModeState::new()
-  state.set(CursorKeys, true)
+  let state = ModeState::new().set(CursorKeys, true)
   assert_eq(state.get_report(mode_tag(1, false)).encode(), b"\x1B[?1;1$y")
   assert_eq(state.get_report(mode_tag(4, true)).encode(), b"\x1B[4;2$y")
   assert_eq(state.get_report(mode_tag(9999, false)).encode(), b"\x1B[?9999;0$y")
@@ -162,31 +145,19 @@ test "modes/report encode" {
 }
 
 ///|
-test "modes/packed state exercises set clear no-op and reset paths" {
-  let packed = ModePacked::empty()
+test "modes/packed state exercises set clear no-op paths" {
+  let mut packed = ModePacked::empty()
   guard !packed.get(CursorKeys) else {
     fail("expected cursor keys to start unset")
   }
-  packed.set(CursorKeys, false)
+  packed = packed.set(CursorKeys, false)
   guard !packed.get(CursorKeys) else {
     fail("expected clearing an unset mode to remain unset")
   }
-  packed.set(CursorKeys, true)
+  packed = packed.set(CursorKeys, true)
   guard packed.get(CursorKeys) else { fail("expected cursor keys to be set") }
-  packed.set(CursorKeys, false)
+  packed = packed.set(CursorKeys, false)
   guard !packed.get(CursorKeys) else { fail("expected cursor keys to clear") }
-
-  let state = ModeState::new()
-  state.set(CursorKeys, true)
-  state.save(CursorKeys)
-  state.set(CursorKeys, false)
-  state.reset()
-  guard !state.get(CursorKeys) else {
-    fail("expected reset to restore defaults")
-  }
-  guard !state.restore(ReverseWrap) else {
-    fail("expected unsaved mode restore to remain false")
-  }
 }
 
 ///|
@@ -197,15 +168,15 @@ test "modes/report state codes and bit helpers cover edge modes" {
   assert_eq(ReportState::PermanentlySet.code(), 3)
   assert_eq(ReportState::PermanentlyReset.code(), 4)
 
-  let packed = ModePacked::empty()
+  let mut packed = ModePacked::empty()
   guard !packed.get(DisableKeyboard) else {
     fail("expected disable keyboard to start unset")
   }
   guard !packed.get(InBandSizeReports) else {
     fail("expected in-band size reports to start unset")
   }
-  packed.set(DisableKeyboard, true)
-  packed.set(InBandSizeReports, true)
+  packed = packed.set(DisableKeyboard, true)
+  packed = packed.set(InBandSizeReports, true)
   guard packed.get(DisableKeyboard) else {
     fail("expected disable keyboard to become set")
   }
