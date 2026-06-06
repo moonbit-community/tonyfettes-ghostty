@@ -244,10 +244,13 @@ fn GhosttyTerminal::view(
   let row_nodes : Array[@html.Html] = []
   let rows = self.rows()
   let cols = self.cols()
+  // Snapshot the palette once per frame; every cell shares it rather than
+  // re-snapshotting (a 256-entry copy) per cell.
+  let palette = self.terminal.palette()
   for row in 0..<rows {
     let cells : Array[@html.Html] = []
     for col in 0..<cols {
-      cells.push(self.cell_view(row, col))
+      cells.push(self.cell_view(row, col, palette))
     }
     row_nodes.push(
       @html.div(
@@ -274,6 +277,7 @@ fn GhosttyTerminal::cell_view(
   self : GhosttyTerminal,
   row : Int,
   col : Int,
+  palette : Array[@color.RGB],
 ) -> @html.Html {
   let cell = self.terminal.screen_cell_snapshot(
     row.to_uint16(),
@@ -283,7 +287,7 @@ fn GhosttyTerminal::cell_view(
     Some(cell) =>
       (
         self.cell_text(row, col, cell),
-        self.cell_style(row, col, cell),
+        self.cell_style(row, col, cell, palette),
         cell.hyperlink().map(link => link.uri()),
       )
     None => {
@@ -335,10 +339,10 @@ fn GhosttyTerminal::cell_style(
   _row : Int,
   _col : Int,
   cell : @terminal.PageCellState,
+  palette : Array[@color.RGB],
 ) -> Array[String] {
   let styles : Array[String] = []
   let style = cell.style()
-  let palette = self.terminal.palette()
   let fg = style_color_css(style.fg_color(), palette)
   let bg = cell_background_css(cell, palette, style)
   let (resolved_fg, resolved_bg) = if style.inverse() {

@@ -39,7 +39,7 @@ pub fn RenderState::new() -> RenderState {
     background: default_render_background(),
     foreground: default_render_foreground(),
     cursor_color: None,
-    palette: clone_render_palette(@color.default_palette()),
+    palette: @color.default_palette(),
     cursor_visual_style: Block,
     cursor_visible: true,
     cursor_blinking: false,
@@ -184,7 +184,9 @@ pub fn RenderState::update(
   self.background = background
   self.foreground = foreground
   self.cursor_color = cursor_color
-  self.palette = clone_render_palette(palette)
+  // `palette` came from `terminal.palette()`, which already returns a fresh
+  // snapshot owned by no one else — store it directly instead of cloning again.
+  self.palette = palette
   self.cursor_visual_style = cursor_visual_style
   self.cursor_visible = cursor_visible
   self.cursor_blinking = cursor_blinking

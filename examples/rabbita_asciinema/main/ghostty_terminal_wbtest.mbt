@@ -70,7 +70,7 @@ test "ghostty terminal adapter renders hyperlinks and fallback cells" {
     fail("expected hyperlink href")
   }
   let fallback = @rabbita.render_to_string(
-    @rabbita.static_cell(terminal.cell_view(999, 999)),
+    @rabbita.static_cell(terminal.cell_view(999, 999, @color.default_palette())),
   )
   guard fallback.contains("terminal-cell") else {
     fail("expected fallback cell")
@@ -95,7 +95,9 @@ test "ghostty terminal adapter direct cell style branches" {
   style = style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
   style = style.apply_attribute(DirectColorBg(@color.RGB::new(4, 5, 6)))
   styled.set_style(style)
-  let css = terminal.cell_style(0, 0, styled).join(";")
+  let css = terminal
+    .cell_style(0, 0, styled, @color.default_palette())
+    .join(";")
   guard css.contains("font-weight") &&
     css.contains("font-style") &&
     css.contains("opacity") &&
@@ -108,7 +110,7 @@ test "ghostty terminal adapter direct cell style branches" {
   let palette_cell = @terminal.PageCellState::new()
   palette_cell.set_background_palette(1)
   guard terminal
-    .cell_style(0, 0, palette_cell)
+    .cell_style(0, 0, palette_cell, @color.default_palette())
     .join(";")
     .contains("background-color") else {
     fail("expected palette background")
@@ -116,7 +118,10 @@ test "ghostty terminal adapter direct cell style branches" {
 
   let rgb_cell = @terminal.PageCellState::new()
   rgb_cell.set_background_rgb(@color.RGB::new(8, 9, 10))
-  guard terminal.cell_style(0, 0, rgb_cell).join(";").contains("rgb(8, 9, 10)") else {
+  guard terminal
+    .cell_style(0, 0, rgb_cell, @color.default_palette())
+    .join(";")
+    .contains("rgb(8, 9, 10)") else {
     fail("expected rgb background")
   }
 
