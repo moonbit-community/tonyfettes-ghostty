@@ -150,12 +150,14 @@ fn underline_decode(bits : UInt) -> @sgr.SgrUnderline {
   }
 }
 
-// `CellStyle` is immutable: every "mutation" returns a new value via the
-// `with_*` helpers and `apply_attribute`. Immutability lets callers share a
-// style freely (no defensive copies) and keeps the door open to either an
-// inline `#valtype` representation or hash-consing the distinct styles.
+// `CellStyle` is an immutable `#valtype`: four inline scalar words (three packed
+// `StyleColor`s plus the flags), stored inline in a cell with no heap object and
+// no reference. Every "mutation" returns a new value via the `with_*` helpers
+// and `apply_attribute`; since it is a value, those updates and the temporaries
+// in a `new().with_*()` chain are stack copies, not allocations.
 
 ///|
+#valtype
 struct CellStyle {
   fg_color : StyleColor
   bg_color : StyleColor

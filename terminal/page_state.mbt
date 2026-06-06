@@ -275,13 +275,9 @@ pub fn PageCellState::style(self : PageCellState) -> @style.CellStyle {
 }
 
 ///|
-// The default cell style, shared by every cell that has no SGR styling.
-//
-// Analogous to upstream Ghostty's `style.default_id`: the overwhelmingly common
-// style needs neither per-cell storage nor a copy. `CellStyle` is immutable, so
-// every unstyled cell shares this one instance by reference — `set_style` points
-// at it, `full_reset` re-points to it, and `PageCellState::style()` hands the
-// shared reference straight back since no caller can mutate it.
+// The default (unstyled) cell style. `CellStyle` is a `#valtype`, so this is
+// just the canonical zero value a fresh cell starts from — there is no shared
+// instance or reference counting to manage.
 let default_cell_style : @style.CellStyle = @style.CellStyle::new()
 
 ///|
@@ -289,18 +285,9 @@ pub fn PageCellState::set_style(
   self : PageCellState,
   style : @style.CellStyle,
 ) -> Unit {
-  // Share the default singleton (no allocation) for unstyled cells — the hot
-  // path for plain text; copy only when the style actually carries SGR state.
-  if style.is_default() {
-    // Skip the assignment when the cell already points at the singleton, so the
-    // common "overwrite an unstyled cell with unstyled text" case touches no
-    // reference counts at all.
-    if !physical_equal(self.style, default_cell_style) {
-      self.style = default_cell_style
-    }
-  } else {
-    self.style = style
-  }
+  // A `CellStyle` is 16 inline bytes, so storing it is a value copy with no
+  // allocation — the default and the styled cases are the same store.
+  self.style = style
 }
 
 ///|
@@ -375,14 +362,10 @@ pub fn PageCellState::grid_width(self : PageCellState) -> Int {
 
 ///|
 pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
-  // Fast path: cells written on the active grid share the `default_cell_style`
-  // singleton for unstyled text (set_style / full_reset / new), so the identity
-  // check resolves the hot print path in O(1), like Ghostty's
-  // `style_id != default_id`. The scrollback/reflow copy paths build a
-  // fresh-but-equal default style, so when the identity test misses, fall back
-  // to the structural is_default() — keeping the answer exact regardless of how
-  // the cell was constructed.
-  !physical_equal(self.style, default_cell_style) && !self.style.is_default()
+  // The style is an inline `#valtype`, so this is a handful of register
+  // comparisons (`is_default` is `fg|bg|underline == 0 && flags == 0`) — no
+  // pointer chase, like Ghostty's `style_id != default_id`.
+  !self.style.is_default()
 }
 
 ///|
