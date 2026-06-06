@@ -1,64 +1,92 @@
 ///|
-/// A color carried by a cell style, tagged by source. `#valtype` keeps it
-/// unboxed: it stores inline in `CellStyle` (no per-color heap box) while
-/// staying a normal enum, so callers can still pattern-match
-/// `None`/`Palette`/`Rgb`. All payloads are scalar (`Byte`, and `RGB` is a
-/// transparent `UInt` newtype), which `#valtype` enums require.
-#valtype
-enum StyleColor {
-  None
-  Palette(Byte)
-  Rgb(@color.RGB)
-} derive(Eq, Debug)
+/// A color carried by a cell style, tagged by source. Packed into a single
+/// `UInt` (a transparent scalar): bits 24-25 hold the tag (0 none, 1 palette,
+/// 2 rgb) and bits 0-23 the value — the palette index in the low byte, or rgb
+/// as `r<<16 | g<<8 | b`. `None` encodes to 0, so a default color is just
+/// `packed == 0`. Being a scalar (not a `#valtype` enum) lets it sit inline in
+/// a `#valtype` `CellStyle`; its representation stays internal to this package,
+/// reached only through the constructors and accessors below.
+struct StyleColor(UInt) derive(Eq, Debug)
+
+///|
+const StyleColorTagShift : Int = 24
+
+///|
+const StyleColorPaletteTag : UInt = 1
+
+///|
+const StyleColorRgbTag : UInt = 2
 
 ///|
 pub fn StyleColor::none() -> StyleColor {
-  None
+  StyleColor(0)
 }
 
 ///|
 pub fn StyleColor::palette(index : Byte) -> StyleColor {
-  Palette(index)
+  StyleColor((StyleColorPaletteTag << StyleColorTagShift) | index.to_uint())
 }
 
 ///|
 pub fn StyleColor::rgb(value : @color.RGB) -> StyleColor {
-  Rgb(value)
+  let bits = (value.r().to_uint() << 16) |
+    (value.g().to_uint() << 8) |
+    value.b().to_uint()
+  StyleColor((StyleColorRgbTag << StyleColorTagShift) | bits)
+}
+
+///|
+fn StyleColor::tag(self : StyleColor) -> UInt {
+  self.0 >> StyleColorTagShift
+}
+
+///|
+fn StyleColor::decode_rgb(self : StyleColor) -> @color.RGB {
+  @color.RGB::new(
+    ((self.0 >> 16) & 0xFFU).to_byte(),
+    ((self.0 >> 8) & 0xFFU).to_byte(),
+    (self.0 & 0xFFU).to_byte(),
+  )
 }
 
 ///|
 pub fn StyleColor::is_default(self : StyleColor) -> Bool {
-  self is None
+  self.0 == 0
 }
 
 ///|
 pub fn StyleColor::palette_index(self : StyleColor) -> Byte? {
-  match self {
-    Palette(value) => Some(value)
-    None | Rgb(_) => None
+  if self.tag() == StyleColorPaletteTag {
+    Some((self.0 & 0xFFU).to_byte())
+  } else {
+    None
   }
 }
 
 ///|
 pub fn StyleColor::rgb_value(self : StyleColor) -> @color.RGB? {
-  match self {
-    Rgb(value) => Some(value)
-    None | Palette(_) => None
+  if self.tag() == StyleColorRgbTag {
+    Some(self.decode_rgb())
+  } else {
+    None
   }
 }
 
 ///|
-/// Resolve to a concrete RGB against `palette`: `None` -> None,
-/// `Palette(i)` -> `palette[i]`, `Rgb(c)` -> `c`. This is the only decoder of a
-/// `StyleColor`, so its representation stays internal to this package.
+/// Resolve to a concrete RGB against `palette`: none -> None,
+/// palette(i) -> `palette[i]`, rgb(c) -> `c`. This and the accessors above are
+/// the only decoders of a `StyleColor`, so its representation stays internal.
 pub fn StyleColor::resolve(
   self : StyleColor,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
-  match self {
-    None => None
-    Palette(index) => Some(palette[index.to_int()])
-    Rgb(value) => Some(value)
+  let tag = self.tag()
+  if tag == StyleColorPaletteTag {
+    Some(palette[(self.0 & 0xFFU).reinterpret_as_int()])
+  } else if tag == StyleColorRgbTag {
+    Some(self.decode_rgb())
+  } else {
+    None
   }
 }
 
@@ -160,9 +188,9 @@ pub fn CellStyle::reset(self : CellStyle) -> Unit {
 
 ///|
 pub fn CellStyle::is_default(self : CellStyle) -> Bool {
-  self.fg_color is None &&
-  self.bg_color is None &&
-  self.underline_color is None &&
+  self.fg_color.is_default() &&
+  self.bg_color.is_default() &&
+  self.underline_color.is_default() &&
   self.flags == 0
 }
 
