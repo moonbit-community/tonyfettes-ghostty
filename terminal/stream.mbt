@@ -31,28 +31,28 @@ pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, Debug)
 
 ///|
 struct DcsHookPayload {
-  intermediates : Array[Byte]
-  params : Array[UInt16]
+  intermediates : Bytes
+  params : ReadOnlyArray[UInt16]
   final_byte : Byte
 } derive(Eq, Debug)
 
 ///|
 fn DcsHookPayload::from_dcs(dcs : @parser.Dcs) -> DcsHookPayload {
   {
-    intermediates: @parser.clone_bytes(dcs.intermediates),
-    params: @parser.clone_params(dcs.params),
+    intermediates: dcs.intermediates,
+    params: dcs.params,
     final_byte: dcs.final_byte,
   }
 }
 
 ///|
-pub fn DcsHookPayload::intermediates(self : DcsHookPayload) -> Array[Byte] {
-  @parser.clone_bytes(self.intermediates)
+pub fn DcsHookPayload::intermediates(self : DcsHookPayload) -> Bytes {
+  self.intermediates
 }
 
 ///|
-pub fn DcsHookPayload::params(self : DcsHookPayload) -> Array[UInt16] {
-  @parser.clone_params(self.params)
+pub fn DcsHookPayload::params(self : DcsHookPayload) -> ReadOnlyArray[UInt16] {
+  self.params
 }
 
 ///|
@@ -350,7 +350,7 @@ fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit 
 ///|
 fn[H : StreamHandler] Stream::emit_sgr(
   self : Stream[H],
-  params : Array[UInt16],
+  params : ReadOnlyArray[UInt16],
   params_sep : @parser.SepList,
 ) -> Unit {
   let parser = @sgr.SgrParser::from_params(params, params_sep)
@@ -385,69 +385,69 @@ fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
 ///|
 fn[H : StreamHandler] Stream::csi_dispatch(
   self : Stream[H],
-  _csi : @parser.Csi,
+  csi : @parser.Csi,
 ) -> Unit {
-  match _csi.final_byte {
+  match csi.final_byte {
     b'A' | b'k' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorUp(CursorMovement(value)))
         }
       }
     b'B' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorDown(CursorMovement(value)))
         }
       }
     b'C' =>
-      if _csi.intermediates == [] {
-        let value = default_single_param(_csi.params)
+      if csi.intermediates == [] {
+        let value = default_single_param(csi.params)
         if value is Some(value) {
           self.emit(StreamCursorRight(CursorMovement(value)))
         }
       }
     b'D' | b'j' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorLeft(CursorMovement(value)))
         }
       }
     b'E' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorDown(CursorMovement(value)))
           self.emit(StreamCarriageReturn)
         }
       }
     b'F' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorUp(CursorMovement(value)))
           self.emit(StreamCarriageReturn)
         }
       }
     b'G' | b'`' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorCol(CursorMovement(value)))
         }
       }
     b'H' | b'f' =>
-      if _csi.intermediates == [] {
-        if cursor_position(_csi.params) is Some(position) {
+      if csi.intermediates == [] {
+        if cursor_position(csi.params) is Some(position) {
           self.emit(StreamCursorPos(position))
         }
       }
     b'I' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamHorizontalTab(value))
         }
       }
     b'J' =>
-      if erase_protected(_csi.intermediates) is Some(is_protected) {
-        match erase_display_mode(_csi.params) {
+      if erase_protected(csi.intermediates) is Some(is_protected) {
+        match erase_display_mode(csi.params) {
           Some(0) => self.emit(StreamEraseDisplayBelow(is_protected))
           Some(1) => self.emit(StreamEraseDisplayAbove(is_protected))
           Some(2) => self.emit(StreamEraseDisplayComplete(is_protected))
@@ -458,8 +458,8 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         }
       }
     b'K' =>
-      if erase_protected(_csi.intermediates) is Some(is_protected) {
-        match erase_line_mode(_csi.params) {
+      if erase_protected(csi.intermediates) is Some(is_protected) {
+        match erase_line_mode(csi.params) {
           Some(0) => self.emit(StreamEraseLineRight(is_protected))
           Some(1) => self.emit(StreamEraseLineLeft(is_protected))
           Some(2) => self.emit(StreamEraseLineComplete(is_protected))
@@ -470,77 +470,77 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         }
       }
     b'L' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamInsertLines(value))
         }
       }
     b'M' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamDeleteLines(value))
         }
       }
     b'P' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamDeleteChars(value))
         }
       }
     b'S' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamScrollUp(value))
         }
       }
     b'T' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamScrollDown(value))
         }
       }
     b'h' =>
-      if mode_ansi(_csi.intermediates) is Some(ansi_mode) {
-        for value in _csi.params {
+      if mode_ansi(csi.intermediates) is Some(ansi_mode) {
+        for value in csi.params {
           if mode_from_int(value, ansi_mode) is Some(mode) {
             self.emit(StreamSetMode(mode))
           }
         }
       }
     b'l' =>
-      if mode_ansi(_csi.intermediates) is Some(ansi_mode) {
-        for value in _csi.params {
+      if mode_ansi(csi.intermediates) is Some(ansi_mode) {
+        for value in csi.params {
           if mode_from_int(value, ansi_mode) is Some(mode) {
             self.emit(StreamResetMode(mode))
           }
         }
       }
     b'n' =>
-      if device_status_request(_csi.intermediates, _csi.params) is Some(request) {
+      if device_status_request(csi.intermediates, csi.params) is Some(request) {
         self.emit(StreamDeviceStatus(request))
-      } else if _csi.intermediates == [b'>'] {
+      } else if csi.intermediates == [b'>'] {
         self.emit(StreamModifyKeyFormat(OtherKeysNumericExcept))
       }
     b'm' =>
-      match _csi.intermediates {
-        [] => self.emit_sgr(_csi.params, _csi.params_sep)
+      match csi.intermediates {
+        [] => self.emit_sgr(csi.params, csi.params_sep)
         [b'>'] =>
-          if modify_key_format_action(_csi.params) is Some(format) {
+          if modify_key_format_action(csi.params) is Some(format) {
             self.emit(StreamModifyKeyFormat(format))
           }
         _ => ()
       }
     b'p' =>
-      if request_mode_tag(_csi.intermediates, _csi.params) is Some(tag) {
+      if request_mode_tag(csi.intermediates, csi.params) is Some(tag) {
         match mode_from_int(tag.value(), tag.ansi()) {
           Some(mode) => self.emit(StreamRequestMode(mode))
           None => self.emit(StreamRequestModeUnknown(tag))
         }
       }
     b'q' =>
-      match _csi.intermediates {
+      match csi.intermediates {
         [b' '] =>
-          match _csi.params {
+          match csi.params {
             [] => self.emit(StreamCursorStyle(Default))
             [value] =>
               if cursor_style_from_int(value.to_int()) is Some(style) {
@@ -549,20 +549,20 @@ fn[H : StreamHandler] Stream::csi_dispatch(
             _ => ()
           }
         [b'"'] =>
-          if protected_mode_action(_csi.params) is Some(action) {
+          if protected_mode_action(csi.params) is Some(action) {
             self.emit(action)
           }
         [b'>'] => self.emit(StreamXtversion)
         _ => ()
       }
     b'r' =>
-      match _csi.intermediates {
+      match csi.intermediates {
         [] =>
-          if top_and_bottom_margin(_csi.params) is Some(margin) {
+          if top_and_bottom_margin(csi.params) is Some(margin) {
             self.emit(StreamTopAndBottomMargin(margin))
           }
         [b'?'] =>
-          for value in _csi.params {
+          for value in csi.params {
             if mode_from_int(value, false) is Some(mode) {
               self.emit(StreamRestoreMode(mode))
             }
@@ -570,7 +570,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         _ => ()
       }
     b'W' =>
-      match (_csi.intermediates, _csi.params) {
+      match (csi.intermediates, csi.params) {
         ([], []) | ([], [0]) => self.emit(StreamTabSet)
         ([], [2]) => self.emit(StreamTabClearCurrent)
         ([], [5]) => self.emit(StreamTabClearAll)
@@ -578,48 +578,48 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         _ => ()
       }
     b'X' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamEraseChars(value))
         }
       }
     b'Z' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamHorizontalTabBack(value))
         }
       }
     b'a' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorColRelative(CursorMovement(value)))
         }
       }
     b'b' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamPrintRepeat(value))
         }
       }
     b'c' =>
-      if device_attributes_request(_csi.intermediates) is Some(request) {
+      if device_attributes_request(csi.intermediates) is Some(request) {
         self.emit(StreamDeviceAttributes(request))
       }
     b'd' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorRow(CursorMovement(value)))
         }
       }
     b'e' =>
-      if _csi.intermediates == [] {
-        if default_single_param(_csi.params) is Some(value) {
+      if csi.intermediates == [] {
+        if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorRowRelative(CursorMovement(value)))
         }
       }
     b'g' =>
-      if _csi.intermediates == [] {
-        match tab_clear_mode(_csi.params) {
+      if csi.intermediates == [] {
+        match tab_clear_mode(csi.params) {
           Some(0) => self.emit(StreamTabClearCurrent)
           Some(3) => self.emit(StreamTabClearAll)
           None => ()
@@ -627,7 +627,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         }
       }
     b's' =>
-      match (_csi.intermediates, _csi.params) {
+      match (csi.intermediates, csi.params) {
         ([], []) => self.emit(StreamLeftAndRightMarginAmbiguous)
         ([], [left]) =>
           self.emit(
@@ -638,7 +638,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
             StreamLeftAndRightMargin({ top_left: left, bottom_right: right }),
           )
         ([b'?'], _) =>
-          for value in _csi.params {
+          for value in csi.params {
             if mode_from_int(value, false) is Some(mode) {
               self.emit(StreamSaveMode(mode))
             }
@@ -649,8 +649,8 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         _ => ()
       }
     b't' =>
-      if _csi.intermediates == [] {
-        match xtwinops_action(_csi.params) {
+      if csi.intermediates == [] {
+        match xtwinops_action(csi.params) {
           Some(StreamSizeReport(style)) => self.emit(StreamSizeReport(style))
           Some(StreamTitlePush(index)) => self.emit(StreamTitlePush(index))
           Some(StreamTitlePop(index)) => self.emit(StreamTitlePop(index))
@@ -658,33 +658,33 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         }
       }
     b'u' =>
-      match _csi.intermediates {
+      match csi.intermediates {
         [] => self.emit(StreamRestoreCursor)
         [b'?'] => self.emit(StreamKittyKeyboardQuery)
         [b'>'] =>
-          if kitty_keyboard_push_flags(_csi.params) is Some(flags) {
+          if kitty_keyboard_push_flags(csi.params) is Some(flags) {
             self.emit(StreamKittyKeyboardPush(flags))
           }
         [b'<'] =>
           self.emit(
-            StreamKittyKeyboardPop(kitty_keyboard_pop_count(_csi.params)),
+            StreamKittyKeyboardPop(kitty_keyboard_pop_count(csi.params)),
           )
         [b'='] =>
-          if kitty_keyboard_set_action(_csi.params) is Some(action) {
+          if kitty_keyboard_set_action(csi.params) is Some(action) {
             self.emit(action)
           }
         _ => ()
       }
     b'@' =>
-      if _csi.intermediates == [] {
-        match insert_blanks_count(_csi.params) {
+      if csi.intermediates == [] {
+        match insert_blanks_count(csi.params) {
           Some(value) => self.emit(StreamInsertBlanks(value))
           None => ()
         }
       }
     b'}' =>
-      if _csi.intermediates == [b'$'] {
-        if active_status_display(_csi.params) is Some(display) {
+      if csi.intermediates == [b'$'] {
+        if active_status_display(csi.params) is Some(display) {
           self.emit(StreamActiveStatusDisplay(display))
         }
       }
@@ -695,63 +695,63 @@ fn[H : StreamHandler] Stream::csi_dispatch(
 ///|
 fn[H : StreamHandler] Stream::esc_dispatch(
   self : Stream[H],
-  _esc : @parser.Esc,
+  esc : @parser.Esc,
 ) -> Unit {
-  match _esc.final_byte {
-    b'B' => self.configure_charset(_esc.intermediates, Ascii)
-    b'A' => self.configure_charset(_esc.intermediates, British)
-    b'0' => self.configure_charset(_esc.intermediates, DecSpecial)
-    b'7' => if _esc.intermediates == [] { self.emit(StreamSaveCursor) }
+  match esc.final_byte {
+    b'B' => self.configure_charset(esc.intermediates, Ascii)
+    b'A' => self.configure_charset(esc.intermediates, British)
+    b'0' => self.configure_charset(esc.intermediates, DecSpecial)
+    b'7' => if esc.intermediates == [] { self.emit(StreamSaveCursor) }
     b'8' =>
-      match _esc.intermediates {
+      match esc.intermediates {
         [] => self.emit(StreamRestoreCursor)
         [b'#'] => self.emit(StreamDecaln)
         _ => ()
       }
-    b'D' => if _esc.intermediates == [] { self.emit(StreamIndex) }
-    b'E' => if _esc.intermediates == [] { self.emit(StreamNextLine) }
-    b'H' => if _esc.intermediates == [] { self.emit(StreamTabSet) }
-    b'M' => if _esc.intermediates == [] { self.emit(StreamReverseIndex) }
+    b'D' => if esc.intermediates == [] { self.emit(StreamIndex) }
+    b'E' => if esc.intermediates == [] { self.emit(StreamNextLine) }
+    b'H' => if esc.intermediates == [] { self.emit(StreamTabSet) }
+    b'M' => if esc.intermediates == [] { self.emit(StreamReverseIndex) }
     b'N' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit_invoke_charset(Gl, G2, true)
       }
     b'O' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit_invoke_charset(Gl, G3, true)
       }
     b'n' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit_invoke_charset(Gl, G2, false)
       }
     b'o' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit_invoke_charset(Gl, G3, false)
       }
     b'~' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit_invoke_charset(Gr, G1, false)
       }
     b'}' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit_invoke_charset(Gr, G2, false)
       }
     b'|' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit_invoke_charset(Gr, G3, false)
       }
-    b'=' => if _esc.intermediates == [] { self.emit(StreamSetMode(KeypadKeys)) }
+    b'=' => if esc.intermediates == [] { self.emit(StreamSetMode(KeypadKeys)) }
     b'>' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit(StreamResetMode(KeypadKeys))
       }
-    b'V' => if _esc.intermediates == [] { self.emit(StreamProtectedModeIso) }
-    b'W' => if _esc.intermediates == [] { self.emit(StreamProtectedModeOff) }
+    b'V' => if esc.intermediates == [] { self.emit(StreamProtectedModeIso) }
+    b'W' => if esc.intermediates == [] { self.emit(StreamProtectedModeOff) }
     b'Z' =>
-      if _esc.intermediates == [] {
+      if esc.intermediates == [] {
         self.emit(StreamDeviceAttributes(Primary))
       }
-    b'c' => if _esc.intermediates == [] { self.emit(StreamFullReset) }
+    b'c' => if esc.intermediates == [] { self.emit(StreamFullReset) }
     b'\\' => ()
     _ => ()
   }
@@ -842,7 +842,7 @@ fn[H : StreamHandler] Stream::emit_invoke_charset(
 ///|
 fn[H : StreamHandler] Stream::configure_charset(
   self : Stream[H],
-  intermediates : Array[Byte],
+  intermediates : Bytes,
   charset : @charsets.Charset,
 ) -> Unit {
   match intermediates {
@@ -855,7 +855,7 @@ fn[H : StreamHandler] Stream::configure_charset(
 }
 
 ///|
-fn default_single_param(params : Array[UInt16]) -> UInt16? {
+fn default_single_param(params : ReadOnlyArray[UInt16]) -> UInt16? {
   match params {
     [] => Some(1)
     [value] => Some(value)
@@ -864,7 +864,7 @@ fn default_single_param(params : Array[UInt16]) -> UInt16? {
 }
 
 ///|
-fn cursor_position(params : Array[UInt16]) -> CursorPosition? {
+fn cursor_position(params : ReadOnlyArray[UInt16]) -> CursorPosition? {
   match params {
     [] => Some({ row: 1, col: 1 })
     [row] => Some({ row, col: 1 })
@@ -874,7 +874,7 @@ fn cursor_position(params : Array[UInt16]) -> CursorPosition? {
 }
 
 ///|
-fn top_and_bottom_margin(params : Array[UInt16]) -> Margin? {
+fn top_and_bottom_margin(params : ReadOnlyArray[UInt16]) -> Margin? {
   match params {
     [] => Some({ top_left: 0, bottom_right: 0 })
     [top] => Some({ top_left: top, bottom_right: 0 })
@@ -884,7 +884,7 @@ fn top_and_bottom_margin(params : Array[UInt16]) -> Margin? {
 }
 
 ///|
-fn erase_protected(intermediates : Array[Byte]) -> Bool? {
+fn erase_protected(intermediates : Bytes) -> Bool? {
   match intermediates {
     [] => Some(false)
     [b'?'] => Some(true)
@@ -893,7 +893,7 @@ fn erase_protected(intermediates : Array[Byte]) -> Bool? {
 }
 
 ///|
-fn erase_display_mode(params : Array[UInt16]) -> UInt16? {
+fn erase_display_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
   match params {
     [] => Some(0)
     [value] => Some(value)
@@ -902,9 +902,7 @@ fn erase_display_mode(params : Array[UInt16]) -> UInt16? {
 }
 
 ///|
-fn device_attributes_request(
-  intermediates : Array[Byte],
-) -> DeviceAttributeRequest? {
+fn device_attributes_request(intermediates : Bytes) -> DeviceAttributeRequest? {
   match intermediates {
     [] => Some(Primary)
     [b'>'] => Some(Secondary)
@@ -915,8 +913,8 @@ fn device_attributes_request(
 
 ///|
 fn device_status_request(
-  intermediates : Array[Byte],
-  params : Array[UInt16],
+  intermediates : Bytes,
+  params : ReadOnlyArray[UInt16],
 ) -> DeviceStatusRequest? {
   match (intermediates, params) {
     ([], [value]) => device_status_request_from_int(value, false)
@@ -927,8 +925,8 @@ fn device_status_request(
 
 ///|
 fn request_mode_tag(
-  intermediates : Array[Byte],
-  params : Array[UInt16],
+  intermediates : Bytes,
+  params : ReadOnlyArray[UInt16],
 ) -> ModeTag? {
   match (intermediates, params) {
     ([b'$'], [value]) => Some(mode_tag(value, true))
@@ -938,7 +936,7 @@ fn request_mode_tag(
 }
 
 ///|
-fn modify_key_format_action(params : Array[UInt16]) -> ModifyKeyFormat? {
+fn modify_key_format_action(params : ReadOnlyArray[UInt16]) -> ModifyKeyFormat? {
   match params {
     [] | [0] => Some(Legacy)
     [1] => Some(CursorKeys)
@@ -962,7 +960,9 @@ fn kitty_keyboard_flags(value : UInt16) -> KittyKeyboardFlags? {
 }
 
 ///|
-fn kitty_keyboard_push_flags(params : Array[UInt16]) -> KittyKeyboardFlags? {
+fn kitty_keyboard_push_flags(
+  params : ReadOnlyArray[UInt16],
+) -> KittyKeyboardFlags? {
   match params {
     [value] => kitty_keyboard_flags(value)
     [] => Some(KittyKeyboardFlags(0))
@@ -971,7 +971,7 @@ fn kitty_keyboard_push_flags(params : Array[UInt16]) -> KittyKeyboardFlags? {
 }
 
 ///|
-fn kitty_keyboard_pop_count(params : Array[UInt16]) -> UInt16 {
+fn kitty_keyboard_pop_count(params : ReadOnlyArray[UInt16]) -> UInt16 {
   match params {
     [value] => value
     _ => 1
@@ -979,7 +979,7 @@ fn kitty_keyboard_pop_count(params : Array[UInt16]) -> UInt16 {
 }
 
 ///|
-fn kitty_keyboard_set_action(params : Array[UInt16]) -> StreamAction? {
+fn kitty_keyboard_set_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
   let flags = if params.length() >= 1 {
     kitty_keyboard_flags(params[0])
   } else {
@@ -995,7 +995,7 @@ fn kitty_keyboard_set_action(params : Array[UInt16]) -> StreamAction? {
 }
 
 ///|
-fn protected_mode_action(params : Array[UInt16]) -> StreamAction? {
+fn protected_mode_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
   match params {
     [] => Some(StreamProtectedModeOff)
     [0] | [2] => Some(StreamProtectedModeOff)
@@ -1005,7 +1005,7 @@ fn protected_mode_action(params : Array[UInt16]) -> StreamAction? {
 }
 
 ///|
-fn erase_line_mode(params : Array[UInt16]) -> UInt16? {
+fn erase_line_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
   match params {
     [] => Some(0)
     [value] => Some(value)
@@ -1014,7 +1014,7 @@ fn erase_line_mode(params : Array[UInt16]) -> UInt16? {
 }
 
 ///|
-fn tab_clear_mode(params : Array[UInt16]) -> UInt16? {
+fn tab_clear_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
   match params {
     [value] => Some(value)
     _ => None
@@ -1022,7 +1022,7 @@ fn tab_clear_mode(params : Array[UInt16]) -> UInt16? {
 }
 
 ///|
-fn insert_blanks_count(params : Array[UInt16]) -> UInt16? {
+fn insert_blanks_count(params : ReadOnlyArray[UInt16]) -> UInt16? {
   match params {
     [] => Some(1)
     [value] => if value == 0 { Some(1) } else { Some(value) }
@@ -1031,7 +1031,7 @@ fn insert_blanks_count(params : Array[UInt16]) -> UInt16? {
 }
 
 ///|
-fn active_status_display(params : Array[UInt16]) -> StatusDisplay? {
+fn active_status_display(params : ReadOnlyArray[UInt16]) -> StatusDisplay? {
   match params {
     [value] => status_display_from_int(value.to_int())
     _ => None
@@ -1039,7 +1039,7 @@ fn active_status_display(params : Array[UInt16]) -> StatusDisplay? {
 }
 
 ///|
-fn xtwinops_action(params : Array[UInt16]) -> StreamAction? {
+fn xtwinops_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
   match params {
     [14] => Some(StreamSizeReport(Csi14t))
     [16] => Some(StreamSizeReport(Csi16t))
@@ -1072,7 +1072,7 @@ fn title_pop_action(scope : UInt16, index : UInt16) -> StreamAction? {
 }
 
 ///|
-fn mode_ansi(intermediates : Array[Byte]) -> Bool? {
+fn mode_ansi(intermediates : Bytes) -> Bool? {
   match intermediates {
     [] => Some(true)
     [b'?'] => Some(false)
