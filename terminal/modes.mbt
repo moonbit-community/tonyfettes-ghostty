@@ -181,9 +181,7 @@ pub fn mode_from_int(value : UInt16, ansi : Bool) -> Mode? {
 }
 
 ///|
-struct ModePacked {
-  mut bits : UInt64
-} derive(Eq, Debug)
+struct ModePacked(UInt64) derive(Eq, Debug)
 
 ///|
 fn mode_bit_index(mode : Mode) -> Int {
@@ -247,28 +245,32 @@ let default_mode_mask : UInt64 = mode_mask(SendReceiveMode) |
 
 ///|
 pub fn ModePacked::empty() -> ModePacked {
-  { bits: 0UL }
+  0UL
 }
 
 ///|
 pub fn ModePacked::default() -> ModePacked {
-  { bits: default_mode_mask }
+  default_mode_mask
 }
 
 ///|
 pub fn ModePacked::get(self : ModePacked, mode : Mode) -> Bool {
-  (self.bits & mode_mask(mode)) != 0
+  (self.0 & mode_mask(mode)) != 0
 }
 
 ///|
-pub fn ModePacked::set(self : ModePacked, mode : Mode, value : Bool) -> Unit {
+pub fn ModePacked::set(
+  self : ModePacked,
+  mode : Mode,
+  value : Bool,
+) -> ModePacked {
   let mask = mode_mask(mode)
   if value {
-    self.bits = self.bits | mask
-  } else if (self.bits & mask) != 0 {
-    self.bits = self.bits ^ mask
+    self.0 | mask
+  } else if (self.0 & mask) != 0 {
+    self.0 ^ mask
   } else {
-    ()
+    self.0
   }
 }
 
@@ -282,22 +284,22 @@ struct ModeState {
 ///|
 pub fn ModeState::new() -> ModeState {
   let defaults = ModePacked::default()
-  {
-    values: copy_mode_packed(defaults),
-    saved: ModePacked::empty(),
-    default: copy_mode_packed(defaults),
-  }
+  { values: defaults, saved: ModePacked::empty(), default: defaults }
 }
 
 ///|
 pub fn ModeState::reset(self : ModeState) -> Unit {
-  self.values = copy_mode_packed(self.default)
+  self.values = self.default
   self.saved = ModePacked::empty()
 }
 
 ///|
-pub fn ModeState::set(self : ModeState, mode : Mode, value : Bool) -> Unit {
-  self.values.set(mode, value)
+pub fn ModeState::set(
+  self : ModeState,
+  mode : Mode,
+  value : Bool,
+) -> Unit {
+  self.values = self.values.set(mode, value)
 }
 
 ///|
@@ -307,19 +309,14 @@ pub fn ModeState::get(self : ModeState, mode : Mode) -> Bool {
 
 ///|
 pub fn ModeState::save(self : ModeState, mode : Mode) -> Unit {
-  self.saved.set(mode, self.values.get(mode))
+  self.saved = self.saved.set(mode, self.values.get(mode))
 }
 
 ///|
 pub fn ModeState::restore(self : ModeState, mode : Mode) -> Bool {
   let value = self.saved.get(mode)
-  self.values.set(mode, value)
+  self.values = self.values.set(mode, value)
   value
-}
-
-///|
-fn copy_mode_packed(value : ModePacked) -> ModePacked {
-  { bits: value.bits }
 }
 
 ///|

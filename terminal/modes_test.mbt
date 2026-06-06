@@ -163,17 +163,17 @@ test "modes/report encode" {
 
 ///|
 test "modes/packed state exercises set clear no-op and reset paths" {
-  let packed = ModePacked::empty()
+  let mut packed = ModePacked::empty()
   guard !packed.get(CursorKeys) else {
     fail("expected cursor keys to start unset")
   }
-  packed.set(CursorKeys, false)
+  packed = packed.set(CursorKeys, false)
   guard !packed.get(CursorKeys) else {
     fail("expected clearing an unset mode to remain unset")
   }
-  packed.set(CursorKeys, true)
+  packed = packed.set(CursorKeys, true)
   guard packed.get(CursorKeys) else { fail("expected cursor keys to be set") }
-  packed.set(CursorKeys, false)
+  packed = packed.set(CursorKeys, false)
   guard !packed.get(CursorKeys) else { fail("expected cursor keys to clear") }
 
   let state = ModeState::new()
@@ -197,15 +197,15 @@ test "modes/report state codes and bit helpers cover edge modes" {
   assert_eq(ReportState::PermanentlySet.code(), 3)
   assert_eq(ReportState::PermanentlyReset.code(), 4)
 
-  let packed = ModePacked::empty()
+  let mut packed = ModePacked::empty()
   guard !packed.get(DisableKeyboard) else {
     fail("expected disable keyboard to start unset")
   }
   guard !packed.get(InBandSizeReports) else {
     fail("expected in-band size reports to start unset")
   }
-  packed.set(DisableKeyboard, true)
-  packed.set(InBandSizeReports, true)
+  packed = packed.set(DisableKeyboard, true)
+  packed = packed.set(InBandSizeReports, true)
   guard packed.get(DisableKeyboard) else {
     fail("expected disable keyboard to become set")
   }
