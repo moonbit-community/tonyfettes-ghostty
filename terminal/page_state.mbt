@@ -271,7 +271,7 @@ pub fn PageCellState::background_rgb(self : PageCellState) -> @color.RGB? {
 
 ///|
 pub fn PageCellState::style(self : PageCellState) -> CellStyle {
-  copy_page_cell_style(self.style)
+  self.style.clone()
 }
 
 ///|
@@ -300,7 +300,7 @@ pub fn PageCellState::set_style(
       self.style = default_cell_style
     }
   } else {
-    self.style = copy_page_cell_style(style)
+    self.style = style.clone()
   }
 }
 
@@ -440,22 +440,4 @@ pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
   self.protected_flag = false
   self.hyperlink = None
   self.semantic_content = Output
-}
-
-///|
-fn copy_page_cell_style(style : CellStyle) -> CellStyle {
-  {
-    fg_color: style.fg_color,
-    bg_color: style.bg_color,
-    underline_color: style.underline_color,
-    bold: style.bold,
-    italic: style.italic,
-    faint: style.faint,
-    blink: style.blink,
-    inverse: style.inverse,
-    invisible: style.invisible,
-    strikethrough: style.strikethrough,
-    overline: style.overline,
-    underline: style.underline,
-  }
 }

@@ -119,7 +119,7 @@ pub fn ScreenSavedCursor::y(self : ScreenSavedCursor) -> CellCountInt {
 
 ///|
 pub fn ScreenSavedCursor::style(self : ScreenSavedCursor) -> CellStyle {
-  copy_cell_style(self.style)
+  self.style.clone()
 }
 
 ///|
@@ -171,7 +171,7 @@ pub fn ScreenSavedCursorState::save(
   self.saved = Some({
     x: cursor.x(),
     y: cursor.y(),
-    style: copy_cell_style(style),
+    style: style.clone(),
     cursor_protected,
     pending_wrap: cursor.pending_wrap(),
     origin,
@@ -212,7 +212,7 @@ fn copy_saved_cursor(saved : ScreenSavedCursor) -> ScreenSavedCursor {
   {
     x: saved.x,
     y: saved.y,
-    style: copy_cell_style(saved.style),
+    style: saved.style.clone(),
     cursor_protected: saved.cursor_protected,
     pending_wrap: saved.pending_wrap,
     origin: saved.origin,
@@ -230,23 +230,5 @@ fn copy_charset_state(state : ScreenCharsetState) -> ScreenCharsetState {
     gl: state.gl,
     gr: state.gr,
     single_shift: state.single_shift,
-  }
-}
-
-///|
-fn copy_cell_style(style : CellStyle) -> CellStyle {
-  {
-    fg_color: style.fg_color,
-    bg_color: style.bg_color,
-    underline_color: style.underline_color,
-    bold: style.bold,
-    italic: style.italic,
-    faint: style.faint,
-    blink: style.blink,
-    inverse: style.inverse,
-    invisible: style.invisible,
-    strikethrough: style.strikethrough,
-    overline: style.overline,
-    underline: style.underline,
   }
 }

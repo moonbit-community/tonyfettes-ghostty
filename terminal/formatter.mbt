@@ -593,12 +593,12 @@ fn formatter_cell_style(cell : PageCellState) -> CellStyle {
     Codepoint(_) | CodepointGrapheme(_, _) => cell.style()
     BackgroundPalette(index) => {
       let style = CellStyle::new()
-      style.bg_color = style_color_palette(index)
+      style.set_bg_color(StyleColor::palette(index))
       style
     }
     BackgroundRgb(rgb) => {
       let style = CellStyle::new()
-      style.bg_color = style_color_rgb(rgb)
+      style.set_bg_color(StyleColor::rgb(rgb))
       style
     }
   }
@@ -925,7 +925,7 @@ fn FormatterOutputState::sync_vt_style(
     formatter_write_vt_style_open(buffer, next_style)
   }
 
-  self.vt_style = formatter_copy_style(next_style)
+  self.vt_style = next_style.clone()
 }
 
 ///|
@@ -954,7 +954,7 @@ fn FormatterOutputState::sync_html_run(
 
   formatter_open_html_run(buffer, next_style, next_hyperlink)
   self.html_open = true
-  self.html_style = formatter_copy_style(next_style)
+  self.html_style = next_style.clone()
   self.html_hyperlink = next_hyperlink
 }
 
@@ -1032,26 +1032,22 @@ fn formatter_write_vt_style_color(
   prefix : UInt,
   color : StyleColor,
 ) -> Unit {
-  match color {
-    None => ()
-    Palette(index) => {
-      buffer.write_bytes(b"\x1B[")
-      @ascii.write_uint_ascii(buffer, prefix.to_uint64())
-      buffer.write_bytes(b";5;")
-      @ascii.write_uint_ascii(buffer, index.to_uint64())
-      buffer.write_byte(b'm')
-    }
-    Rgb(rgb) => {
-      buffer.write_bytes(b"\x1B[")
-      @ascii.write_uint_ascii(buffer, prefix.to_uint64())
-      buffer.write_bytes(b";2;")
-      @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
-      buffer.write_byte(b';')
-      @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
-      buffer.write_byte(b';')
-      @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
-      buffer.write_byte(b'm')
-    }
+  if color.palette_index() is Some(index) {
+    buffer.write_bytes(b"\x1B[")
+    @ascii.write_uint_ascii(buffer, prefix.to_uint64())
+    buffer.write_bytes(b";5;")
+    @ascii.write_uint_ascii(buffer, index.to_uint64())
+    buffer.write_byte(b'm')
+  } else if color.rgb_value() is Some(rgb) {
+    buffer.write_bytes(b"\x1B[")
+    @ascii.write_uint_ascii(buffer, prefix.to_uint64())
+    buffer.write_bytes(b";2;")
+    @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
+    buffer.write_byte(b';')
+    @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
+    buffer.write_byte(b';')
+    @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
+    buffer.write_byte(b'm')
   }
 }
 
@@ -1158,24 +1154,20 @@ fn formatter_write_html_color(
   property : String,
   color : StyleColor,
 ) -> Unit {
-  match color {
-    None => ()
-    Palette(index) => {
-      buffer.write_string_utf8(property)
-      buffer.write_bytes(b": var(--vt-palette-")
-      @ascii.write_uint_ascii(buffer, index.to_uint64())
-      buffer.write_bytes(b");")
-    }
-    Rgb(rgb) => {
-      buffer.write_string_utf8(property)
-      buffer.write_bytes(b": rgb(")
-      @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
-      buffer.write_bytes(b", ")
-      @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
-      buffer.write_bytes(b", ")
-      @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
-      buffer.write_bytes(b");")
-    }
+  if color.palette_index() is Some(index) {
+    buffer.write_string_utf8(property)
+    buffer.write_bytes(b": var(--vt-palette-")
+    @ascii.write_uint_ascii(buffer, index.to_uint64())
+    buffer.write_bytes(b");")
+  } else if color.rgb_value() is Some(rgb) {
+    buffer.write_string_utf8(property)
+    buffer.write_bytes(b": rgb(")
+    @ascii.write_uint_ascii(buffer, rgb.r().to_uint64())
+    buffer.write_bytes(b", ")
+    @ascii.write_uint_ascii(buffer, rgb.g().to_uint64())
+    buffer.write_bytes(b", ")
+    @ascii.write_uint_ascii(buffer, rgb.b().to_uint64())
+    buffer.write_bytes(b");")
   }
 }
 
@@ -1207,24 +1199,6 @@ fn formatter_charset_final(charset : @charsets.Charset) -> Byte {
     British => b'A'
     DecSpecial => b'0'
     Utf8 => b'B'
-  }
-}
-
-///|
-fn formatter_copy_style(style : CellStyle) -> CellStyle {
-  {
-    fg_color: style.fg_color,
-    bg_color: style.bg_color,
-    underline_color: style.underline_color,
-    bold: style.bold,
-    italic: style.italic,
-    faint: style.faint,
-    blink: style.blink,
-    inverse: style.inverse,
-    invisible: style.invisible,
-    strikethrough: style.strikethrough,
-    overline: style.overline,
-    underline: style.underline,
   }
 }
 

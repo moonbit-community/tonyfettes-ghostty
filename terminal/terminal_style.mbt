@@ -12,18 +12,18 @@ enum StyleColor {
 } derive(Eq, Debug)
 
 ///|
-fn style_color_none() -> StyleColor {
+pub fn StyleColor::none() -> StyleColor {
   None
 }
 
 ///|
-fn style_color_palette(index : Byte) -> StyleColor {
+pub fn StyleColor::palette(index : Byte) -> StyleColor {
   Palette(index)
 }
 
 ///|
-fn style_color_rgb(rgb : @color.RGB) -> StyleColor {
-  Rgb(rgb)
+pub fn StyleColor::rgb(value : @color.RGB) -> StyleColor {
+  Rgb(value)
 }
 
 ///|
@@ -48,6 +48,21 @@ pub fn StyleColor::rgb_value(self : StyleColor) -> @color.RGB? {
 }
 
 ///|
+/// Resolve to a concrete RGB against `palette`: `None` -> None,
+/// `Palette(i)` -> `palette[i]`, `Rgb(c)` -> `c`. This is the only decoder of a
+/// `StyleColor`, so its representation stays internal to this package.
+pub fn StyleColor::resolve(
+  self : StyleColor,
+  palette : Array[@color.RGB],
+) -> @color.RGB? {
+  match self {
+    None => None
+    Palette(index) => Some(palette[index.to_int()])
+    Rgb(value) => Some(value)
+  }
+}
+
+///|
 struct CellStyle {
   mut fg_color : StyleColor
   mut bg_color : StyleColor
@@ -66,9 +81,9 @@ struct CellStyle {
 ///|
 pub fn CellStyle::new() -> CellStyle {
   {
-    fg_color: style_color_none(),
-    bg_color: style_color_none(),
-    underline_color: style_color_none(),
+    fg_color: StyleColor::none(),
+    bg_color: StyleColor::none(),
+    underline_color: StyleColor::none(),
     bold: false,
     italic: false,
     faint: false,
@@ -83,9 +98,9 @@ pub fn CellStyle::new() -> CellStyle {
 
 ///|
 pub fn CellStyle::reset(self : CellStyle) -> Unit {
-  self.fg_color = style_color_none()
-  self.bg_color = style_color_none()
-  self.underline_color = style_color_none()
+  self.fg_color = StyleColor::none()
+  self.bg_color = StyleColor::none()
+  self.underline_color = StyleColor::none()
   self.bold = false
   self.italic = false
   self.faint = false
@@ -174,6 +189,58 @@ pub fn CellStyle::underline(self : CellStyle) -> @sgr.SgrUnderline {
 }
 
 ///|
+/// A deep copy of this style. Callers in other packages can't reconstruct a
+/// `CellStyle` field-by-field (the fields are private), so this is the one way
+/// to snapshot a style.
+pub fn CellStyle::clone(self : CellStyle) -> CellStyle {
+  {
+    fg_color: self.fg_color,
+    bg_color: self.bg_color,
+    underline_color: self.underline_color,
+    bold: self.bold,
+    italic: self.italic,
+    faint: self.faint,
+    blink: self.blink,
+    inverse: self.inverse,
+    invisible: self.invisible,
+    strikethrough: self.strikethrough,
+    overline: self.overline,
+    underline: self.underline,
+  }
+}
+
+///|
+pub fn CellStyle::set_fg_color(self : CellStyle, color : StyleColor) -> Unit {
+  self.fg_color = color
+}
+
+///|
+pub fn CellStyle::set_bg_color(self : CellStyle, color : StyleColor) -> Unit {
+  self.bg_color = color
+}
+
+///|
+/// Resolve the foreground color to a concrete RGB against `palette`, or `None`
+/// for the default (terminal-chosen) foreground.
+pub fn CellStyle::fg_rgb(
+  self : CellStyle,
+  palette : Array[@color.RGB],
+) -> @color.RGB? {
+  self.fg_color.resolve(palette)
+}
+
+///|
+/// Resolve the style's own background color to a concrete RGB. Note this does
+/// not account for a color-only cell whose background lives in the cell
+/// content — that precedence is handled at the render layer.
+pub fn CellStyle::bg_color_rgb(
+  self : CellStyle,
+  palette : Array[@color.RGB],
+) -> @color.RGB? {
+  self.bg_color.resolve(palette)
+}
+
+///|
 pub fn CellStyle::apply_attribute(
   self : CellStyle,
   attr : @sgr.SgrAttribute,
@@ -190,10 +257,10 @@ pub fn CellStyle::apply_attribute(
     ResetItalic => self.italic = false
     Faint => self.faint = true
     Underline(value) => self.underline = value
-    UnderlineColor(rgb) => self.underline_color = style_color_rgb(rgb)
+    UnderlineColor(rgb) => self.underline_color = StyleColor::rgb(rgb)
     Color256Underline(index) =>
-      self.underline_color = style_color_palette(index)
-    ResetUnderlineColor => self.underline_color = style_color_none()
+      self.underline_color = StyleColor::palette(index)
+    ResetUnderlineColor => self.underline_color = StyleColor::none()
     Overline => self.overline = true
     ResetOverline => self.overline = false
     Blink => self.blink = true
@@ -204,15 +271,15 @@ pub fn CellStyle::apply_attribute(
     ResetInvisible => self.invisible = false
     Strikethrough => self.strikethrough = true
     ResetStrikethrough => self.strikethrough = false
-    DirectColorFg(rgb) => self.fg_color = style_color_rgb(rgb)
-    DirectColorBg(rgb) => self.bg_color = style_color_rgb(rgb)
-    Color8Bg(name) => self.bg_color = style_color_palette(name.code())
-    Color8Fg(name) => self.fg_color = style_color_palette(name.code())
-    ResetFg => self.fg_color = style_color_none()
-    ResetBg => self.bg_color = style_color_none()
-    BrightColor8Bg(name) => self.bg_color = style_color_palette(name.code())
-    BrightColor8Fg(name) => self.fg_color = style_color_palette(name.code())
-    Color256Bg(index) => self.bg_color = style_color_palette(index)
-    Color256Fg(index) => self.fg_color = style_color_palette(index)
+    DirectColorFg(rgb) => self.fg_color = StyleColor::rgb(rgb)
+    DirectColorBg(rgb) => self.bg_color = StyleColor::rgb(rgb)
+    Color8Bg(name) => self.bg_color = StyleColor::palette(name.code())
+    Color8Fg(name) => self.fg_color = StyleColor::palette(name.code())
+    ResetFg => self.fg_color = StyleColor::none()
+    ResetBg => self.bg_color = StyleColor::none()
+    BrightColor8Bg(name) => self.bg_color = StyleColor::palette(name.code())
+    BrightColor8Fg(name) => self.fg_color = StyleColor::palette(name.code())
+    Color256Bg(index) => self.bg_color = StyleColor::palette(index)
+    Color256Fg(index) => self.fg_color = StyleColor::palette(index)
   }
 }

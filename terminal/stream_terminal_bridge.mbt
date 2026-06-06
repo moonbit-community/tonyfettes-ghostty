@@ -385,7 +385,7 @@ fn StreamTerminalBridgeState::mouse_tracking(
 fn StreamTerminalBridgeState::current_style_snapshot(
   self : StreamTerminalBridgeState,
 ) -> CellStyle {
-  copy_cell_style(self.current_style)
+  self.current_style.clone()
 }
 
 ///|
@@ -1565,9 +1565,9 @@ fn StreamTerminalBridgeState::reverse_index(
 ///|
 fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
   let style = CellStyle::new()
-  style.fg_color = self.current_style.fg_color
-  style.bg_color = self.current_style.bg_color
-  self.current_style = copy_cell_style(style)
+  style.set_fg_color(self.current_style.fg_color())
+  style.set_bg_color(self.current_style.bg_color())
+  self.current_style = style.clone()
   self.modes.set(Origin, false)
   self.cursor.full_reset()
   self.grid.decaln(self.current_style)
