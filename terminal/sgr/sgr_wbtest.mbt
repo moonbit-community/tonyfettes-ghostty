@@ -1,5 +1,5 @@
 ///|
-fn test_parse(params : Array[UInt16]) -> SgrAttribute {
+fn test_parse(params : ReadOnlyArray[UInt16]) -> SgrAttribute {
   let parser : SgrParser = {
     params,
     params_sep: @parser.SepList::init_empty(),
@@ -10,7 +10,7 @@ fn test_parse(params : Array[UInt16]) -> SgrAttribute {
 
 ///|
 fn parser_with_colons(
-  params : Array[UInt16],
+  params : ReadOnlyArray[UInt16],
   colon_indices : Array[Int],
 ) -> SgrParser {
   let params_sep = @parser.SepList::init_empty()

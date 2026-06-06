@@ -46,22 +46,22 @@ pub fn SepList::count(self : SepList) -> Int {
 
 ///|
 pub(all) struct Csi {
-  intermediates : Array[Byte]
-  params : Array[UInt16]
+  intermediates : Bytes
+  params : ReadOnlyArray[UInt16]
   params_sep : SepList
   final_byte : Byte
 }
 
 ///|
 pub(all) struct Esc {
-  intermediates : Array[Byte]
+  intermediates : Bytes
   final_byte : Byte
 }
 
 ///|
 pub(all) struct Dcs {
-  intermediates : Array[Byte]
-  params : Array[UInt16]
+  intermediates : Bytes
+  params : ReadOnlyArray[UInt16]
   final_byte : Byte
 }
 
@@ -303,19 +303,15 @@ fn saturating_param_append(value : UInt16, digit : Byte) -> UInt16 {
 }
 
 ///|
-pub fn clone_bytes(source : Array[Byte]) -> Array[Byte] {
-  let result : Array[Byte] = []
+pub fn clone_bytes(source : Array[Byte]) -> Bytes {
+  let result = Buffer()
   for value in source {
-    result.push(value)
+    result.write_byte(value)
   }
-  result
+  result.to_bytes()
 }
 
 ///|
-pub fn clone_params(source : Array[UInt16]) -> Array[UInt16] {
-  let result : Array[UInt16] = []
-  for value in source {
-    result.push(value)
-  }
-  result
+pub fn clone_params(source : Array[UInt16]) -> ReadOnlyArray[UInt16] {
+  ReadOnlyArray::from_array(source)
 }

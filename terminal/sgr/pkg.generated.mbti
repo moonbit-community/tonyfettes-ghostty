@@ -48,7 +48,7 @@ pub(all) enum SgrAttribute {
 } derive(Eq, @debug.Debug)
 
 type SgrParser derive(@debug.Debug)
-pub fn SgrParser::from_params(Array[UInt16], @parser.SepList) -> Self
+pub fn SgrParser::from_params(ReadOnlyArray[UInt16], @parser.SepList) -> Self
 pub fn SgrParser::new() -> Self
 pub fn SgrParser::next(Self) -> SgrAttribute?
 pub fn SgrParser::reset(Self) -> Unit
@@ -64,8 +64,8 @@ pub(all) enum SgrUnderline {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct SgrUnknown {
-  full : Array[UInt16]
-  partial : Array[UInt16]
+  full : ReadOnlyArray[UInt16]
+  partial : ArrayView[UInt16]
 } derive(Eq, @debug.Debug)
 
 // Type aliases

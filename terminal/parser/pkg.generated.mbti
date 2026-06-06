@@ -7,9 +7,9 @@ import {
 }
 
 // Values
-pub fn clone_bytes(Array[Byte]) -> Array[Byte]
+pub fn clone_bytes(Array[Byte]) -> Bytes
 
-pub fn clone_params(Array[UInt16]) -> Array[UInt16]
+pub fn clone_params(Array[UInt16]) -> ReadOnlyArray[UInt16]
 
 // Errors
 
@@ -29,20 +29,20 @@ pub(all) enum Action {
 }
 
 pub(all) struct Csi {
-  intermediates : Array[Byte]
-  params : Array[UInt16]
+  intermediates : Bytes
+  params : ReadOnlyArray[UInt16]
   params_sep : SepList
   final_byte : Byte
 }
 
 pub(all) struct Dcs {
-  intermediates : Array[Byte]
-  params : Array[UInt16]
+  intermediates : Bytes
+  params : ReadOnlyArray[UInt16]
   final_byte : Byte
 }
 
 pub(all) struct Esc {
-  intermediates : Array[Byte]
+  intermediates : Bytes
   final_byte : Byte
 }
 

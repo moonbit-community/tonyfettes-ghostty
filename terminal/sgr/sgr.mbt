@@ -13,8 +13,8 @@ pub(all) enum SgrUnderline {
 
 ///|
 pub(all) struct SgrUnknown {
-  full : Array[UInt16]
-  partial : Array[UInt16]
+  full : ReadOnlyArray[UInt16]
+  partial : ArrayView[UInt16]
 } derive(Eq, Debug)
 
 ///|
@@ -57,7 +57,7 @@ pub(all) enum SgrAttribute {
 /// and drive it through `set_params`/`next`/`reset`, so its cursor state stays
 /// sealed across the package boundary.
 struct SgrParser {
-  mut params : Array[UInt16]
+  mut params : ReadOnlyArray[UInt16]
   mut params_sep : @parser.SepList
   mut idx : Int
 } derive(Debug)
@@ -72,7 +72,7 @@ fn SgrParser::empty() -> SgrParser {
 /// set. Boundary factory so callers in other packages do not construct the
 /// SgrParser record directly.
 pub fn SgrParser::from_params(
-  params : Array[UInt16],
+  params : ReadOnlyArray[UInt16],
   params_sep : @parser.SepList,
 ) -> SgrParser {
   { params, params_sep, idx: 0 }
@@ -143,8 +143,8 @@ pub fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
         }
         return Some(
           Unknown({
-            full: @parser.clone_params(self.params),
-            partial: clone_param_range(self.params, current, consumed_end),
+            full: self.params,
+            partial: self.params[current:consumed_end],
           }),
         )
       }
@@ -356,22 +356,9 @@ fn SgrParser::consume_unknown_colon(self : SgrParser) -> Unit {
 ///|
 fn SgrParser::unknown_from(self : SgrParser, current : Int) -> SgrAttribute {
   Unknown({
-    full: @parser.clone_params(self.params),
-    partial: clone_param_range(self.params, current, self.params.length()),
+    full: self.params,
+    partial: self.params[current:self.params.length()],
   })
-}
-
-///|
-fn clone_param_range(
-  source : Array[UInt16],
-  start : Int,
-  end_ : Int,
-) -> Array[UInt16] {
-  let result : Array[UInt16] = []
-  for index in start..<end_ {
-    result.push(source[index])
-  }
-  result
 }
 
 ///|
