@@ -1255,7 +1255,7 @@ fn copy_page_cell(cell : PageCellState) -> PageCellState {
       }
       other => other
     },
-    style: cell.style.clone(),
+    style: cell.style,
     wide: cell.wide,
     protected_flag: cell.protected_flag,
     hyperlink: cell.hyperlink,

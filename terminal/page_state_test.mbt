@@ -141,8 +141,8 @@ test "page cell state/background content reports no text and preserves payloads"
 ///|
 test "page cell state/style hyperlink semantic and full reset" {
   let cell = PageCellState::new()
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Bold)
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
   let hyperlink = CellHyperlink::implicit("https://example.com", 3)
 
   cell.set_style(style)
@@ -150,18 +150,12 @@ test "page cell state/style hyperlink semantic and full reset" {
   cell.set_hyperlink(Some(hyperlink))
   cell.set_semantic_content(Prompt)
 
-  let style_copy = cell.style()
-  guard style_copy.bold() &&
+  guard cell.style().bold() &&
     cell.has_styling() &&
     cell.is_protected() &&
     cell.hyperlink() == Some(hyperlink) &&
     cell.semantic_content() == Prompt else {
     fail("expected style, hyperlink, protection, and semantic state")
-  }
-
-  style_copy.reset()
-  guard cell.style().bold() else {
-    fail("expected cell style getter to return a defensive copy")
   }
 
   cell.full_reset()

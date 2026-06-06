@@ -119,7 +119,7 @@ pub fn ScreenSavedCursor::y(self : ScreenSavedCursor) -> CellCountInt {
 
 ///|
 pub fn ScreenSavedCursor::style(self : ScreenSavedCursor) -> @style.CellStyle {
-  self.style.clone()
+  self.style
 }
 
 ///|
@@ -171,7 +171,7 @@ pub fn ScreenSavedCursorState::save(
   self.saved = Some({
     x: cursor.x(),
     y: cursor.y(),
-    style: style.clone(),
+    style,
     cursor_protected,
     pending_wrap: cursor.pending_wrap(),
     origin,
@@ -212,7 +212,7 @@ fn copy_saved_cursor(saved : ScreenSavedCursor) -> ScreenSavedCursor {
   {
     x: saved.x,
     y: saved.y,
-    style: saved.style.clone(),
+    style: saved.style,
     cursor_protected: saved.cursor_protected,
     pending_wrap: saved.pending_wrap,
     origin: saved.origin,

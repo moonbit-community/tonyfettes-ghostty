@@ -271,18 +271,17 @@ pub fn PageCellState::background_rgb(self : PageCellState) -> @color.RGB? {
 
 ///|
 pub fn PageCellState::style(self : PageCellState) -> @style.CellStyle {
-  self.style.clone()
+  self.style
 }
 
 ///|
 // The default cell style, shared by every cell that has no SGR styling.
 //
 // Analogous to upstream Ghostty's `style.default_id`: the overwhelmingly common
-// style needs neither per-cell storage nor a copy. The singleton is treated as
-// immutable — `set_style` shares it by reference, `full_reset` re-points to it,
-// and the only in-place mutator a cell had (`full_reset`'s `style.reset()`) now
-// replaces the field instead. Reads go through `PageCellState::style()`, which
-// returns a copy, so no caller can mutate the shared instance.
+// style needs neither per-cell storage nor a copy. `CellStyle` is immutable, so
+// every unstyled cell shares this one instance by reference — `set_style` points
+// at it, `full_reset` re-points to it, and `PageCellState::style()` hands the
+// shared reference straight back since no caller can mutate it.
 let default_cell_style : @style.CellStyle = @style.CellStyle::new()
 
 ///|
@@ -300,7 +299,7 @@ pub fn PageCellState::set_style(
       self.style = default_cell_style
     }
   } else {
-    self.style = style.clone()
+    self.style = style
   }
 }
 

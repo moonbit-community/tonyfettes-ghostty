@@ -73,9 +73,9 @@ test "screen grid/new clamps zero dimensions and accessors" {
 test "screen grid/print stores metadata and repeat clamps zero count" {
   let grid = ScreenGridState::new(2, 5)
   let cursor = TerminalCursorState::new(2, 5)
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(Color256Bg(7))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(Color256Bg(7))
   let hyperlink = CellHyperlink::explicit("https://example.com", "link")
 
   grid.print(
@@ -332,8 +332,8 @@ test "screen grid/print edge branches and insert mode" {
 test "screen grid/insert delete and erase chars preserve backgrounds and protection" {
   let grid = ScreenGridState::new(2, 5)
   let cursor = TerminalCursorState::new(2, 5)
-  let bg_style = @style.CellStyle::new()
-  bg_style.apply_attribute(Color256Bg(3))
+  let mut bg_style = @style.CellStyle::new()
+  bg_style = bg_style.apply_attribute(Color256Bg(3))
 
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D', b'E'])
   cursor.x = 1
@@ -376,8 +376,8 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
 test "screen grid/char editing edge branches and helper math" {
   let grid = ScreenGridState::new(1, 5)
   let cursor = TerminalCursorState::new(1, 5)
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Color256Bg(5))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Color256Bg(5))
 
   cursor.pending_wrap = true
   grid.insert_blanks(cursor, style, 0)
@@ -533,8 +533,8 @@ test "screen grid/char editing edge branches and helper math" {
     fail("expected helper math branches")
   }
 
-  let rgb_style = @style.CellStyle::new()
-  rgb_style.apply_attribute(DirectColorBg(@color.RGB::new(1, 2, 3)))
+  let mut rgb_style = @style.CellStyle::new()
+  rgb_style = rgb_style.apply_attribute(DirectColorBg(@color.RGB::new(1, 2, 3)))
   guard blank_cell(rgb_style).background_rgb() == Some(@color.RGB::new(1, 2, 3)) else {
     fail("expected rgb blank cell")
   }
@@ -544,8 +544,8 @@ test "screen grid/char editing edge branches and helper math" {
 test "screen grid/erase line and display modes" {
   let right_grid = ScreenGridState::new(2, 4)
   let right_cursor = TerminalCursorState::new(2, 4)
-  let bg_style = @style.CellStyle::new()
-  bg_style.apply_attribute(Color256Bg(4))
+  let mut bg_style = @style.CellStyle::new()
+  bg_style = bg_style.apply_attribute(Color256Bg(4))
   right_grid.write_cell(
     0,
     0,
@@ -754,8 +754,8 @@ test "screen grid/line shifts scroll and helper boundaries" {
   }
 
   let boundary_grid = ScreenGridState::new(2, 4)
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Color256Bg(6))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Color256Bg(6))
   boundary_grid.write_cell(
     0,
     3,
@@ -941,8 +941,8 @@ test "screen grid/shift helpers partial regions and split early return" {
 ///|
 test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let grid = ScreenGridState::new(1, 3)
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Bold)
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
   let cell = expect_cell(grid, 0, 0)
   cell.set_codepoint(b'G'.to_uint(), true)
   cell.set_style(style)
@@ -958,8 +958,8 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
 test "screen grid/print cell clears prior wide and spacer forms" {
   let grid = ScreenGridState::new(2, 4)
   let cursor = TerminalCursorState::new(2, 4)
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Color256Bg(8))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Color256Bg(8))
 
   grid.write_cell(
     0,
@@ -1061,9 +1061,9 @@ test "screen grid/print cell clears prior wide and spacer forms" {
 ///|
 test "screen grid/decaln and full reset" {
   let grid = ScreenGridState::new(2, 3)
-  let fill_style = @style.CellStyle::new()
-  fill_style.apply_attribute(Color8Fg(Red))
-  fill_style.apply_attribute(Color256Bg(2))
+  let mut fill_style = @style.CellStyle::new()
+  fill_style = fill_style.apply_attribute(Color8Fg(Red))
+  fill_style = fill_style.apply_attribute(Color256Bg(2))
 
   grid.decaln(fill_style)
   guard expect_cell(grid, 0, 0).codepoint() == b'E'.to_uint() &&

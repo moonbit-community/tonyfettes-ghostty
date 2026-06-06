@@ -591,16 +591,10 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
 fn formatter_cell_style(cell : PageCellState) -> @style.CellStyle {
   match cell.content() {
     Codepoint(_) | CodepointGrapheme(_, _) => cell.style()
-    BackgroundPalette(index) => {
-      let style = @style.CellStyle::new()
-      style.set_bg_color(@style.StyleColor::palette(index))
-      style
-    }
-    BackgroundRgb(rgb) => {
-      let style = @style.CellStyle::new()
-      style.set_bg_color(@style.StyleColor::rgb(rgb))
-      style
-    }
+    BackgroundPalette(index) =>
+      @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(index))
+    BackgroundRgb(rgb) =>
+      @style.CellStyle::new().with_bg_color(@style.StyleColor::rgb(rgb))
   }
 }
 
@@ -925,7 +919,7 @@ fn FormatterOutputState::sync_vt_style(
     formatter_write_vt_style_open(buffer, next_style)
   }
 
-  self.vt_style = next_style.clone()
+  self.vt_style = next_style
 }
 
 ///|
@@ -954,7 +948,7 @@ fn FormatterOutputState::sync_html_run(
 
   formatter_open_html_run(buffer, next_style, next_hyperlink)
   self.html_open = true
-  self.html_style = next_style.clone()
+  self.html_style = next_style
   self.html_hyperlink = next_hyperlink
 }
 

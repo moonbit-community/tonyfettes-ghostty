@@ -84,16 +84,16 @@ test "ghostty terminal adapter direct cell style branches" {
   terminal.set_theme(background="#000000", foreground="#ffffff")
 
   let styled = @terminal.PageCellState::init(b'X'.to_uint())
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Bold)
-  style.apply_attribute(Italic)
-  style.apply_attribute(Faint)
-  style.apply_attribute(Invisible)
-  style.apply_attribute(Inverse)
-  style.apply_attribute(Strikethrough)
-  style.apply_attribute(Overline)
-  style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
-  style.apply_attribute(DirectColorBg(@color.RGB::new(4, 5, 6)))
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
+  style = style.apply_attribute(Italic)
+  style = style.apply_attribute(Faint)
+  style = style.apply_attribute(Invisible)
+  style = style.apply_attribute(Inverse)
+  style = style.apply_attribute(Strikethrough)
+  style = style.apply_attribute(Overline)
+  style = style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
+  style = style.apply_attribute(DirectColorBg(@color.RGB::new(4, 5, 6)))
   styled.set_style(style)
   let css = terminal.cell_style(0, 0, styled).join(";")
   guard css.contains("font-weight") &&
@@ -134,8 +134,8 @@ test "ghostty terminal adapter direct cell style branches" {
 ///|
 test "ghostty terminal adapter underline style variants" {
   for underline in [@sgr.SgrUnderline::Double, Curly, Dotted, Dashed] {
-    let style = @style.CellStyle::new()
-    style.apply_attribute(Underline(underline))
+    let mut style = @style.CellStyle::new()
+    style = style.apply_attribute(Underline(underline))
     guard text_decoration(style) is Some(_) else {
       fail("expected text decoration")
     }

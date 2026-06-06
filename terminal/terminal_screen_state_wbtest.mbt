@@ -24,8 +24,8 @@ fn fill_terminal_screen_row(
 ///|
 test "terminal screen state/scrollback snapshots and viewport movement" {
   let grid = ScreenGridState::new(2, 5)
-  let style = @style.CellStyle::new()
-  style.apply_attribute(Bold)
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
   let hyperlink = CellHyperlink::explicit("https://example.com", "id")
   fill_terminal_screen_row(
     grid,

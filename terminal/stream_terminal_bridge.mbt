@@ -385,7 +385,7 @@ fn StreamTerminalBridgeState::mouse_tracking(
 fn StreamTerminalBridgeState::current_style_snapshot(
   self : StreamTerminalBridgeState,
 ) -> @style.CellStyle {
-  self.current_style.clone()
+  self.current_style
 }
 
 ///|
@@ -1076,7 +1076,7 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamSetAttribute(attribute) => {
-      self.current_style.apply_attribute(attribute)
+      self.current_style = self.current_style.apply_attribute(attribute)
       true
     }
     StreamTabSet => {
@@ -1564,10 +1564,9 @@ fn StreamTerminalBridgeState::reverse_index(
 
 ///|
 fn StreamTerminalBridgeState::decaln(self : StreamTerminalBridgeState) -> Unit {
-  let style = @style.CellStyle::new()
-  style.set_fg_color(self.current_style.fg_color())
-  style.set_bg_color(self.current_style.bg_color())
-  self.current_style = style.clone()
+  self.current_style = @style.CellStyle::new()
+    .with_fg_color(self.current_style.fg_color())
+    .with_bg_color(self.current_style.bg_color())
   self.modes.set(Origin, false)
   self.cursor.full_reset()
   self.grid.decaln(self.current_style)
@@ -1598,7 +1597,7 @@ fn StreamTerminalBridgeState::full_reset(
   self.semantic.full_reset()
   self.metadata.full_reset()
   self.charset.reset()
-  self.current_style.reset()
+  self.current_style = @style.CellStyle::new()
   self.previous_char = None
   self.mouse_event = None
   self.mouse_format = X10
