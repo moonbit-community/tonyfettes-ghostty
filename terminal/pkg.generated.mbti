@@ -479,7 +479,7 @@ pub(all) enum OptionAsAlt {
 type PageCellState derive(Eq, @debug.Debug)
 pub fn PageCellState::background_rgb(Self) -> @color.RGB?
 pub fn PageCellState::codepoint(Self) -> UInt
-pub fn PageCellState::grapheme_codepoints(Self) -> ArrayView[UInt]
+pub fn PageCellState::grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
 pub fn PageCellState::has_styling(Self) -> Bool

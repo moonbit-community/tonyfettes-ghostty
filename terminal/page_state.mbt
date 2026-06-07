@@ -200,8 +200,10 @@ struct PageCellState {
   // Combining codepoints (skin-tone modifiers, accents, …) layered on top of
   // `content`'s base codepoint. `None` for the overwhelmingly common single-
   // codepoint cell, so a normal cell write allocates nothing here; only a real
-  // grapheme cluster pays for the array.
-  grapheme_extras : Array[UInt]?
+  // grapheme cluster pays for the array. `ReadOnlyArray` so it can never be
+  // mutated in place — together with the immutable cell that means copying a
+  // cell into another slot is a plain value share, with no deep copy needed.
+  grapheme_extras : ReadOnlyArray[UInt]?
   style : @style.CellStyle
   wide : PageCellWide
   protected_flag : Bool
@@ -409,14 +411,14 @@ pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
 
 ///|
 // The cell's combining codepoints (empty when the cell is not a grapheme
-// cluster). Returns a read-only `ArrayView` over the cell's internal storage —
-// no copy on the render hot path, and the view exposes no `push`/element-set,
-// so callers cannot resize or mutate the cell's grapheme run (which would
-// desync `PageRowState::grapheme`/dirty flags). Callers that need to retain or
-// edit the codepoints should `.to_array()` first.
+// cluster). Returns the cell's `ReadOnlyArray` directly — no copy on the render
+// hot path, and the type itself forbids `push`/element-set, so callers cannot
+// resize or mutate the cell's grapheme run (which would desync
+// `PageRowState::grapheme`/dirty flags). Callers that need a mutable copy should
+// `.iter().collect()` first.
 pub fn PageCellState::grapheme_codepoints(
   self : PageCellState,
-) -> ArrayView[UInt] {
+) -> ReadOnlyArray[UInt] {
   match self.grapheme_extras {
     Some(extras) => extras
     None => []
@@ -436,12 +438,12 @@ fn PageCellState::with_grapheme_appended(
   let extras : Array[UInt] = match self.grapheme_extras {
     Some(existing) => {
       let copy = Array::make(existing.length() + 1, codepoint)
-      for index, cp in existing {
-        copy[index] = cp
+      for index in 0..<existing.length() {
+        copy[index] = existing.at(index)
       }
       copy
     }
     None => [codepoint]
   }
-  { ..self, grapheme_extras: Some(extras) }
+  { ..self, grapheme_extras: Some(ReadOnlyArray::from_array(extras)) }
 }

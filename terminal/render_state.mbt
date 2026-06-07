@@ -431,7 +431,7 @@ fn render_cell_at(
   if col_idx < 0 || col_idx >= state.row_cells[row_idx].length() {
     return None
   }
-  Some(copy_scrollback_cell(state.row_cells[row_idx][col_idx]))
+  Some(state.row_cells[row_idx][col_idx])
 }
 
 ///|

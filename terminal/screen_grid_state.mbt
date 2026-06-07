@@ -1135,7 +1135,9 @@ fn ScreenGridState::set_cell(
   col_idx : Int,
   source : PageCellState,
 ) -> Unit {
-  self.lines[row_idx].cells[col_idx] = copy_page_cell(source)
+  // A cell is an immutable value with no in-place mutation anywhere, so storing
+  // the source into the slot can share it directly — no defensive copy.
+  self.lines[row_idx].cells[col_idx] = source
 }
 
 ///|
@@ -1238,34 +1240,4 @@ fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
     cells.push(blank_cell(style))
   }
   { desc: PageRowState::new(), cells }
-}
-
-///|
-fn copy_page_cell(cell : PageCellState) -> PageCellState {
-  {
-    // `content` is an inline #valtype enum, so this is a value copy.
-    content: cell.content,
-    grapheme_extras: copy_grapheme_extras(cell.grapheme_extras),
-    style: cell.style,
-    wide: cell.wide,
-    protected_flag: cell.protected_flag,
-    hyperlink: cell.hyperlink,
-    semantic_content: cell.semantic_content,
-  }
-}
-
-///|
-// Deep-copy a cell's combining marks so a cloned cell does not alias (and
-// later mutate) the source cell's grapheme run.
-fn copy_grapheme_extras(extras : Array[UInt]?) -> Array[UInt]? {
-  match extras {
-    Some(src) => {
-      let copy : Array[UInt] = []
-      for cp in src {
-        copy.push(cp)
-      }
-      Some(copy)
-    }
-    None => None
-  }
 }
