@@ -37,7 +37,7 @@ test "page cell state/a fresh cell has no grapheme extras" {
   cell = PageCellState::new()
   guard !cell.has_grapheme() &&
     cell.grapheme_codepoints() == [] &&
-    cell.content() is Codepoint(_) else {
+    cell.codepoint() == 0U else {
     fail("expected a fresh cell to have no grapheme extras")
   }
 }

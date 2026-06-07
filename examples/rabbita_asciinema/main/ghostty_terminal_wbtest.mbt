@@ -106,7 +106,9 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected rich style css")
   }
 
-  let palette_cell = @terminal.PageCellState::new().with_background_palette(1)
+  let palette_cell = @terminal.PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(1)),
+  )
   guard terminal
     .cell_style(0, 0, palette_cell, @color.default_palette())
     .join(";")
@@ -114,8 +116,10 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected palette background")
   }
 
-  let rgb_cell = @terminal.PageCellState::new().with_background_rgb(
-    @color.RGB::new(8, 9, 10),
+  let rgb_cell = @terminal.PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(
+      @style.StyleColor::rgb(@color.RGB::new(8, 9, 10)),
+    ),
   )
   guard terminal
     .cell_style(0, 0, rgb_cell, @color.default_palette())

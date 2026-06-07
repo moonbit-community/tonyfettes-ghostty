@@ -494,8 +494,6 @@ pub fn PageCellState::palette_index(Self) -> Byte?
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::style(Self) -> @style.CellStyle
 pub fn PageCellState::wide(Self) -> PageCellWide
-pub fn PageCellState::with_background_palette(Self, Byte) -> Self
-pub fn PageCellState::with_background_rgb(Self, @color.RGB) -> Self
 pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
 pub fn PageCellState::with_hyperlink(Self, CellHyperlink?) -> Self
 pub fn PageCellState::with_protected(Self, Bool) -> Self

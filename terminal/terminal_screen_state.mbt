@@ -1232,7 +1232,11 @@ fn PageListReflowCursor::reflow_row(
 ) -> Unit {
   let mut cols_len = source.cells.length()
   if !source.row.wrap() {
-    while cols_len > 0 && source.cells[cols_len - 1].is_empty() {
+    // Keep trailing cells that carry a background color: they are `is_empty()`
+    // (no glyph) now that bg lives in the style, but `has_styling()` is true.
+    while cols_len > 0 &&
+          source.cells[cols_len - 1].is_empty() &&
+          !source.cells[cols_len - 1].has_styling() {
       cols_len -= 1
     }
     if cols_len == 0 && source.row.semantic_prompt() != None {

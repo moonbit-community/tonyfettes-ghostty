@@ -351,7 +351,6 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   cursor.x = 1
   grid.insert_blanks(cursor, bg_style, 1)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() &&
-    expect_cell(grid, 0, 1).content() is BackgroundPalette(_) &&
     expect_cell(grid, 0, 1).palette_index() == Some(3) &&
     expect_cell(grid, 0, 2).codepoint() == b'B'.to_uint() &&
     expect_cell(grid, 0, 4).codepoint() == b'D'.to_uint() &&
@@ -378,7 +377,6 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   cursor.x = 1
   grid.erase_chars(cursor, bg_style, Iso, 2)
   guard expect_cell(grid, 0, 1).codepoint() == b'B'.to_uint() &&
-    expect_cell(grid, 0, 2).content() is BackgroundPalette(_) &&
     expect_cell(grid, 0, 2).palette_index() == Some(3) else {
     fail("expected erase chars to respect iso protection")
   }

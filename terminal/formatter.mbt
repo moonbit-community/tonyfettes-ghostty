@@ -216,7 +216,7 @@ fn formatter_write_render_state_frame_row(
             blank_cells = 0
           }
 
-          output.sync_vt_style(formatter_cell_style(cell), buffer)
+          output.sync_vt_style(cell.style(), buffer)
           formatter_write_cell_text(Vt, cell, buffer)
         }
       }
@@ -458,7 +458,7 @@ fn formatter_write_content(
                     blank_cells = 0
                   }
 
-                  let style = formatter_cell_style(cell)
+                  let style = cell.style()
                   let hyperlink = if formatter.opts.emit == Html {
                     match cell.hyperlink() {
                       Some(link) => Some(link.uri())
@@ -585,17 +585,6 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
   }
   // A space carrying combining marks is a real grapheme, not blank padding.
   cell.codepoint() == b' '.to_uint() && !cell.has_grapheme()
-}
-
-///|
-fn formatter_cell_style(cell : PageCellState) -> @style.CellStyle {
-  match cell.content() {
-    Codepoint(_) => cell.style()
-    BackgroundPalette(index) =>
-      @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(index))
-    BackgroundRgb(rgb) =>
-      @style.CellStyle::new().with_bg_color(@style.StyleColor::rgb(rgb))
-  }
 }
 
 ///|

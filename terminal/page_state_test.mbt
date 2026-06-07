@@ -115,24 +115,30 @@ test "page cell state/set_codepoint clears grapheme extras" {
 }
 
 ///|
-test "page cell state/background content reports no text and preserves payloads" {
-  let mut cell = PageCellState::new()
+test "page cell state/background color lives in the style" {
+  // A background-color cell is a glyph-less cell whose style carries the bg, so
+  // it has no text and is `is_empty()` (no glyph) but `has_styling()`.
   let rgb = @color.RGB::new(1, 2, 3)
-  cell = cell.with_background_palette(7)
-  guard cell.palette_index() == Some(7) &&
-    cell.background_rgb() == None &&
-    !cell.has_text() &&
-    !cell.is_empty() &&
-    cell.codepoint() == 0U else {
-    fail("expected palette background cell state")
+  let palette_cell = PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
+  )
+  guard palette_cell.palette_index() == Some(7) &&
+    palette_cell.background_rgb() == None &&
+    !palette_cell.has_text() &&
+    palette_cell.is_empty() &&
+    palette_cell.has_styling() &&
+    palette_cell.codepoint() == 0U else {
+    fail("expected palette background carried in the style")
   }
 
-  cell = cell.with_background_rgb(rgb)
-  guard cell.palette_index() == None &&
-    cell.background_rgb() == Some(rgb) &&
-    !cell.has_text() &&
-    !cell.is_empty() else {
-    fail("expected rgb background cell state")
+  let rgb_cell = PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::rgb(rgb)),
+  )
+  guard rgb_cell.palette_index() == None &&
+    rgb_cell.background_rgb() == Some(rgb) &&
+    !rgb_cell.has_text() &&
+    rgb_cell.has_styling() else {
+    fail("expected rgb background carried in the style")
   }
 }
 

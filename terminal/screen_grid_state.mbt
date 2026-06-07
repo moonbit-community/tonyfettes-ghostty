@@ -1118,7 +1118,7 @@ fn ScreenGridState::write_cell(
   // `with_*` builders. (Whole-cell `#valtype` will turn this store into an
   // inline memcpy with no allocation at all.)
   self.lines[row_idx].cells[col_idx] = {
-    content: Codepoint(codepoint),
+    codepoint,
     grapheme_extras: None,
     style,
     wide,
@@ -1218,14 +1218,17 @@ fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
 }
 
 ///|
+// A blank cell that carries the erase style's background color (and nothing
+// else): a glyph-less cell whose `style` holds just the bg, so a run of them
+// renders as a colored gap.
 fn blank_cell(style : @style.CellStyle) -> PageCellState {
   let bg = style.bg_color()
-  if bg.palette_index() is Some(index) {
-    PageCellState::new().with_background_palette(index)
-  } else if bg.rgb_value() is Some(rgb) {
-    PageCellState::new().with_background_rgb(rgb)
-  } else {
+  // Common case (erase with no SGR background): a plain blank cell, no style to
+  // build. Only a colored erase pays to construct a bg-only style.
+  if bg.is_default() {
     PageCellState::new()
+  } else {
+    PageCellState::new(style=@style.CellStyle::new().with_bg_color(bg))
   }
 }
 

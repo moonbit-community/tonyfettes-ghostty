@@ -67,7 +67,7 @@ pub(all) enum Name {
 pub fn Name::code(Self) -> Byte
 pub fn Name::default_rgb(Self) -> RGB
 
-pub struct RGB(UInt) derive(Eq, @debug.Debug)
+type RGB derive(Eq, @debug.Debug)
 pub fn RGB::b(Self) -> Byte
 pub fn RGB::g(Self) -> Byte
 pub fn RGB::new(Byte, Byte, Byte) -> Self

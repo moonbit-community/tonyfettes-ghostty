@@ -206,8 +206,10 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode style properties")
   }
 
-  let palette_cell = PageCellState::new().with_background_palette(7)
-  let palette_style = formatter_cell_style(palette_cell)
+  let palette_cell = PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
+  )
+  let palette_style = palette_cell.style()
   guard palette_style.bg_color().palette_index() == Some(7) else {
     fail("expected background-palette cell helper")
   }
