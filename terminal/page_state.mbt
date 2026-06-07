@@ -281,6 +281,14 @@ pub fn PageCellState::style(self : PageCellState) -> @style.CellStyle {
 let default_cell_style : @style.CellStyle = @style.CellStyle::new()
 
 ///|
+// A single shared blank cell. Because a cell is immutable, every empty slot can
+// point at this one value instead of allocating its own — a cleared/scrolled-in
+// row is then a fill of the same reference, with no per-cell allocation. A write
+// replaces the slot wholesale (the shared value is never mutated), so the sharing
+// is invisible to callers.
+let default_page_cell_state : PageCellState = PageCellState::new()
+
+///|
 pub fn PageCellState::with_style(
   self : PageCellState,
   style : @style.CellStyle,
@@ -335,7 +343,7 @@ pub fn PageCellState::semantic_content(self : PageCellState) -> SemanticContent 
 
 ///|
 pub fn PageCellState::is_zero(self : PageCellState) -> Bool {
-  self == PageCellState::new()
+  self == default_page_cell_state
 }
 
 ///|

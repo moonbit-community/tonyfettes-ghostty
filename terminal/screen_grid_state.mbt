@@ -26,7 +26,7 @@ priv struct GridLine {
 fn GridLine::new(cols : Int) -> GridLine {
   let cells : Array[PageCellState] = []
   for _ in 0..<cols {
-    cells.push(PageCellState::new())
+    cells.push(default_page_cell_state)
   }
   { desc: PageRowState::new(), cells }
 }
@@ -1223,10 +1223,10 @@ fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
 // renders as a colored gap.
 fn blank_cell(style : @style.CellStyle) -> PageCellState {
   let bg = style.bg_color()
-  // Common case (erase with no SGR background): a plain blank cell, no style to
-  // build. Only a colored erase pays to construct a bg-only style.
+  // Common case (erase with no SGR background): the shared blank cell, no alloc.
+  // Only a colored erase pays to construct a bg-only style.
   if bg.is_default() {
-    PageCellState::new()
+    default_page_cell_state
   } else {
     PageCellState::new(style=@style.CellStyle::new().with_bg_color(bg))
   }
