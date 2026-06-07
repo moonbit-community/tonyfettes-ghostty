@@ -1930,9 +1930,7 @@ fn make_pinned_row_owned(
 
 ///|
 fn reflow_spacer_head_cell() -> PageCellState {
-  let cell = PageCellState::new()
-  cell.set_wide(SpacerHead)
-  cell
+  PageCellState::new().with_wide(SpacerHead)
 }
 
 ///|

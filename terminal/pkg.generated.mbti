@@ -479,7 +479,6 @@ pub(all) enum OptionAsAlt {
 type PageCellState derive(Eq, @debug.Debug)
 pub fn PageCellState::background_rgb(Self) -> @color.RGB?
 pub fn PageCellState::codepoint(Self) -> UInt
-pub fn PageCellState::full_reset(Self) -> Unit
 pub fn PageCellState::grapheme_codepoints(Self) -> ArrayView[UInt]
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
@@ -493,16 +492,16 @@ pub fn PageCellState::is_zero(Self) -> Bool
 pub fn PageCellState::new() -> Self
 pub fn PageCellState::palette_index(Self) -> Byte?
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
-pub fn PageCellState::set_background_palette(Self, Byte) -> Unit
-pub fn PageCellState::set_background_rgb(Self, @color.RGB) -> Unit
-pub fn PageCellState::set_codepoint(Self, UInt, Bool) -> Unit
-pub fn PageCellState::set_hyperlink(Self, CellHyperlink?) -> Unit
-pub fn PageCellState::set_protected(Self, Bool) -> Unit
-pub fn PageCellState::set_semantic_content(Self, SemanticContent) -> Unit
-pub fn PageCellState::set_style(Self, @style.CellStyle) -> Unit
-pub fn PageCellState::set_wide(Self, PageCellWide) -> Unit
 pub fn PageCellState::style(Self) -> @style.CellStyle
 pub fn PageCellState::wide(Self) -> PageCellWide
+pub fn PageCellState::with_background_palette(Self, Byte) -> Self
+pub fn PageCellState::with_background_rgb(Self, @color.RGB) -> Self
+pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
+pub fn PageCellState::with_hyperlink(Self, CellHyperlink?) -> Self
+pub fn PageCellState::with_protected(Self, Bool) -> Self
+pub fn PageCellState::with_semantic_content(Self, SemanticContent) -> Self
+pub fn PageCellState::with_style(Self, @style.CellStyle) -> Self
+pub fn PageCellState::with_wide(Self, PageCellWide) -> Self
 
 pub(all) enum PageCellWide {
   Narrow

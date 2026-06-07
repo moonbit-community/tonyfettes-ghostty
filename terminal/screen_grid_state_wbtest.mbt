@@ -31,6 +31,18 @@ fn expect_cell(
 }
 
 ///|
+// Cells are immutable values, so a test that wants to tweak one writes the new
+// value back into the grid slot directly.
+fn set_test_cell(
+  grid : ScreenGridState,
+  row : Int,
+  col : Int,
+  cell : PageCellState,
+) -> Unit {
+  grid.lines[row].cells[col] = cell
+}
+
+///|
 fn fill_ascii(grid : ScreenGridState, row : Int, chars : Array[Byte]) -> Unit {
   for i in 0..<chars.length() {
     grid.write_cell(
@@ -362,7 +374,7 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   }
 
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D', b'E'])
-  expect_cell(grid, 0, 1).set_protected(true)
+  set_test_cell(grid, 0, 1, expect_cell(grid, 0, 1).with_protected(true))
   cursor.x = 1
   grid.erase_chars(cursor, bg_style, Iso, 2)
   guard expect_cell(grid, 0, 1).codepoint() == b'B'.to_uint() &&
@@ -640,7 +652,12 @@ test "screen grid/erase line and display modes" {
   fill_ascii(above_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(above_grid, 1, [b'D', b'E', b'F'])
   fill_ascii(above_grid, 2, [b'G', b'H', b'I'])
-  expect_cell(above_grid, 0, 0).set_protected(true)
+  set_test_cell(
+    above_grid,
+    0,
+    0,
+    expect_cell(above_grid, 0, 0).with_protected(true),
+  )
   above_cursor.y = 1
   above_cursor.x = 1
   above_grid.erase_display(above_cursor, bg_style, Above, Iso, false)
@@ -944,9 +961,10 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   let cell = expect_cell(grid, 0, 0)
-  cell.set_codepoint(b'G'.to_uint(), true)
-  cell.set_style(style)
-  cell.set_hyperlink(Some(CellHyperlink::implicit("https://example.com", 9)))
+    .with_codepoint(b'G'.to_uint(), true)
+    .with_style(style)
+    .with_hyperlink(Some(CellHyperlink::implicit("https://example.com", 9)))
+  set_test_cell(grid, 0, 0, cell)
   grid.recompute_row_flags(0)
   let row = expect_row(grid, 0)
   guard row.grapheme() && row.styled() && row.hyperlink() else {

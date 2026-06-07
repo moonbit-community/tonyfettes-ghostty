@@ -84,14 +84,10 @@ fn ScreenGridState::blank_line(
 ) -> GridLine {
   match self.cell_pool.pop() {
     Some(cells) => {
-      for cell in cells {
-        cell.full_reset()
-        let bg = style.bg_color()
-        if bg.palette_index() is Some(index) {
-          cell.set_background_palette(index)
-        } else if bg.rgb_value() is Some(rgb) {
-          cell.set_background_rgb(rgb)
-        }
+      // Reuse the pooled array buffer, refilling every slot with a fresh blank
+      // cell value (cells are immutable, so we replace rather than reset).
+      for index in 0..<cells.length() {
+        cells[index] = blank_cell(style)
       }
       { desc: PageRowState::new(), cells }
     }
@@ -305,7 +301,7 @@ fn ScreenGridState::append_grapheme(
       (codepoint == 0xFE0EU && base_is_wide) {
       return
     }
-    cell.append_grapheme(codepoint)
+    self.lines[row_idx].cells[target_x] = cell.with_grapheme_appended(codepoint)
     self.lines[row_idx].desc.set_grapheme(true)
     self.lines[row_idx].desc.set_dirty(true)
   }
@@ -1116,18 +1112,20 @@ fn ScreenGridState::write_cell(
   semantic_content : SemanticContent,
   hyperlink : CellHyperlink?,
 ) -> Unit {
-  // Mutate the existing cell object in place rather than allocating a fresh
-  // PageCellState per printed character. Active-grid cells are never aliased
-  // (each column is its own object; clears copy, row shifts move whole lines),
-  // so in-place mutation is safe and avoids an alloc + refcount-drop per cell —
-  // the dominant cost on the print hot path.
-  let cell = self.lines[row_idx].cells[col_idx]
-  cell.set_codepoint(codepoint, false)
-  cell.set_style(style)
-  cell.set_wide(wide)
-  cell.set_protected(protected_flag)
-  cell.set_hyperlink(hyperlink)
-  cell.set_semantic_content(semantic_content)
+  // A printed character fully defines the cell, so build one fresh immutable
+  // value and store it into the slot — there is nothing to read from the old
+  // cell. One record literal is a single allocation, versus chaining six
+  // `with_*` builders. (Whole-cell `#valtype` will turn this store into an
+  // inline memcpy with no allocation at all.)
+  self.lines[row_idx].cells[col_idx] = {
+    content: Codepoint(codepoint),
+    grapheme_extras: None,
+    style,
+    wide,
+    protected_flag,
+    hyperlink,
+    semantic_content,
+  }
 }
 
 ///|
@@ -1219,14 +1217,14 @@ fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
 
 ///|
 fn blank_cell(style : @style.CellStyle) -> PageCellState {
-  let cell = PageCellState::new()
   let bg = style.bg_color()
   if bg.palette_index() is Some(index) {
-    cell.set_background_palette(index)
+    PageCellState::new().with_background_palette(index)
   } else if bg.rgb_value() is Some(rgb) {
-    cell.set_background_rgb(rgb)
+    PageCellState::new().with_background_rgb(rgb)
+  } else {
+    PageCellState::new()
   }
-  cell
 }
 
 ///|
