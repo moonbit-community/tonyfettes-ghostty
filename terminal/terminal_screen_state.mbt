@@ -1924,7 +1924,7 @@ fn make_pinned_row_owned(
 
 ///|
 fn reflow_spacer_head_cell() -> PageCellState {
-  PageCellState::new().with_wide(SpacerHead)
+  PageCellState::new(wide=SpacerHead)
 }
 
 ///|

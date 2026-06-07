@@ -489,7 +489,7 @@ pub fn PageCellState::init(UInt) -> Self
 pub fn PageCellState::is_empty(Self) -> Bool
 pub fn PageCellState::is_protected(Self) -> Bool
 pub fn PageCellState::is_zero(Self) -> Bool
-pub fn PageCellState::new() -> Self
+pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style? : @style.CellStyle, wide? : PageCellWide, protected_flag? : Bool, hyperlink? : CellHyperlink?, semantic_content? : SemanticContent) -> Self
 pub fn PageCellState::palette_index(Self) -> Byte?
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::style(Self) -> @style.CellStyle
@@ -499,7 +499,6 @@ pub fn PageCellState::with_background_rgb(Self, @color.RGB) -> Self
 pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
 pub fn PageCellState::with_hyperlink(Self, CellHyperlink?) -> Self
 pub fn PageCellState::with_protected(Self, Bool) -> Self
-pub fn PageCellState::with_semantic_content(Self, SemanticContent) -> Self
 pub fn PageCellState::with_style(Self, @style.CellStyle) -> Self
 pub fn PageCellState::with_wide(Self, PageCellWide) -> Self
 

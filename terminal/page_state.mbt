@@ -212,21 +212,39 @@ struct PageCellState {
 } derive(Eq, Debug)
 
 ///|
-pub fn PageCellState::new() -> PageCellState {
+// Construct a text cell. Every field is an optional with the blank-cell default,
+// so `new()` is still a blank cell and a fully-specified cell is one call
+// (`new(codepoint=.., style=.., wide=..)`) rather than a `with_*` chain. The
+// `with_*` builders remain for transforming an *existing* cell. Background-color
+// cells (`with_background_palette`/`with_background_rgb`) are a separate content
+// kind and are not constructed here.
+pub fn PageCellState::new(
+  codepoint? : UInt = 0,
+  grapheme? : Bool = false,
+  style? : @style.CellStyle = default_cell_style,
+  wide? : PageCellWide = Narrow,
+  protected_flag? : Bool = false,
+  hyperlink? : CellHyperlink? = None,
+  semantic_content? : SemanticContent = Output,
+) -> PageCellState {
   {
-    content: Codepoint(0U),
-    grapheme_extras: None,
-    style: default_cell_style,
-    wide: Narrow,
-    protected_flag: false,
-    hyperlink: None,
-    semantic_content: Output,
+    content: Codepoint(codepoint),
+    grapheme_extras: if grapheme {
+      Some([])
+    } else {
+      None
+    },
+    style,
+    wide,
+    protected_flag,
+    hyperlink,
+    semantic_content,
   }
 }
 
 ///|
 pub fn PageCellState::init(codepoint : UInt) -> PageCellState {
-  PageCellState::new().with_codepoint(codepoint, false)
+  PageCellState::new(codepoint~)
 }
 
 ///|
@@ -357,14 +375,6 @@ pub fn PageCellState::with_hyperlink(
 ///|
 pub fn PageCellState::semantic_content(self : PageCellState) -> SemanticContent {
   self.semantic_content
-}
-
-///|
-pub fn PageCellState::with_semantic_content(
-  self : PageCellState,
-  value : SemanticContent,
-) -> PageCellState {
-  { ..self, semantic_content: value }
 }
 
 ///|

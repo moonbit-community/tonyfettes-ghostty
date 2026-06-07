@@ -93,7 +93,7 @@ test "ghostty terminal adapter direct cell style branches" {
   style = style.apply_attribute(Overline)
   style = style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
   style = style.apply_attribute(DirectColorBg(@color.RGB::new(4, 5, 6)))
-  let styled = @terminal.PageCellState::init(b'X'.to_uint()).with_style(style)
+  let styled = @terminal.PageCellState::new(codepoint=b'X'.to_uint(), style~)
   let css = terminal
     .cell_style(0, 0, styled, @color.default_palette())
     .join(";")
@@ -124,13 +124,14 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected rgb background")
   }
 
-  let spacer = @terminal.PageCellState::init(b'Z'.to_uint()).with_wide(
-    SpacerHead,
+  let spacer = @terminal.PageCellState::new(
+    codepoint=b'Z'.to_uint(),
+    wide=SpacerHead,
   )
   assert_eq(terminal.cell_text(0, 0, spacer), " ")
-  let grapheme = @terminal.PageCellState::new().with_codepoint(
-    b'e'.to_uint(),
-    true,
+  let grapheme = @terminal.PageCellState::new(
+    codepoint=b'e'.to_uint(),
+    grapheme=true,
   )
   ignore(terminal.cell_text(0, 0, grapheme))
   ignore(terminal.cell_text(999, 999, grapheme))
