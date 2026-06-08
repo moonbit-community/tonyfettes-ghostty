@@ -81,7 +81,27 @@ pub(all) enum Action {
 }
 
 ///|
-pub type ActionList = FixedArray[Action?]
+/// The up-to-three actions a single `next` step can emit, in dispatch order:
+/// the state-exit action, the transition action, then the state-entry action.
+/// An immutable `#valtype` of three inline `Action?` words — returned by value
+/// with no heap object, so the hot escape-parsing path allocates nothing per
+/// byte beyond the (rare) `Action` payloads themselves. Indexed `[0]/[1]/[2]`
+/// via `op_get` for exit/transition/entry.
+#valtype
+struct ActionList {
+  exit : Action?
+  transition : Action?
+  entry : Action?
+}
+
+///|
+pub fn ActionList::op_get(self : ActionList, index : Int) -> Action? {
+  match index {
+    0 => self.exit
+    1 => self.transition
+    _ => self.entry
+  }
+}
 
 ///|
 /// Abstract (no `pub`): the type name crosses the package boundary but its
@@ -196,7 +216,7 @@ pub fn Parser::next(self : Parser, c : Byte) -> ActionList {
   }
 
   self.state = next_state
-  [exit_action, transition_action, entry_action]
+  { exit: exit_action, transition: transition_action, entry: entry_action }
 }
 
 ///|

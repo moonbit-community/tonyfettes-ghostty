@@ -316,21 +316,29 @@ fn[H : StreamHandler] Stream::next_non_utf8(
   byte : Byte,
 ) -> Unit {
   let actions = self.parser.next(byte)
-  for action in actions {
-    match action {
-      Some(Print(codepoint)) => self.print(codepoint)
-      Some(Execute(value)) => self.execute(value)
-      Some(CsiDispatch(csi)) => self.csi_dispatch(csi)
-      Some(EscDispatch(esc)) => self.esc_dispatch(esc)
-      Some(OscDispatch(command)) => self.osc_dispatch(command)
-      Some(DcsHook(dcs)) => self.dcs_hook(dcs)
-      Some(DcsPut(value)) => self.dcs_put(value)
-      Some(DcsUnhook) => self.dcs_unhook()
-      Some(ApcStart) => self.apc_start()
-      Some(ApcPut(value)) => self.apc_put(value)
-      Some(ApcEnd) => self.apc_end()
-      None => ()
-    }
+  self.dispatch_action(actions[0])
+  self.dispatch_action(actions[1])
+  self.dispatch_action(actions[2])
+}
+
+///|
+fn[H : StreamHandler] Stream::dispatch_action(
+  self : Stream[H],
+  action : @parser.Action?,
+) -> Unit {
+  match action {
+    Some(Print(codepoint)) => self.print(codepoint)
+    Some(Execute(value)) => self.execute(value)
+    Some(CsiDispatch(csi)) => self.csi_dispatch(csi)
+    Some(EscDispatch(esc)) => self.esc_dispatch(esc)
+    Some(OscDispatch(command)) => self.osc_dispatch(command)
+    Some(DcsHook(dcs)) => self.dcs_hook(dcs)
+    Some(DcsPut(value)) => self.dcs_put(value)
+    Some(DcsUnhook) => self.dcs_unhook()
+    Some(ApcStart) => self.apc_start()
+    Some(ApcPut(value)) => self.apc_put(value)
+    Some(ApcEnd) => self.apc_end()
+    None => ()
   }
 }
 
