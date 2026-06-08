@@ -117,12 +117,14 @@ fn osc_titles(count : Int) -> Bytes {
 }
 
 ///|
-/// Pure SGR/CSI churn with no printable payload to dilute it: isolates the VT
-/// parser's escape-handling cost — almost every byte drives `Parser::next`.
+/// Pure SGR churn with no printable payload to dilute it: every byte is part of
+/// an escape sequence, so the whole stream drives `Parser::next` and nothing
+/// reaches the glyph print / wrap / scroll path. This isolates the parser's
+/// escape-handling cost.
 fn sgr_storm(count : Int) -> Bytes {
   let buf = Buffer(size_hint=256)
   for _ in 0..<count {
-    buf.write_bytes(b"\x1b[1mA\x1b[0m")
+    buf.write_bytes(b"\x1b[1m\x1b[0m")
   }
   buf.contents()
 }
