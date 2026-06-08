@@ -1100,3 +1100,39 @@ test "screen grid/decaln and full reset" {
     fail("expected full reset to clear screen state")
   }
 }
+
+///|
+// Regression: a colored erase (e.g. `ESC[48;5;4m` then `ESC[2J`, or a scroll
+// with a colored erase background) fills a full row with bg-styled blanks. The
+// full-row clear and full-width scroll paths must keep the row descriptor's
+// `styled()`/`managed_memory()` in sync with those cells' `has_styling()`,
+// the invariant `recompute_row_flags` maintains.
+test "screen grid/colored erase keeps full-row flags in sync with cells" {
+  let style = @style.CellStyle::new().with_bg_color(
+    @style.StyleColor::palette(4),
+  )
+
+  // Full-row clear (colored ESC[2J on a row).
+  let grid = ScreenGridState::new(2, 4)
+  grid.clear_full_row(0, style, false)
+  guard expect_cell(grid, 0, 0).has_styling() else {
+    fail("expected colored blank cell to report has_styling")
+  }
+  guard expect_row(grid, 0).styled() && expect_row(grid, 0).managed_memory() else {
+    fail("clear_full_row left row flags out of sync with colored blanks")
+  }
+
+  // Full-width scroll whose scrolled-in rows use a colored erase background.
+  let scrolled = ScreenGridState::new(2, 4)
+  scrolled.shift_region_up(0, 1, 0, 3, 2, style)
+  guard expect_cell(scrolled, 0, 0).has_styling() &&
+    expect_cell(scrolled, 1, 0).has_styling() else {
+    fail("expected scrolled-in colored blank to report has_styling")
+  }
+  guard expect_row(scrolled, 0).styled() &&
+    expect_row(scrolled, 0).managed_memory() &&
+    expect_row(scrolled, 1).styled() &&
+    expect_row(scrolled, 1).managed_memory() else {
+    fail("full-width scroll left row flags out of sync with colored blanks")
+  }
+}

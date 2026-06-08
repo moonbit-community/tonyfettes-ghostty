@@ -89,7 +89,9 @@ fn ScreenGridState::blank_line(
       for index in 0..<cells.length() {
         cells[index] = blank_cell(style)
       }
-      { desc: PageRowState::new(), cells }
+      let desc = PageRowState::new()
+      desc.set_styled(blank_row_is_styled(style))
+      { desc, cells }
     }
     None => blank_grid_line(self.cols.to_int(), style)
   }
@@ -1028,6 +1030,9 @@ fn ScreenGridState::clear_full_row(
       col_idx += 1
     }
     self.lines[row_idx].desc.full_reset()
+    // full_reset clears `styled`, but a colored erase fills the row with
+    // bg-styled blanks; restore the flag so it tracks the cells.
+    self.lines[row_idx].desc.set_styled(blank_row_is_styled(style))
   }
   self.lines[row_idx].desc.set_dirty(true)
 }
@@ -1233,6 +1238,19 @@ fn blank_cell(style : @style.CellStyle) -> PageCellState {
 }
 
 ///|
+// Whether a row filled entirely with `blank_cell(style)` should report
+// `styled()`. A blank carries at most a background color — never a grapheme or
+// hyperlink — so such a row is styled exactly when that background is
+// non-default, mirroring `blank_cell`'s own default-vs-bg-only choice. The
+// full-row blank/clear paths use this to keep the row descriptor's flags in sync
+// with its cells in O(1), upholding the same invariant `recompute_row_flags`
+// would (otherwise a colored erase leaves `styled()`/`managed_memory()` false
+// while the cells report `has_styling()`).
+fn blank_row_is_styled(style : @style.CellStyle) -> Bool {
+  !style.bg_color().is_default()
+}
+
+///|
 /// A fresh blank line for a full-width scroll: a new descriptor and `cols`
 /// blank cells. Used as the scrolled-in row so it is a *distinct* GridLine —
 /// the moved rows above may transiently alias their source slot, and a fresh
@@ -1242,5 +1260,7 @@ fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
   for _ in 0..<cols {
     cells.push(blank_cell(style))
   }
-  { desc: PageRowState::new(), cells }
+  let desc = PageRowState::new()
+  desc.set_styled(blank_row_is_styled(style))
+  { desc, cells }
 }
