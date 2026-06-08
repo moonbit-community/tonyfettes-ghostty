@@ -3,9 +3,16 @@
 // callers query via codepoint()/palette_index()/background_rgb()/has_grapheme()
 // /grapheme_codepoints() rather than matching on this enum, so the storage
 // layout stays an implementation detail.
+//
+// All payloads are scalar (`RGB` is a `UInt` newtype), so this is a `#valtype`
+// enum: it is stored *inline* in `PageCellState` rather than as a boxed object,
+// and writing a cell's content (the print hot path) is an inline value store
+// with no allocation. The grapheme combining marks — the one non-scalar piece —
+// live in a separate `grapheme_extras` field on the cell instead of a payload
+// here, which is what lets this enum stay unboxed.
+#valtype
 priv enum PageCellContent {
   Codepoint(UInt)
-  CodepointGrapheme(UInt, Array[UInt])
   BackgroundPalette(Byte)
   BackgroundRgb(@color.RGB)
 } derive(Eq, Debug)
@@ -185,6 +192,11 @@ pub fn PageRowState::full_reset(self : PageRowState) -> Unit {
 ///|
 struct PageCellState {
   mut content : PageCellContent
+  // Combining codepoints (skin-tone modifiers, accents, …) layered on top of
+  // `content`'s base codepoint. `None` for the overwhelmingly common single-
+  // codepoint cell, so a normal cell write allocates nothing here; only a real
+  // grapheme cluster pays for the array.
+  mut grapheme_extras : Array[UInt]?
   mut style : @style.CellStyle
   mut wide : PageCellWide
   mut protected_flag : Bool
@@ -196,6 +208,7 @@ struct PageCellState {
 pub fn PageCellState::new() -> PageCellState {
   {
     content: Codepoint(0U),
+    grapheme_extras: None,
     style: default_cell_style,
     wide: Narrow,
     protected_flag: false,
@@ -222,11 +235,12 @@ pub fn PageCellState::set_codepoint(
   codepoint : UInt,
   grapheme : Bool,
 ) -> Unit {
-  self.content = if grapheme {
-    CodepointGrapheme(codepoint, [])
-  } else {
-    Codepoint(codepoint)
-  }
+  self.content = Codepoint(codepoint)
+  // `grapheme` marks the start of a cluster; the combining marks arrive later
+  // via append_grapheme. `Some([])` records "this is a grapheme cell" before any
+  // extras land, matching the old `CodepointGrapheme(_, [])`. Either way this
+  // overwrite drops any prior cell's extras.
+  self.grapheme_extras = if grapheme { Some([]) } else { None }
 }
 
 ///|
@@ -235,6 +249,7 @@ pub fn PageCellState::set_background_palette(
   index : Byte,
 ) -> Unit {
   self.content = BackgroundPalette(index)
+  self.grapheme_extras = None
 }
 
 ///|
@@ -243,12 +258,13 @@ pub fn PageCellState::set_background_rgb(
   rgb : @color.RGB,
 ) -> Unit {
   self.content = BackgroundRgb(rgb)
+  self.grapheme_extras = None
 }
 
 ///|
 pub fn PageCellState::codepoint(self : PageCellState) -> UInt {
   match self.content {
-    Codepoint(cp) | CodepointGrapheme(cp, _) => cp
+    Codepoint(cp) => cp
     BackgroundPalette(_) | BackgroundRgb(_) => 0U
   }
 }
@@ -347,7 +363,7 @@ pub fn PageCellState::is_zero(self : PageCellState) -> Bool {
 ///|
 pub fn PageCellState::has_text(self : PageCellState) -> Bool {
   match self.content {
-    Codepoint(cp) | CodepointGrapheme(cp, _) => cp != 0U
+    Codepoint(cp) => cp != 0U
     BackgroundPalette(_) | BackgroundRgb(_) => false
   }
 }
@@ -371,14 +387,14 @@ pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
 ///|
 pub fn PageCellState::is_empty(self : PageCellState) -> Bool {
   match self.content {
-    Codepoint(cp) | CodepointGrapheme(cp, _) => cp == 0U && self.wide == Narrow
+    Codepoint(cp) => cp == 0U && self.wide == Narrow
     BackgroundPalette(_) | BackgroundRgb(_) => false
   }
 }
 
 ///|
 pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
-  self.content is CodepointGrapheme(_, _)
+  self.grapheme_extras is Some(_)
 }
 
 ///|
@@ -391,9 +407,9 @@ pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
 pub fn PageCellState::grapheme_codepoints(
   self : PageCellState,
 ) -> ArrayView[UInt] {
-  match self.content {
-    CodepointGrapheme(_, extras) => extras
-    _ => []
+  match self.grapheme_extras {
+    Some(extras) => extras
+    None => []
   }
 }
 
@@ -405,16 +421,18 @@ fn PageCellState::append_grapheme(
   self : PageCellState,
   codepoint : UInt,
 ) -> Unit {
-  match self.content {
-    Codepoint(base) => self.content = CodepointGrapheme(base, [codepoint])
-    CodepointGrapheme(_, extras) => extras.push(codepoint)
-    _ => ()
+  // Only text cells carry combining marks; ignore on background-color cells.
+  guard self.content is Codepoint(_) else { return }
+  match self.grapheme_extras {
+    Some(extras) => extras.push(codepoint)
+    None => self.grapheme_extras = Some([codepoint])
   }
 }
 
 ///|
 pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
   self.content = Codepoint(0U)
+  self.grapheme_extras = None
   // Re-point to the shared default rather than mutating the style in place:
   // the field may alias the shared default singleton (see `default_cell_style`).
   self.style = default_cell_style

@@ -1245,20 +1245,29 @@ fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
 ///|
 fn copy_page_cell(cell : PageCellState) -> PageCellState {
   {
-    content: match cell.content {
-      CodepointGrapheme(base, extras) => {
-        let copy : Array[UInt] = []
-        for cp in extras {
-          copy.push(cp)
-        }
-        CodepointGrapheme(base, copy)
-      }
-      other => other
-    },
+    // `content` is an inline #valtype enum, so this is a value copy.
+    content: cell.content,
+    grapheme_extras: copy_grapheme_extras(cell.grapheme_extras),
     style: cell.style,
     wide: cell.wide,
     protected_flag: cell.protected_flag,
     hyperlink: cell.hyperlink,
     semantic_content: cell.semantic_content,
+  }
+}
+
+///|
+// Deep-copy a cell's combining marks so a cloned cell does not alias (and
+// later mutate) the source cell's grapheme run.
+fn copy_grapheme_extras(extras : Array[UInt]?) -> Array[UInt]? {
+  match extras {
+    Some(src) => {
+      let copy : Array[UInt] = []
+      for cp in src {
+        copy.push(cp)
+      }
+      Some(copy)
+    }
+    None => None
   }
 }

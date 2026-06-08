@@ -590,7 +590,7 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
 ///|
 fn formatter_cell_style(cell : PageCellState) -> @style.CellStyle {
   match cell.content() {
-    Codepoint(_) | CodepointGrapheme(_, _) => cell.style()
+    Codepoint(_) => cell.style()
     BackgroundPalette(index) =>
       @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(index))
     BackgroundRgb(rgb) =>
