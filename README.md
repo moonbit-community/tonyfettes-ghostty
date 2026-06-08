@@ -83,7 +83,7 @@ docs/plans/                    Task-specific implementation plans and audits
 examples/rabbita_asciinema/    Browser asciinema player using StreamTerminal
 examples/terminal_playground/  Browser terminal playground (web shell + wasm-gc core/)
 examples/tmux/                 Native mini tmux-like PTY multiplexer demo
-tools/stream_terminal_perf/    StreamTerminal performance harness
+bench/                         StreamTerminal benchmarks (moon bench) + per-workload profiling mains
 upstream/ghostty/              Upstream Ghostty submodule
 ```
 

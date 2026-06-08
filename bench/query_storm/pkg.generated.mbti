@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/tools/stream_terminal_perf"
+package "tonyfettes/ghostty-bench/query_storm"
 
 // Values
 

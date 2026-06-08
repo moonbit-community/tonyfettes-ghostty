@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty-bench/workloads"
+
+import {
+  "tonyfettes/ghostty/terminal",
+}
+
+// Values
+pub fn cjk_text() -> Workload
+
+pub fn colored_log() -> Workload
+
+pub fn mixed_realistic() -> Workload
+
+pub fn osc_titles() -> Workload
+
+pub fn plain_lines() -> Workload
+
+pub fn query_storm() -> Workload
+
+pub fn scroll_full() -> Workload
+
+pub fn scroll_storm() -> Workload
+
+pub fn sgr_storm() -> Workload
+
+pub fn tui_redraw() -> Workload
+
+pub fn wrapped_blob() -> Workload
+
+// Errors
+
+// Types and methods
+type Workload
+pub fn Workload::process(Self) -> @terminal.StreamTerminal
+pub fn Workload::run_main(Self) -> Unit
+
+// Type aliases
+
+// Traits
+
