@@ -75,7 +75,7 @@ test "page cell state/defaults and zero helpers" {
 
 ///|
 test "page cell state/codepoint grapheme and wide helpers" {
-  let cell = PageCellState::init(0x41U)
+  let mut cell = PageCellState::init(0x41U)
   guard cell.codepoint() == 0x41U &&
     cell.has_text() &&
     !cell.has_grapheme() &&
@@ -84,8 +84,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
     fail("expected basic codepoint cell")
   }
 
-  cell.set_codepoint(0x62U, true)
-  cell.set_wide(Wide)
+  cell = cell.with_codepoint(0x62U, true).with_wide(Wide)
   guard cell.codepoint() == 0x62U &&
     cell.has_text() &&
     cell.has_grapheme() &&
@@ -94,8 +93,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
     fail("expected grapheme and wide state")
   }
 
-  cell.set_codepoint(0U, false)
-  cell.set_wide(SpacerHead)
+  cell = cell.with_codepoint(0U, false).with_wide(SpacerHead)
   guard !cell.is_empty() && cell.grid_width() == 1 else {
     fail("expected spacer head to remain non-empty")
   }
@@ -105,50 +103,56 @@ test "page cell state/codepoint grapheme and wide helpers" {
 test "page cell state/set_codepoint clears grapheme extras" {
   // When set_codepoint is called with a new codepoint, grapheme_codepoints
   // should return [] regardless of the grapheme flag.
-  let cell = PageCellState::init(0x65U)
-  cell.set_codepoint(0x65U, true) // flag grapheme but no extras yet
+  let mut cell = PageCellState::init(0x65U)
+  cell = cell.with_codepoint(0x65U, true) // flag grapheme but no extras yet
   guard cell.has_grapheme() && cell.grapheme_codepoints() == [] else {
     fail("expected empty grapheme_codepoints when flagged but no extras")
   }
-  cell.set_codepoint(0x61U, false) // overwrite: clears flag and extras
+  cell = cell.with_codepoint(0x61U, false) // overwrite: clears flag and extras
   guard !cell.has_grapheme() && cell.grapheme_codepoints() == [] else {
-    fail("expected grapheme cleared after set_codepoint(_, false)")
+    fail("expected grapheme cleared after with_codepoint(_, false)")
   }
 }
 
 ///|
-test "page cell state/background content reports no text and preserves payloads" {
-  let cell = PageCellState::new()
+test "page cell state/background color lives in the style" {
+  // A background-color cell is a glyph-less cell whose style carries the bg, so
+  // it has no text and is `is_empty()` (no glyph) but `has_styling()`.
   let rgb = @color.RGB::new(1, 2, 3)
-  cell.set_background_palette(7)
-  guard cell.palette_index() == Some(7) &&
-    cell.background_rgb() == None &&
-    !cell.has_text() &&
-    !cell.is_empty() &&
-    cell.codepoint() == 0U else {
-    fail("expected palette background cell state")
+  let palette_cell = PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
+  )
+  guard palette_cell.palette_index() == Some(7) &&
+    palette_cell.background_rgb() == None &&
+    !palette_cell.has_text() &&
+    palette_cell.is_empty() &&
+    palette_cell.has_styling() &&
+    palette_cell.codepoint() == 0U else {
+    fail("expected palette background carried in the style")
   }
 
-  cell.set_background_rgb(rgb)
-  guard cell.palette_index() == None &&
-    cell.background_rgb() == Some(rgb) &&
-    !cell.has_text() &&
-    !cell.is_empty() else {
-    fail("expected rgb background cell state")
+  let rgb_cell = PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::rgb(rgb)),
+  )
+  guard rgb_cell.palette_index() == None &&
+    rgb_cell.background_rgb() == Some(rgb) &&
+    !rgb_cell.has_text() &&
+    rgb_cell.has_styling() else {
+    fail("expected rgb background carried in the style")
   }
 }
 
 ///|
 test "page cell state/style hyperlink semantic and full reset" {
-  let cell = PageCellState::new()
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   let hyperlink = CellHyperlink::implicit("https://example.com", 3)
-
-  cell.set_style(style)
-  cell.set_protected(true)
-  cell.set_hyperlink(Some(hyperlink))
-  cell.set_semantic_content(Prompt)
+  let mut cell = PageCellState::new(
+    style~,
+    protected_flag=true,
+    hyperlink=Some(hyperlink),
+    semantic_content=Prompt,
+  )
 
   guard cell.style().bold() &&
     cell.has_styling() &&
@@ -158,7 +162,8 @@ test "page cell state/style hyperlink semantic and full reset" {
     fail("expected style, hyperlink, protection, and semantic state")
   }
 
-  cell.full_reset()
+  // A blank cell is just a fresh value now (full_reset is gone).
+  cell = PageCellState::new()
   guard cell.codepoint() == 0U &&
     cell.palette_index() == None &&
     cell.background_rgb() == None &&

@@ -83,7 +83,6 @@ test "ghostty terminal adapter direct cell style branches" {
   let terminal = GhosttyTerminal::new(cols=4, rows=2)
   terminal.set_theme(background="#000000", foreground="#ffffff")
 
-  let styled = @terminal.PageCellState::init(b'X'.to_uint())
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   style = style.apply_attribute(Italic)
@@ -94,7 +93,7 @@ test "ghostty terminal adapter direct cell style branches" {
   style = style.apply_attribute(Overline)
   style = style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
   style = style.apply_attribute(DirectColorBg(@color.RGB::new(4, 5, 6)))
-  styled.set_style(style)
+  let styled = @terminal.PageCellState::new(codepoint=b'X'.to_uint(), style~)
   let css = terminal
     .cell_style(0, 0, styled, @color.default_palette())
     .join(";")
@@ -107,8 +106,9 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected rich style css")
   }
 
-  let palette_cell = @terminal.PageCellState::new()
-  palette_cell.set_background_palette(1)
+  let palette_cell = @terminal.PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(1)),
+  )
   guard terminal
     .cell_style(0, 0, palette_cell, @color.default_palette())
     .join(";")
@@ -116,8 +116,11 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected palette background")
   }
 
-  let rgb_cell = @terminal.PageCellState::new()
-  rgb_cell.set_background_rgb(@color.RGB::new(8, 9, 10))
+  let rgb_cell = @terminal.PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(
+      @style.StyleColor::rgb(@color.RGB::new(8, 9, 10)),
+    ),
+  )
   guard terminal
     .cell_style(0, 0, rgb_cell, @color.default_palette())
     .join(";")
@@ -125,11 +128,15 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected rgb background")
   }
 
-  let spacer = @terminal.PageCellState::init(b'Z'.to_uint())
-  spacer.set_wide(SpacerHead)
+  let spacer = @terminal.PageCellState::new(
+    codepoint=b'Z'.to_uint(),
+    wide=SpacerHead,
+  )
   assert_eq(terminal.cell_text(0, 0, spacer), " ")
-  let grapheme = @terminal.PageCellState::new()
-  grapheme.set_codepoint(b'e'.to_uint(), true)
+  let grapheme = @terminal.PageCellState::new(
+    codepoint=b'e'.to_uint(),
+    grapheme=true,
+  )
   ignore(terminal.cell_text(0, 0, grapheme))
   ignore(terminal.cell_text(999, 999, grapheme))
   assert_eq(codepoints_to_string([0U, b'A'.to_uint()]), " A")

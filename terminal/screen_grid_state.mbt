@@ -26,7 +26,7 @@ priv struct GridLine {
 fn GridLine::new(cols : Int) -> GridLine {
   let cells : Array[PageCellState] = []
   for _ in 0..<cols {
-    cells.push(PageCellState::new())
+    cells.push(default_page_cell_state)
   }
   { desc: PageRowState::new(), cells }
 }
@@ -84,16 +84,14 @@ fn ScreenGridState::blank_line(
 ) -> GridLine {
   match self.cell_pool.pop() {
     Some(cells) => {
-      for cell in cells {
-        cell.full_reset()
-        let bg = style.bg_color()
-        if bg.palette_index() is Some(index) {
-          cell.set_background_palette(index)
-        } else if bg.rgb_value() is Some(rgb) {
-          cell.set_background_rgb(rgb)
-        }
+      // Reuse the pooled array buffer, refilling every slot with a fresh blank
+      // cell value (cells are immutable, so we replace rather than reset).
+      for index in 0..<cells.length() {
+        cells[index] = blank_cell(style)
       }
-      { desc: PageRowState::new(), cells }
+      let desc = PageRowState::new()
+      desc.set_styled(blank_row_is_styled(style))
+      { desc, cells }
     }
     None => blank_grid_line(self.cols.to_int(), style)
   }
@@ -305,7 +303,7 @@ fn ScreenGridState::append_grapheme(
       (codepoint == 0xFE0EU && base_is_wide) {
       return
     }
-    cell.append_grapheme(codepoint)
+    self.lines[row_idx].cells[target_x] = cell.with_grapheme_appended(codepoint)
     self.lines[row_idx].desc.set_grapheme(true)
     self.lines[row_idx].desc.set_dirty(true)
   }
@@ -1032,6 +1030,9 @@ fn ScreenGridState::clear_full_row(
       col_idx += 1
     }
     self.lines[row_idx].desc.full_reset()
+    // full_reset clears `styled`, but a colored erase fills the row with
+    // bg-styled blanks; restore the flag so it tracks the cells.
+    self.lines[row_idx].desc.set_styled(blank_row_is_styled(style))
   }
   self.lines[row_idx].desc.set_dirty(true)
 }
@@ -1116,18 +1117,20 @@ fn ScreenGridState::write_cell(
   semantic_content : SemanticContent,
   hyperlink : CellHyperlink?,
 ) -> Unit {
-  // Mutate the existing cell object in place rather than allocating a fresh
-  // PageCellState per printed character. Active-grid cells are never aliased
-  // (each column is its own object; clears copy, row shifts move whole lines),
-  // so in-place mutation is safe and avoids an alloc + refcount-drop per cell —
-  // the dominant cost on the print hot path.
-  let cell = self.lines[row_idx].cells[col_idx]
-  cell.set_codepoint(codepoint, false)
-  cell.set_style(style)
-  cell.set_wide(wide)
-  cell.set_protected(protected_flag)
-  cell.set_hyperlink(hyperlink)
-  cell.set_semantic_content(semantic_content)
+  // A printed character fully defines the cell, so build one fresh immutable
+  // value and store it into the slot — there is nothing to read from the old
+  // cell. One record literal is a single allocation, versus chaining six
+  // `with_*` builders. (Whole-cell `#valtype` will turn this store into an
+  // inline memcpy with no allocation at all.)
+  self.lines[row_idx].cells[col_idx] = {
+    codepoint,
+    grapheme_extras: None,
+    style,
+    wide,
+    protected_flag,
+    hyperlink,
+    semantic_content,
+  }
 }
 
 ///|
@@ -1137,7 +1140,9 @@ fn ScreenGridState::set_cell(
   col_idx : Int,
   source : PageCellState,
 ) -> Unit {
-  self.lines[row_idx].cells[col_idx] = copy_page_cell(source)
+  // A cell is an immutable value with no in-place mutation anywhere, so storing
+  // the source into the slot can share it directly — no defensive copy.
+  self.lines[row_idx].cells[col_idx] = source
 }
 
 ///|
@@ -1218,15 +1223,31 @@ fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
 }
 
 ///|
+// A blank cell that carries the erase style's background color (and nothing
+// else): a glyph-less cell whose `style` holds just the bg, so a run of them
+// renders as a colored gap.
 fn blank_cell(style : @style.CellStyle) -> PageCellState {
-  let cell = PageCellState::new()
   let bg = style.bg_color()
-  if bg.palette_index() is Some(index) {
-    cell.set_background_palette(index)
-  } else if bg.rgb_value() is Some(rgb) {
-    cell.set_background_rgb(rgb)
+  // Common case (erase with no SGR background): the shared blank cell, no alloc.
+  // Only a colored erase pays to construct a bg-only style.
+  if bg.is_default() {
+    default_page_cell_state
+  } else {
+    PageCellState::new(style=@style.CellStyle::new().with_bg_color(bg))
   }
-  cell
+}
+
+///|
+// Whether a row filled entirely with `blank_cell(style)` should report
+// `styled()`. A blank carries at most a background color — never a grapheme or
+// hyperlink — so such a row is styled exactly when that background is
+// non-default, mirroring `blank_cell`'s own default-vs-bg-only choice. The
+// full-row blank/clear paths use this to keep the row descriptor's flags in sync
+// with its cells in O(1), upholding the same invariant `recompute_row_flags`
+// would (otherwise a colored erase leaves `styled()`/`managed_memory()` false
+// while the cells report `has_styling()`).
+fn blank_row_is_styled(style : @style.CellStyle) -> Bool {
+  !style.bg_color().is_default()
 }
 
 ///|
@@ -1239,35 +1260,7 @@ fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
   for _ in 0..<cols {
     cells.push(blank_cell(style))
   }
-  { desc: PageRowState::new(), cells }
-}
-
-///|
-fn copy_page_cell(cell : PageCellState) -> PageCellState {
-  {
-    // `content` is an inline #valtype enum, so this is a value copy.
-    content: cell.content,
-    grapheme_extras: copy_grapheme_extras(cell.grapheme_extras),
-    style: cell.style,
-    wide: cell.wide,
-    protected_flag: cell.protected_flag,
-    hyperlink: cell.hyperlink,
-    semantic_content: cell.semantic_content,
-  }
-}
-
-///|
-// Deep-copy a cell's combining marks so a cloned cell does not alias (and
-// later mutate) the source cell's grapheme run.
-fn copy_grapheme_extras(extras : Array[UInt]?) -> Array[UInt]? {
-  match extras {
-    Some(src) => {
-      let copy : Array[UInt] = []
-      for cp in src {
-        copy.push(cp)
-      }
-      Some(copy)
-    }
-    None => None
-  }
+  let desc = PageRowState::new()
+  desc.set_styled(blank_row_is_styled(style))
+  { desc, cells }
 }

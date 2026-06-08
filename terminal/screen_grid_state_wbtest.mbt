@@ -31,6 +31,18 @@ fn expect_cell(
 }
 
 ///|
+// Cells are immutable values, so a test that wants to tweak one writes the new
+// value back into the grid slot directly.
+fn set_test_cell(
+  grid : ScreenGridState,
+  row : Int,
+  col : Int,
+  cell : PageCellState,
+) -> Unit {
+  grid.lines[row].cells[col] = cell
+}
+
+///|
 fn fill_ascii(grid : ScreenGridState, row : Int, chars : Array[Byte]) -> Unit {
   for i in 0..<chars.length() {
     grid.write_cell(
@@ -339,7 +351,6 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   cursor.x = 1
   grid.insert_blanks(cursor, bg_style, 1)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() &&
-    expect_cell(grid, 0, 1).content() is BackgroundPalette(_) &&
     expect_cell(grid, 0, 1).palette_index() == Some(3) &&
     expect_cell(grid, 0, 2).codepoint() == b'B'.to_uint() &&
     expect_cell(grid, 0, 4).codepoint() == b'D'.to_uint() &&
@@ -362,11 +373,10 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   }
 
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D', b'E'])
-  expect_cell(grid, 0, 1).set_protected(true)
+  set_test_cell(grid, 0, 1, expect_cell(grid, 0, 1).with_protected(true))
   cursor.x = 1
   grid.erase_chars(cursor, bg_style, Iso, 2)
   guard expect_cell(grid, 0, 1).codepoint() == b'B'.to_uint() &&
-    expect_cell(grid, 0, 2).content() is BackgroundPalette(_) &&
     expect_cell(grid, 0, 2).palette_index() == Some(3) else {
     fail("expected erase chars to respect iso protection")
   }
@@ -640,7 +650,12 @@ test "screen grid/erase line and display modes" {
   fill_ascii(above_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(above_grid, 1, [b'D', b'E', b'F'])
   fill_ascii(above_grid, 2, [b'G', b'H', b'I'])
-  expect_cell(above_grid, 0, 0).set_protected(true)
+  set_test_cell(
+    above_grid,
+    0,
+    0,
+    expect_cell(above_grid, 0, 0).with_protected(true),
+  )
   above_cursor.y = 1
   above_cursor.x = 1
   above_grid.erase_display(above_cursor, bg_style, Above, Iso, false)
@@ -944,9 +959,10 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   let cell = expect_cell(grid, 0, 0)
-  cell.set_codepoint(b'G'.to_uint(), true)
-  cell.set_style(style)
-  cell.set_hyperlink(Some(CellHyperlink::implicit("https://example.com", 9)))
+    .with_codepoint(b'G'.to_uint(), true)
+    .with_style(style)
+    .with_hyperlink(Some(CellHyperlink::implicit("https://example.com", 9)))
+  set_test_cell(grid, 0, 0, cell)
   grid.recompute_row_flags(0)
   let row = expect_row(grid, 0)
   guard row.grapheme() && row.styled() && row.hyperlink() else {
@@ -1082,5 +1098,41 @@ test "screen grid/decaln and full reset" {
     !expect_row(grid, 0).dirty() &&
     !expect_row(grid, 1).dirty() else {
     fail("expected full reset to clear screen state")
+  }
+}
+
+///|
+// Regression: a colored erase (e.g. `ESC[48;5;4m` then `ESC[2J`, or a scroll
+// with a colored erase background) fills a full row with bg-styled blanks. The
+// full-row clear and full-width scroll paths must keep the row descriptor's
+// `styled()`/`managed_memory()` in sync with those cells' `has_styling()`,
+// the invariant `recompute_row_flags` maintains.
+test "screen grid/colored erase keeps full-row flags in sync with cells" {
+  let style = @style.CellStyle::new().with_bg_color(
+    @style.StyleColor::palette(4),
+  )
+
+  // Full-row clear (colored ESC[2J on a row).
+  let grid = ScreenGridState::new(2, 4)
+  grid.clear_full_row(0, style, false)
+  guard expect_cell(grid, 0, 0).has_styling() else {
+    fail("expected colored blank cell to report has_styling")
+  }
+  guard expect_row(grid, 0).styled() && expect_row(grid, 0).managed_memory() else {
+    fail("clear_full_row left row flags out of sync with colored blanks")
+  }
+
+  // Full-width scroll whose scrolled-in rows use a colored erase background.
+  let scrolled = ScreenGridState::new(2, 4)
+  scrolled.shift_region_up(0, 1, 0, 3, 2, style)
+  guard expect_cell(scrolled, 0, 0).has_styling() &&
+    expect_cell(scrolled, 1, 0).has_styling() else {
+    fail("expected scrolled-in colored blank to report has_styling")
+  }
+  guard expect_row(scrolled, 0).styled() &&
+    expect_row(scrolled, 0).managed_memory() &&
+    expect_row(scrolled, 1).styled() &&
+    expect_row(scrolled, 1).managed_memory() else {
+    fail("full-width scroll left row flags out of sync with colored blanks")
   }
 }

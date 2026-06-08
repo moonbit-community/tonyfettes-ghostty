@@ -213,10 +213,8 @@ fn PageList::cell(
   }
 
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
-    Some(History(index)) =>
-      Some(copy_scrollback_cell(self.history[index].cells[col_idx]))
-    Some(Screen(index)) =>
-      Some(copy_scrollback_cell(grid.lines[index].cells[col_idx]))
+    Some(History(index)) => Some(self.history[index].cells[col_idx])
+    Some(Screen(index)) => Some(grid.lines[index].cells[col_idx])
     None => None
   }
 }
@@ -247,10 +245,8 @@ fn PageList::screen_cell(
   }
 
   match self.screen_row_source(grid, row.to_int()) {
-    Some(History(index)) =>
-      Some(copy_scrollback_cell(self.history[index].cells[col_idx]))
-    Some(Screen(index)) =>
-      Some(copy_scrollback_cell(grid.lines[index].cells[col_idx]))
+    Some(History(index)) => Some(self.history[index].cells[col_idx])
+    Some(Screen(index)) => Some(grid.lines[index].cells[col_idx])
     None => None
   }
 }
@@ -1236,7 +1232,11 @@ fn PageListReflowCursor::reflow_row(
 ) -> Unit {
   let mut cols_len = source.cells.length()
   if !source.row.wrap() {
-    while cols_len > 0 && source.cells[cols_len - 1].is_empty() {
+    // Keep trailing cells that carry a background color: they are `is_empty()`
+    // (no glyph) now that bg lives in the style, but `has_styling()` is true.
+    while cols_len > 0 &&
+          source.cells[cols_len - 1].is_empty() &&
+          !source.cells[cols_len - 1].has_styling() {
       cols_len -= 1
     }
     if cols_len == 0 && source.row.semantic_prompt() != None {
@@ -1336,7 +1336,7 @@ fn PageListReflowCursor::write_cell(
 ) -> PageListReflowWriteResult {
   match cell.wide() {
     Narrow => {
-      self.node.page.lines[0].cells[self.x] = copy_scrollback_cell(cell)
+      self.node.page.lines[0].cells[self.x] = cell
       self.cursor_forward()
       Success
     }
@@ -1347,7 +1347,7 @@ fn PageListReflowCursor::write_cell(
           self.cursor_forward()
           Repeat
         } else {
-          self.node.page.lines[0].cells[self.x] = copy_scrollback_cell(cell)
+          self.node.page.lines[0].cells[self.x] = cell
           self.cursor_forward()
           Success
         }
@@ -1358,7 +1358,7 @@ fn PageListReflowCursor::write_cell(
       }
     SpacerTail =>
       if self.cols.to_int() > 1 {
-        self.node.page.lines[0].cells[self.x] = copy_scrollback_cell(cell)
+        self.node.page.lines[0].cells[self.x] = cell
         self.cursor_forward()
         Success
       } else {
@@ -1555,10 +1555,8 @@ fn PageList::cell_at_point(
   }
 
   match self.row_source_for_point(grid, point) {
-    Some(History(index)) =>
-      Some(copy_scrollback_cell(self.history[index].cells[col_idx]))
-    Some(Screen(index)) =>
-      Some(copy_scrollback_cell(grid.lines[index].cells[col_idx]))
+    Some(History(index)) => Some(self.history[index].cells[col_idx])
+    Some(Screen(index)) => Some(grid.lines[index].cells[col_idx])
     None => None
   }
 }
@@ -1889,7 +1887,7 @@ fn make_pinned_row(
   let width = cols.to_int()
   for col in 0..<width {
     if col < source_cells.length() {
-      cells.push(copy_scrollback_cell(source_cells[col]))
+      cells.push(source_cells[col])
     } else {
       cells.push(PageCellState::new())
     }
@@ -1930,9 +1928,7 @@ fn make_pinned_row_owned(
 
 ///|
 fn reflow_spacer_head_cell() -> PageCellState {
-  let cell = PageCellState::new()
-  cell.set_wide(SpacerHead)
-  cell
+  PageCellState::new(wide=SpacerHead)
 }
 
 ///|
@@ -1980,9 +1976,7 @@ fn screen_grid_from_rows(
   for row_idx in 0..<row_count {
     grid.lines[row_idx].desc = copy_scrollback_row(pinned_rows[row_idx].row)
     for col_idx in 0..<cols.to_int() {
-      grid.lines[row_idx].cells[col_idx] = copy_scrollback_cell(
-        pinned_rows[row_idx].cells[col_idx],
-      )
+      grid.lines[row_idx].cells[col_idx] = pinned_rows[row_idx].cells[col_idx]
     }
   }
   grid
@@ -1999,32 +1993,6 @@ fn copy_scrollback_row(row : PageRowState) -> PageRowState {
     semantic_prompt: row.semantic_prompt,
     kitty_virtual_placeholder: row.kitty_virtual_placeholder,
     dirty: row.dirty,
-  }
-}
-
-///|
-fn copy_scrollback_cell(cell : PageCellState) -> PageCellState {
-  {
-    // `content` is an inline #valtype enum, so this is a value copy.
-    content: cell.content,
-    grapheme_extras: copy_grapheme_extras(cell.grapheme_extras),
-    style: cell.style,
-    wide: cell.wide,
-    protected_flag: cell.protected_flag,
-    hyperlink: match cell.hyperlink {
-      Some(value) => Some(copy_scrollback_hyperlink(value))
-      None => None
-    },
-    semantic_content: cell.semantic_content,
-  }
-}
-
-///|
-fn copy_scrollback_hyperlink(link : CellHyperlink) -> CellHyperlink {
-  {
-    uri: link.uri(),
-    explicit_id: link.explicit_id(),
-    implicit_id: link.implicit_id(),
   }
 }
 

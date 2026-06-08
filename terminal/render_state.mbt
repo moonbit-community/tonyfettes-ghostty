@@ -431,7 +431,7 @@ fn render_cell_at(
   if col_idx < 0 || col_idx >= state.row_cells[row_idx].length() {
     return None
   }
-  Some(copy_scrollback_cell(state.row_cells[row_idx][col_idx]))
+  Some(state.row_cells[row_idx][col_idx])
 }
 
 ///|
@@ -463,11 +463,9 @@ fn render_cell_background_color(
   cell : PageCellState,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
-  match cell.content() {
-    BackgroundPalette(index) => Some(palette[index.to_int()])
-    BackgroundRgb(rgb) => Some(rgb)
-    Codepoint(_) => cell.style.bg_color_rgb(palette)
-  }
+  // Every cell keeps its background in the style now (no separate background
+  // content kind), so this is just the style's resolved bg.
+  cell.style.bg_color_rgb(palette)
 }
 
 ///|

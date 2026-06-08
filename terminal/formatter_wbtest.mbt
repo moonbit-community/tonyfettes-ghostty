@@ -109,7 +109,9 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   }
   state.grid = ScreenGridState::new(2, 2)
   state.scrollback = PageList::new(2, 2, 0)
-  state.grid.lines[1].cells[1].set_wide(SpacerHead)
+  state.grid.lines[1].cells[1] = state.grid.lines[1].cells[1].with_wide(
+    SpacerHead,
+  )
   let spacer_head_bounds : FormatterSelectionBounds = {
     start: Coordinate::new(1, 1U),
     end_: Coordinate::new(1, 1U),
@@ -204,9 +206,10 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode style properties")
   }
 
-  let palette_cell = PageCellState::new()
-  palette_cell.set_background_palette(7)
-  let palette_style = formatter_cell_style(palette_cell)
+  let palette_cell = PageCellState::new(
+    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
+  )
+  let palette_style = palette_cell.style()
   guard palette_style.bg_color().palette_index() == Some(7) else {
     fail("expected background-palette cell helper")
   }

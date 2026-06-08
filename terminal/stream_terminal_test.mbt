@@ -466,11 +466,10 @@ test "stream terminal/copied default cell is not reported as styled" {
   // Plain default text followed by a bold cell.
   terminal.next_slice(b"A\x1B[1mB\x1B[0m")
 
-  // screen_cell_snapshot reads through the scrollback copy path
-  // (copy_scrollback_cell), which rebuilds the style as a fresh CellStyle rather
-  // than the shared default singleton. has_styling() must still be false for the
-  // unstyled cell (regression: an identity-only check reported every copied
-  // default cell as styled) and true for the bold one.
+  // has_styling() compares the style value (`!is_default()`), not object
+  // identity, so it must be false for the unstyled cell (regression: an
+  // identity-only check reported every copied default cell as styled) and true
+  // for the bold one.
   let plain = expect_terminal_cell(terminal, 0, 0)
   let bold = expect_terminal_cell(terminal, 0, 1)
   guard !plain.has_styling() && bold.has_styling() else {

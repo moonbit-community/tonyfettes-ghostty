@@ -1,23 +1,4 @@
 ///|
-// Internal representation of a cell's content. Kept package-private: external
-// callers query via codepoint()/palette_index()/background_rgb()/has_grapheme()
-// /grapheme_codepoints() rather than matching on this enum, so the storage
-// layout stays an implementation detail.
-//
-// All payloads are scalar (`RGB` is a `UInt` newtype), so this is a `#valtype`
-// enum: it is stored *inline* in `PageCellState` rather than as a boxed object,
-// and writing a cell's content (the print hot path) is an inline value store
-// with no allocation. The grapheme combining marks — the one non-scalar piece —
-// live in a separate `grapheme_extras` field on the cell instead of a payload
-// here, which is what lets this enum stay unboxed.
-#valtype
-priv enum PageCellContent {
-  Codepoint(UInt)
-  BackgroundPalette(Byte)
-  BackgroundRgb(@color.RGB)
-} derive(Eq, Debug)
-
-///|
 pub(all) enum PageCellWide {
   Narrow
   Wide
@@ -190,99 +171,102 @@ pub fn PageRowState::full_reset(self : PageRowState) -> Unit {
 }
 
 ///|
+// The codepoint of a cell with no glyph. U+0000 (NUL) is never a displayable
+// character — terminals discard a printed NUL — so it is the conventional
+// "empty cell" sentinel (upstream Ghostty uses it the same way). Kept as a named
+// scalar rather than `UInt?` so the cell stays allocation-free and value-typed.
+const EmptyCodepoint : UInt = 0
+
+///|
+// A cell is an immutable value: writes produce a new `PageCellState` via the
+// `with_*` builders and the grid stores it back into its slot, rather than
+// mutating fields in place. This keeps cells aliasing-safe (a value can be
+// copied freely) and is the prerequisite for later making the cell a flat
+// `#valtype` so `Array[PageCellState]` becomes a contiguous value buffer.
 struct PageCellState {
-  mut content : PageCellContent
+  // The cell's base codepoint (`EmptyCodepoint` = blank). A cell's background
+  // color lives in `style.bg_color` like any other style attribute — there is no
+  // separate "background cell" kind, so the codepoint is a plain scalar.
+  codepoint : UInt
   // Combining codepoints (skin-tone modifiers, accents, …) layered on top of
-  // `content`'s base codepoint. `None` for the overwhelmingly common single-
+  // the base codepoint. `None` for the overwhelmingly common single-
   // codepoint cell, so a normal cell write allocates nothing here; only a real
-  // grapheme cluster pays for the array.
-  mut grapheme_extras : Array[UInt]?
-  mut style : @style.CellStyle
-  mut wide : PageCellWide
-  mut protected_flag : Bool
-  mut hyperlink : CellHyperlink?
-  mut semantic_content : SemanticContent
+  // grapheme cluster pays for the array. `ReadOnlyArray` so it can never be
+  // mutated in place — together with the immutable cell that means copying a
+  // cell into another slot is a plain value share, with no deep copy needed.
+  grapheme_extras : ReadOnlyArray[UInt]?
+  style : @style.CellStyle
+  wide : PageCellWide
+  protected_flag : Bool
+  hyperlink : CellHyperlink?
+  semantic_content : SemanticContent
 } derive(Eq, Debug)
 
 ///|
-pub fn PageCellState::new() -> PageCellState {
+// Construct a cell. Every field is an optional with the blank-cell default, so
+// `new()` is still a blank cell and a fully-specified cell is one call —
+// `new(codepoint=.., style=.., wide=..)` — rather than a `with_*` chain. A
+// background-color cell is just a blank cell whose `style` carries the bg, so it
+// is `new(style=...)` too; the `with_*` builders remain for transforming an
+// *existing* cell.
+pub fn PageCellState::new(
+  codepoint? : UInt = EmptyCodepoint,
+  grapheme? : Bool = false,
+  style? : @style.CellStyle = default_cell_style,
+  wide? : PageCellWide = Narrow,
+  protected_flag? : Bool = false,
+  hyperlink? : CellHyperlink? = None,
+  semantic_content? : SemanticContent = Output,
+) -> PageCellState {
   {
-    content: Codepoint(0U),
-    grapheme_extras: None,
-    style: default_cell_style,
-    wide: Narrow,
-    protected_flag: false,
-    hyperlink: None,
-    semantic_content: Output,
+    codepoint,
+    grapheme_extras: if grapheme {
+      Some([])
+    } else {
+      None
+    },
+    style,
+    wide,
+    protected_flag,
+    hyperlink,
+    semantic_content,
   }
 }
 
 ///|
 pub fn PageCellState::init(codepoint : UInt) -> PageCellState {
-  let cell = PageCellState::new()
-  cell.set_codepoint(codepoint, false)
-  cell
+  PageCellState::new(codepoint~)
 }
 
 ///|
-fn PageCellState::content(self : PageCellState) -> PageCellContent {
-  self.content
-}
-
-///|
-pub fn PageCellState::set_codepoint(
+pub fn PageCellState::with_codepoint(
   self : PageCellState,
   codepoint : UInt,
   grapheme : Bool,
-) -> Unit {
-  self.content = Codepoint(codepoint)
+) -> PageCellState {
   // `grapheme` marks the start of a cluster; the combining marks arrive later
-  // via append_grapheme. `Some([])` records "this is a grapheme cell" before any
-  // extras land, matching the old `CodepointGrapheme(_, [])`. Either way this
-  // overwrite drops any prior cell's extras.
-  self.grapheme_extras = if grapheme { Some([]) } else { None }
-}
-
-///|
-pub fn PageCellState::set_background_palette(
-  self : PageCellState,
-  index : Byte,
-) -> Unit {
-  self.content = BackgroundPalette(index)
-  self.grapheme_extras = None
-}
-
-///|
-pub fn PageCellState::set_background_rgb(
-  self : PageCellState,
-  rgb : @color.RGB,
-) -> Unit {
-  self.content = BackgroundRgb(rgb)
-  self.grapheme_extras = None
+  // via with_grapheme_appended. `Some([])` records "this is a grapheme cell"
+  // before any extras land. Either way this overwrite drops any prior extras.
+  { ..self, codepoint, grapheme_extras: if grapheme { Some([]) } else { None } }
 }
 
 ///|
 pub fn PageCellState::codepoint(self : PageCellState) -> UInt {
-  match self.content {
-    Codepoint(cp) => cp
-    BackgroundPalette(_) | BackgroundRgb(_) => 0U
-  }
+  self.codepoint
 }
 
 ///|
+// The cell's background as a palette index, if its style's bg is a palette
+// color. Equivalent to `style().bg_color().palette_index()`; kept as a cell-level
+// convenience for renderers.
 pub fn PageCellState::palette_index(self : PageCellState) -> Byte? {
-  match self.content {
-    BackgroundPalette(index) => Some(index)
-    _ => None
-  }
+  self.style.bg_color().palette_index()
 }
 
 ///|
+// The cell's background as a direct RGB color, if its style's bg is RGB.
 pub fn PageCellState::background_rgb(self : PageCellState) -> @color.RGB? {
-  match self.content {
-    BackgroundRgb(rgb) => Some(rgb)
-    _ => None
-  }
+  self.style.bg_color().rgb_value()
 }
 
 ///|
@@ -297,13 +281,20 @@ pub fn PageCellState::style(self : PageCellState) -> @style.CellStyle {
 let default_cell_style : @style.CellStyle = @style.CellStyle::new()
 
 ///|
-pub fn PageCellState::set_style(
+// A single shared blank cell. Because a cell is immutable, every empty slot can
+// point at this one value instead of allocating its own — a cleared/scrolled-in
+// row is then a fill of the same reference, with no per-cell allocation. A write
+// replaces the slot wholesale (the shared value is never mutated), so the sharing
+// is invisible to callers.
+let default_page_cell_state : PageCellState = PageCellState::new()
+
+///|
+pub fn PageCellState::with_style(
   self : PageCellState,
   style : @style.CellStyle,
-) -> Unit {
-  // A `CellStyle` is 16 inline bytes, so storing it is a value copy with no
-  // allocation — the default and the styled cases are the same store.
-  self.style = style
+) -> PageCellState {
+  // A `CellStyle` is 16 inline bytes, so this is a value copy with no allocation.
+  { ..self, style, }
 }
 
 ///|
@@ -312,11 +303,11 @@ pub fn PageCellState::wide(self : PageCellState) -> PageCellWide {
 }
 
 ///|
-pub fn PageCellState::set_wide(
+pub fn PageCellState::with_wide(
   self : PageCellState,
   value : PageCellWide,
-) -> Unit {
-  self.wide = value
+) -> PageCellState {
+  { ..self, wide: value }
 }
 
 ///|
@@ -325,8 +316,11 @@ pub fn PageCellState::is_protected(self : PageCellState) -> Bool {
 }
 
 ///|
-pub fn PageCellState::set_protected(self : PageCellState, value : Bool) -> Unit {
-  self.protected_flag = value
+pub fn PageCellState::with_protected(
+  self : PageCellState,
+  value : Bool,
+) -> PageCellState {
+  { ..self, protected_flag: value }
 }
 
 ///|
@@ -335,11 +329,11 @@ pub fn PageCellState::hyperlink(self : PageCellState) -> CellHyperlink? {
 }
 
 ///|
-pub fn PageCellState::set_hyperlink(
+pub fn PageCellState::with_hyperlink(
   self : PageCellState,
   value : CellHyperlink?,
-) -> Unit {
-  self.hyperlink = value
+) -> PageCellState {
+  { ..self, hyperlink: value }
 }
 
 ///|
@@ -348,24 +342,13 @@ pub fn PageCellState::semantic_content(self : PageCellState) -> SemanticContent 
 }
 
 ///|
-pub fn PageCellState::set_semantic_content(
-  self : PageCellState,
-  value : SemanticContent,
-) -> Unit {
-  self.semantic_content = value
-}
-
-///|
 pub fn PageCellState::is_zero(self : PageCellState) -> Bool {
-  self == PageCellState::new()
+  self == default_page_cell_state
 }
 
 ///|
 pub fn PageCellState::has_text(self : PageCellState) -> Bool {
-  match self.content {
-    Codepoint(cp) => cp != 0U
-    BackgroundPalette(_) | BackgroundRgb(_) => false
-  }
+  self.codepoint != EmptyCodepoint
 }
 
 ///|
@@ -386,10 +369,10 @@ pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
 
 ///|
 pub fn PageCellState::is_empty(self : PageCellState) -> Bool {
-  match self.content {
-    Codepoint(cp) => cp == 0U && self.wide == Narrow
-    BackgroundPalette(_) | BackgroundRgb(_) => false
-  }
+  // Note: a cell carrying only a background color is now "empty" here (no glyph)
+  // but `has_styling()` is true, so trim/emit sites use `!is_empty() ||
+  // has_styling()` to keep it.
+  self.codepoint == EmptyCodepoint && self.wide == Narrow
 }
 
 ///|
@@ -399,14 +382,14 @@ pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
 
 ///|
 // The cell's combining codepoints (empty when the cell is not a grapheme
-// cluster). Returns a read-only `ArrayView` over the cell's internal storage —
-// no copy on the render hot path, and the view exposes no `push`/element-set,
-// so callers cannot resize or mutate the cell's grapheme run (which would
-// desync `PageRowState::grapheme`/dirty flags). Callers that need to retain or
-// edit the codepoints should `.to_array()` first.
+// cluster). Returns the cell's `ReadOnlyArray` directly — no copy on the render
+// hot path, and the type itself forbids `push`/element-set, so callers cannot
+// resize or mutate the cell's grapheme run (which would desync
+// `PageRowState::grapheme`/dirty flags). Callers that need a mutable copy should
+// `.iter().collect()` first.
 pub fn PageCellState::grapheme_codepoints(
   self : PageCellState,
-) -> ArrayView[UInt] {
+) -> ReadOnlyArray[UInt] {
   match self.grapheme_extras {
     Some(extras) => extras
     None => []
@@ -414,30 +397,23 @@ pub fn PageCellState::grapheme_codepoints(
 }
 
 ///|
-// Append a combining codepoint onto this cell. Upgrades Codepoint to
-// CodepointGrapheme on first call; subsequent calls push onto the existing
-// extras. Only meaningful when the cell has text.
-fn PageCellState::append_grapheme(
+// Return a copy of this cell with one more combining codepoint. Seeds the
+// extras on the first mark; subsequent marks extend a *fresh* array so the
+// returned cell never shares storage with `self` (value-semantics safe). Callers
+// only invoke this on a cell that already has a base glyph.
+fn PageCellState::with_grapheme_appended(
   self : PageCellState,
   codepoint : UInt,
-) -> Unit {
-  // Only text cells carry combining marks; ignore on background-color cells.
-  guard self.content is Codepoint(_) else { return }
-  match self.grapheme_extras {
-    Some(extras) => extras.push(codepoint)
-    None => self.grapheme_extras = Some([codepoint])
+) -> PageCellState {
+  let extras : Array[UInt] = match self.grapheme_extras {
+    Some(existing) => {
+      let copy = Array::make(existing.length() + 1, codepoint)
+      for index in 0..<existing.length() {
+        copy[index] = existing.at(index)
+      }
+      copy
+    }
+    None => [codepoint]
   }
-}
-
-///|
-pub fn PageCellState::full_reset(self : PageCellState) -> Unit {
-  self.content = Codepoint(0U)
-  self.grapheme_extras = None
-  // Re-point to the shared default rather than mutating the style in place:
-  // the field may alias the shared default singleton (see `default_cell_style`).
-  self.style = default_cell_style
-  self.wide = Narrow
-  self.protected_flag = false
-  self.hyperlink = None
-  self.semantic_content = Output
+  { ..self, grapheme_extras: Some(ReadOnlyArray::from_array(extras)) }
 }
