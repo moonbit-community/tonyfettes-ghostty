@@ -1,5 +1,5 @@
 "use strict";
-const WASM_URL = "../../_build/wasm-gc/debug/build/tools/terminal_playground_core/terminal_playground_core.wasm";
+const WASM_URL = "../../_build/wasm-gc/debug/build/tonyfettes/ghostty-examples/terminal_playground/core/core.wasm";
 const ESC = "\u001B";
 const BEL = "\u0007";
 const statusText = element("statusText");

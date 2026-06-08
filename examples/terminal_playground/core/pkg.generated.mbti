@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/tools/terminal_playground_core"
+package "tonyfettes/ghostty-examples/terminal_playground/core"
 
 // Values
 pub fn playground_apply_text(Int, String) -> Unit

@@ -81,9 +81,9 @@ docs/architecture.md           Parser stack architecture notes
 docs/plan.md                   Translation plan, scope, and quality gates
 docs/plans/                    Task-specific implementation plans and audits
 examples/rabbita_asciinema/    Browser asciinema player using StreamTerminal
+examples/terminal_playground/  Browser terminal playground (web shell + wasm-gc core/)
 examples/tmux/                 Native mini tmux-like PTY multiplexer demo
 tools/stream_terminal_perf/    StreamTerminal performance harness
-tools/terminal_playground_core/ Playground support package
 upstream/ghostty/              Upstream Ghostty submodule
 ```
 
