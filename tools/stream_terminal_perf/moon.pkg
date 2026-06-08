@@ -1,13 +1,4 @@
 import {
-  "moonbitlang/core/env",
-  "tonyfettes/ghostty/terminal",
-}
-
-import {
   "moonbitlang/core/bench",
   "tonyfettes/ghostty/terminal",
 } for "test"
-
-options(
-  "is-main": true,
-)

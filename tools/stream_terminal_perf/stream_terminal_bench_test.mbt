@@ -117,6 +117,28 @@ fn osc_titles(count : Int) -> Bytes {
 }
 
 ///|
+/// Pure SGR/CSI churn with no printable payload to dilute it: isolates the VT
+/// parser's escape-handling cost — almost every byte drives `Parser::next`.
+fn sgr_storm(count : Int) -> Bytes {
+  let buf = Buffer(size_hint=256)
+  for _ in 0..<count {
+    buf.write_bytes(b"\x1b[1mA\x1b[0m")
+  }
+  buf.contents()
+}
+
+///|
+/// Back-to-back device-status / attribute queries: another parser-bound stream
+/// (CSI with intermediates and params) with no text between sequences.
+fn query_storm(count : Int) -> Bytes {
+  let buf = Buffer(size_hint=256)
+  for _ in 0..<count {
+    buf.write_bytes(b"\x1b[?7$p\x1b[c\x1b[>q\x05\x1b[18t")
+  }
+  buf.contents()
+}
+
+///|
 /// A realistic blend of the above.
 fn mixed_realistic(blocks : Int) -> Bytes {
   let buf = Buffer(size_hint=256)
@@ -192,5 +214,17 @@ test "bench osc_titles x300" (it : @bench.T) {
 ///|
 test "bench mixed_realistic x150" (it : @bench.T) {
   let payload = mixed_realistic(150)
+  it.bench(fn() { it.keep(process(payload)) })
+}
+
+///|
+test "bench sgr_storm x50000" (it : @bench.T) {
+  let payload = sgr_storm(50000)
+  it.bench(fn() { it.keep(process(payload)) })
+}
+
+///|
+test "bench query_storm x20000" (it : @bench.T) {
+  let payload = query_storm(20000)
   it.bench(fn() { it.keep(process(payload)) })
 }
