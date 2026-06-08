@@ -28,6 +28,9 @@ pub(all) enum Action {
   ApcEnd
 }
 
+type ActionList
+pub fn ActionList::op_get(Self, Int) -> Action?
+
 pub(all) struct Csi {
   intermediates : Bytes
   params : ReadOnlyArray[UInt16]
@@ -51,7 +54,7 @@ pub fn Parser::deinit(Self) -> Unit
 pub fn Parser::enter_escape(Self) -> Unit
 pub fn Parser::is_ground(Self) -> Bool
 pub fn Parser::new() -> Self
-pub fn Parser::next(Self, Byte) -> FixedArray[Action?]
+pub fn Parser::next(Self, Byte) -> ActionList
 pub fn Parser::reset_ground(Self) -> Unit
 
 type SepList derive(@debug.Debug)
@@ -61,7 +64,6 @@ pub fn SepList::is_set(Self, Int) -> Bool
 pub fn SepList::set(Self, Int) -> Unit
 
 // Type aliases
-pub type ActionList = FixedArray[Action?]
 
 // Traits
 
