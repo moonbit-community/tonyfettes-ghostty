@@ -24,11 +24,13 @@ priv struct GridLine {
 
 ///|
 fn GridLine::new(cols : Int) -> GridLine {
-  let cells : Array[PageCellState] = []
-  for _ in 0..<cols {
-    cells.push(default_page_cell_state)
+  // Allocate the row's cells in one shot. `Array::make` fills every slot with a
+  // copy of the (immutable value) blank cell — a single allocation, versus a
+  // `push` loop that reallocs and ref-blits the growing buffer ~log2(cols) times.
+  {
+    desc: PageRowState::new(),
+    cells: Array::make(cols, default_page_cell_state),
   }
-  { desc: PageRowState::new(), cells }
 }
 
 ///|
@@ -1256,10 +1258,10 @@ fn blank_row_is_styled(style : @style.CellStyle) -> Bool {
 /// the moved rows above may transiently alias their source slot, and a fresh
 /// object breaks that alias instead of clearing a shared line in place.
 fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
-  let cells : Array[PageCellState] = []
-  for _ in 0..<cols {
-    cells.push(blank_cell(style))
-  }
+  // One allocation filled with the blank cell value, instead of growing an empty
+  // array by `push` (which reallocs and ref-blits ~log2(cols) times). This is the
+  // hot path for a line feed when the cell pool is empty (scrollback not yet full).
+  let cells = Array::make(cols, blank_cell(style))
   let desc = PageRowState::new()
   desc.set_styled(blank_row_is_styled(style))
   { desc, cells }
