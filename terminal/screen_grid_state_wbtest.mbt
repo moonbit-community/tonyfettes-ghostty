@@ -1136,3 +1136,23 @@ test "screen grid/colored erase keeps full-row flags in sync with cells" {
     fail("full-width scroll left row flags out of sync with colored blanks")
   }
 }
+
+///|
+test "screen grid/decaln keeps styled flag in sync with styled fill" {
+  // DECALN under a non-default SGR fills every cell with `style` via write_cell,
+  // which does not maintain row flags. The row's `styled` flag must still track
+  // the styled cells — the scrollback harvest path trusts the live flag rather
+  // than rescanning, so a stale `styled == false` would desync a DECALN row
+  // captured into history.
+  let style = @style.CellStyle::new().with_bg_color(
+    @style.StyleColor::palette(4),
+  )
+  let grid = ScreenGridState::new(2, 4)
+  grid.decaln(style)
+  guard expect_cell(grid, 0, 0).has_styling() else {
+    fail("expected styled DECALN cell to report has_styling")
+  }
+  guard expect_row(grid, 0).styled() && expect_row(grid, 0).managed_memory() else {
+    fail("decaln left row flags out of sync with its styled cells")
+  }
+}

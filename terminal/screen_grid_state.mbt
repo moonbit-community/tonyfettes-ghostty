@@ -639,6 +639,12 @@ fn ScreenGridState::decaln(
       )
       col_idx += 1
     }
+    // Every cell in the row was written with `style`, so the row is styled
+    // exactly when `style` is non-default. `write_cell` does not maintain row
+    // flags, so set it here — otherwise a styled DECALN row scrolled into
+    // scrollback would report `styled == false`, since the harvest path trusts
+    // the live descriptor flag instead of rescanning the cells.
+    self.lines[row_idx].desc.set_styled(!style.is_default())
     self.lines[row_idx].desc.set_dirty(true)
     row_idx += 1
   }
