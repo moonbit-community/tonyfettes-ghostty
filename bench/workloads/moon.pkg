@@ -1,4 +1,7 @@
 import {
-  "moonbitlang/core/bench",
   "tonyfettes/ghostty/terminal",
+}
+
+import {
+  "moonbitlang/core/bench",
 } for "test"
