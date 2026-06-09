@@ -51,7 +51,19 @@ pub fn Utf8Decoder::is_accept_state(self : Utf8Decoder) -> Bool {
 }
 
 ///|
-pub fn Utf8Decoder::next(self : Utf8Decoder, byte : Byte) -> (UInt?, Bool) {
+/// The result of decoding one byte: the codepoint produced (if any) and whether
+/// the byte was consumed (`consumed` is false on a reject that restarts the
+/// state machine, so the byte must be re-fed). An immutable `#valtype` returned
+/// by value with no heap object — unlike the `(UInt?, Bool)` tuple it replaces,
+/// which was a per-byte heap allocation on the text hot path.
+#valtype
+pub struct Utf8Decoded {
+  value : UInt?
+  consumed : Bool
+}
+
+///|
+pub fn Utf8Decoder::next(self : Utf8Decoder, byte : Byte) -> Utf8Decoded {
   let char_class = char_classes[byte.to_int()]
   let initial_state = self.state
 
@@ -66,12 +78,12 @@ pub fn Utf8Decoder::next(self : Utf8Decoder, byte : Byte) -> (UInt?, Bool) {
   if self.state == AcceptState {
     let result = self.accumulator
     self.accumulator = 0
-    (Some(result), true)
+    { value: Some(result), consumed: true }
   } else if self.state == RejectState {
     self.accumulator = 0
     self.state = AcceptState
-    (Some(0xFFFD), initial_state == AcceptState)
+    { value: Some(0xFFFD), consumed: initial_state == AcceptState }
   } else {
-    (None, true)
+    { value: None, consumed: true }
   }
 }

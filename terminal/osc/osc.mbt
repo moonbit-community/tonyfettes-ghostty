@@ -834,9 +834,9 @@ fn captured_string(buffer : Array[Byte]) -> String {
   for byte in buffer {
     let mut consumed = false
     while !consumed {
-      let (value, did_consume) = decoder.next(byte)
-      consumed = did_consume
-      if value is Some(codepoint) {
+      let decoded = decoder.next(byte)
+      consumed = decoded.consumed
+      if decoded.value is Some(codepoint) {
         builder.write_char(codepoint.reinterpret_as_int().unsafe_to_char())
       }
     }
