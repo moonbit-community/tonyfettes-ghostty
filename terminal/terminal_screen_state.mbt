@@ -1918,10 +1918,17 @@ fn make_pinned_row_owned(
   wrap : Bool,
   wrap_continuation : Bool,
 ) -> PageListRow {
+  // No `apply_cell_flags_to_row` rescan here: this owned/harvest path receives
+  // the *same* live grid row's descriptor and its exact cells (via
+  // `harvest_scrollback_row`), and the grid maintains `grapheme`/`styled`/
+  // `hyperlink` incrementally on every write/erase, so `copy_scrollback_row`
+  // already carries the correct flags. (`make_pinned_row` keeps the rescan: its
+  // cells are rebuilt/reflowed and need not match the template.) Verified by
+  // asserting live == rescanned across the suite and the styled/grapheme scroll
+  // benchmarks before removing.
   let row = copy_scrollback_row(row_template)
   row.set_wrap(wrap)
   row.set_wrap_continuation(wrap_continuation)
-  apply_cell_flags_to_row(row, cells)
   let node = PageListNode::new({ rows: 1, cols, lines: [{ desc: row, cells }] })
   { row, cells, node, y: 0 }
 }
