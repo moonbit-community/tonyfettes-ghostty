@@ -19,18 +19,22 @@ priv enum ScreenEraseDisplayMode {
 /// objects (descriptor + cells together) instead of copying cell-by-cell.
 priv struct GridLine {
   mut desc : PageRowState
-  cells : Array[PageCellState]
+  // A row is a fixed `cols`-wide buffer: it is never grown or shrunk in place
+  // (a resize rebuilds the grid), only indexed. `FixedArray` is that buffer
+  // directly, dropping the growable `Array` wrapper object and the extra
+  // indirection on every per-cell access in the print/read hot path.
+  cells : FixedArray[PageCellState]
 }
 
 ///|
 fn GridLine::new(cols : Int) -> GridLine {
-  // Allocate the row's cells in one shot. `Array::make` fills every slot
+  // Allocate the row's cells in one shot. `FixedArray::make` fills every slot
   // with a copy of the (immutable value) blank cell — a single allocation,
   // versus a `push` loop that reallocs and ref-blits the growing buffer
   // ~log2(cols) times.
   {
     desc: PageRowState::new(),
-    cells: Array::make(cols, default_page_cell_state),
+    cells: FixedArray::make(cols, default_page_cell_state),
   }
 }
 
@@ -44,7 +48,7 @@ priv struct ScreenGridState {
   // At a full scrollback buffer this makes a line feed allocation-free: the row
   // evicted from history becomes the new blank row instead of being GC'd while
   // a fresh 80-cell row is allocated. Bounded to the screen height.
-  cell_pool : Array[Array[PageCellState]]
+  cell_pool : Array[FixedArray[PageCellState]]
 }
 
 ///|
@@ -67,7 +71,7 @@ fn ScreenGridState::new(
 /// past the screen height are dropped to GC rather than pooled.
 fn ScreenGridState::recycle_row_cells(
   self : ScreenGridState,
-  cells : Array[PageCellState],
+  cells : FixedArray[PageCellState],
 ) -> Unit {
   if cells.length() == self.cols.to_int() &&
     self.cell_pool.length() < self.rows.to_int() {
@@ -1382,7 +1386,7 @@ fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
   // One allocation filled with the blank cell value, instead of growing an empty
   // array by `push` (which reallocs and ref-blits ~log2(cols) times). This is the
   // hot path for a line feed when the cell pool is empty (scrollback not yet full).
-  let cells = Array::make(cols, blank_cell(style))
+  let cells = FixedArray::make(cols, blank_cell(style))
   let desc = PageRowState::new().with_styled(blank_row_is_styled(style))
   { desc, cells }
 }

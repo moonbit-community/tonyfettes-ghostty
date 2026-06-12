@@ -24,7 +24,7 @@ struct RenderState {
   mut cursor_viewport : Coordinate?
   mut cursor_viewport_wide_tail : Bool
   mut row_states : Array[PageRowState]
-  mut row_cells : Array[Array[PageCellState]]
+  mut row_cells : Array[FixedArray[PageCellState]]
 }
 
 ///|
@@ -203,7 +203,7 @@ fn RenderState::snapshot_all_rows(
   columns : CellCountInt,
 ) -> Unit {
   let row_states : Array[PageRowState] = []
-  let row_cells : Array[Array[PageCellState]] = []
+  let row_cells : Array[FixedArray[PageCellState]] = []
   let mut row_idx = 0
   while row_idx < rows.to_int() {
     let snapshot = snapshot_render_row(terminal, row_idx.to_uint16()).with_dirty(
@@ -338,18 +338,18 @@ fn snapshot_render_cells(
   terminal : StreamTerminal,
   row : CellCountInt,
   columns : CellCountInt,
-) -> Array[PageCellState] {
-  let result : Array[PageCellState] = []
-  let mut col_idx = 0
-  while col_idx < columns.to_int() {
+) -> FixedArray[PageCellState] {
+  let width = columns.to_int()
+  let result : FixedArray[PageCellState] = FixedArray::make(
+    width,
+    PageCellState::new(),
+  )
+  for col_idx in 0..<width {
     let col = col_idx.to_uint16()
-    result.push(
-      match terminal.screen_cell_snapshot(row, col) {
-        Some(snapshot) => snapshot
-        None => PageCellState::new()
-      },
-    )
-    col_idx += 1
+    result[col_idx] = match terminal.screen_cell_snapshot(row, col) {
+      Some(snapshot) => snapshot
+      None => PageCellState::new()
+    }
   }
   result
 }
@@ -366,8 +366,8 @@ fn render_row_snapshot_equals(
 
 ///|
 fn render_row_cells_equal(
-  left : Array[PageCellState],
-  right : Array[PageCellState],
+  left : FixedArray[PageCellState],
+  right : FixedArray[PageCellState],
 ) -> Bool {
   if left.length() != right.length() {
     return false

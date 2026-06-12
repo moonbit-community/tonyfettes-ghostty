@@ -19,7 +19,7 @@ priv struct PageListNode {
 ///|
 priv struct PageListRow {
   mut row : PageRowState
-  cells : Array[PageCellState]
+  cells : FixedArray[PageCellState]
   node : PageListNode
   y : CellCountInt
 }
@@ -1773,11 +1773,13 @@ fn snapshot_scrollback_row(
   // Gather the row's cells by reference; make_pinned_row performs the single
   // deep copy into the history row (previously this pre-copied them too, so
   // every captured row was deep-copied twice).
-  let cells : Array[PageCellState] = []
-  let mut col_idx = 0
-  while col_idx < grid.cols.to_int() {
-    cells.push(grid.lines[row_idx].cells[col_idx])
-    col_idx += 1
+  let width = grid.cols.to_int()
+  let cells : FixedArray[PageCellState] = FixedArray::make(
+    width,
+    PageCellState::new(),
+  )
+  for col_idx in 0..<width {
+    cells[col_idx] = grid.lines[row_idx].cells[col_idx]
   }
   make_pinned_row(
     grid.lines[row_idx].desc,
@@ -1883,20 +1885,20 @@ fn copy_pinned_row(source : PageListRow, cols : CellCountInt) -> PageListRow {
 ///|
 fn make_pinned_row(
   row_template : PageRowState,
-  source_cells : Array[PageCellState],
+  source_cells : FixedArray[PageCellState],
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
   update_prompt_continuation : Bool,
 ) -> PageListRow {
-  let cells : Array[PageCellState] = []
   let width = cols.to_int()
-  for col in 0..<width {
-    if col < source_cells.length() {
-      cells.push(source_cells[col])
-    } else {
-      cells.push(PageCellState::new())
-    }
+  let cells : FixedArray[PageCellState] = FixedArray::make(
+    width,
+    PageCellState::new(),
+  )
+  let copy_len = min_int(width, source_cells.length())
+  for col in 0..<copy_len {
+    cells[col] = source_cells[col]
   }
   let mut row = row_template
     .with_wrap(wrap)
@@ -1919,7 +1921,7 @@ fn make_pinned_row(
 /// per-cell copy (and its style/array allocation) that dominated scroll cost.
 fn make_pinned_row_owned(
   row_template : PageRowState,
-  cells : Array[PageCellState],
+  cells : FixedArray[PageCellState],
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
@@ -1947,7 +1949,7 @@ fn reflow_spacer_head_cell() -> PageCellState {
 ///|
 fn apply_cell_flags_to_row(
   row : PageRowState,
-  cells : Array[PageCellState],
+  cells : FixedArray[PageCellState],
 ) -> PageRowState {
   let mut grapheme = false
   let mut styled = false

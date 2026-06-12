@@ -219,8 +219,8 @@ const EmptyCodepoint : UInt = 0
 // A cell is an immutable value: writes produce a new `PageCellState` via the
 // `with_*` builders and the grid stores it back into its slot, rather than
 // mutating fields in place. This keeps cells aliasing-safe (a value can be
-// copied freely) and is the prerequisite for later making the cell a flat
-// `#valtype` so `Array[PageCellState]` becomes a contiguous value buffer.
+// copied freely) and is the prerequisite for the cell being a flat `#valtype`
+// so a row's `FixedArray[PageCellState]` is a contiguous value buffer.
 struct PageCellState {
   // The cell's base codepoint (`EmptyCodepoint` = blank). A cell's background
   // color lives in `style.bg_color` like any other style attribute — there is no
