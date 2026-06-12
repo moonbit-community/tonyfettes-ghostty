@@ -231,13 +231,27 @@ priv enum OscParserState {
 struct OscParser {
   mut state : OscParserState
   mut capturing : Bool
-  mut buffer : Array[Byte]
+  // Accumulate into a `FixedArray[Byte]` + length rather than a growable
+  // `Array[Byte]`: at `end()` the backing array reinterprets to `Bytes` for free
+  // (`%identity`), so the capture freezes to a zero-copy `BytesView` with no
+  // snapshot copy. The array is reused across commands (length 0 = empty).
+  mut buffer : FixedArray[Byte]
+  mut buffer_len : Int
   mut command : Command
 } derive(Debug)
 
 ///|
+const OscCaptureInitCap : Int = 64
+
+///|
 pub fn OscParser::new() -> OscParser {
-  { state: Start, capturing: false, buffer: [], command: Invalid }
+  {
+    state: Start,
+    capturing: false,
+    buffer: FixedArray::make(OscCaptureInitCap, 0),
+    buffer_len: 0,
+    command: Invalid,
+  }
 }
 
 ///|
@@ -249,24 +263,36 @@ pub fn OscParser::deinit(self : OscParser) -> Unit {
 pub fn OscParser::reset(self : OscParser) -> Unit {
   self.state = Start
   self.capturing = false
-  self.buffer = []
+  // An allocating capture (OSC 52/5522/66) can grow the backing array without
+  // bound; don't pin that peak for the parser's lifetime. Only the bounded
+  // steady-state buffer (<= OscMaxBuf) is worth reusing across commands.
+  if self.buffer.length() > OscMaxBuf {
+    self.buffer = FixedArray::make(OscCaptureInitCap, 0)
+  }
+  self.buffer_len = 0
   self.command = Invalid
 }
 
 ///|
 fn OscParser::start_capture(self : OscParser) -> Unit {
   self.capturing = true
-  self.buffer = []
+  self.buffer_len = 0
 }
 
 ///|
 fn OscParser::push_capture(self : OscParser, byte : Byte) -> Unit {
-  if !self.allocating_capture() && self.buffer.length() >= OscMaxBuf - 1 {
+  if !self.allocating_capture() && self.buffer_len >= OscMaxBuf - 1 {
     self.state = Invalid
     self.capturing = false
-    self.buffer = []
+    self.buffer_len = 0
   } else {
-    self.buffer.push(byte)
+    if self.buffer_len == self.buffer.length() {
+      let grown = FixedArray::make(self.buffer.length() * 2, (0 : Byte))
+      self.buffer.blit_to(grown, len=self.buffer_len)
+      self.buffer = grown
+    }
+    self.buffer[self.buffer_len] = byte
+    self.buffer_len += 1
   }
 }
 
@@ -598,9 +624,11 @@ pub fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
 
 ///|
 pub fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
-  // Snapshot the capture buffer into an immutable `Bytes` once; sub-parsers slice
-  // zero-copy `BytesView`s off it and decode through the core UTF-8 decoder.
-  let buffer = Bytes::from_array(self.buffer)
+  // Freeze the capture buffer to a zero-copy `BytesView`: the `FixedArray[Byte]`
+  // reinterprets to `Bytes` for free, then we slice `[0:len]`. Sound because no
+  // view escapes this call — Command fields own their bytes (`.to_owned()` /
+  // decoded `String`), so reusing `self.buffer` next command can't alias them.
+  let buffer = self.buffer.unsafe_reinterpret_as_bytes()[0:self.buffer_len]
   let result : Command? = match self.state {
     Start => None
     Invalid => None
