@@ -807,31 +807,74 @@ fn ScreenGridState::shift_region_down(
 ) -> Unit {
   let rem = bottom - start_y + 1
   let count = min_int(count_req, rem)
-  let full_width = left == 0 && right == self.cols.to_int() - 1
+  if left == 0 && right == self.cols.to_int() - 1 {
+    self.shift_full_width_down(start_y, bottom, count, style)
+    return
+  }
   let mut row_idx = bottom
   while row_idx >= start_y {
     self.row_will_be_shifted(row_idx, left, right, style)
     if row_idx - count >= start_y {
       let src = row_idx - count
       self.row_will_be_shifted(src, left, right, style)
-      if full_width {
-        self.copy_full_row_for_shift(src, row_idx)
-      } else {
-        self.copy_row_region(src, row_idx, left, right)
-      }
-    } else if full_width {
-      self.lines[row_idx] = self.blank_line(style)
+      self.copy_row_region(src, row_idx, left, right)
     } else {
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
-    if !full_width {
-      self.recompute_row_flags(row_idx)
-    }
+    self.recompute_row_flags(row_idx)
     self.lines[row_idx].desc.set_dirty(true)
     if row_idx == start_y {
       break
     }
     row_idx -= 1
+  }
+}
+
+///|
+/// Full-width scroll-down of rows `[start_y, bottom]` by `count`: the bottom
+/// `count` rows scroll off, the survivors slide down, and `count` fresh blank
+/// rows fill the top. The full-width mirror of `shift_full_width_up` — a single
+/// line-array blit plus a hoisted clean/wrap pass, instead of `rem` per-row ref
+/// stores. Unlike scroll-up this path never harvests into history, so the
+/// survivor rows can be cleaned in place freely.
+fn ScreenGridState::shift_full_width_down(
+  self : ScreenGridState,
+  start_y : Int,
+  bottom : Int,
+  count : Int,
+  style : @style.CellStyle,
+) -> Unit {
+  let move_len = bottom - start_y + 1 - count
+  if move_len > 0 {
+    // Survivors are the rows above the scrolled-off block: `[start_y, bottom -
+    // count]`. Detaching each from the row that used to precede it breaks any
+    // wrap link and orphans a trailing SpacerHead, so clean both before moving.
+    let mut src = bottom - count
+    while src >= start_y {
+      self.clean_trailing_spacer_head(src, style)
+      let desc = self.lines[src].desc
+      desc.set_wrap(false)
+      desc.set_wrap_continuation(false)
+      src -= 1
+    }
+    // Slide the survivor line refs down by `count`; blit_to picks the
+    // overlap-safe (here backward) copy direction.
+    self.lines[start_y:bottom - count + 1].blit_to(
+      self.lines,
+      dst_offset=start_y + count,
+    )
+  }
+  // Fresh blank rows scroll in at the top (reusing pooled cell arrays).
+  let mut row_idx = start_y
+  while row_idx < start_y + count {
+    self.lines[row_idx] = self.blank_line(style)
+    row_idx += 1
+  }
+  // Every row's contents moved, so the whole region is dirty.
+  let mut dirty_idx = start_y
+  while dirty_idx <= bottom {
+    self.lines[dirty_idx].desc.set_dirty(true)
+    dirty_idx += 1
   }
 }
 
@@ -1126,24 +1169,6 @@ fn ScreenGridState::clear_row_range(
     col_idx += 1
   }
   self.recompute_row_flags(row_idx)
-}
-
-///|
-fn ScreenGridState::copy_full_row_for_shift(
-  self : ScreenGridState,
-  src_row : Int,
-  dst_row : Int,
-) -> Unit {
-  // Move the whole source line (descriptor + its cells) by reference. The
-  // active grid owns its lines exclusively — scrollback capture deep-copies
-  // rows out (snapshot_scrollback_row / make_pinned_row), so nothing outside
-  // aliases them — and a full-width shift consumes each source slot exactly
-  // once, so no two destination slots can alias the same line. This is an O(1)
-  // line-object move, not an O(cols) per-cell copy.
-  let line = self.lines[src_row]
-  line.desc.set_wrap(false)
-  line.desc.set_wrap_continuation(false)
-  self.lines[dst_row] = line
 }
 
 ///|

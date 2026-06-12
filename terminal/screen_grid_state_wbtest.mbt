@@ -954,6 +954,34 @@ test "screen grid/shift helpers partial regions and split early return" {
 }
 
 ///|
+test "screen grid/full-width scroll down moves survivors and blanks the top" {
+  // Exercises the full-width fast path of shift_region_down: a single line-array
+  // blit, top `count` rows blanked, survivors slid down by `count`. Distinct
+  // from the partial-width region-copy path tested above.
+  let grid = ScreenGridState::new(3, 4)
+  fill_ascii(grid, 0, [b'A', b'B', b'C', b'D'])
+  fill_ascii(grid, 1, [b'E', b'F', b'G', b'H'])
+  fill_ascii(grid, 2, [b'I', b'J', b'K', b'L'])
+  grid.shift_region_down(0, 2, 0, 3, 1, @style.CellStyle::new())
+  guard expect_cell(grid, 0, 0).is_empty() &&
+    expect_cell(grid, 1, 0).codepoint() == b'A'.to_uint() &&
+    expect_cell(grid, 2, 0).codepoint() == b'E'.to_uint() else {
+    fail("expected full-width shift down to blank the top and slide survivors")
+  }
+
+  // count == region height blanks every row.
+  fill_ascii(grid, 0, [b'A', b'B', b'C', b'D'])
+  fill_ascii(grid, 1, [b'E', b'F', b'G', b'H'])
+  fill_ascii(grid, 2, [b'I', b'J', b'K', b'L'])
+  grid.shift_region_down(0, 2, 0, 3, 3, @style.CellStyle::new())
+  guard expect_cell(grid, 0, 0).is_empty() &&
+    expect_cell(grid, 1, 0).is_empty() &&
+    expect_cell(grid, 2, 0).is_empty() else {
+    fail("expected a full-height scroll down to blank every row")
+  }
+}
+
+///|
 test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let grid = ScreenGridState::new(1, 3)
   let mut style = @style.CellStyle::new()
