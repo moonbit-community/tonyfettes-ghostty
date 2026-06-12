@@ -18,7 +18,7 @@ priv struct PageListNode {
 
 ///|
 priv struct PageListRow {
-  row : PageRowState
+  mut row : PageRowState
   cells : Array[PageCellState]
   node : PageListNode
   y : CellCountInt
@@ -194,8 +194,8 @@ fn PageList::row(
   row : CellCountInt,
 ) -> PageRowState? {
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
-    Some(History(index)) => Some(copy_scrollback_row(self.history[index].row))
-    Some(Screen(index)) => Some(copy_scrollback_row(grid.lines[index].desc))
+    Some(History(index)) => Some(self.history[index].row)
+    Some(Screen(index)) => Some(grid.lines[index].desc)
     None => None
   }
 }
@@ -226,8 +226,8 @@ fn PageList::screen_row(
   row : CellCountInt,
 ) -> PageRowState? {
   match self.screen_row_source(grid, row.to_int()) {
-    Some(History(index)) => Some(copy_scrollback_row(self.history[index].row))
-    Some(Screen(index)) => Some(copy_scrollback_row(grid.lines[index].desc))
+    Some(History(index)) => Some(self.history[index].row)
+    Some(Screen(index)) => Some(grid.lines[index].desc)
     None => None
   }
 }
@@ -1217,7 +1217,7 @@ fn PageListReflowCursor::finish(
 ) -> Array[PageListRow] {
   let row = self.row()
   if !pinned_row_is_blank(row) || list.pinned_row_is_tracked(row) {
-    apply_cell_flags_to_row(row.row, row.cells)
+    row.recompute_cell_flags()
     self.rows.push(row)
   }
   self.total_rows = self.rows.length()
@@ -1276,12 +1276,16 @@ fn PageListReflowCursor::reflow_row(
   let mut x = 0
   while x < cols_len {
     if self.pending_wrap {
-      self.node.page.lines[0].desc.set_wrap(true)
+      self.node.page.lines[0].desc = self.node.page.lines[0].desc.with_wrap(
+        true,
+      )
       self.cursor_scroll_or_new_page()
       self.copy_row_metadata(source.row)
-      self.node.page.lines[0].desc.set_wrap_continuation(true)
-      if self.node.page.lines[0].desc.semantic_prompt() == Prompt {
-        self.node.page.lines[0].desc.set_semantic_prompt(PromptContinuation)
+      let desc = self.node.page.lines[0].desc.with_wrap_continuation(true)
+      self.node.page.lines[0].desc = if desc.semantic_prompt() == Prompt {
+        desc.with_semantic_prompt(PromptContinuation)
+      } else {
+        desc
       }
     }
 
@@ -1382,7 +1386,7 @@ fn PageListReflowCursor::cursor_scroll_or_new_page(
   self : PageListReflowCursor,
 ) -> Unit {
   let row = self.row()
-  apply_cell_flags_to_row(row.row, row.cells)
+  row.recompute_cell_flags()
   self.rows.push(row)
   self.node = PageListNode::new(PageListPage::new(1, self.cols))
   self.x = 0
@@ -1399,7 +1403,9 @@ fn PageListReflowCursor::copy_row_metadata(
   // semantic_prompt unconditionally. This keeps strict alignment, including
   // prompt-start loss when column-grow reflow merges Prompt and
   // PromptContinuation source rows into one destination row.
-  self.node.page.lines[0].desc.set_semantic_prompt(row.semantic_prompt())
+  self.node.page.lines[0].desc = self.node.page.lines[0].desc.with_semantic_prompt(
+    row.semantic_prompt(),
+  )
 }
 
 ///|
@@ -1892,15 +1898,15 @@ fn make_pinned_row(
       cells.push(PageCellState::new())
     }
   }
-  let row = copy_scrollback_row(row_template)
-  row.set_wrap(wrap)
-  row.set_wrap_continuation(wrap_continuation)
+  let mut row = row_template
+    .with_wrap(wrap)
+    .with_wrap_continuation(wrap_continuation)
   if update_prompt_continuation &&
     wrap_continuation &&
     row.semantic_prompt() == Prompt {
-    row.set_semantic_prompt(PromptContinuation)
+    row = row.with_semantic_prompt(PromptContinuation)
   }
-  apply_cell_flags_to_row(row, cells)
+  row = apply_cell_flags_to_row(row, cells)
   let node = PageListNode::new({ rows: 1, cols, lines: [{ desc: row, cells }] })
   { row, cells, node, y: 0 }
 }
@@ -1921,14 +1927,14 @@ fn make_pinned_row_owned(
   // No `apply_cell_flags_to_row` rescan here: this owned/harvest path receives
   // the *same* live grid row's descriptor and its exact cells (via
   // `harvest_scrollback_row`), and the grid maintains `grapheme`/`styled`/
-  // `hyperlink` incrementally on every write/erase, so `copy_scrollback_row`
+  // `hyperlink` incrementally on every write/erase, so the template descriptor
   // already carries the correct flags. (`make_pinned_row` keeps the rescan: its
   // cells are rebuilt/reflowed and need not match the template.) Verified by
   // asserting live == rescanned across the suite and the styled/grapheme scroll
   // benchmarks before removing.
-  let row = copy_scrollback_row(row_template)
-  row.set_wrap(wrap)
-  row.set_wrap_continuation(wrap_continuation)
+  let row = row_template
+    .with_wrap(wrap)
+    .with_wrap_continuation(wrap_continuation)
   let node = PageListNode::new({ rows: 1, cols, lines: [{ desc: row, cells }] })
   { row, cells, node, y: 0 }
 }
@@ -1942,7 +1948,7 @@ fn reflow_spacer_head_cell() -> PageCellState {
 fn apply_cell_flags_to_row(
   row : PageRowState,
   cells : Array[PageCellState],
-) -> Unit {
+) -> PageRowState {
   let mut grapheme = false
   let mut styled = false
   let mut hyperlink = false
@@ -1958,9 +1964,18 @@ fn apply_cell_flags_to_row(
       hyperlink = true
     }
   }
-  row.set_grapheme(grapheme)
-  row.set_styled(styled)
-  row.set_hyperlink(hyperlink)
+  row.with_grapheme(grapheme).with_styled(styled).with_hyperlink(hyperlink)
+}
+
+///|
+/// Recompute the cell-derived flags of a pinned row and write the new descriptor
+/// back to both `row` and the row's backing page line. `PageRowState` is a value
+/// type, so the two no longer share storage — keeping them in sync preserves the
+/// aliased behaviour the previous mutable descriptor had.
+fn PageListRow::recompute_cell_flags(self : PageListRow) -> Unit {
+  let desc = apply_cell_flags_to_row(self.row, self.cells)
+  self.row = desc
+  self.node.page.lines[0].desc = desc
 }
 
 ///|
@@ -1981,26 +1996,12 @@ fn screen_grid_from_rows(
   let grid = ScreenGridState::new(rows, cols)
   let row_count = min_int(rows.to_int(), pinned_rows.length())
   for row_idx in 0..<row_count {
-    grid.lines[row_idx].desc = copy_scrollback_row(pinned_rows[row_idx].row)
+    grid.lines[row_idx].desc = pinned_rows[row_idx].row
     for col_idx in 0..<cols.to_int() {
       grid.lines[row_idx].cells[col_idx] = pinned_rows[row_idx].cells[col_idx]
     }
   }
   grid
-}
-
-///|
-fn copy_scrollback_row(row : PageRowState) -> PageRowState {
-  {
-    wrap: row.wrap,
-    wrap_continuation: row.wrap_continuation,
-    grapheme: row.grapheme,
-    styled: row.styled,
-    hyperlink: row.hyperlink,
-    semantic_prompt: row.semantic_prompt,
-    kitty_virtual_placeholder: row.kitty_virtual_placeholder,
-    dirty: row.dirty,
-  }
 }
 
 ///|

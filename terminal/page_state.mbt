@@ -39,135 +39,173 @@ pub fn CellHyperlink::implicit_id(self : CellHyperlink) -> Int? {
 }
 
 ///|
-struct PageRowState {
-  mut wrap : Bool
-  mut wrap_continuation : Bool
-  mut grapheme : Bool
-  mut styled : Bool
-  mut hyperlink : Bool
-  mut semantic_prompt : RowSemanticPrompt
-  mut kitty_virtual_placeholder : Bool
-  mut dirty : Bool
-} derive(Eq, Debug)
+/// Per-row flags packed into a single `Int` bitfield. The previous record had
+/// seven `Bool` fields plus a `RowSemanticPrompt` enum, which the backend lays
+/// out as eight separate int32 words inside a heap object — one allocation and
+/// one `drop_object` per row. As an `Int` newtype it is an unboxed value (no
+/// heap, no refcount) stored inline in `GridLine`, so a blank row scrolled in no
+/// longer allocates a descriptor. Bits 0-6 are the boolean flags; bits 7-8 hold
+/// the three-state semantic-prompt tag. Mutation is value-style: the `with_*`
+/// builders return a new descriptor, so callers reassign the `lines[i].desc`
+/// slot rather than mutating in place.
+struct PageRowState(Int) derive(Eq, Debug)
+
+///|
+const RowWrapBit : Int = 0x01
+
+///|
+const RowWrapContinuationBit : Int = 0x02
+
+///|
+const RowGraphemeBit : Int = 0x04
+
+///|
+const RowStyledBit : Int = 0x08
+
+///|
+const RowHyperlinkBit : Int = 0x10
+
+///|
+const RowKittyPlaceholderBit : Int = 0x20
+
+///|
+const RowDirtyBit : Int = 0x40
+
+///|
+// Semantic-prompt tag lives in bits 7-8; the flag bits are everything below it,
+// so clearing the tag is `& RowFlagMask`.
+const RowSemanticShift : Int = 7
+
+///|
+const RowFlagMask : Int = 0x7F
 
 ///|
 pub fn PageRowState::new() -> PageRowState {
-  {
-    wrap: false,
-    wrap_continuation: false,
-    grapheme: false,
-    styled: false,
-    hyperlink: false,
-    semantic_prompt: None,
-    kitty_virtual_placeholder: false,
-    dirty: false,
+  0
+}
+
+///|
+fn PageRowState::with_bit(
+  self : PageRowState,
+  mask : Int,
+  value : Bool,
+) -> PageRowState {
+  if value {
+    self.0 | mask
+  } else if (self.0 & mask) != 0 {
+    self.0 ^ mask
+  } else {
+    self.0
   }
 }
 
 ///|
 pub fn PageRowState::wrap(self : PageRowState) -> Bool {
-  self.wrap
+  (self.0 & RowWrapBit) != 0
 }
 
 ///|
-pub fn PageRowState::set_wrap(self : PageRowState, value : Bool) -> Unit {
-  self.wrap = value
+fn PageRowState::with_wrap(self : PageRowState, value : Bool) -> PageRowState {
+  self.with_bit(RowWrapBit, value)
 }
 
 ///|
 pub fn PageRowState::wrap_continuation(self : PageRowState) -> Bool {
-  self.wrap_continuation
+  (self.0 & RowWrapContinuationBit) != 0
 }
 
 ///|
-pub fn PageRowState::set_wrap_continuation(
+fn PageRowState::with_wrap_continuation(
   self : PageRowState,
   value : Bool,
-) -> Unit {
-  self.wrap_continuation = value
+) -> PageRowState {
+  self.with_bit(RowWrapContinuationBit, value)
 }
 
 ///|
 pub fn PageRowState::grapheme(self : PageRowState) -> Bool {
-  self.grapheme
+  (self.0 & RowGraphemeBit) != 0
 }
 
 ///|
-pub fn PageRowState::set_grapheme(self : PageRowState, value : Bool) -> Unit {
-  self.grapheme = value
+fn PageRowState::with_grapheme(
+  self : PageRowState,
+  value : Bool,
+) -> PageRowState {
+  self.with_bit(RowGraphemeBit, value)
 }
 
 ///|
 pub fn PageRowState::styled(self : PageRowState) -> Bool {
-  self.styled
+  (self.0 & RowStyledBit) != 0
 }
 
 ///|
-pub fn PageRowState::set_styled(self : PageRowState, value : Bool) -> Unit {
-  self.styled = value
+fn PageRowState::with_styled(self : PageRowState, value : Bool) -> PageRowState {
+  self.with_bit(RowStyledBit, value)
 }
 
 ///|
 pub fn PageRowState::hyperlink(self : PageRowState) -> Bool {
-  self.hyperlink
+  (self.0 & RowHyperlinkBit) != 0
 }
 
 ///|
-pub fn PageRowState::set_hyperlink(self : PageRowState, value : Bool) -> Unit {
-  self.hyperlink = value
+fn PageRowState::with_hyperlink(
+  self : PageRowState,
+  value : Bool,
+) -> PageRowState {
+  self.with_bit(RowHyperlinkBit, value)
 }
 
 ///|
 pub fn PageRowState::semantic_prompt(self : PageRowState) -> RowSemanticPrompt {
-  self.semantic_prompt
+  match (self.0 >> RowSemanticShift) & 0x3 {
+    1 => Prompt
+    2 => PromptContinuation
+    _ => None
+  }
 }
 
 ///|
-pub fn PageRowState::set_semantic_prompt(
+fn PageRowState::with_semantic_prompt(
   self : PageRowState,
   value : RowSemanticPrompt,
-) -> Unit {
-  self.semantic_prompt = value
+) -> PageRowState {
+  let code = match value {
+    None => 0
+    Prompt => 1
+    PromptContinuation => 2
+  }
+  (self.0 & RowFlagMask) | (code << RowSemanticShift)
 }
 
 ///|
 pub fn PageRowState::kitty_virtual_placeholder(self : PageRowState) -> Bool {
-  self.kitty_virtual_placeholder
+  (self.0 & RowKittyPlaceholderBit) != 0
 }
 
 ///|
-pub fn PageRowState::set_kitty_virtual_placeholder(
+fn PageRowState::with_kitty_virtual_placeholder(
   self : PageRowState,
   value : Bool,
-) -> Unit {
-  self.kitty_virtual_placeholder = value
+) -> PageRowState {
+  self.with_bit(RowKittyPlaceholderBit, value)
 }
 
 ///|
 pub fn PageRowState::dirty(self : PageRowState) -> Bool {
-  self.dirty
+  (self.0 & RowDirtyBit) != 0
 }
 
 ///|
-pub fn PageRowState::set_dirty(self : PageRowState, value : Bool) -> Unit {
-  self.dirty = value
+fn PageRowState::with_dirty(self : PageRowState, value : Bool) -> PageRowState {
+  self.with_bit(RowDirtyBit, value)
 }
 
 ///|
 pub fn PageRowState::managed_memory(self : PageRowState) -> Bool {
-  self.styled || self.hyperlink || self.grapheme
-}
-
-///|
-pub fn PageRowState::full_reset(self : PageRowState) -> Unit {
-  self.wrap = false
-  self.wrap_continuation = false
-  self.grapheme = false
-  self.styled = false
-  self.hyperlink = false
-  self.semantic_prompt = None
-  self.kitty_virtual_placeholder = false
-  self.dirty = false
+  (self.0 & (RowStyledBit | RowHyperlinkBit | RowGraphemeBit)) != 0
 }
 
 ///|

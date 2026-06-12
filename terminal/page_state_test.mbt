@@ -15,44 +15,6 @@ test "page row state/defaults and managed memory" {
 }
 
 ///|
-test "page row state/flags semantic prompt and full reset" {
-  let row = PageRowState::new()
-  row.set_wrap(true)
-  row.set_wrap_continuation(true)
-  row.set_grapheme(true)
-  row.set_styled(true)
-  row.set_hyperlink(true)
-  row.set_semantic_prompt(PromptContinuation)
-  row.set_kitty_virtual_placeholder(true)
-  row.set_dirty(true)
-
-  guard row.wrap() &&
-    row.wrap_continuation() &&
-    row.grapheme() &&
-    row.styled() &&
-    row.hyperlink() &&
-    row.semantic_prompt() == PromptContinuation &&
-    row.kitty_virtual_placeholder() &&
-    row.dirty() &&
-    row.managed_memory() else {
-    fail("expected mutated page row state")
-  }
-
-  row.full_reset()
-  guard !row.wrap() &&
-    !row.wrap_continuation() &&
-    !row.grapheme() &&
-    !row.styled() &&
-    !row.hyperlink() &&
-    row.semantic_prompt() == None &&
-    !row.kitty_virtual_placeholder() &&
-    !row.dirty() &&
-    !row.managed_memory() else {
-    fail("expected page row full reset")
-  }
-}
-
-///|
 test "page cell state/defaults and zero helpers" {
   let cell = PageCellState::new()
   guard cell.codepoint() == 0U &&

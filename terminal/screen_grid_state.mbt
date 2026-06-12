@@ -24,9 +24,10 @@ priv struct GridLine {
 
 ///|
 fn GridLine::new(cols : Int) -> GridLine {
-  // Allocate the row's cells in one shot. `Array::make` fills every slot with a
-  // copy of the (immutable value) blank cell — a single allocation, versus a
-  // `push` loop that reallocs and ref-blits the growing buffer ~log2(cols) times.
+  // Allocate the row's cells in one shot. `Array::make` fills every slot
+  // with a copy of the (immutable value) blank cell — a single allocation,
+  // versus a `push` loop that reallocs and ref-blits the growing buffer
+  // ~log2(cols) times.
   {
     desc: PageRowState::new(),
     cells: Array::make(cols, default_page_cell_state),
@@ -91,8 +92,7 @@ fn ScreenGridState::blank_line(
       for index in 0..<cells.length() {
         cells[index] = blank_cell(style)
       }
-      let desc = PageRowState::new()
-      desc.set_styled(blank_row_is_styled(style))
+      let desc = PageRowState::new().with_styled(blank_row_is_styled(style))
       { desc, cells }
     }
     None => blank_grid_line(self.cols.to_int(), style)
@@ -109,6 +109,21 @@ fn ScreenGridState::row(
     None
   } else {
     Some(self.lines[idx].desc)
+  }
+}
+
+///|
+/// Set the semantic-prompt tag on a row by index, bounds-checked. `PageRowState`
+/// is a value type, so callers cannot mutate the descriptor returned by `row`
+/// in place — they go through here to write the `lines[idx].desc` slot.
+fn ScreenGridState::set_row_semantic_prompt(
+  self : ScreenGridState,
+  row : CellCountInt,
+  prompt : RowSemanticPrompt,
+) -> Unit {
+  let idx = row.to_int()
+  if idx >= 0 && idx < self.rows.to_int() {
+    self.lines[idx].desc = self.lines[idx].desc.with_semantic_prompt(prompt)
   }
 }
 
@@ -167,7 +182,8 @@ fn ScreenGridState::print(
 
           self.apply_row_prompt(cursor.y.to_int(), row_prompt)
           if right_limit == self.cols.to_int() {
-            self.lines[cursor.y.to_int()].desc.set_wrap(true)
+            let cy = cursor.y.to_int()
+            self.lines[cy].desc = self.lines[cy].desc.with_wrap(true)
             self.print_cell(
               cursor,
               0U,
@@ -306,8 +322,9 @@ fn ScreenGridState::append_grapheme(
       return
     }
     self.lines[row_idx].cells[target_x] = cell.with_grapheme_appended(codepoint)
-    self.lines[row_idx].desc.set_grapheme(true)
-    self.lines[row_idx].desc.set_dirty(true)
+    self.lines[row_idx].desc = self.lines[row_idx].desc
+      .with_grapheme(true)
+      .with_dirty(true)
   }
 }
 
@@ -644,8 +661,9 @@ fn ScreenGridState::decaln(
     // flags, so set it here — otherwise a styled DECALN row scrolled into
     // scrollback would report `styled == false`, since the harvest path trusts
     // the live descriptor flag instead of rescanning the cells.
-    self.lines[row_idx].desc.set_styled(!style.is_default())
-    self.lines[row_idx].desc.set_dirty(true)
+    self.lines[row_idx].desc = self.lines[row_idx].desc
+      .with_styled(!style.is_default())
+      .with_dirty(true)
     row_idx += 1
   }
 }
@@ -655,7 +673,7 @@ fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
   let mut row_idx = 0
   while row_idx < self.rows.to_int() {
     self.clear_full_row(row_idx, @style.CellStyle::new(), false)
-    self.lines[row_idx].desc.set_dirty(false)
+    self.lines[row_idx].desc = self.lines[row_idx].desc.with_dirty(false)
     row_idx += 1
   }
 }
@@ -738,17 +756,17 @@ fn ScreenGridState::update_row_flags_after_write(
     self.recompute_row_flags(row_idx)
     return
   }
-  let row = self.lines[row_idx].desc
+  let mut row = self.lines[row_idx].desc
   if has_grapheme {
-    row.set_grapheme(true)
+    row = row.with_grapheme(true)
   }
   if has_styled {
-    row.set_styled(true)
+    row = row.with_styled(true)
   }
   if has_hyperlink {
-    row.set_hyperlink(true)
+    row = row.with_hyperlink(true)
   }
-  row.set_kitty_virtual_placeholder(false)
+  self.lines[row_idx].desc = row.with_kitty_virtual_placeholder(false)
 }
 
 ///|
@@ -761,17 +779,20 @@ fn ScreenGridState::print_wrap(
   let row_idx = cursor.y.to_int()
   let mark_wrap = cursor.x.to_int() == self.cols.to_int() - 1
   if mark_wrap {
-    self.lines[row_idx].desc.set_wrap(true)
+    self.lines[row_idx].desc = self.lines[row_idx].desc.with_wrap(true)
   }
 
   cursor.pending_wrap = false
   self.index(cursor, style)
   cursor.x = cursor.left_margin
+  let cy = cursor.y.to_int()
   if semantic_content == Prompt {
-    self.lines[cursor.y.to_int()].desc.set_semantic_prompt(PromptContinuation)
+    self.lines[cy].desc = self.lines[cy].desc.with_semantic_prompt(
+      PromptContinuation,
+    )
   }
   if mark_wrap {
-    self.lines[cursor.y.to_int()].desc.set_wrap_continuation(true)
+    self.lines[cy].desc = self.lines[cy].desc.with_wrap_continuation(true)
   }
 }
 
@@ -822,7 +843,7 @@ fn ScreenGridState::shift_region_down(
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
     self.recompute_row_flags(row_idx)
-    self.lines[row_idx].desc.set_dirty(true)
+    self.lines[row_idx].desc = self.lines[row_idx].desc.with_dirty(true)
     if row_idx == start_y {
       break
     }
@@ -852,9 +873,9 @@ fn ScreenGridState::shift_full_width_down(
     let mut src = bottom - count
     while src >= start_y {
       self.clean_trailing_spacer_head(src, style)
-      let desc = self.lines[src].desc
-      desc.set_wrap(false)
-      desc.set_wrap_continuation(false)
+      self.lines[src].desc = self.lines[src].desc
+        .with_wrap(false)
+        .with_wrap_continuation(false)
       src -= 1
     }
     // Slide the survivor line refs down by `count`; blit_to picks the
@@ -873,7 +894,7 @@ fn ScreenGridState::shift_full_width_down(
   // Every row's contents moved, so the whole region is dirty.
   let mut dirty_idx = start_y
   while dirty_idx <= bottom {
-    self.lines[dirty_idx].desc.set_dirty(true)
+    self.lines[dirty_idx].desc = self.lines[dirty_idx].desc.with_dirty(true)
     dirty_idx += 1
   }
 }
@@ -908,7 +929,7 @@ fn ScreenGridState::shift_region_up(
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
     self.recompute_row_flags(row_idx)
-    self.lines[row_idx].desc.set_dirty(true)
+    self.lines[row_idx].desc = self.lines[row_idx].desc.with_dirty(true)
     row_idx += 1
   }
 }
@@ -940,9 +961,9 @@ fn ScreenGridState::shift_full_width_up(
     let mut src = start_y + count
     while src <= bottom {
       self.clean_trailing_spacer_head(src, style)
-      let desc = self.lines[src].desc
-      desc.set_wrap(false)
-      desc.set_wrap_continuation(false)
+      self.lines[src].desc = self.lines[src].desc
+        .with_wrap(false)
+        .with_wrap_continuation(false)
       src += 1
     }
     // Slide the survivor line refs up by `count`. blit_to overwrites the
@@ -964,7 +985,7 @@ fn ScreenGridState::shift_full_width_up(
   // Every row's contents moved, so the whole region is dirty.
   let mut dirty_idx = start_y
   while dirty_idx <= bottom {
-    self.lines[dirty_idx].desc.set_dirty(true)
+    self.lines[dirty_idx].desc = self.lines[dirty_idx].desc.with_dirty(true)
     dirty_idx += 1
   }
 }
@@ -1077,9 +1098,11 @@ fn ScreenGridState::cursor_reset_wrap(
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   cursor.pending_wrap = false
-  self.lines[row_idx].desc.set_wrap(false)
+  self.lines[row_idx].desc = self.lines[row_idx].desc.with_wrap(false)
   if row_idx + 1 < self.rows.to_int() {
-    self.lines[row_idx + 1].desc.set_wrap_continuation(false)
+    self.lines[row_idx + 1].desc = self.lines[row_idx + 1].desc.with_wrap_continuation(
+      false,
+    )
   }
   let end_cell = self.lines[row_idx].cells[self.cols.to_int() - 1]
   if end_cell.wide() == SpacerHead {
@@ -1098,7 +1121,8 @@ fn ScreenGridState::cursor_mark_dirty(
   self : ScreenGridState,
   cursor : TerminalCursorState,
 ) -> Unit {
-  self.lines[cursor.y.to_int()].desc.set_dirty(true)
+  let cy = cursor.y.to_int()
+  self.lines[cy].desc = self.lines[cy].desc.with_dirty(true)
 }
 
 ///|
@@ -1108,7 +1132,9 @@ fn ScreenGridState::apply_row_prompt(
   row_prompt : RowSemanticPrompt,
 ) -> Unit {
   if row_prompt != None {
-    self.lines[row_idx].desc.set_semantic_prompt(row_prompt)
+    self.lines[row_idx].desc = self.lines[row_idx].desc.with_semantic_prompt(
+      row_prompt,
+    )
   }
 }
 
@@ -1142,12 +1168,14 @@ fn ScreenGridState::clear_full_row(
       self.set_cell(row_idx, col_idx, blank_cell(style))
       col_idx += 1
     }
-    self.lines[row_idx].desc.full_reset()
-    // full_reset clears `styled`, but a colored erase fills the row with
-    // bg-styled blanks; restore the flag so it tracks the cells.
-    self.lines[row_idx].desc.set_styled(blank_row_is_styled(style))
+    // Reset to a blank descriptor, then restore `styled`: `full_reset` cleared
+    // it, but a colored erase fills the row with bg-styled blanks, so the flag
+    // must track the cells.
+    self.lines[row_idx].desc = PageRowState::new().with_styled(
+      blank_row_is_styled(style),
+    )
   }
-  self.lines[row_idx].desc.set_dirty(true)
+  self.lines[row_idx].desc = self.lines[row_idx].desc.with_dirty(true)
 }
 
 ///|
@@ -1245,7 +1273,6 @@ fn ScreenGridState::recompute_row_flags(
   self : ScreenGridState,
   row_idx : Int,
 ) -> Unit {
-  let row = self.lines[row_idx].desc
   let mut grapheme = false
   let mut styled = false
   let mut hyperlink = false
@@ -1263,10 +1290,11 @@ fn ScreenGridState::recompute_row_flags(
     }
     col_idx += 1
   }
-  row.set_grapheme(grapheme)
-  row.set_styled(styled)
-  row.set_hyperlink(hyperlink)
-  row.set_kitty_virtual_placeholder(false)
+  self.lines[row_idx].desc = self.lines[row_idx].desc
+    .with_grapheme(grapheme)
+    .with_styled(styled)
+    .with_hyperlink(hyperlink)
+    .with_kitty_virtual_placeholder(false)
 }
 
 ///|
@@ -1355,7 +1383,6 @@ fn blank_grid_line(cols : Int, style : @style.CellStyle) -> GridLine {
   // array by `push` (which reallocs and ref-blits ~log2(cols) times). This is the
   // hot path for a line feed when the cell pool is empty (scrollback not yet full).
   let cells = Array::make(cols, blank_cell(style))
-  let desc = PageRowState::new()
-  desc.set_styled(blank_row_is_styled(style))
+  let desc = PageRowState::new().with_styled(blank_row_is_styled(style))
   { desc, cells }
 }

@@ -206,8 +206,9 @@ fn RenderState::snapshot_all_rows(
   let row_cells : Array[Array[PageCellState]] = []
   let mut row_idx = 0
   while row_idx < rows.to_int() {
-    let snapshot = snapshot_render_row(terminal, row_idx.to_uint16())
-    snapshot.set_dirty(true)
+    let snapshot = snapshot_render_row(terminal, row_idx.to_uint16()).with_dirty(
+      true,
+    )
     row_states.push(snapshot)
     row_cells.push(
       snapshot_render_cells(terminal, row_idx.to_uint16(), columns),
@@ -232,8 +233,7 @@ fn RenderState::update_changed_rows(
     let cells = snapshot_render_cells(terminal, row_idx.to_uint16(), columns)
     if !render_row_snapshot_equals(self.row_states[row_idx], snapshot) ||
       !render_row_cells_equal(self.row_cells[row_idx], cells) {
-      snapshot.set_dirty(true)
-      self.row_states[row_idx] = snapshot
+      self.row_states[row_idx] = snapshot.with_dirty(true)
       self.row_cells[row_idx] = cells
       any_row_dirty = true
     }
@@ -359,13 +359,9 @@ fn render_row_snapshot_equals(
   left : PageRowState,
   right : PageRowState,
 ) -> Bool {
-  left.wrap == right.wrap &&
-  left.wrap_continuation == right.wrap_continuation &&
-  left.grapheme == right.grapheme &&
-  left.styled == right.styled &&
-  left.hyperlink == right.hyperlink &&
-  left.semantic_prompt == right.semantic_prompt &&
-  left.kitty_virtual_placeholder == right.kitty_virtual_placeholder
+  // Compare every flag *except* `dirty`, which tracks render bookkeeping rather
+  // than content: force the dirty bit on in both so it never affects equality.
+  (left.0 | RowDirtyBit) == (right.0 | RowDirtyBit)
 }
 
 ///|
@@ -392,7 +388,7 @@ fn render_row_at(state : RenderState, row_idx : Int) -> PageRowState? {
   if row_idx < 0 || row_idx >= state.row_states.length() {
     None
   } else {
-    Some(copy_scrollback_row(state.row_states[row_idx]))
+    Some(state.row_states[row_idx])
   }
 }
 
@@ -414,7 +410,7 @@ fn render_set_row_dirty_at(
   if row_idx < 0 || row_idx >= state.row_states.length() {
     false
   } else {
-    state.row_states[row_idx].set_dirty(value)
+    state.row_states[row_idx] = state.row_states[row_idx].with_dirty(value)
     true
   }
 }

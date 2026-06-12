@@ -41,3 +41,48 @@ test "page cell state/a fresh cell has no grapheme extras" {
     fail("expected a fresh cell to have no grapheme extras")
   }
 }
+
+///|
+/// White-box: the `with_*` builders are package-private (no external caller sets
+/// row flags), so this exercises the `Int` bitfield packing/unpacking directly.
+test "page row state/with builders pack and unpack flags" {
+  let row = PageRowState::new()
+    .with_wrap(true)
+    .with_wrap_continuation(true)
+    .with_grapheme(true)
+    .with_styled(true)
+    .with_hyperlink(true)
+    .with_semantic_prompt(PromptContinuation)
+    .with_kitty_virtual_placeholder(true)
+    .with_dirty(true)
+  guard row.wrap() &&
+    row.wrap_continuation() &&
+    row.grapheme() &&
+    row.styled() &&
+    row.hyperlink() &&
+    row.semantic_prompt() == PromptContinuation &&
+    row.kitty_virtual_placeholder() &&
+    row.dirty() &&
+    row.managed_memory() else {
+    fail("expected every flag set")
+  }
+
+  // Clearing one bit leaves the others untouched.
+  let cleared = row.with_styled(false).with_semantic_prompt(Prompt)
+  guard cleared.wrap() &&
+    !cleared.styled() &&
+    cleared.hyperlink() &&
+    cleared.semantic_prompt() == Prompt &&
+    cleared.managed_memory() else {
+    fail("expected a single-bit clear to preserve the rest")
+  }
+
+  // A fresh descriptor is the all-zero value (the old `full_reset`).
+  let blank = PageRowState::new()
+  guard !blank.wrap() &&
+    !blank.dirty() &&
+    blank.semantic_prompt() == None &&
+    !blank.managed_memory() else {
+    fail("expected a blank descriptor to clear every flag")
+  }
+}
