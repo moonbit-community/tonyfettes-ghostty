@@ -280,13 +280,13 @@ fn[H : StreamHandler] Stream::next_utf8(self : Stream[H], byte : Byte) -> Unit {
     return
   }
 
-  let (value, consumed) = self.utf8decoder.next(byte)
-  if value is Some(codepoint) {
+  let decoded = self.utf8decoder.next(byte)
+  if decoded.value is Some(codepoint) {
     self.handle_codepoint(codepoint)
   }
-  if !consumed {
-    let (retry, retry_consumed) = self.utf8decoder.next(byte)
-    if retry_consumed && retry is Some(codepoint) {
+  if !decoded.consumed {
+    let retry = self.utf8decoder.next(byte)
+    if retry.consumed && retry.value is Some(codepoint) {
       self.handle_codepoint(codepoint)
     }
   }
