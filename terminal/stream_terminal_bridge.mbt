@@ -1643,10 +1643,7 @@ fn StreamTerminalBridgeState::apply_semantic_prompt(
       self.semantic.set_output()
       self.semantic.clear_row_prompt()
       if self.cursor.x() == 0 {
-        match self.grid.row(self.cursor.y()) {
-          Some(row) => row.set_semantic_prompt(None)
-          None => ()
-        }
+        self.grid.set_row_semantic_prompt(self.cursor.y(), None)
       }
     }
     EndCommand => self.semantic.set_output()
@@ -1675,10 +1672,7 @@ fn StreamTerminalBridgeState::semantic_prompt_fresh_line(
 fn StreamTerminalBridgeState::sync_current_row_prompt(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  match self.grid.row(self.cursor.y()) {
-    Some(row) => row.set_semantic_prompt(self.semantic.row_prompt())
-    None => ()
-  }
+  self.grid.set_row_semantic_prompt(self.cursor.y(), self.semantic.row_prompt())
 }
 
 ///|
@@ -1695,10 +1689,7 @@ fn StreamTerminalBridgeState::apply_semantic_after_newline(
   }
 
   self.semantic.row_prompt = PromptContinuation
-  match self.grid.row(self.cursor.y()) {
-    Some(row) => row.set_semantic_prompt(PromptContinuation)
-    None => ()
-  }
+  self.grid.set_row_semantic_prompt(self.cursor.y(), PromptContinuation)
 }
 
 ///|
