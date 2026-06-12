@@ -3,5 +3,4 @@ import {
   "moonbitlang/core/encoding/utf8",
   "tonyfettes/ghostty/terminal/ascii",
   "tonyfettes/ghostty/terminal/color",
-  "tonyfettes/ghostty/terminal/utf8_decoder",
 }

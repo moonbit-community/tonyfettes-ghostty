@@ -598,44 +598,47 @@ pub fn OscParser::next(self : OscParser, byte : Byte) -> Unit {
 
 ///|
 pub fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
+  // Snapshot the capture buffer into an immutable `Bytes` once; sub-parsers slice
+  // zero-copy `BytesView`s off it and decode through the core UTF-8 decoder.
+  let buffer = Bytes::from_array(self.buffer)
   let result : Command? = match self.state {
     Start => None
     Invalid => None
     Prefix0 =>
       captured_command(
         self.capturing,
-        ChangeWindowTitle(captured_string(self.buffer)),
+        ChangeWindowTitle(captured_string(buffer)),
       )
     Prefix1 =>
       captured_command(
         self.capturing,
-        ChangeWindowIcon(captured_string(self.buffer)),
+        ChangeWindowIcon(captured_string(buffer)),
       )
     Prefix2 =>
       captured_command(
         self.capturing,
-        ChangeWindowTitle(captured_string(self.buffer)),
+        ChangeWindowTitle(captured_string(buffer)),
       )
     Prefix3 => None
     Prefix30 => None
     Prefix300 => None
     Prefix3008 =>
       if self.capturing {
-        parse_context_signal_command(self.buffer)
+        parse_context_signal_command(buffer)
       } else {
         None
       }
     Prefix21 =>
       if self.capturing {
-        parse_kitty_color_command(self.buffer, terminator_ch)
+        parse_kitty_color_command(buffer, terminator_ch)
       } else {
         None
       }
-    Prefix4 => Some(parse_color_command(Prefix4, self.buffer, terminator_ch))
-    Prefix5 => Some(parse_color_command(Prefix5, self.buffer, terminator_ch))
+    Prefix4 => Some(parse_color_command(Prefix4, buffer, terminator_ch))
+    Prefix5 => Some(parse_color_command(Prefix5, buffer, terminator_ch))
     Prefix52 =>
       if self.capturing {
-        parse_clipboard_command(self.buffer)
+        parse_clipboard_command(buffer)
       } else {
         None
       }
@@ -643,84 +646,73 @@ pub fn OscParser::end(self : OscParser, terminator_ch : Byte?) -> Command? {
     Prefix552 => None
     Prefix5522 =>
       if self.capturing {
-        Some(parse_kitty_clipboard_command(self.buffer, terminator_ch))
+        Some(parse_kitty_clipboard_command(buffer, terminator_ch))
       } else {
         None
       }
     Prefix6 => None
     Prefix66 =>
       if self.capturing {
-        parse_kitty_text_sizing_command(self.buffer, terminator_ch)
+        parse_kitty_text_sizing_command(buffer, terminator_ch)
       } else {
         None
       }
     Prefix7 =>
-      captured_command(self.capturing, ReportPwd(captured_string(self.buffer)))
+      captured_command(self.capturing, ReportPwd(captured_string(buffer)))
     Prefix77 => None
     Prefix777 =>
       if self.capturing {
-        parse_rxvt_extension_command(self.buffer)
+        parse_rxvt_extension_command(buffer)
       } else {
         None
       }
     Prefix8 =>
       if self.capturing {
-        parse_hyperlink_command(self.buffer)
+        parse_hyperlink_command(buffer)
       } else {
         None
       }
     Prefix9 =>
       if self.capturing {
-        Some(parse_osc9_command(self.buffer))
+        Some(parse_osc9_command(buffer))
       } else {
         None
       }
-    Prefix10 => Some(parse_color_command(Prefix10, self.buffer, terminator_ch))
-    Prefix11 => Some(parse_color_command(Prefix11, self.buffer, terminator_ch))
-    Prefix12 => Some(parse_color_command(Prefix12, self.buffer, terminator_ch))
-    Prefix13 => Some(parse_color_command(Prefix13, self.buffer, terminator_ch))
+    Prefix10 => Some(parse_color_command(Prefix10, buffer, terminator_ch))
+    Prefix11 => Some(parse_color_command(Prefix11, buffer, terminator_ch))
+    Prefix12 => Some(parse_color_command(Prefix12, buffer, terminator_ch))
+    Prefix13 => Some(parse_color_command(Prefix13, buffer, terminator_ch))
     Prefix133 =>
       if self.capturing {
-        parse_semantic_prompt_command(self.buffer)
+        parse_semantic_prompt_command(buffer)
       } else {
         None
       }
     Prefix1337 =>
       if self.capturing {
-        parse_iterm2_command(self.buffer)
+        parse_iterm2_command(buffer)
       } else {
         None
       }
-    Prefix14 => Some(parse_color_command(Prefix14, self.buffer, terminator_ch))
-    Prefix15 => Some(parse_color_command(Prefix15, self.buffer, terminator_ch))
-    Prefix16 => Some(parse_color_command(Prefix16, self.buffer, terminator_ch))
-    Prefix17 => Some(parse_color_command(Prefix17, self.buffer, terminator_ch))
-    Prefix18 => Some(parse_color_command(Prefix18, self.buffer, terminator_ch))
-    Prefix19 => Some(parse_color_command(Prefix19, self.buffer, terminator_ch))
+    Prefix14 => Some(parse_color_command(Prefix14, buffer, terminator_ch))
+    Prefix15 => Some(parse_color_command(Prefix15, buffer, terminator_ch))
+    Prefix16 => Some(parse_color_command(Prefix16, buffer, terminator_ch))
+    Prefix17 => Some(parse_color_command(Prefix17, buffer, terminator_ch))
+    Prefix18 => Some(parse_color_command(Prefix18, buffer, terminator_ch))
+    Prefix19 => Some(parse_color_command(Prefix19, buffer, terminator_ch))
     Prefix22 =>
-      captured_command(self.capturing, MouseShape(captured_string(self.buffer)))
-    Prefix104 =>
-      Some(parse_color_command(Prefix104, self.buffer, terminator_ch))
-    Prefix110 =>
-      Some(parse_color_command(Prefix110, self.buffer, terminator_ch))
-    Prefix111 =>
-      Some(parse_color_command(Prefix111, self.buffer, terminator_ch))
-    Prefix112 =>
-      Some(parse_color_command(Prefix112, self.buffer, terminator_ch))
-    Prefix113 =>
-      Some(parse_color_command(Prefix113, self.buffer, terminator_ch))
-    Prefix114 =>
-      Some(parse_color_command(Prefix114, self.buffer, terminator_ch))
-    Prefix115 =>
-      Some(parse_color_command(Prefix115, self.buffer, terminator_ch))
-    Prefix116 =>
-      Some(parse_color_command(Prefix116, self.buffer, terminator_ch))
-    Prefix117 =>
-      Some(parse_color_command(Prefix117, self.buffer, terminator_ch))
-    Prefix118 =>
-      Some(parse_color_command(Prefix118, self.buffer, terminator_ch))
-    Prefix119 =>
-      Some(parse_color_command(Prefix119, self.buffer, terminator_ch))
+      captured_command(self.capturing, MouseShape(captured_string(buffer)))
+    Prefix104 => Some(parse_color_command(Prefix104, buffer, terminator_ch))
+    Prefix110 => Some(parse_color_command(Prefix110, buffer, terminator_ch))
+    Prefix111 => Some(parse_color_command(Prefix111, buffer, terminator_ch))
+    Prefix112 => Some(parse_color_command(Prefix112, buffer, terminator_ch))
+    Prefix113 => Some(parse_color_command(Prefix113, buffer, terminator_ch))
+    Prefix114 => Some(parse_color_command(Prefix114, buffer, terminator_ch))
+    Prefix115 => Some(parse_color_command(Prefix115, buffer, terminator_ch))
+    Prefix116 => Some(parse_color_command(Prefix116, buffer, terminator_ch))
+    Prefix117 => Some(parse_color_command(Prefix117, buffer, terminator_ch))
+    Prefix118 => Some(parse_color_command(Prefix118, buffer, terminator_ch))
+    Prefix119 => Some(parse_color_command(Prefix119, buffer, terminator_ch))
   }
   self.reset()
   result
@@ -736,16 +728,14 @@ fn captured_command(capturing : Bool, command : Command) -> Command? {
 }
 
 ///|
-fn parse_hyperlink_command(buffer : Array[Byte]) -> Command? {
+fn parse_hyperlink_command(buffer : BytesView) -> Command? {
   let params_end = match @ascii.find_byte(buffer, 0, buffer.length(), b';') {
     Some(index) => index
     None => return None
   }
 
   let id = parse_hyperlink_id(buffer, params_end)
-  let uri = captured_string(
-    copy_bytes_range(buffer, params_end + 1, buffer.length()),
-  )
+  let uri = captured_string(buffer[params_end + 1:buffer.length()])
   if uri == "" {
     match id {
       Some(_) => None
@@ -757,7 +747,7 @@ fn parse_hyperlink_command(buffer : Array[Byte]) -> Command? {
 }
 
 ///|
-fn parse_hyperlink_id(buffer : Array[Byte], end_ : Int) -> String? {
+fn parse_hyperlink_id(buffer : BytesView, end_ : Int) -> String? {
   let mut result : String? = None
   let mut start = 0
   while start <= end_ {
@@ -770,9 +760,7 @@ fn parse_hyperlink_id(buffer : Array[Byte], end_ : Int) -> String? {
       Some(eq_index) =>
         if @ascii.slice_equals_ascii(buffer, start, eq_index, "id") &&
           eq_index + 1 < segment_end {
-          result = Some(
-            captured_string(copy_bytes_range(buffer, eq_index + 1, segment_end)),
-          )
+          result = Some(captured_string(buffer[eq_index + 1:segment_end]))
         }
       None => ()
     }
@@ -786,7 +774,7 @@ fn parse_hyperlink_id(buffer : Array[Byte], end_ : Int) -> String? {
 }
 
 ///|
-fn parse_clipboard_command(buffer : Array[Byte]) -> Command? {
+fn parse_clipboard_command(buffer : BytesView) -> Command? {
   if buffer.length() == 0 {
     return None
   }
@@ -795,7 +783,7 @@ fn parse_clipboard_command(buffer : Array[Byte]) -> Command? {
     return Some(
       ClipboardContents({
         kind: b'c',
-        data: captured_string(copy_bytes_range(buffer, 1, buffer.length())),
+        data: captured_string(buffer[1:buffer.length()]),
       }),
     )
   }
@@ -807,47 +795,23 @@ fn parse_clipboard_command(buffer : Array[Byte]) -> Command? {
   Some(
     ClipboardContents({
       kind: buffer[0],
-      data: captured_string(copy_bytes_range(buffer, 2, buffer.length())),
+      data: captured_string(buffer[2:buffer.length()]),
     }),
   )
 }
 
 ///|
-fn copy_bytes_range(
-  buffer : Array[Byte],
-  start : Int,
-  end_ : Int,
-) -> Array[Byte] {
-  let result : Array[Byte] = []
-  let mut index = start
-  while index < end_ {
-    result.push(buffer[index])
-    index += 1
-  }
-  result
-}
-
-///|
-fn captured_string(buffer : Array[Byte]) -> String {
-  let decoder = @utf8_decoder.Utf8Decoder::new()
-  let builder = StringBuilder::new(size_hint=buffer.length())
-  for byte in buffer {
-    let mut consumed = false
-    while !consumed {
-      let decoded = decoder.next(byte)
-      consumed = decoded.consumed
-      if decoded.value is Some(codepoint) {
-        builder.write_char(codepoint.reinterpret_as_int().unsafe_to_char())
-      }
-    }
-  }
-  builder.to_string()
+/// Decode a captured byte slice as lossy UTF-8 via the core decoder (simdutf on
+/// the native backend for valid UTF-8). The `BytesView` already views the frozen
+/// capture buffer, so this decodes in place with no snapshot copy.
+fn captured_string(buffer : BytesView) -> String {
+  @utf8.decode_lossy(buffer)
 }
 
 ///|
 fn parse_color_command(
   state : OscParserState,
-  buffer : Array[Byte],
+  buffer : BytesView,
   terminator_ch : Byte?,
 ) -> Command {
   let op = match color_operation_from_state(state) {

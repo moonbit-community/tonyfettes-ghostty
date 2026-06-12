@@ -34,15 +34,15 @@ pub enum ContextSignalExitStatus {
 ///|
 struct ContextSignalOsc {
   action : ContextSignalAction
-  id_unvalidated : Array[Byte]
-  metadata_unvalidated : Array[Byte]
+  id_unvalidated : Bytes
+  metadata_unvalidated : Bytes
 } derive(Eq, Debug)
 
 ///|
 fn ContextSignalOsc::new(
   action : ContextSignalAction,
-  id_unvalidated : Array[Byte],
-  metadata_unvalidated : Array[Byte],
+  id_unvalidated : Bytes,
+  metadata_unvalidated : Bytes,
 ) -> ContextSignalOsc {
   { action, id_unvalidated, metadata_unvalidated }
 }
@@ -163,7 +163,7 @@ pub fn ContextSignalOsc::signal(self : ContextSignalOsc) -> String? {
 }
 
 ///|
-fn parse_context_signal_command(buffer : Array[Byte]) -> Command? {
+fn parse_context_signal_command(buffer : BytesView) -> Command? {
   if buffer.length() == 0 {
     return None
   }
@@ -194,15 +194,15 @@ fn parse_context_signal_command(buffer : Array[Byte]) -> Command? {
   }
 
   let metadata = if id_end < buffer.length() {
-    copy_bytes_range(buffer, id_end + 1, buffer.length())
+    buffer[id_end + 1:buffer.length()].to_owned()
   } else {
-    []
+    b""
   }
   Some(
     ContextSignal(
       ContextSignalOsc::new(
         action,
-        copy_bytes_range(buffer, prefix_len, id_end),
+        buffer[prefix_len:id_end].to_owned(),
         metadata,
       ),
     ),
@@ -211,7 +211,7 @@ fn parse_context_signal_command(buffer : Array[Byte]) -> Command? {
 
 ///|
 fn context_signal_option_string(
-  metadata_unvalidated : Array[Byte],
+  metadata_unvalidated : BytesView,
   key : String,
 ) -> String? {
   match context_signal_option_value(metadata_unvalidated, key) {
@@ -227,7 +227,7 @@ fn context_signal_option_string(
 
 ///|
 fn context_signal_option_uint64(
-  metadata_unvalidated : Array[Byte],
+  metadata_unvalidated : BytesView,
   key : String,
 ) -> UInt64? {
   match context_signal_option_value(metadata_unvalidated, key) {
@@ -238,9 +238,9 @@ fn context_signal_option_uint64(
 
 ///|
 fn context_signal_option_value(
-  metadata_unvalidated : Array[Byte],
+  metadata_unvalidated : BytesView,
   key : String,
-) -> Array[Byte]? {
+) -> BytesView? {
   let mut start = 0
   while start <= metadata_unvalidated.length() {
     let segment_end = match
@@ -257,9 +257,7 @@ fn context_signal_option_value(
     match @ascii.find_byte(metadata_unvalidated, start, segment_end, b'=') {
       Some(eq_index) =>
         if @ascii.slice_equals_ascii(metadata_unvalidated, start, eq_index, key) {
-          return Some(
-            copy_bytes_range(metadata_unvalidated, eq_index + 1, segment_end),
-          )
+          return Some(metadata_unvalidated[eq_index + 1:segment_end])
         }
       None => ()
     }
@@ -275,7 +273,7 @@ fn context_signal_option_value(
 
 ///|
 fn context_signal_id_is_valid(
-  buffer : Array[Byte],
+  buffer : BytesView,
   start : Int,
   end_ : Int,
 ) -> Bool {
@@ -297,7 +295,7 @@ fn context_signal_id_is_valid(
 }
 
 ///|
-fn context_signal_type_from_bytes(value : Array[Byte]) -> ContextSignalType? {
+fn context_signal_type_from_bytes(value : BytesView) -> ContextSignalType? {
   if @ascii.slice_equals_ascii(value, 0, value.length(), "boot") {
     return Some(ContextSignalBoot)
   }
@@ -339,7 +337,7 @@ fn context_signal_type_from_bytes(value : Array[Byte]) -> ContextSignalType? {
 
 ///|
 fn context_signal_exit_status_from_bytes(
-  value : Array[Byte],
+  value : BytesView,
 ) -> ContextSignalExitStatus? {
   if @ascii.slice_equals_ascii(value, 0, value.length(), "success") {
     return Some(ContextSignalExitSuccess)
@@ -357,7 +355,7 @@ fn context_signal_exit_status_from_bytes(
 }
 
 ///|
-fn parse_u64_ascii(bytes : Array[Byte], start : Int, end_ : Int) -> UInt64? {
+fn parse_u64_ascii(bytes : BytesView, start : Int, end_ : Int) -> UInt64? {
   if start >= end_ {
     return None
   }

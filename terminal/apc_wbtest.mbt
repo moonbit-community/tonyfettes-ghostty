@@ -140,7 +140,7 @@ test "apc/private helper branches and parser states" {
     fail("expected identify-without-bytes end to return none")
   }
 
-  guard @ascii.parse_i32_ascii([], 0, 0) == None else {
+  guard @ascii.parse_i32_ascii(b"", 0, 0) == None else {
     fail("expected empty i32 slice to return none")
   }
 
