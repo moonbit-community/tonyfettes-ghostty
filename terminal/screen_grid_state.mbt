@@ -847,36 +847,98 @@ fn ScreenGridState::shift_region_up(
 ) -> Unit {
   let rem = bottom - start_y + 1
   let count = min_int(count_req, rem)
-  let full_width = left == 0 && right == self.cols.to_int() - 1
+  // The full-width case is the line-feed/scroll hot path; it moves whole line
+  // refs (not per-cell) and so can hoist the per-row work out of the move and
+  // bulk-shift the line array. See `shift_full_width_up`.
+  if left == 0 && right == self.cols.to_int() - 1 {
+    self.shift_full_width_up(start_y, bottom, count, style)
+    return
+  }
   let mut row_idx = start_y
   while row_idx <= bottom {
-    // For a full-width scroll the destination row is always fully replaced below
-    // (moved source ref or a fresh blank), so its pre-shift wide-char fragment
-    // cleanup would be wasted work — and worse, the top `count` rows have just
-    // been harvested into history sharing this exact cell array, so clearing a
-    // trailing SpacerHead in place would corrupt the captured scrollback row.
-    // Only partial-width destinations keep cells and need cleaning.
-    if !full_width {
-      self.row_will_be_shifted(row_idx, left, right, style)
-    }
+    self.row_will_be_shifted(row_idx, left, right, style)
     if row_idx + count <= bottom {
       let src = row_idx + count
       self.row_will_be_shifted(src, left, right, style)
-      if full_width {
-        self.copy_full_row_for_shift(src, row_idx)
-      } else {
-        self.copy_row_region(src, row_idx, left, right)
-      }
-    } else if full_width {
-      self.lines[row_idx] = self.blank_line(style)
+      self.copy_row_region(src, row_idx, left, right)
     } else {
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
-    if !full_width {
-      self.recompute_row_flags(row_idx)
-    }
+    self.recompute_row_flags(row_idx)
     self.lines[row_idx].desc.set_dirty(true)
     row_idx += 1
+  }
+}
+
+///|
+/// Full-width scroll-up of rows `[start_y, bottom]` by `count`: the top `count`
+/// rows scroll off (already harvested into history by the caller, so their cell
+/// arrays must not be touched here), the survivors slide up, and `count` fresh
+/// blank rows fill the bottom.
+///
+/// The win over the generic per-row loop: each surviving row keeps its cells, so
+/// the move is a single line-array blit instead of `rem` individual ref stores.
+/// The only per-row work left — clearing the now-broken wrap link and any
+/// orphaned trailing wide-char fragment — is hoisted into one pass before the
+/// blit, and dirtying is a separate cheap pass of descriptor bit flips.
+fn ScreenGridState::shift_full_width_up(
+  self : ScreenGridState,
+  start_y : Int,
+  bottom : Int,
+  count : Int,
+  style : @style.CellStyle,
+) -> Unit {
+  let move_len = bottom - start_y + 1 - count
+  if move_len > 0 {
+    // Survivors are the rows below the scrolled-off block: `[start_y + count,
+    // bottom]`. Clean each before the move — the move detaches it from the row
+    // that used to follow it, so any wrap relationship is gone and a trailing
+    // SpacerHead (a wide char deferred across the old wrap boundary) is orphaned.
+    let mut src = start_y + count
+    while src <= bottom {
+      self.clean_trailing_spacer_head(src, style)
+      let desc = self.lines[src].desc
+      desc.set_wrap(false)
+      desc.set_wrap_continuation(false)
+      src += 1
+    }
+    // Slide the survivor line refs up by `count`. blit_to overwrites the
+    // scrolled-off slots (dropping those harvested GridLines, whose cells history
+    // still owns) and picks the overlap-safe copy direction; for a same-array
+    // shift it maintains one incref/decref per row, half the churn the hand loop
+    // paid through its temp ref.
+    self.lines[start_y + count:bottom + 1].blit_to(
+      self.lines,
+      dst_offset=start_y,
+    )
+  }
+  // Fresh blank rows scroll in at the bottom (reusing pooled cell arrays).
+  let mut row_idx = bottom - count + 1
+  while row_idx <= bottom {
+    self.lines[row_idx] = self.blank_line(style)
+    row_idx += 1
+  }
+  // Every row's contents moved, so the whole region is dirty.
+  let mut dirty_idx = start_y
+  while dirty_idx <= bottom {
+    self.lines[dirty_idx].desc.set_dirty(true)
+    dirty_idx += 1
+  }
+}
+
+///|
+/// Clear a lone trailing SpacerHead at the last column. A SpacerHead there marks
+/// a wide char that did not fit and was deferred to the next (wrapped) row; once
+/// this row's wrap link is broken the fragment is meaningless, so blank it.
+fn ScreenGridState::clean_trailing_spacer_head(
+  self : ScreenGridState,
+  row_idx : Int,
+  style : @style.CellStyle,
+) -> Unit {
+  let last = self.cols.to_int() - 1
+  if self.lines[row_idx].cells[last].wide() == SpacerHead {
+    // clear_row_range recomputes the row flags, so no separate rescan is needed.
+    self.clear_row_range(row_idx, last, last + 1, style, false)
   }
 }
 
