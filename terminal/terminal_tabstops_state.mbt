@@ -7,13 +7,19 @@ const DefaultTabstopInterval : CellCountInt = 8
 ///|
 struct TerminalTabstopsState {
   cols : Int
-  stops : Array[Byte]
+  // One bit per column, packed 8-to-a-byte. Fixed `entry_count(cols)` wide —
+  // never grown, only `fill`/indexed in place — so a `FixedArray` is the bare
+  // contiguous buffer without the growable `Array` wrapper.
+  stops : FixedArray[Byte]
 } derive(Eq, Debug)
 
 ///|
 pub fn TerminalTabstopsState::new(cols : CellCountInt) -> TerminalTabstopsState {
   let cols_int = cols.to_int()
-  let state = { cols: cols_int, stops: Array::make(entry_count(cols_int), 0) }
+  let state = {
+    cols: cols_int,
+    stops: FixedArray::make(entry_count(cols_int), 0),
+  }
   state.reset(DefaultTabstopInterval)
   state
 }
