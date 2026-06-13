@@ -25,15 +25,15 @@ pub(all) enum KittyClipboardStatus {
 
 ///|
 struct KittyClipboardOsc {
-  metadata_unvalidated : Array[Byte]
-  payload_unvalidated : Array[Byte]?
+  metadata_unvalidated : Bytes
+  payload_unvalidated : Bytes?
   terminator : Terminator
 } derive(Eq, Debug)
 
 ///|
 fn KittyClipboardOsc::new(
-  metadata_unvalidated : Array[Byte],
-  payload_unvalidated : Array[Byte]?,
+  metadata_unvalidated : Bytes,
+  payload_unvalidated : Bytes?,
   terminator : Terminator,
 ) -> KittyClipboardOsc {
   { metadata_unvalidated, payload_unvalidated, terminator }
@@ -122,7 +122,7 @@ pub fn KittyClipboardOsc::operation(
 
 ///|
 fn parse_kitty_clipboard_command(
-  buffer : Array[Byte],
+  buffer : BytesView,
   terminator_ch : Byte?,
 ) -> Command {
   let separator = @ascii.find_byte(buffer, 0, buffer.length(), b';')
@@ -130,9 +130,9 @@ fn parse_kitty_clipboard_command(
     Some(index) => index
     None => buffer.length()
   }
-  let metadata = copy_bytes_range(buffer, 0, metadata_end)
+  let metadata = buffer[0:metadata_end].to_owned()
   let payload = match separator {
-    Some(index) => Some(copy_bytes_range(buffer, index + 1, buffer.length()))
+    Some(index) => Some(buffer[index + 1:buffer.length()].to_owned())
     None => None
   }
   KittyClipboardProtocol(
@@ -141,10 +141,7 @@ fn parse_kitty_clipboard_command(
 }
 
 ///|
-fn kitty_clipboard_option_string(
-  metadata : Array[Byte],
-  key : Bytes,
-) -> String? {
+fn kitty_clipboard_option_string(metadata : BytesView, key : Bytes) -> String? {
   match kitty_clipboard_option_value(metadata, key) {
     Some(value) => Some(captured_string(value))
     None => None
@@ -153,9 +150,9 @@ fn kitty_clipboard_option_string(
 
 ///|
 fn kitty_clipboard_option_value(
-  metadata : Array[Byte],
+  metadata : BytesView,
   key : Bytes,
-) -> Array[Byte]? {
+) -> BytesView? {
   let mut pos = 0
   while pos < metadata.length() {
     while pos < metadata.length() &&
@@ -193,7 +190,7 @@ fn kitty_clipboard_option_value(
       pos + 1,
       value_end,
     )
-    return Some(copy_bytes_range(metadata, trimmed_start, trimmed_end))
+    return Some(metadata[trimmed_start:trimmed_end])
   }
 
   None
@@ -201,7 +198,7 @@ fn kitty_clipboard_option_value(
 
 ///|
 fn kitty_clipboard_location_from_bytes(
-  value : Array[Byte],
+  value : BytesView,
 ) -> KittyClipboardLocation? {
   if @ascii.slice_equals_ascii(value, 0, value.length(), "primary") {
     Some(KittyClipboardPrimary)
@@ -212,7 +209,7 @@ fn kitty_clipboard_location_from_bytes(
 
 ///|
 fn kitty_clipboard_operation_from_bytes(
-  value : Array[Byte],
+  value : BytesView,
 ) -> KittyClipboardOperation? {
   if @ascii.slice_equals_ascii(value, 0, value.length(), "read") {
     return Some(KittyClipboardRead)
@@ -231,7 +228,7 @@ fn kitty_clipboard_operation_from_bytes(
 
 ///|
 fn kitty_clipboard_status_from_bytes(
-  value : Array[Byte],
+  value : BytesView,
 ) -> KittyClipboardStatus? {
   if @ascii.slice_equals_ascii(value, 0, value.length(), "DATA") {
     return Some(KittyClipboardData)
@@ -264,7 +261,7 @@ fn kitty_clipboard_status_from_bytes(
 const KittyClipboardIdentifierChars : Bytes = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_+."
 
 ///|
-fn kitty_clipboard_identifier_is_valid(value : Array[Byte]) -> Bool {
+fn kitty_clipboard_identifier_is_valid(value : BytesView) -> Bool {
   if value.length() == 0 {
     return false
   }
@@ -289,7 +286,7 @@ fn kitty_clipboard_identifier_byte_allowed(value : Byte) -> Bool {
 
 ///|
 fn slice_starts_with_bytes(
-  bytes : Array[Byte],
+  bytes : BytesView,
   start : Int,
   expected : Bytes,
 ) -> Bool {

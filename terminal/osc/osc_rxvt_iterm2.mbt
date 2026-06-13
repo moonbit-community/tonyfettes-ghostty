@@ -1,5 +1,5 @@
 ///|
-fn parse_rxvt_extension_command(buffer : Array[Byte]) -> Command? {
+fn parse_rxvt_extension_command(buffer : BytesView) -> Command? {
   let extension_end = match @ascii.find_byte(buffer, 0, buffer.length(), b';') {
     Some(index) => index
     None => return None
@@ -17,17 +17,15 @@ fn parse_rxvt_extension_command(buffer : Array[Byte]) -> Command? {
   Some(
     ShowDesktopNotification(
       DesktopNotification::new(
-        captured_string(copy_bytes_range(buffer, extension_end + 1, title_end)),
-        captured_string(
-          copy_bytes_range(buffer, title_end + 1, buffer.length()),
-        ),
+        captured_string(buffer[extension_end + 1:title_end]),
+        captured_string(buffer[title_end + 1:buffer.length()]),
       ),
     ),
   )
 }
 
 ///|
-fn parse_iterm2_command(buffer : Array[Byte]) -> Command? {
+fn parse_iterm2_command(buffer : BytesView) -> Command? {
   let separator = @ascii.find_byte(buffer, 0, buffer.length(), b'=')
   let key_end = match separator {
     Some(index) => index
@@ -45,7 +43,7 @@ fn parse_iterm2_command(buffer : Array[Byte]) -> Command? {
 }
 
 ///|
-fn parse_iterm2_copy(buffer : Array[Byte], separator : Int?) -> Command? {
+fn parse_iterm2_copy(buffer : BytesView, separator : Int?) -> Command? {
   let value_start = match separator {
     Some(index) => index + 1
     None => return None
@@ -65,15 +63,13 @@ fn parse_iterm2_copy(buffer : Array[Byte], separator : Int?) -> Command? {
   Some(
     ClipboardContents({
       kind: b'c',
-      data: captured_string(
-        copy_bytes_range(buffer, payload_start, buffer.length()),
-      ),
+      data: captured_string(buffer[payload_start:buffer.length()]),
     }),
   )
 }
 
 ///|
-fn parse_iterm2_current_dir(buffer : Array[Byte], separator : Int?) -> Command? {
+fn parse_iterm2_current_dir(buffer : BytesView, separator : Int?) -> Command? {
   let value_start = match separator {
     Some(index) => index + 1
     None => return None
@@ -82,16 +78,12 @@ fn parse_iterm2_current_dir(buffer : Array[Byte], separator : Int?) -> Command? 
     return None
   }
 
-  Some(
-    ReportPwd(
-      captured_string(copy_bytes_range(buffer, value_start, buffer.length())),
-    ),
-  )
+  Some(ReportPwd(captured_string(buffer[value_start:buffer.length()])))
 }
 
 ///|
 fn slice_equals_bytes(
-  bytes : Array[Byte],
+  bytes : BytesView,
   start : Int,
   end_ : Int,
   expected : Bytes,
@@ -113,7 +105,7 @@ fn slice_equals_bytes(
 
 ///|
 fn slice_equals_ascii_ignore_case_bytes(
-  bytes : Array[Byte],
+  bytes : BytesView,
   start : Int,
   end_ : Int,
   expected : Bytes,

@@ -788,7 +788,7 @@ test "osc/kitty color protocol request limit is enforced" {
     buffer.push(b'?')
     buffer.push(b';')
   }
-  guard parse_kitty_color_command(buffer, Some(0x07)) == None else {
+  guard parse_kitty_color_command(Bytes::from_array(buffer), Some(0x07)) == None else {
     fail("expected oversized OSC 21 request list to be rejected")
   }
 }
@@ -1231,11 +1231,8 @@ test "osc/osc5522 kitty clipboard parsing" {
 test "osc/context signal constructors and option readers" {
   let command = ContextSignalOsc::new(
     ContextSignalStart,
-    [b'm', b'y', b'c', b't', b'x'],
-    b"type=command;user=root;hostname=myhost;machineid=mid;bootid=bid;pid=1062862;pidfdid=1063162;comm=bash;cwd=/home/user;cmdline=ls -la;vm=guest;container=ctr;targetuser=alice;targethost=example.com;sessionid=s1;exit=interrupt;status=9;signal=SIGKILL"[:]
-    .iter()
-    .map(char => char.to_int().to_byte())
-    .collect(),
+    b"myctx",
+    b"type=command;user=root;hostname=myhost;machineid=mid;bootid=bid;pid=1062862;pidfdid=1063162;comm=bash;cwd=/home/user;cmdline=ls -la;vm=guest;container=ctr;targetuser=alice;targethost=example.com;sessionid=s1;exit=interrupt;status=9;signal=SIGKILL",
   )
   guard command.action() == ContextSignalStart else {
     fail("expected context signal action accessor")
@@ -1344,11 +1341,8 @@ test "osc/osc3008 context signal parsing" {
 
   let overflow_status = ContextSignalOsc::new(
     ContextSignalEnd,
-    [b'i', b'd'],
-    b"status=18446744073709551616"[:]
-    .iter()
-    .map(char => char.to_int().to_byte())
-    .collect(),
+    b"id",
+    b"status=18446744073709551616",
   )
   guard overflow_status.status() == None else {
     fail("expected overflowing OSC 3008 numeric field rejection")

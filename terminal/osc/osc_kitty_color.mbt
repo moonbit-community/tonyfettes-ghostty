@@ -70,7 +70,7 @@ const KittyColorRequestLimit : Int = 528
 
 ///|
 fn parse_kitty_color_command(
-  buffer : Array[Byte],
+  buffer : BytesView,
   terminator_ch : Byte?,
 ) -> Command? {
   let requests : Array[KittyColorRequest] = []
@@ -101,7 +101,7 @@ fn parse_kitty_color_command(
 
 ///|
 fn kitty_color_append_request(
-  buffer : Array[Byte],
+  buffer : BytesView,
   start : Int,
   end_ : Int,
   requests : Array[KittyColorRequest],
@@ -137,9 +137,7 @@ fn kitty_color_append_request(
     return
   }
 
-  let spec = captured_string(
-    copy_bytes_range(buffer, trimmed_start, trimmed_end),
-  )
+  let spec = captured_string(buffer[trimmed_start:trimmed_end])
   let color = try @color.RGB::parse(spec) catch {
     _ => return
   } noraise {
@@ -150,7 +148,7 @@ fn kitty_color_append_request(
 
 ///|
 fn kitty_color_kind_from_bytes(
-  buffer : Array[Byte],
+  buffer : BytesView,
   start : Int,
   end_ : Int,
 ) -> KittyColorKind? {
@@ -181,12 +179,7 @@ fn kitty_color_kind_from_bytes(
     return Some(KittySpecial(KittySecondTransparentBackground))
   }
 
-  match
-    @ascii.parse_u32_ascii(
-      copy_bytes_range(buffer, start, end_),
-      0,
-      end_ - start,
-    ) {
+  match @ascii.parse_u32_ascii(buffer, start, end_) {
     Some(value) =>
       if value <= 255U {
         Some(KittyPalette(value.to_byte()))
@@ -198,11 +191,7 @@ fn kitty_color_kind_from_bytes(
 }
 
 ///|
-fn trim_ascii_spaces(
-  buffer : Array[Byte],
-  start : Int,
-  end_ : Int,
-) -> (Int, Int) {
+fn trim_ascii_spaces(buffer : BytesView, start : Int, end_ : Int) -> (Int, Int) {
   let mut trimmed_start = start
   let mut trimmed_end = end_
   while trimmed_start < trimmed_end && buffer[trimmed_start] == b' ' {
