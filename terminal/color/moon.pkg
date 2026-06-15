@@ -1,1 +1,3 @@
-
+import {
+  "tonyfettes/ghostty/terminal/cimap",
+}
