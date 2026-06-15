@@ -844,15 +844,41 @@ fn parse_color_command(
   buffer : BytesView,
   terminator_ch : Byte?,
 ) -> Command {
-  let op = match color_operation_from_state(state) {
-    Some(op) => op
-    None => return Invalid
-  }
+  guard color_operation_from_state(state) is Some(op) else { return Invalid }
   ColorOperation({
     op,
-    requests: parse_color_requests(op, captured_string(buffer)),
+    requests: parse_color_requests(op, buffer),
     terminator: terminator_init(terminator_ch),
   })
+}
+
+///|
+/// Together `token_start` + `token_end` are MoonBit's split of upstream's
+/// `tokenizeScalar` `next()`: `token_start` skips empties to a token's start,
+/// `token_end` finds that token's end. Callers thread a cursor and slice
+/// `body[start:end]` as a view, so tokenizing allocates nothing (no segment
+/// array, no per-token copy / Option boxing).
+///
+/// Start of the next non-empty `;`-token at or after `from`, skipping empty
+/// tokens (leading or consecutive `;`). Returns `body.length()` when none
+/// remain — so e.g. `4;;1;red` still yields the `1;red` pair.
+fn token_start(body : BytesView, from : Int) -> Int {
+  let mut cursor = from
+  while cursor < body.length() && body[cursor] == b';' {
+    cursor += 1
+  }
+  cursor
+}
+
+///|
+/// End index (exclusive) of the token beginning at `start`: the next `;` or the
+/// end of `body`. `end == body.length()` marks the last token.
+fn token_end(body : BytesView, start : Int) -> Int {
+  if @ascii.find_byte(body, start, body.length(), b';') is Some(index) {
+    index
+  } else {
+    body.length()
+  }
 }
 
 ///|
@@ -888,7 +914,7 @@ fn color_operation_from_state(state : OscParserState) -> ColorOperation? {
 ///|
 fn parse_color_requests(
   op : ColorOperation,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   match op {
     Osc4 => parse_get_set_ansi_color(op, body)
@@ -920,32 +946,38 @@ fn parse_color_requests(
 ///|
 fn parse_get_set_ansi_color(
   op : ColorOperation,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut index = 0
-  while index + 1 < parts.length() {
-    let color = match parse_decimal(parts[index]) {
-      Some(value) => value
-      None => return result
+  // Read `c;spec` pairs over non-empty `;`-tokens (upstream `tokenizeScalar`
+  // drops empty tokens). A missing spec token or any malformed token stops
+  // parsing and returns what was accumulated (xterm behavior).
+  for cursor = 0 {
+    let color_start = token_start(body, cursor)
+    if color_start >= body.length() {
+      break
     }
-    let target = match ansi_target_from_index(op, color) {
-      Some(target) => target
-      None => return result
+    let color_end = token_end(body, color_start)
+    guard parse_decimal(body, color_start, color_end) is Some(color) else {
+      break
     }
-    let spec = parts[index + 1]
-    if spec == "?" {
+    let spec_start = token_start(body, color_end)
+    if spec_start >= body.length() {
+      break
+    }
+    let spec_end = token_end(body, spec_start)
+    guard ansi_target_from_index(op, color) is Some(target) else { break }
+    if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(target))
     } else {
-      let rgb = try @color.RGB::parse(spec) catch {
-        _ => return result
+      let rgb = try @color.RGB::parse(body[spec_start:spec_end]) catch {
+        _ => break
       } noraise {
         rgb => rgb
       }
       result.push(Set({ target, color: rgb }))
     }
-    index += 2
+    continue spec_end
   }
   result
 }
@@ -953,26 +985,26 @@ fn parse_get_set_ansi_color(
 ///|
 fn parse_reset_ansi_color(
   op : ColorOperation,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut saw_value = false
-  for part in parts {
-    let text = part
-    if text == "" {
-      continue
+  // Thread the `saw_value` accumulator through the loop and break it out, rather
+  // than carrying a `mut`.
+  let saw_value = for start = 0, saw = false {
+    let end_ = token_end(body, start)
+    let saw = if start == end_ {
+      saw
+    } else {
+      if parse_decimal(body, start, end_) is Some(color) &&
+        ansi_target_from_index(op, color) is Some(target) {
+        result.push(Reset(target))
+      }
+      true
     }
-    saw_value = true
-    let color = match parse_decimal(text) {
-      Some(value) => value
-      None => continue
+    if end_ == body.length() {
+      break saw
     }
-    let target = match ansi_target_from_index(op, color) {
-      Some(target) => target
-      None => continue
-    }
-    result.push(Reset(target))
+    continue end_ + 1, saw
   }
   if !saw_value {
     result.push(ResetPalette)
@@ -983,31 +1015,30 @@ fn parse_reset_ansi_color(
 ///|
 fn parse_get_set_dynamic_color(
   start : @color.Dynamic,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut current = Some(start)
-  for part in parts {
-    let dynamic = match current {
-      Some(dynamic) => dynamic
-      None => return result
+  // One spec per successive dynamic slot, over non-empty `;`-tokens (upstream
+  // `tokenizeScalar` drops empties). Stop when the tokens or the slots run out,
+  // or on a malformed spec. The cursor and next slot thread through the loop.
+  for cursor = 0, current = Some(start) {
+    guard current is Some(dynamic) else { break }
+    let spec_start = token_start(body, cursor)
+    if spec_start >= body.length() {
+      break
     }
-    let spec = part
-    if spec == "" {
-      return result
-    }
-    if spec == "?" {
+    let spec_end = token_end(body, spec_start)
+    if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(Dynamic(dynamic)))
     } else {
-      let rgb = try @color.RGB::parse(spec) catch {
-        _ => return result
+      let rgb = try @color.RGB::parse(body[spec_start:spec_end]) catch {
+        _ => break
       } noraise {
         rgb => rgb
       }
       result.push(Set({ target: Dynamic(dynamic), color: rgb }))
     }
-    current = dynamic.next()
+    continue spec_end, dynamic.next()
   }
   result
 }
@@ -1015,15 +1046,18 @@ fn parse_get_set_dynamic_color(
 ///|
 fn parse_reset_dynamic_color(
   dynamic : @color.Dynamic,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut saw_non_empty = false
-  for part in parts {
-    if part != "" {
-      saw_non_empty = true
-      break
+  // The loop's own value is whether any non-empty segment was seen — no `mut`.
+  let saw_non_empty = for start = 0 {
+    let end_ = token_end(body, start)
+    if start != end_ {
+      break true
     }
+    if end_ == body.length() {
+      break false
+    }
+    continue end_ + 1
   }
   if saw_non_empty {
     []
@@ -1036,17 +1070,19 @@ fn parse_reset_dynamic_color(
 fn ansi_target_from_index(op : ColorOperation, value : Int) -> ColorTarget? {
   match op {
     Osc5 =>
-      match special_from_int(value) {
-        Some(special) => Some(Special(special))
-        None => None
+      if special_from_int(value) is Some(special) {
+        Some(Special(special))
+      } else {
+        None
       }
     _ =>
       if value >= 0 && value <= 255 {
         Some(Palette(value.to_byte()))
       } else if value >= 256 {
-        match special_from_int(value - 256) {
-          Some(special) => Some(Special(special))
-          None => None
+        if special_from_int(value - 256) is Some(special) {
+          Some(Special(special))
+        } else {
+          None
         }
       } else {
         None
@@ -1067,16 +1103,17 @@ fn special_from_int(value : Int) -> @color.Special? {
 }
 
 ///|
-fn parse_decimal(value : String) -> Int? {
-  if value == "" {
+fn parse_decimal(buffer : BytesView, start : Int, end_ : Int) -> Int? {
+  if start >= end_ {
     return None
   }
   let mut result = 0
-  for char in value {
-    if char < '0' || char > '9' {
+  for index in start..<end_ {
+    let byte = buffer[index]
+    if byte < b'0' || byte > b'9' {
       return None
     }
-    result = result * 10 + (char.to_int() - '0'.to_int())
+    result = result * 10 + (byte.to_int() - b'0'.to_int())
   }
   Some(result)
 }

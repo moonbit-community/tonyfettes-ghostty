@@ -47,6 +47,9 @@ zero-copy byte parsing and comptime string map.
   backends (no signed-overflow UB on native/sanitized builds).
 - X11 names are ASCII, so the `String`-key and `BytesView`-key hash/eq paths are
   required to agree byte-for-byte.
+- The OSC color sub-parsers split the body the way upstream's `tokenizeScalar`
+  does — empty `;`-tokens are skipped, not treated as terminators — so inputs
+  like `4;;1;red` and `10;;red` still yield the valid request.
 
 ## Acceptance criteria
 
@@ -72,9 +75,13 @@ zero-copy byte parsing and comptime string map.
 
 - `.mbti` reviewed. New public surface: `terminal/cimap` exports `CiStrMap`
   (opaque) with `from_entries` / `get` / `get_view`.
-- `terminal/color`: `RGB::parse` keeps its public `String` entry; the byte-view
-  parser is the public OSC entry. `x11_color_lookup` is internal
-  (implementation detail of `RGB::parse`).
+- `terminal/color`: **intentional breaking change** — `RGB::parse` changes from
+  `String` to `BytesView` (matching upstream's `[]const u8`). Color specs reach
+  it as bytes (OSC capture, config bytes), so the byte-view signature avoids a
+  decode at every call; the only in-tree callers are the OSC parsers. Downstream
+  `String` holders must view their bytes (`s.to_bytes()[:]`).
+- `x11_color_lookup` is now internal (implementation detail of `RGB::parse`),
+  removed from the public `.mbti`.
 
 ## Audit/result notes
 

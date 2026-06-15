@@ -775,23 +775,33 @@ fn clone_palette(source : Array[RGB]) -> Array[RGB] {
 }
 
 ///|
-pub fn RGB::parse(value : String) -> RGB raise ColorParseError {
+/// Parse a color spec (`#rgb`, `rgb:`/`rgbi:`, or an X11 name) from a byte view.
+/// Takes a `BytesView` (matching upstream's `[]const u8`) so the OSC path parses
+/// the capture in place without decoding it to a `String`.
+pub fn RGB::parse(value : BytesView) -> RGB raise ColorParseError {
   if value.length() == 0 {
     raise InvalidFormat
   }
 
-  if value[0] == '#' {
-    parse_hash_rgb(value)
-  } else {
-    match x11_color_lookup(value) {
-      Some(rgb) => rgb
-      None => parse_rgb_spec(value)
-    }
+  match value {
+    [b'#', ..] => parse_hash_rgb(value)
+    // `rgb:R/G/B` and `rgbi:R/G/B` are the machine-emitted color formats; they
+    // can never be X11 named colors, so route them straight to the spec parser
+    // instead of first scanning the whole named-color table (the dominant cost
+    // on color-heavy OSC streams).
+    [b'r', b'g', b'b', b':', ..] | [b'r', b'g', b'b', b'i', ..] =>
+      parse_rgb_spec(value)
+    _ =>
+      if x11_color_lookup(value) is Some(rgb) {
+        rgb
+      } else {
+        parse_rgb_spec(value)
+      }
   }
 }
 
 ///|
-fn parse_hash_rgb(value : String) -> RGB raise ColorParseError {
+fn parse_hash_rgb(value : BytesView) -> RGB raise ColorParseError {
   match value.length() {
     4 =>
       RGB::new(
@@ -822,36 +832,37 @@ fn parse_hash_rgb(value : String) -> RGB raise ColorParseError {
 }
 
 ///|
-fn parse_rgb_spec(value : String) -> RGB raise ColorParseError {
+fn parse_rgb_spec(value : BytesView) -> RGB raise ColorParseError {
   if value.length() < 6 {
     raise InvalidFormat
   }
-  guard value[0] == 'r' && value[1] == 'g' && value[2] == 'b' else {
+  guard value[0] == b'r' && value[1] == b'g' && value[2] == b'b' else {
     raise InvalidFormat
   }
 
   let mut index = 3
-  let use_intensity = if index < value.length() && value[index] == 'i' {
+  let use_intensity = if index < value.length() && value[index] == b'i' {
     index += 1
     true
   } else {
     false
   }
 
-  guard index < value.length() && value[index] == ':' else {
+  guard index < value.length() && value[index] == b':' else {
     raise InvalidFormat
   }
   index += 1
 
-  let slash1 = find_char(value, index, '/')
-  let slash2 = match slash1 {
-    Some(pos) => find_char(value, pos + 1, '/')
-    None => None
+  let slash1 = find_char(value, index, b'/')
+  let slash2 = if slash1 is Some(pos) {
+    find_char(value, pos + 1, b'/')
+  } else {
+    None
   }
   guard slash1 is Some(first) && slash2 is Some(second) else {
     raise InvalidFormat
   }
-  guard find_char(value, second + 1, '/') == None else { raise InvalidFormat }
+  guard find_char(value, second + 1, b'/') == None else { raise InvalidFormat }
 
   if use_intensity {
     RGB::new(
@@ -870,7 +881,7 @@ fn parse_rgb_spec(value : String) -> RGB raise ColorParseError {
 
 ///|
 fn parse_hex_component(
-  value : String,
+  value : BytesView,
   start : Int,
   end_ : Int,
 ) -> Byte raise ColorParseError {
@@ -880,10 +891,7 @@ fn parse_hex_component(
   let mut result = 0
   let mut i = start
   while i < end_ {
-    let digit = match hex_digit(value[i]) {
-      Some(d) => d
-      None => raise InvalidFormat
-    }
+    guard hex_digit(value[i]) is Some(digit) else { raise InvalidFormat }
     result = result * 16 + digit
     i += 1
   }
@@ -903,7 +911,7 @@ fn parse_hex_component(
 
 ///|
 fn parse_intensity_component(
-  value : String,
+  value : BytesView,
   start : Int,
   end_ : Int,
 ) -> Byte raise ColorParseError {
@@ -918,16 +926,16 @@ fn parse_intensity_component(
 
   while i < end_ {
     let char = value[i]
-    if char >= '0' && char <= '9' {
+    if char >= b'0' && char <= b'9' {
       saw_digit = true
-      let digit = char.to_int() - '0'.to_int()
+      let digit = char.to_int() - b'0'.to_int()
       if saw_dot {
         fraction = fraction * 10 + digit
         fraction_digits += 1
       } else {
         integer = integer * 10 + digit
       }
-    } else if char == '.' && !saw_dot {
+    } else if char == b'.' && !saw_dot {
       saw_dot = true
     } else {
       raise InvalidFormat
@@ -948,7 +956,7 @@ fn parse_intensity_component(
 }
 
 ///|
-fn find_char(value : String, start : Int, target : UInt16) -> Int? {
+fn find_char(value : BytesView, start : Int, target : Byte) -> Int? {
   let mut i = start
   while i < value.length() {
     if value[i] == target {
@@ -960,13 +968,13 @@ fn find_char(value : String, start : Int, target : UInt16) -> Int? {
 }
 
 ///|
-fn hex_digit(value : UInt16) -> Int? {
-  if value >= '0' && value <= '9' {
-    Some(value.to_int() - '0'.to_int())
-  } else if value >= 'a' && value <= 'f' {
-    Some(value.to_int() - 'a'.to_int() + 10)
-  } else if value >= 'A' && value <= 'F' {
-    Some(value.to_int() - 'A'.to_int() + 10)
+fn hex_digit(value : Byte) -> Int? {
+  if value >= b'0' && value <= b'9' {
+    Some(value.to_int() - b'0'.to_int())
+  } else if value >= b'a' && value <= b'f' {
+    Some(value.to_int() - b'a'.to_int() + 10)
+  } else if value >= b'A' && value <= b'F' {
+    Some(value.to_int() - b'A'.to_int() + 10)
   } else {
     None
   }

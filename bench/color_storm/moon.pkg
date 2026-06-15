@@ -1,0 +1,7 @@
+import {
+  "tonyfettes/ghostty-bench/workloads",
+}
+
+options(
+  "is-main": true,
+)

@@ -4,3 +4,7 @@ import {
   "tonyfettes/ghostty/terminal/ascii",
   "tonyfettes/ghostty/terminal/color",
 }
+
+import {
+  "moonbitlang/core/bench",
+} for "test"

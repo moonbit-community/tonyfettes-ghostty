@@ -1,24 +1,29 @@
 ///|
-test "x11 color lookup handles aliases case and trimming" {
-  guard x11_color_lookup("   ") == None else {
-    fail("expected blank trimmed lookup to fail")
+/// X11 named-color resolution is exercised through the public `RGB::parse`
+/// (the lookup table itself is private).
+test "color/rgb parse resolves x11 names case-insensitively and trimmed" {
+  let cases : Array[(Bytes, RGB)] = [
+    (b"white", RGB::new(255, 255, 255)),
+    (b"medium spring green", RGB::new(0, 250, 154)),
+    (b"ForestGreen", RGB::new(34, 139, 34)),
+    (b"FoReStGReen", RGB::new(34, 139, 34)),
+    (b" black ", RGB::new(0, 0, 0)),
+  ]
+  for entry in cases {
+    guard RGB::parse(entry.0) == entry.1 else {
+      fail("unexpected x11 parse for \{entry.0}")
+    }
   }
-  guard x11_color_lookup("white") == Some(RGB::new(255, 255, 255)) else {
-    fail("expected white lookup")
-  }
-  guard x11_color_lookup("medium spring green") == Some(RGB::new(0, 250, 154)) else {
-    fail("expected spaced alias lookup")
-  }
-  guard x11_color_lookup("ForestGreen") == Some(RGB::new(34, 139, 34)) else {
-    fail("expected mixed-case lookup")
-  }
-  guard x11_color_lookup("FoReStGReen") == Some(RGB::new(34, 139, 34)) else {
-    fail("expected case-insensitive lookup")
-  }
-  guard x11_color_lookup(" black ") == Some(RGB::new(0, 0, 0)) else {
-    fail("expected trimmed lookup")
-  }
-  guard x11_color_lookup("nosuchcolor") == None else {
-    fail("unexpected missing color lookup")
+
+  // Blank (trims to empty) and unknown names are not colors.
+  for bad in [b"   ", b"nosuchcolor"] {
+    let result : Result[RGB, ColorParseError] = try RGB::parse(bad) catch {
+      err => Err(err)
+    } noraise {
+      color => Ok(color)
+    }
+    guard result is Err(InvalidFormat) else {
+      fail("expected invalid x11 name \{bad}")
+    }
   }
 }
