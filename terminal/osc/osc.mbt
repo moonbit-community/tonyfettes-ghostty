@@ -867,6 +867,19 @@ fn segment_end(body : BytesView, start : Int) -> Int {
 }
 
 ///|
+/// Start of the next non-empty `;`-token at or after `start`, skipping empty
+/// tokens (leading or consecutive `;`). Returns `body.length()` when none
+/// remain. This makes the color parsers match upstream's `tokenizeScalar`,
+/// which drops empty tokens (so e.g. `4;;1;red` still yields the `1;red` pair).
+fn next_token_start(body : BytesView, start : Int) -> Int {
+  let mut cursor = start
+  while cursor < body.length() && body[cursor] == b';' {
+    cursor += 1
+  }
+  cursor
+}
+
+///|
 fn color_operation_from_state(state : OscParserState) -> ColorOperation? {
   match state {
     Prefix4 => Some(Osc4)
@@ -934,17 +947,24 @@ fn parse_get_set_ansi_color(
   body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  // Walk `c;spec` pairs with a cursor; stop as soon as a `c` has no following
-  // `spec` segment (mirrors the old `while index + 1 < parts.length()`).
-  for start = 0 {
-    let color_end = segment_end(body, start)
-    guard parse_decimal(body, start, color_end) is Some(color) else { break }
-    if color_end == body.length() {
+  // Read `c;spec` pairs over non-empty `;`-tokens (upstream `tokenizeScalar`
+  // drops empty tokens). A missing spec token or any malformed token stops
+  // parsing and returns what was accumulated (xterm behavior).
+  for cursor = 0 {
+    let color_start = next_token_start(body, cursor)
+    if color_start >= body.length() {
       break
     }
-    guard ansi_target_from_index(op, color) is Some(target) else { break }
-    let spec_start = color_end + 1
+    let color_end = segment_end(body, color_start)
+    guard parse_decimal(body, color_start, color_end) is Some(color) else {
+      break
+    }
+    let spec_start = next_token_start(body, color_end)
+    if spec_start >= body.length() {
+      break
+    }
     let spec_end = segment_end(body, spec_start)
+    guard ansi_target_from_index(op, color) is Some(target) else { break }
     if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(target))
     } else {
@@ -955,10 +975,7 @@ fn parse_get_set_ansi_color(
       }
       result.push(Set({ target, color: rgb }))
     }
-    if spec_end == body.length() {
-      break
-    }
-    continue spec_end + 1
+    continue spec_end
   }
   result
 }
@@ -999,28 +1016,27 @@ fn parse_get_set_dynamic_color(
   body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  // Thread the cursor and the next dynamic slot through the loop; advancing the
-  // slot is `continue ..., dynamic.next()` instead of a `mut` reassignment.
+  // One spec per successive dynamic slot, over non-empty `;`-tokens (upstream
+  // `tokenizeScalar` drops empties). Stop when the tokens or the slots run out,
+  // or on a malformed spec. The cursor and next slot thread through the loop.
   for cursor = 0, current = Some(start) {
     guard current is Some(dynamic) else { break }
-    let spec_end = segment_end(body, cursor)
-    if cursor == spec_end {
+    let spec_start = next_token_start(body, cursor)
+    if spec_start >= body.length() {
       break
     }
-    if spec_end - cursor == 1 && body[cursor] == b'?' {
+    let spec_end = segment_end(body, spec_start)
+    if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(Dynamic(dynamic)))
     } else {
-      let rgb = try @color.RGB::parse(body[cursor:spec_end]) catch {
+      let rgb = try @color.RGB::parse(body[spec_start:spec_end]) catch {
         _ => break
       } noraise {
         rgb => rgb
       }
       result.push(Set({ target: Dynamic(dynamic), color: rgb }))
     }
-    if spec_end == body.length() {
-      break
-    }
-    continue spec_end + 1, dynamic.next()
+    continue spec_end, dynamic.next()
   }
   result
 }

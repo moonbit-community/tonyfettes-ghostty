@@ -2032,6 +2032,34 @@ test "osc/color ansi operations handle special targets queries and invalid bodie
 }
 
 ///|
+test "osc/color parsers skip empty tokens like tokenizeScalar" {
+  // Leading/internal empty tokens are dropped, so the valid `1;red` pair still
+  // parses (upstream uses tokenizeScalar, not a keep-empty split).
+  expect_color_command(
+    b"4;;1;red",
+    Some(0x07),
+    Osc4,
+    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0) })],
+    Bel,
+  )
+  expect_color_command(
+    b"4;1;;red",
+    Some(0x07),
+    Osc4,
+    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0) })],
+    Bel,
+  )
+  // Dynamic colors skip empties too (OSC 10 = foreground).
+  expect_color_command(
+    b"10;;red",
+    Some(0x07),
+    Osc10,
+    [Set({ target: Dynamic(Foreground), color: @color.RGB::new(255, 0, 0) })],
+    Bel,
+  )
+}
+
+///|
 test "osc/color reset ansi accepts palette and special targets and skips invalid entries" {
   expect_color_command(
     b"104;1;;260;bogus;999",

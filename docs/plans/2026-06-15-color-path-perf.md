@@ -47,6 +47,9 @@ zero-copy byte parsing and comptime string map.
   backends (no signed-overflow UB on native/sanitized builds).
 - X11 names are ASCII, so the `String`-key and `BytesView`-key hash/eq paths are
   required to agree byte-for-byte.
+- The OSC color sub-parsers split the body the way upstream's `tokenizeScalar`
+  does — empty `;`-tokens are skipped, not treated as terminators — so inputs
+  like `4;;1;red` and `10;;red` still yield the valid request.
 
 ## Acceptance criteria
 
