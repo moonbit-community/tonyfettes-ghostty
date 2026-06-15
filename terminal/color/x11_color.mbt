@@ -8,7 +8,9 @@ let x11_color_table : @cimap.CiStrMap[RGB] = @cimap.CiStrMap::from_entries(
 )
 
 ///|
-pub fn x11_color_lookup(value : BytesView) -> RGB? {
+/// Internal: an implementation detail of `RGB::parse`. Kept private so the table
+/// and key representation stay free to change without breaking downstream.
+fn x11_color_lookup(value : BytesView) -> RGB? {
   let (start, end_) = trim_name_bounds(value)
   if start >= end_ {
     return None

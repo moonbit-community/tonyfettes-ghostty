@@ -775,7 +775,18 @@ fn clone_palette(source : Array[RGB]) -> Array[RGB] {
 }
 
 ///|
-pub fn RGB::parse(value : BytesView) -> RGB raise ColorParseError {
+/// Parse a color spec from a `String` (`#rgb`, `rgb:`/`rgbi:`, or an X11 name).
+/// Kept for downstream callers that hold a `String` (config / user input); the
+/// OSC byte path uses `RGB::parse_view` to avoid the encode. Color specs are
+/// ASCII, so the UTF-8 encoding round-trips exactly.
+pub fn RGB::parse(value : String) -> RGB raise ColorParseError {
+  RGB::parse_view(@utf8.encode(value))
+}
+
+///|
+/// Zero-copy color spec parser over a byte view — the entry the OSC parser uses
+/// so it never decodes the capture to a `String`.
+pub fn RGB::parse_view(value : BytesView) -> RGB raise ColorParseError {
   if value.length() == 0 {
     raise InvalidFormat
   }

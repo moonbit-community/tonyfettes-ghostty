@@ -86,18 +86,18 @@ test "color/dynamic codes cover every osc dynamic slot" {
 
 ///|
 test "color/rgb parse accepts hash rgb rgbi and x11 names" {
-  let cases : Array[(Bytes, RGB)] = [
-    (b"rgbi:1.0/0/0", RGB::new(255, 0, 0)),
-    (b"rgb:7f/a0a0/0", RGB::new(127, 160, 0)),
-    (b"rgb:f/ff/fff", RGB::new(255, 255, 255)),
-    (b"#ffffff", RGB::new(255, 255, 255)),
-    (b"#fff", RGB::new(255, 255, 255)),
-    (b"#fffffffff", RGB::new(255, 255, 255)),
-    (b"#ffffffffffff", RGB::new(255, 255, 255)),
-    (b"#ff0010", RGB::new(255, 0, 16)),
-    (b"LawnGreen", RGB::new(124, 252, 0)),
-    (b"medium spring green", RGB::new(0, 250, 154)),
-    (b" Forest Green ", RGB::new(34, 139, 34)),
+  let cases : Array[(String, RGB)] = [
+    ("rgbi:1.0/0/0", RGB::new(255, 0, 0)),
+    ("rgb:7f/a0a0/0", RGB::new(127, 160, 0)),
+    ("rgb:f/ff/fff", RGB::new(255, 255, 255)),
+    ("#ffffff", RGB::new(255, 255, 255)),
+    ("#fff", RGB::new(255, 255, 255)),
+    ("#fffffffff", RGB::new(255, 255, 255)),
+    ("#ffffffffffff", RGB::new(255, 255, 255)),
+    ("#ff0010", RGB::new(255, 0, 16)),
+    ("LawnGreen", RGB::new(124, 252, 0)),
+    ("medium spring green", RGB::new(0, 250, 154)),
+    (" Forest Green ", RGB::new(34, 139, 34)),
   ]
 
   for entry in cases {
@@ -117,10 +117,10 @@ test "color/rgb constructor and accessors" {
 
 ///|
 test "color/rgb parse rejects invalid formats" {
-  let invalid : Array[Bytes] = [
-    b"", b"rgb;", b"rgb:", b"rgbi0/0/0", b"rgb:abcd", b":a/a/a", b"a/a/a", b"rgb:a/a/a/",
-    b"rgb:00000///", b"rgb:000/", b"rgbi:a/a/a", b"rgb:0.5/0.0/1.0", b"rgb:not/hex/zz",
-    b"#", b"#ff", b"#ffff", b"#fffff", b"#gggggg",
+  let invalid : Array[String] = [
+    "", "rgb;", "rgb:", "rgbi0/0/0", "rgb:abcd", ":a/a/a", "a/a/a", "rgb:a/a/a/",
+    "rgb:00000///", "rgb:000/", "rgbi:a/a/a", "rgb:0.5/0.0/1.0", "rgb:not/hex/zz",
+    "#", "#ff", "#ffff", "#fffff", "#gggggg",
   ]
 
   for value in invalid {
@@ -137,14 +137,14 @@ test "color/rgb parse rejects invalid formats" {
 
 ///|
 test "color/rgb parse handles public width and intensity edge cases" {
-  let valid : Array[(Bytes, RGB)] = [
-    (b"#ABC", RGB::new(0xAA, 0xBB, 0xCC)),
-    (b"#800800800", RGB::new(0x7F, 0x7F, 0x7F)),
-    (b"#800080008000", RGB::new(0x7F, 0x7F, 0x7F)),
-    (b"rgbi:1/0/0", RGB::new(0xFF, 0, 0)),
-    (b"rgbi:0.5/0/0", RGB::new(0x7F, 0, 0)),
-    (b"rgbi:.5/0/0", RGB::new(0x7F, 0, 0)),
-    (b"rgbi:1./0/0", RGB::new(0xFF, 0, 0)),
+  let valid : Array[(String, RGB)] = [
+    ("#ABC", RGB::new(0xAA, 0xBB, 0xCC)),
+    ("#800800800", RGB::new(0x7F, 0x7F, 0x7F)),
+    ("#800080008000", RGB::new(0x7F, 0x7F, 0x7F)),
+    ("rgbi:1/0/0", RGB::new(0xFF, 0, 0)),
+    ("rgbi:0.5/0/0", RGB::new(0x7F, 0, 0)),
+    ("rgbi:.5/0/0", RGB::new(0x7F, 0, 0)),
+    ("rgbi:1./0/0", RGB::new(0xFF, 0, 0)),
   ]
   for entry in valid {
     guard RGB::parse(entry.0) == entry.1 else {
@@ -155,9 +155,9 @@ test "color/rgb parse handles public width and intensity edge cases" {
 
 ///|
 test "color/rgb parse rejects malformed public edge cases" {
-  let invalid : Array[Bytes] = [
-    b"#12345", b"#zzzzzz", b"rgb:12345/0/0", b"rgbi:./0/0", b"rgbi:1.1/0/0", b"rgbi:1..0/0/0",
-    b"rgb:1/2/3/",
+  let invalid : Array[String] = [
+    "#12345", "#zzzzzz", "rgb:12345/0/0", "rgbi:./0/0", "rgbi:1.1/0/0", "rgbi:1..0/0/0",
+    "rgb:1/2/3/",
   ]
   for value in invalid {
     let result : Result[RGB, ColorParseError] = try RGB::parse(value) catch {

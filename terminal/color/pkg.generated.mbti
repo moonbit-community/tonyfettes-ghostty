@@ -8,8 +8,6 @@ import {
 // Values
 pub fn default_palette() -> Array[RGB]
 
-pub fn x11_color_lookup(BytesView) -> RGB?
-
 // Errors
 pub suberror ColorParseError {
   InvalidFormat
@@ -71,7 +69,8 @@ type RGB derive(Eq, @debug.Debug)
 pub fn RGB::b(Self) -> Byte
 pub fn RGB::g(Self) -> Byte
 pub fn RGB::new(Byte, Byte, Byte) -> Self
-pub fn RGB::parse(BytesView) -> Self raise ColorParseError
+pub fn RGB::parse(String) -> Self raise ColorParseError
+pub fn RGB::parse_view(BytesView) -> Self raise ColorParseError
 pub fn RGB::r(Self) -> Byte
 
 pub(all) enum Special {

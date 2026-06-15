@@ -948,7 +948,7 @@ fn parse_get_set_ansi_color(
     if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(target))
     } else {
-      let rgb = try @color.RGB::parse(body[spec_start:spec_end]) catch {
+      let rgb = try @color.RGB::parse_view(body[spec_start:spec_end]) catch {
         _ => break
       } noraise {
         rgb => rgb
@@ -1010,7 +1010,7 @@ fn parse_get_set_dynamic_color(
     if spec_end - cursor == 1 && body[cursor] == b'?' {
       result.push(Query(Dynamic(dynamic)))
     } else {
-      let rgb = try @color.RGB::parse(body[cursor:spec_end]) catch {
+      let rgb = try @color.RGB::parse_view(body[cursor:spec_end]) catch {
         _ => break
       } noraise {
         rgb => rgb
