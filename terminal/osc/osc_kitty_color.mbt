@@ -137,9 +137,7 @@ fn kitty_color_append_request(
     return
   }
 
-  let color = try
-    @color.RGB::parse_view(buffer[trimmed_start:trimmed_end])
-  catch {
+  let color = try @color.RGB::parse(buffer[trimmed_start:trimmed_end]) catch {
     _ => return
   } noraise {
     color => color
