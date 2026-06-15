@@ -1,0 +1,17 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/cimap"
+
+// Values
+
+// Errors
+
+// Types and methods
+type CiStrMap[V]
+pub fn[V] CiStrMap::from_entries(ReadOnlyArray[(String, V)]) -> Self[V]
+pub fn[V] CiStrMap::get(Self[V], String) -> V?
+pub fn[V] CiStrMap::get_view(Self[V], BytesView) -> V?
+
+// Type aliases
+
+// Traits
+
