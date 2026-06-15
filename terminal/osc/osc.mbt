@@ -844,15 +844,26 @@ fn parse_color_command(
   buffer : BytesView,
   terminator_ch : Byte?,
 ) -> Command {
-  let op = match color_operation_from_state(state) {
-    Some(op) => op
-    None => return Invalid
-  }
+  guard color_operation_from_state(state) is Some(op) else { return Invalid }
   ColorOperation({
     op,
-    requests: parse_color_requests(op, captured_string(buffer)),
+    requests: parse_color_requests(op, buffer),
     terminator: terminator_init(terminator_ch),
   })
+}
+
+///|
+/// End index (exclusive) of the `;`-delimited segment starting at `start`: the
+/// next `;` or the end of `body`. Callers walk segments with a `mut start`
+/// cursor and slice `body[start:end]` as a view, so splitting allocates
+/// nothing (no segment array, no per-segment copy) — matching Zig's
+/// `tokenizeScalar` iterator. `end == body.length()` marks the last segment.
+fn segment_end(body : BytesView, start : Int) -> Int {
+  if @ascii.find_byte(body, start, body.length(), b';') is Some(index) {
+    index
+  } else {
+    body.length()
+  }
 }
 
 ///|
@@ -888,7 +899,7 @@ fn color_operation_from_state(state : OscParserState) -> ColorOperation? {
 ///|
 fn parse_color_requests(
   op : ColorOperation,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   match op {
     Osc4 => parse_get_set_ansi_color(op, body)
@@ -920,32 +931,34 @@ fn parse_color_requests(
 ///|
 fn parse_get_set_ansi_color(
   op : ColorOperation,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut index = 0
-  while index + 1 < parts.length() {
-    let color = match parse_decimal(parts[index]) {
-      Some(value) => value
-      None => return result
+  // Walk `c;spec` pairs with a cursor; stop as soon as a `c` has no following
+  // `spec` segment (mirrors the old `while index + 1 < parts.length()`).
+  for start = 0 {
+    let color_end = segment_end(body, start)
+    guard parse_decimal(body, start, color_end) is Some(color) else { break }
+    if color_end == body.length() {
+      break
     }
-    let target = match ansi_target_from_index(op, color) {
-      Some(target) => target
-      None => return result
-    }
-    let spec = parts[index + 1]
-    if spec == "?" {
+    guard ansi_target_from_index(op, color) is Some(target) else { break }
+    let spec_start = color_end + 1
+    let spec_end = segment_end(body, spec_start)
+    if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(target))
     } else {
-      let rgb = try @color.RGB::parse(spec) catch {
-        _ => return result
+      let rgb = try @color.RGB::parse(body[spec_start:spec_end]) catch {
+        _ => break
       } noraise {
         rgb => rgb
       }
       result.push(Set({ target, color: rgb }))
     }
-    index += 2
+    if spec_end == body.length() {
+      break
+    }
+    continue spec_end + 1
   }
   result
 }
@@ -953,26 +966,26 @@ fn parse_get_set_ansi_color(
 ///|
 fn parse_reset_ansi_color(
   op : ColorOperation,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut saw_value = false
-  for part in parts {
-    let text = part
-    if text == "" {
-      continue
+  // Thread the `saw_value` accumulator through the loop and break it out, rather
+  // than carrying a `mut`.
+  let saw_value = for start = 0, saw = false {
+    let end_ = segment_end(body, start)
+    let saw = if start == end_ {
+      saw
+    } else {
+      if parse_decimal(body, start, end_) is Some(color) &&
+        ansi_target_from_index(op, color) is Some(target) {
+        result.push(Reset(target))
+      }
+      true
     }
-    saw_value = true
-    let color = match parse_decimal(text) {
-      Some(value) => value
-      None => continue
+    if end_ == body.length() {
+      break saw
     }
-    let target = match ansi_target_from_index(op, color) {
-      Some(target) => target
-      None => continue
-    }
-    result.push(Reset(target))
+    continue end_ + 1, saw
   }
   if !saw_value {
     result.push(ResetPalette)
@@ -983,31 +996,31 @@ fn parse_reset_ansi_color(
 ///|
 fn parse_get_set_dynamic_color(
   start : @color.Dynamic,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
   let result : Array[ColorRequest] = []
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut current = Some(start)
-  for part in parts {
-    let dynamic = match current {
-      Some(dynamic) => dynamic
-      None => return result
+  // Thread the cursor and the next dynamic slot through the loop; advancing the
+  // slot is `continue ..., dynamic.next()` instead of a `mut` reassignment.
+  for cursor = 0, current = Some(start) {
+    guard current is Some(dynamic) else { break }
+    let spec_end = segment_end(body, cursor)
+    if cursor == spec_end {
+      break
     }
-    let spec = part
-    if spec == "" {
-      return result
-    }
-    if spec == "?" {
+    if spec_end - cursor == 1 && body[cursor] == b'?' {
       result.push(Query(Dynamic(dynamic)))
     } else {
-      let rgb = try @color.RGB::parse(spec) catch {
-        _ => return result
+      let rgb = try @color.RGB::parse(body[cursor:spec_end]) catch {
+        _ => break
       } noraise {
         rgb => rgb
       }
       result.push(Set({ target: Dynamic(dynamic), color: rgb }))
     }
-    current = dynamic.next()
+    if spec_end == body.length() {
+      break
+    }
+    continue spec_end + 1, dynamic.next()
   }
   result
 }
@@ -1015,15 +1028,18 @@ fn parse_get_set_dynamic_color(
 ///|
 fn parse_reset_dynamic_color(
   dynamic : @color.Dynamic,
-  body : String,
+  body : BytesView,
 ) -> Array[ColorRequest] {
-  let parts = body.split(";").map(part => part.to_owned()).collect()
-  let mut saw_non_empty = false
-  for part in parts {
-    if part != "" {
-      saw_non_empty = true
-      break
+  // The loop's own value is whether any non-empty segment was seen — no `mut`.
+  let saw_non_empty = for start = 0 {
+    let end_ = segment_end(body, start)
+    if start != end_ {
+      break true
     }
+    if end_ == body.length() {
+      break false
+    }
+    continue end_ + 1
   }
   if saw_non_empty {
     []
@@ -1036,17 +1052,19 @@ fn parse_reset_dynamic_color(
 fn ansi_target_from_index(op : ColorOperation, value : Int) -> ColorTarget? {
   match op {
     Osc5 =>
-      match special_from_int(value) {
-        Some(special) => Some(Special(special))
-        None => None
+      if special_from_int(value) is Some(special) {
+        Some(Special(special))
+      } else {
+        None
       }
     _ =>
       if value >= 0 && value <= 255 {
         Some(Palette(value.to_byte()))
       } else if value >= 256 {
-        match special_from_int(value - 256) {
-          Some(special) => Some(Special(special))
-          None => None
+        if special_from_int(value - 256) is Some(special) {
+          Some(Special(special))
+        } else {
+          None
         }
       } else {
         None
@@ -1067,16 +1085,17 @@ fn special_from_int(value : Int) -> @color.Special? {
 }
 
 ///|
-fn parse_decimal(value : String) -> Int? {
-  if value == "" {
+fn parse_decimal(buffer : BytesView, start : Int, end_ : Int) -> Int? {
+  if start >= end_ {
     return None
   }
   let mut result = 0
-  for char in value {
-    if char < '0' || char > '9' {
+  for index in start..<end_ {
+    let byte = buffer[index]
+    if byte < b'0' || byte > b'9' {
       return None
     }
-    result = result * 10 + (char.to_int() - '0'.to_int())
+    result = result * 10 + (byte.to_int() - b'0'.to_int())
   }
   Some(result)
 }

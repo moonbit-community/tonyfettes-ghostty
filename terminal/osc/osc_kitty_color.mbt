@@ -137,8 +137,7 @@ fn kitty_color_append_request(
     return
   }
 
-  let spec = captured_string(buffer[trimmed_start:trimmed_end])
-  let color = try @color.RGB::parse(spec) catch {
+  let color = try @color.RGB::parse(buffer[trimmed_start:trimmed_end]) catch {
     _ => return
   } noraise {
     color => color

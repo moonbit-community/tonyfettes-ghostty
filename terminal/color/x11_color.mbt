@@ -1,5 +1,5 @@
 ///|
-pub fn x11_color_lookup(value : String) -> RGB? {
+pub fn x11_color_lookup(value : BytesView) -> RGB? {
   let (start, end_) = trim_name_bounds(value)
   if start >= end_ {
     return None
@@ -20,13 +20,13 @@ pub fn x11_color_lookup(value : String) -> RGB? {
 }
 
 ///|
-fn trim_name_bounds(input : String) -> (Int, Int) {
+fn trim_name_bounds(input : BytesView) -> (Int, Int) {
   let mut start = 0
   let mut end_ = input.length()
-  while start < end_ && input[start] == ' ' {
+  while start < end_ && input[start] == b' ' {
     start += 1
   }
-  while end_ > start && input[end_ - 1] == ' ' {
+  while end_ > start && input[end_ - 1] == b' ' {
     end_ -= 1
   }
   (start, end_)
@@ -34,13 +34,13 @@ fn trim_name_bounds(input : String) -> (Int, Int) {
 
 ///|
 fn ascii_equals_ignore_case(
-  input : String,
+  input : BytesView,
   start : Int,
   expected : String,
 ) -> Bool {
   let mut i = 0
   while i < expected.length() {
-    if ascii_lower(input[start + i]) != expected[i] {
+    if ascii_lower(input[start + i]).to_int() != expected[i].to_int() {
       return false
     }
     i += 1
@@ -49,9 +49,9 @@ fn ascii_equals_ignore_case(
 }
 
 ///|
-fn ascii_lower(value : UInt16) -> UInt16 {
-  if value >= 'A' && value <= 'Z' {
-    (value.to_int() - 'A'.to_int() + 'a'.to_int()).to_uint16()
+fn ascii_lower(value : Byte) -> Byte {
+  if value >= b'A' && value <= b'Z' {
+    (value.to_int() - b'A'.to_int() + b'a'.to_int()).to_byte()
   } else {
     value
   }
