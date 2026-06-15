@@ -41,13 +41,13 @@ pub suberror SemanticPromptDecodeError {
 ///|
 pub struct SemanticPrompt {
   action : SemanticPromptAction
-  options_unvalidated : Array[Byte]
+  options_unvalidated : Bytes
 } derive(Eq, Debug)
 
 ///|
 pub fn SemanticPrompt::new(
   action : SemanticPromptAction,
-  options_unvalidated : Array[Byte],
+  options_unvalidated : Bytes,
 ) -> SemanticPrompt {
   { action, options_unvalidated }
 }
@@ -154,7 +154,7 @@ pub fn SemanticPrompt::decoded_command_line(
 }
 
 ///|
-fn parse_semantic_prompt_command(buffer : Array[Byte]) -> Command? {
+fn parse_semantic_prompt_command(buffer : BytesView) -> Command? {
   if buffer.length() == 0 {
     return None
   }
@@ -174,7 +174,7 @@ fn parse_semantic_prompt_command(buffer : Array[Byte]) -> Command? {
       )
     b'L' =>
       if buffer.length() == 1 {
-        Some(SemanticPrompt(SemanticPrompt::new(FreshLine, [])))
+        Some(SemanticPrompt(SemanticPrompt::new(FreshLine, b"")))
       } else {
         None
       }
@@ -186,25 +186,25 @@ fn parse_semantic_prompt_command(buffer : Array[Byte]) -> Command? {
 
 ///|
 fn semantic_prompt_command_with_optional_options(
-  buffer : Array[Byte],
+  buffer : BytesView,
   action : SemanticPromptAction,
 ) -> Command? {
   if buffer.length() == 1 {
-    return Some(SemanticPrompt(SemanticPrompt::new(action, [])))
+    return Some(SemanticPrompt(SemanticPrompt::new(action, b"")))
   }
   if buffer[1] != b';' {
     return None
   }
   Some(
     SemanticPrompt(
-      SemanticPrompt::new(action, copy_bytes_range(buffer, 2, buffer.length())),
+      SemanticPrompt::new(action, buffer[2:buffer.length()].to_owned()),
     ),
   )
 }
 
 ///|
 fn semantic_prompt_option_string(
-  options_unvalidated : Array[Byte],
+  options_unvalidated : BytesView,
   key : String,
 ) -> String? {
   match semantic_prompt_option_value(options_unvalidated, key) {
@@ -215,9 +215,9 @@ fn semantic_prompt_option_string(
 
 ///|
 fn semantic_prompt_option_value(
-  options_unvalidated : Array[Byte],
+  options_unvalidated : BytesView,
   key : String,
-) -> Array[Byte]? {
+) -> BytesView? {
   let mut start = 0
   while start <= options_unvalidated.length() {
     let segment_end = match
@@ -234,9 +234,7 @@ fn semantic_prompt_option_value(
     match @ascii.find_byte(options_unvalidated, start, segment_end, b'=') {
       Some(eq_index) =>
         if @ascii.slice_equals_ascii(options_unvalidated, start, eq_index, key) {
-          return Some(
-            copy_bytes_range(options_unvalidated, eq_index + 1, segment_end),
-          )
+          return Some(options_unvalidated[eq_index + 1:segment_end])
         }
       None => ()
     }
@@ -250,9 +248,7 @@ fn semantic_prompt_option_value(
 }
 
 ///|
-fn semantic_prompt_click_from_bytes(
-  value : Array[Byte],
-) -> SemanticPromptClick? {
+fn semantic_prompt_click_from_bytes(value : BytesView) -> SemanticPromptClick? {
   if value.length() == 1 {
     match value[0] {
       b'm' => Some(Multiple)
@@ -268,7 +264,7 @@ fn semantic_prompt_click_from_bytes(
 }
 
 ///|
-fn semantic_prompt_kind_from_bytes(value : Array[Byte]) -> SemanticPromptKind? {
+fn semantic_prompt_kind_from_bytes(value : BytesView) -> SemanticPromptKind? {
   if value.length() != 1 {
     return None
   }
@@ -283,7 +279,7 @@ fn semantic_prompt_kind_from_bytes(value : Array[Byte]) -> SemanticPromptKind? {
 
 ///|
 fn semantic_prompt_redraw_from_bytes(
-  value : Array[Byte],
+  value : BytesView,
 ) -> SemanticPromptRedraw? {
   if value.length() == 1 {
     match value[0] {
@@ -299,7 +295,7 @@ fn semantic_prompt_redraw_from_bytes(
 }
 
 ///|
-fn semantic_prompt_bool_from_bytes(value : Array[Byte]) -> Bool? {
+fn semantic_prompt_bool_from_bytes(value : BytesView) -> Bool? {
   if value.length() != 1 {
     return None
   }
@@ -312,7 +308,7 @@ fn semantic_prompt_bool_from_bytes(value : Array[Byte]) -> Bool? {
 
 ///|
 fn semantic_prompt_printf_q_decode(
-  value : Array[Byte],
+  value : BytesView,
 ) -> String raise SemanticPromptDecodeError {
   let (start, end_) = semantic_prompt_printf_q_range(value)
   let result : Array[Byte] = []
@@ -344,7 +340,7 @@ fn semantic_prompt_printf_q_decode(
 
 ///|
 fn semantic_prompt_printf_q_range(
-  value : Array[Byte],
+  value : BytesView,
 ) -> (Int, Int) raise SemanticPromptDecodeError {
   if value.length() >= 2 && value[0] == b'$' && value[1] == b'\'' {
     if value.length() < 3 || value[value.length() - 1] != b'\'' {
@@ -363,7 +359,7 @@ fn semantic_prompt_printf_q_range(
 
 ///|
 fn semantic_prompt_url_percent_decode(
-  value : Array[Byte],
+  value : BytesView,
 ) -> String raise SemanticPromptDecodeError {
   let result : Array[Byte] = []
   let mut index = 0

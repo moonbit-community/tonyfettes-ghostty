@@ -87,14 +87,14 @@ pub fn KittyTextSizingOsc::terminator(self : KittyTextSizingOsc) -> Terminator {
 
 ///|
 fn parse_kitty_text_sizing_command(
-  buffer : Array[Byte],
+  buffer : BytesView,
   terminator_ch : Byte?,
 ) -> Command? {
   let payload_start = match @ascii.find_byte(buffer, 0, buffer.length(), b';') {
     Some(index) => index
     None => return None
   }
-  let payload = copy_bytes_range(buffer, payload_start + 1, buffer.length())
+  let payload = buffer[payload_start + 1:buffer.length()]
   if payload.length() > KittyTextSizingPayloadLimit {
     return None
   }
@@ -121,7 +121,7 @@ fn parse_kitty_text_sizing_command(
       Some(eq_index) =>
         if eq_index == start + 1 && eq_index + 1 < segment_end {
           let key = buffer[start]
-          let value = copy_bytes_range(buffer, eq_index + 1, segment_end)
+          let value = buffer[eq_index + 1:segment_end]
           let parsed = @ascii.parse_u32_ascii(value, 0, value.length())
           match key {
             b's' =>
@@ -187,9 +187,8 @@ fn parse_kitty_text_sizing_command(
 }
 
 ///|
-fn decode_safe_utf8(payload : Array[Byte]) -> String? {
-  let bytes = @buffer.from_array(payload).to_bytes()
-  let text = try @utf8.decode(bytes) catch {
+fn decode_safe_utf8(payload : BytesView) -> String? {
+  let text = try @utf8.decode(payload) catch {
     _ => return None
   } noraise {
     text => text

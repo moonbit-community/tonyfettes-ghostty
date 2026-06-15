@@ -112,7 +112,7 @@ const ConEmuSleepMaxMs : UInt16 = 10000
 const ConEmuProgressMax : UInt = 100U
 
 ///|
-fn parse_osc9_command(buffer : Array[Byte]) -> Command {
+fn parse_osc9_command(buffer : BytesView) -> Command {
   if buffer.length() == 0 {
     return desktop_notification_command(buffer)
   }
@@ -126,7 +126,7 @@ fn parse_osc9_command(buffer : Array[Byte]) -> Command {
           b';' => ConEmuSleep(conemu_sleep_from_bytes(buffer, 2))
           b'0' => conemu_xterm_emulation_or_notification(buffer)
           b'1' => conemu_comment_or_notification(buffer)
-          b'2' => SemanticPrompt(SemanticPrompt::new(FreshLineNewPrompt, []))
+          b'2' => SemanticPrompt(SemanticPrompt::new(FreshLineNewPrompt, b""))
           _ => desktop_notification_command(buffer)
         }
       }
@@ -151,17 +151,12 @@ fn parse_osc9_command(buffer : Array[Byte]) -> Command {
 }
 
 ///|
-fn desktop_notification_command(buffer : Array[Byte]) -> Command {
-  ShowDesktopNotification(
-    DesktopNotification::new(
-      "",
-      captured_string(copy_bytes_range(buffer, 0, buffer.length())),
-    ),
-  )
+fn desktop_notification_command(buffer : BytesView) -> Command {
+  ShowDesktopNotification(DesktopNotification::new("", captured_string(buffer)))
 }
 
 ///|
-fn conemu_sleep_from_bytes(buffer : Array[Byte], start : Int) -> ConEmuSleep {
+fn conemu_sleep_from_bytes(buffer : BytesView, start : Int) -> ConEmuSleep {
   match @ascii.parse_u32_ascii(buffer, start, buffer.length()) {
     Some(value) =>
       if value >= ConEmuSleepMaxMs.to_uint() {
@@ -174,7 +169,7 @@ fn conemu_sleep_from_bytes(buffer : Array[Byte], start : Int) -> ConEmuSleep {
 }
 
 ///|
-fn conemu_xterm_emulation_or_notification(buffer : Array[Byte]) -> Command {
+fn conemu_xterm_emulation_or_notification(buffer : BytesView) -> Command {
   if buffer.length() == 2 {
     return ConEmuXtermEmulation(
       ConEmuXtermEmulation::new(Some(true), Some(true)),
@@ -196,16 +191,16 @@ fn conemu_xterm_emulation_or_notification(buffer : Array[Byte]) -> Command {
 }
 
 ///|
-fn conemu_comment_or_notification(buffer : Array[Byte]) -> Command {
+fn conemu_comment_or_notification(buffer : BytesView) -> Command {
   if buffer.length() < 3 || buffer[2] != b';' {
     return desktop_notification_command(buffer)
   }
-  ConEmuComment(captured_string(copy_bytes_range(buffer, 3, buffer.length())))
+  ConEmuComment(captured_string(buffer[3:buffer.length()]))
 }
 
 ///|
 fn conemu_string_or_notification(
-  buffer : Array[Byte],
+  buffer : BytesView,
   separator_index : Int,
   builder : (String) -> Command,
 ) -> Command {
@@ -215,13 +210,11 @@ fn conemu_string_or_notification(
   if buffer[separator_index - 1] != b';' {
     return desktop_notification_command(buffer)
   }
-  builder(
-    captured_string(copy_bytes_range(buffer, separator_index, buffer.length())),
-  )
+  builder(captured_string(buffer[separator_index:buffer.length()]))
 }
 
 ///|
-fn conemu_tab_title_or_notification(buffer : Array[Byte]) -> Command {
+fn conemu_tab_title_or_notification(buffer : BytesView) -> Command {
   if buffer.length() < 2 || buffer[1] != b';' {
     return desktop_notification_command(buffer)
   }
@@ -229,14 +222,12 @@ fn conemu_tab_title_or_notification(buffer : Array[Byte]) -> Command {
     return ConEmuChangeTabTitle(ConEmuTabTitleReset)
   }
   ConEmuChangeTabTitle(
-    ConEmuTabTitleValue(
-      captured_string(copy_bytes_range(buffer, 2, buffer.length())),
-    ),
+    ConEmuTabTitleValue(captured_string(buffer[2:buffer.length()])),
   )
 }
 
 ///|
-fn conemu_progress_or_notification(buffer : Array[Byte]) -> Command {
+fn conemu_progress_or_notification(buffer : BytesView) -> Command {
   if buffer.length() < 3 || buffer[1] != b';' {
     return desktop_notification_command(buffer)
   }

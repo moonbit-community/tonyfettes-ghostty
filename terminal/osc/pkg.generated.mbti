@@ -292,7 +292,7 @@ pub(all) enum KittyTextSizingVerticalAlign {
   KittyTextSizingVCenter
 } derive(Eq, @debug.Debug)
 
-type OscParser derive(@debug.Debug)
+type OscParser
 pub fn OscParser::deinit(Self) -> Unit
 pub fn OscParser::end(Self, Byte?) -> Command?
 pub fn OscParser::new() -> Self
@@ -301,7 +301,7 @@ pub fn OscParser::reset(Self) -> Unit
 
 pub struct SemanticPrompt {
   action : SemanticPromptAction
-  options_unvalidated : Array[Byte]
+  options_unvalidated : Bytes
 } derive(Eq, @debug.Debug)
 pub fn SemanticPrompt::action(Self) -> SemanticPromptAction
 pub fn SemanticPrompt::aid(Self) -> String?
@@ -312,7 +312,7 @@ pub fn SemanticPrompt::cmdline_url(Self) -> String?
 pub fn SemanticPrompt::decoded_command_line(Self) -> String? raise SemanticPromptDecodeError
 pub fn SemanticPrompt::err(Self) -> String?
 pub fn SemanticPrompt::exit_code(Self) -> Int?
-pub fn SemanticPrompt::new(SemanticPromptAction, Array[Byte]) -> Self
+pub fn SemanticPrompt::new(SemanticPromptAction, Bytes) -> Self
 pub fn SemanticPrompt::prompt_kind(Self) -> SemanticPromptKind?
 pub fn SemanticPrompt::redraw(Self) -> SemanticPromptRedraw?
 pub fn SemanticPrompt::special_key(Self) -> Bool?
