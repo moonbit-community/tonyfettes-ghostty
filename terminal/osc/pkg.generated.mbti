@@ -292,7 +292,7 @@ pub(all) enum KittyTextSizingVerticalAlign {
   KittyTextSizingVCenter
 } derive(Eq, @debug.Debug)
 
-type OscParser derive(@debug.Debug)
+type OscParser
 pub fn OscParser::deinit(Self) -> Unit
 pub fn OscParser::end(Self, Byte?) -> Command?
 pub fn OscParser::new() -> Self

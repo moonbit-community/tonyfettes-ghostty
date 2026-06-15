@@ -222,7 +222,7 @@ priv enum OscParserState {
   Prefix117
   Prefix118
   Prefix119
-} derive(Debug)
+}
 
 ///|
 /// Abstract (no `pub`): the parser package builds one via `OscParser::new` and
@@ -237,8 +237,12 @@ struct OscParser {
   // snapshot copy. The array is reused across commands (length 0 = empty).
   mut buffer : FixedArray[Byte]
   mut buffer_len : Int
-  mut command : Command
-} derive(Debug)
+}
+// No `derive(Debug)`: `buffer` is reused across commands and reset only rewinds
+// `buffer_len`, so the backing array keeps stale bytes past the live capture.
+// Deriving Debug would format the whole array and leak prior OSC payloads
+// (e.g. OSC 52/5522/66 clipboard content). Nothing inspects the parser, so the
+// derive is dropped outright rather than hidden behind a custom Show.
 
 ///|
 const OscCaptureInitCap : Int = 64
@@ -250,7 +254,6 @@ pub fn OscParser::new() -> OscParser {
     capturing: false,
     buffer: FixedArray::make(OscCaptureInitCap, 0),
     buffer_len: 0,
-    command: Invalid,
   }
 }
 
@@ -270,7 +273,6 @@ pub fn OscParser::reset(self : OscParser) -> Unit {
     self.buffer = FixedArray::make(OscCaptureInitCap, 0)
   }
   self.buffer_len = 0
-  self.command = Invalid
 }
 
 ///|
