@@ -853,30 +853,32 @@ fn parse_color_command(
 }
 
 ///|
-/// End index (exclusive) of the `;`-delimited segment starting at `start`: the
-/// next `;` or the end of `body`. Callers walk segments with a `mut start`
-/// cursor and slice `body[start:end]` as a view, so splitting allocates
-/// nothing (no segment array, no per-segment copy) — matching Zig's
-/// `tokenizeScalar` iterator. `end == body.length()` marks the last segment.
-fn segment_end(body : BytesView, start : Int) -> Int {
+/// Together `token_start` + `token_end` are MoonBit's split of upstream's
+/// `tokenizeScalar` `next()`: `token_start` skips empties to a token's start,
+/// `token_end` finds that token's end. Callers thread a cursor and slice
+/// `body[start:end]` as a view, so tokenizing allocates nothing (no segment
+/// array, no per-token copy / Option boxing).
+///
+/// Start of the next non-empty `;`-token at or after `from`, skipping empty
+/// tokens (leading or consecutive `;`). Returns `body.length()` when none
+/// remain — so e.g. `4;;1;red` still yields the `1;red` pair.
+fn token_start(body : BytesView, from : Int) -> Int {
+  let mut cursor = from
+  while cursor < body.length() && body[cursor] == b';' {
+    cursor += 1
+  }
+  cursor
+}
+
+///|
+/// End index (exclusive) of the token beginning at `start`: the next `;` or the
+/// end of `body`. `end == body.length()` marks the last token.
+fn token_end(body : BytesView, start : Int) -> Int {
   if @ascii.find_byte(body, start, body.length(), b';') is Some(index) {
     index
   } else {
     body.length()
   }
-}
-
-///|
-/// Start of the next non-empty `;`-token at or after `start`, skipping empty
-/// tokens (leading or consecutive `;`). Returns `body.length()` when none
-/// remain. This makes the color parsers match upstream's `tokenizeScalar`,
-/// which drops empty tokens (so e.g. `4;;1;red` still yields the `1;red` pair).
-fn next_token_start(body : BytesView, start : Int) -> Int {
-  let mut cursor = start
-  while cursor < body.length() && body[cursor] == b';' {
-    cursor += 1
-  }
-  cursor
 }
 
 ///|
@@ -951,19 +953,19 @@ fn parse_get_set_ansi_color(
   // drops empty tokens). A missing spec token or any malformed token stops
   // parsing and returns what was accumulated (xterm behavior).
   for cursor = 0 {
-    let color_start = next_token_start(body, cursor)
+    let color_start = token_start(body, cursor)
     if color_start >= body.length() {
       break
     }
-    let color_end = segment_end(body, color_start)
+    let color_end = token_end(body, color_start)
     guard parse_decimal(body, color_start, color_end) is Some(color) else {
       break
     }
-    let spec_start = next_token_start(body, color_end)
+    let spec_start = token_start(body, color_end)
     if spec_start >= body.length() {
       break
     }
-    let spec_end = segment_end(body, spec_start)
+    let spec_end = token_end(body, spec_start)
     guard ansi_target_from_index(op, color) is Some(target) else { break }
     if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(target))
@@ -989,7 +991,7 @@ fn parse_reset_ansi_color(
   // Thread the `saw_value` accumulator through the loop and break it out, rather
   // than carrying a `mut`.
   let saw_value = for start = 0, saw = false {
-    let end_ = segment_end(body, start)
+    let end_ = token_end(body, start)
     let saw = if start == end_ {
       saw
     } else {
@@ -1021,11 +1023,11 @@ fn parse_get_set_dynamic_color(
   // or on a malformed spec. The cursor and next slot thread through the loop.
   for cursor = 0, current = Some(start) {
     guard current is Some(dynamic) else { break }
-    let spec_start = next_token_start(body, cursor)
+    let spec_start = token_start(body, cursor)
     if spec_start >= body.length() {
       break
     }
-    let spec_end = segment_end(body, spec_start)
+    let spec_end = token_end(body, spec_start)
     if spec_end - spec_start == 1 && body[spec_start] == b'?' {
       result.push(Query(Dynamic(dynamic)))
     } else {
@@ -1048,7 +1050,7 @@ fn parse_reset_dynamic_color(
 ) -> Array[ColorRequest] {
   // The loop's own value is whether any non-empty segment was seen — no `mut`.
   let saw_non_empty = for start = 0 {
-    let end_ = segment_end(body, start)
+    let end_ = token_end(body, start)
     if start != end_ {
       break true
     }
