@@ -25,7 +25,7 @@ pub fn[V] CiStrMap::from_entries(
   let slots : FixedArray[(String, V)?] = FixedArray::make(cap, None)
   let mask = cap - 1
   for entry in entries.iter() {
-    let mut idx = fnv1a_string(entry.0) & mask
+    let mut idx = slot_index(fnv1a_string(entry.0), mask)
     while slots[idx] is Some(_) {
       idx = (idx + 1) & mask
     }
@@ -38,7 +38,7 @@ pub fn[V] CiStrMap::from_entries(
 /// Look up by a `String` key (ASCII case-insensitive).
 pub fn[V] CiStrMap::get(self : CiStrMap[V], key : String) -> V? {
   let mask = self.mask
-  for idx = fnv1a_string(key) & mask {
+  for idx = slot_index(fnv1a_string(key), mask) {
     match self.slots[idx] {
       None => break None
       Some((name, value)) =>
@@ -56,7 +56,7 @@ pub fn[V] CiStrMap::get(self : CiStrMap[V], key : String) -> V? {
 /// hashed and compared in place against the stored names.
 pub fn[V] CiStrMap::get_view(self : CiStrMap[V], key : BytesView) -> V? {
   let mask = self.mask
-  for idx = fnv1a_view(key) & mask {
+  for idx = slot_index(fnv1a_view(key), mask) {
     match self.slots[idx] {
       None => break None
       Some((name, value)) =>
@@ -80,22 +80,34 @@ fn ascii_lower(code : Int) -> Int {
 }
 
 ///|
-/// FNV-1a over the ASCII-lowercased bytes. `Int` is 32-bit and wraps, matching
-/// the 32-bit FNV reference. `fnv1a_string` must agree byte-for-byte with
-/// `fnv1a_view` on ASCII so a `String` and an equal `BytesView` collide.
-fn fnv1a_string(key : String) -> Int {
-  let mut hash = 0x811c9dc5
+/// Reduce a hash to a slot index. The hash is unsigned; `&` with the (positive)
+/// power-of-two mask keeps it in `[0, cap)`, and the result fits a non-negative
+/// `Int`.
+fn slot_index(hash : UInt, mask : Int) -> Int {
+  (hash & mask.reinterpret_as_uint()).reinterpret_as_int()
+}
+
+///|
+/// FNV-1a over the ASCII-lowercased bytes. Kept in `UInt` so the modulo-2^32
+/// multiply wraps as unsigned (FNV's defined behavior) instead of relying on
+/// signed `Int` overflow, which is UB on native/sanitized builds. `fnv1a_string`
+/// must agree byte-for-byte with `fnv1a_view` on ASCII so a `String` and an
+/// equal `BytesView` collide.
+fn fnv1a_string(key : String) -> UInt {
+  let mut hash = 0x811c9dc5U
   for i in 0..<key.length() {
-    hash = (hash ^ ascii_lower(key[i].to_int())) * 0x01000193
+    hash = (hash ^ ascii_lower(key[i].to_int()).reinterpret_as_uint()) *
+      0x01000193U
   }
   hash
 }
 
 ///|
-fn fnv1a_view(key : BytesView) -> Int {
-  let mut hash = 0x811c9dc5
+fn fnv1a_view(key : BytesView) -> UInt {
+  let mut hash = 0x811c9dc5U
   for byte in key {
-    hash = (hash ^ ascii_lower(byte.to_int())) * 0x01000193
+    hash = (hash ^ ascii_lower(byte.to_int()).reinterpret_as_uint()) *
+      0x01000193U
   }
   hash
 }
