@@ -8,6 +8,8 @@ import {
 // Values
 pub fn cjk_text() -> Workload
 
+pub fn color_storm() -> Workload
+
 pub fn colored_log() -> Workload
 
 pub fn mixed_realistic() -> Workload

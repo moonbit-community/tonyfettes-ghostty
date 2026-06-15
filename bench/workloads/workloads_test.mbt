@@ -54,6 +54,12 @@ test "bench osc_titles" (it : @bench.T) {
 }
 
 ///|
+test "bench color_storm" (it : @bench.T) {
+  let w = color_storm()
+  it.bench(fn() { it.keep(w.process()) })
+}
+
+///|
 test "bench sgr_storm" (it : @bench.T) {
   let w = sgr_storm()
   it.bench(fn() { it.keep(w.process()) })

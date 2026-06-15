@@ -169,6 +169,24 @@ pub fn osc_titles() -> Workload {
 }
 
 ///|
+/// Pure OSC color churn (OSC 4 palette + OSC 10/11 dynamic) with no printable
+/// payload: every byte drives the OSC parser and the color command apply, with
+/// nothing reaching the glyph print path. Isolates the OSC color parse cost
+/// (UTF-8 decode of the body, `;`-split, `RGB::parse`), which the micro-bench
+/// flags as ~5x the OSC title cost.
+pub fn color_storm() -> Workload {
+  let buf = Buffer(size_hint=256)
+  for i in 0..<20000 {
+    buf.write_bytes(b"\x1b]4;")
+    put_uint(buf, i % 256)
+    buf.write_bytes(b";rgb:0102/0304/0506\x07")
+    buf.write_bytes(b"\x1b]10;rgb:ffff/0000/0000\x07")
+    buf.write_bytes(b"\x1b]11;#1e1e2e\x07")
+  }
+  { name: "color_storm", payload: buf.contents(), default_iters: 60 }
+}
+
+///|
 /// Pure SGR churn with no printable payload to dilute it: every byte is part of
 /// an escape sequence, so the whole stream drives `Parser::next` and nothing
 /// reaches the glyph print / wrap / scroll path. This isolates the parser's
