@@ -111,8 +111,8 @@ pub fn ActionList::op_get(self : ActionList, index : Int) -> Action? {
 /// bypassed by assigning fields from another package.
 struct Parser {
   mut state : ParserState
-  mut intermediates : Array[Byte]
-  mut params : Array[UInt16]
+  intermediates : Array[Byte]
+  params : Array[UInt16]
   mut params_sep : SepList
   mut param_acc : UInt16
   mut param_acc_idx : Int
@@ -305,8 +305,12 @@ fn Parser::consume_param(self : Parser, c : Byte) -> Action? {
 
 ///|
 fn Parser::clear(self : Parser) -> Unit {
-  self.intermediates = []
-  self.params = []
+  // Reset length to zero while keeping the backing buffers, mirroring upstream's
+  // fixed-size arrays + length counters (`clear()` just rewinds the counts). The
+  // dispatched `Csi`/`Esc`/`Dcs` payloads are deep copies (`clone_bytes` /
+  // `clone_params`), so they never alias these buffers and reuse is safe.
+  self.intermediates.clear()
+  self.params.clear()
   self.params_sep = SepList::init_empty()
   self.param_acc = 0
   self.param_acc_idx = 0
@@ -323,15 +327,26 @@ fn saturating_param_append(value : UInt16, digit : Byte) -> UInt16 {
 }
 
 ///|
+/// Shared empty payloads for the common no-intermediate / no-param dispatch
+/// (e.g. `\x1b[c`). Both are immutable, so handing the same instance to every
+/// such action is safe and avoids a per-dispatch allocation.
+let empty_intermediates : Bytes = b""
+
+///|
+let empty_params : ReadOnlyArray[UInt16] = []
+
+///|
 pub fn clone_bytes(source : Array[Byte]) -> Bytes {
-  let result = Buffer()
-  for value in source {
-    result.write_byte(value)
+  if source.is_empty() {
+    return empty_intermediates
   }
-  result.to_bytes()
+  Bytes::from_array(source)
 }
 
 ///|
 pub fn clone_params(source : Array[UInt16]) -> ReadOnlyArray[UInt16] {
+  if source.is_empty() {
+    return empty_params
+  }
   ReadOnlyArray::from_array(source)
 }
