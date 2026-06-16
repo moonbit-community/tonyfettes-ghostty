@@ -171,6 +171,27 @@ test "stream terminal/uses readonly fallbacks and palette dirtiness" {
 }
 
 ///|
+test "stream terminal/default secondary and tertiary device attributes" {
+  let recorder = StreamTerminalEffectsRecorder::new()
+  let terminal = StreamTerminal::new(write_pty=fn(data) {
+    recorder.write_pty(data)
+  })
+
+  // No device_attributes effect is set, so each query takes the cached default
+  // reply branch: Primary (`c`), Secondary (`>c`), and Tertiary (`=c`).
+  terminal.next_slice(b"\x1B[c\x1B[>c\x1B[=c")
+
+  guard recorder.writes.length() == 3 else {
+    fail("expected default primary, secondary, and tertiary DA replies")
+  }
+  expect_stream_write(recorder, 0, b"\x1B[?62;22c")
+  expect_stream_write(recorder, 1, b"\x1B[>1;0;0c")
+  expect_stream_write(recorder, 2, b"\x1BP!|00000000\x1B\\")
+
+  terminal.deinit()
+}
+
+///|
 test "stream terminal/resize updates dimensions and reports size" {
   let recorder = StreamTerminalEffectsRecorder::new()
   let terminal = StreamTerminal::new(write_pty=fn(data) {
