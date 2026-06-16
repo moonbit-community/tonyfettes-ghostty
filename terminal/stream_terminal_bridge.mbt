@@ -1723,13 +1723,39 @@ fn StreamTerminalBridgeState::bell(self : StreamTerminalBridgeState) -> Unit {
 }
 
 ///|
+/// Precomputed responses for the default device attributes. The default
+/// config is constant, so its three encodings never change — caching them keeps
+/// back-to-back DA queries (the `\x1b[c` hot path) from rebuilding the same
+/// bytes (and the `DeviceAttributes::default()` struct graph) on every request.
+let default_primary_da_response : Bytes = DeviceAttributes::default().encode(
+  Primary,
+)
+
+///|
+let default_secondary_da_response : Bytes = DeviceAttributes::default().encode(
+  Secondary,
+)
+
+///|
+let default_tertiary_da_response : Bytes = DeviceAttributes::default().encode(
+  Tertiary,
+)
+
+///|
 fn StreamTerminalBridgeState::report_device_attributes(
   self : StreamTerminalBridgeState,
   request : DeviceAttributeRequest,
 ) -> Unit {
   match (self.effects.device_attributes)() {
     Some(attributes) => self.write_pty(attributes.encode(request))
-    None => self.write_pty(DeviceAttributes::default().encode(request))
+    None =>
+      self.write_pty(
+        match request {
+          Primary => default_primary_da_response
+          Secondary => default_secondary_da_response
+          Tertiary => default_tertiary_da_response
+        },
+      )
   }
 }
 
@@ -1780,24 +1806,40 @@ fn StreamTerminalBridgeState::report_enquiry(
 }
 
 ///|
-fn StreamTerminalBridgeState::report_xtversion(
-  self : StreamTerminalBridgeState,
-) -> Unit {
-  let version_bytes = utf8_bytes((self.effects.xtversion)())
-  let reported = if version_bytes.length() == 0 {
-    utf8_bytes(DefaultXtversion)
-  } else {
-    version_bytes
-  }
-  if reported.length() > MaxXtversionBytes {
-    return
-  }
-
+/// Build the XTVERSION reply (`DCS >| <name> ST`) for an already-encoded name.
+/// Upstream `reportXtversion` formats this into a fixed stack buffer and
+/// allocates nothing per query; this mirrors that single construction so the
+/// constant default reply can be precomputed once below.
+fn encode_xtversion_response(reported : Bytes) -> Bytes {
   let buffer = Buffer(size_hint=reported.length() + 5)
   buffer.write_bytes(b"\x1BP>|")
   buffer.write_bytes(reported)
   buffer.write_bytes(b"\x1B\\")
-  self.write_pty(buffer.contents())
+  buffer.contents()
+}
+
+///|
+/// Precomputed XTVERSION reply for the built-in default name. The default name
+/// is constant, so back-to-back `\x1b[>q` queries reuse this shared value
+/// instead of re-encoding `DefaultXtversion` into a fresh `Buffer` each time —
+/// restoring upstream's no-per-query-allocation behavior.
+let default_xtversion_response : Bytes = encode_xtversion_response(
+  @utf8.encode(DefaultXtversion),
+)
+
+///|
+fn StreamTerminalBridgeState::report_xtversion(
+  self : StreamTerminalBridgeState,
+) -> Unit {
+  let version_bytes = @utf8.encode((self.effects.xtversion)())
+  if version_bytes.length() == 0 {
+    self.write_pty(default_xtversion_response)
+    return
+  }
+  if version_bytes.length() > MaxXtversionBytes {
+    return
+  }
+  self.write_pty(encode_xtversion_response(version_bytes))
 }
 
 ///|
@@ -3426,15 +3468,8 @@ fn saturated_dimension(count : CellCountInt, unit : UInt) -> UInt {
 }
 
 ///|
-fn utf8_bytes(value : String) -> Bytes {
-  let buffer = Buffer()
-  buffer.write_string_utf8(value)
-  buffer.contents()
-}
-
-///|
 fn truncate_utf8(value : String, max_bytes : Int) -> String {
-  let original = utf8_bytes(value)
+  let original = @utf8.encode(value)
   if original.length() <= max_bytes {
     return value
   }
