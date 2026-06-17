@@ -12,6 +12,11 @@ pub(all) enum SgrUnderline {
 } derive(Eq, Debug)
 
 ///|
+/// Carries the parameters of an unrecognized SGR attribute out to the stream
+/// handler. Unlike the internal parser payloads, an `SgrUnknown` crosses the
+/// public `StreamHandler` boundary and may be stored by the consumer (e.g. a
+/// handler that batches actions), so it owns `full` (a copy of the params) with
+/// `partial` a slice of that copy — it never aliases the parser's reused buffer.
 pub(all) struct SgrUnknown {
   full : ReadOnlyArray[UInt16]
   partial : ArrayView[UInt16]
@@ -57,22 +62,35 @@ pub(all) enum SgrAttribute {
 /// and drive it through `set_params`/`next`/`reset`, so its cursor state stays
 /// sealed across the package boundary.
 struct SgrParser {
-  mut params : ReadOnlyArray[UInt16]
+  mut params : ArrayView[UInt16]
   mut params_sep : @parser.SepList
   mut idx : Int
 } derive(Debug)
 
 ///|
+/// Shared empty parameter view for the no-param parser. The backing empty array
+/// is immutable in practice (length 0), so handing out the same view is safe.
+let empty_sgr_params : ArrayView[UInt16] = ([] : Array[UInt16])
+
+///|
 fn SgrParser::empty() -> SgrParser {
-  { params: [], params_sep: @parser.SepList::init_empty(), idx: 0 }
+  {
+    params: empty_sgr_params,
+    params_sep: @parser.SepList::init_empty(),
+    idx: 0,
+  }
 }
 
 ///|
 /// Build a parser over already-collected CSI parameters and their separator
 /// set. Boundary factory so callers in other packages do not construct the
 /// SgrParser record directly.
+/// `params` borrows the caller's CSI parameter buffer (an `ArrayView`); the
+/// parser is consumed synchronously within the dispatch window, so it never
+/// outlives that buffer. The only attribute that escapes to the handler with
+/// param data — the rare `Unknown` — is copied out in `make_unknown`.
 pub fn SgrParser::from_params(
-  params : ReadOnlyArray[UInt16],
+  params : ArrayView[UInt16],
   params_sep : @parser.SepList,
 ) -> SgrParser {
   { params, params_sep, idx: 0 }
@@ -102,7 +120,9 @@ pub fn SgrParser::set_params(
     return InvalidValue
   }
 
-  self.params = @parser.clone_params(params)
+  // Snapshot the caller's params into an independent buffer; the stored view
+  // keeps that copy alive and is decoupled from later caller mutation.
+  self.params = params.copy()
   self.params_sep = @parser.SepList::init_empty()
   for index in 0..<separators.length() {
     if separators[index] == b':' {
@@ -141,12 +161,7 @@ pub fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
         } else {
           self.params.length()
         }
-        return Some(
-          Unknown({
-            full: self.params,
-            partial: self.params[current:consumed_end],
-          }),
-        )
+        return Some(Unknown(self.make_unknown(current, consumed_end)))
       }
     }
   }
@@ -355,10 +370,22 @@ fn SgrParser::consume_unknown_colon(self : SgrParser) -> Unit {
 
 ///|
 fn SgrParser::unknown_from(self : SgrParser, current : Int) -> SgrAttribute {
-  Unknown({
-    full: self.params,
-    partial: self.params[current:self.params.length()],
-  })
+  Unknown(self.make_unknown(current, self.params.length()))
+}
+
+///|
+/// Build an owned `SgrUnknown`. `self.params` borrows the parser's reused
+/// buffer, but the `Unknown` attribute escapes to the stream handler (which may
+/// store it), so the params are copied into an owned `ReadOnlyArray` with
+/// `partial` a slice of that copy. Unknown SGR codes are rare, so this copy is
+/// off the hot path (known attributes are returned as borrow-free value types).
+fn SgrParser::make_unknown(
+  self : SgrParser,
+  start : Int,
+  end : Int,
+) -> SgrUnknown {
+  let full = ReadOnlyArray::from_array(self.params.to_owned())
+  { full, partial: full[start:end] }
 }
 
 ///|

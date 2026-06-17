@@ -207,17 +207,17 @@ fn to_upper_ascii(value : Byte) -> Byte {
 
 ///|
 fn make_plain_dcs(final_byte : Byte) -> @parser.Dcs {
-  let intermediates : Bytes = []
-  let params : ReadOnlyArray[UInt16] = []
+  let intermediates : Array[Byte] = []
+  let params : Array[UInt16] = []
   { intermediates, params, final_byte }
 }
 
 ///|
 fn make_intermediate_dcs(
-  intermediates : Bytes,
+  intermediates : ArrayView[Byte],
   final_byte : Byte,
 ) -> @parser.Dcs {
-  let params : ReadOnlyArray[UInt16] = []
+  let params : Array[UInt16] = []
   { intermediates, params, final_byte }
 }
 
