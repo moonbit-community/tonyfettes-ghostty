@@ -17,7 +17,7 @@ fn ScreenGridState::cell(
     col_idx >= self.cols.to_int() {
     None
   } else {
-    Some(self.lines[row_idx].cells[col_idx])
+    Some(self.cells[row_idx][col_idx])
   }
 }
 
@@ -39,7 +39,7 @@ fn set_test_cell(
   col : Int,
   cell : PageCellState,
 ) -> Unit {
-  grid.lines[row].cells[col] = cell
+  grid.cells[row][col] = cell
 }
 
 ///|
@@ -359,8 +359,8 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   }
 
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D', b'E'])
-  grid.lines[0].desc = grid.lines[0].desc.with_wrap(true)
-  grid.lines[1].desc = grid.lines[1].desc.with_wrap_continuation(true)
+  grid.descs[0] = grid.descs[0].with_wrap(true)
+  grid.descs[1] = grid.descs[1].with_wrap_continuation(true)
   cursor.x = 1
   grid.delete_chars(cursor, @style.CellStyle::new(), 2)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() &&
@@ -519,7 +519,7 @@ test "screen grid/char editing edge branches and helper math" {
 
   let wrap_grid = ScreenGridState::new(1, 4)
   let wrap_cursor = TerminalCursorState::new(1, 4)
-  wrap_grid.lines[0].desc = wrap_grid.lines[0].desc.with_wrap(true)
+  wrap_grid.descs[0] = wrap_grid.descs[0].with_wrap(true)
   wrap_grid.write_cell(
     0,
     3,
@@ -631,9 +631,7 @@ test "screen grid/erase line and display modes" {
   let complete_cursor = TerminalCursorState::new(2, 3)
   fill_ascii(complete_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(complete_grid, 1, [b'D', b'E', b'F'])
-  complete_grid.lines[1].desc = complete_grid.lines[1].desc.with_semantic_prompt(
-    Prompt,
-  )
+  complete_grid.descs[1] = complete_grid.descs[1].with_semantic_prompt(Prompt)
   complete_grid.erase_display(
     complete_cursor,
     @style.CellStyle::new(),
@@ -783,7 +781,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     Output,
     None,
   )
-  boundary_grid.lines[0].desc = boundary_grid.lines[0].desc.with_wrap(true)
+  boundary_grid.descs[0] = boundary_grid.descs[0].with_wrap(true)
   boundary_grid.split_cell_boundary(0, 4, style)
   guard expect_cell(boundary_grid, 0, 3).palette_index() == Some(6) else {
     fail("expected split boundary at row end to clear spacer head")
@@ -809,9 +807,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     Output,
     None,
   )
-  boundary_grid.lines[1].desc = boundary_grid.lines[1].desc.with_wrap_continuation(
-    true,
-  )
+  boundary_grid.descs[1] = boundary_grid.descs[1].with_wrap_continuation(true)
   boundary_grid.split_cell_boundary(1, 0, style)
   guard expect_cell(boundary_grid, 0, 3).palette_index() == Some(6) else {
     fail("expected split boundary at row start to clear previous spacer head")
@@ -948,7 +944,7 @@ test "screen grid/shift helpers partial regions and split early return" {
     fail("expected index at bottom margin to scroll up")
   }
 
-  bottom_grid.lines[1].desc = bottom_grid.lines[1].desc.with_wrap(false)
+  bottom_grid.descs[1] = bottom_grid.descs[1].with_wrap(false)
   bottom_grid.split_cell_boundary(1, 3, @style.CellStyle::new())
   guard expect_cell(bottom_grid, 1, 0).is_empty() else {
     fail(
