@@ -7,9 +7,6 @@ import {
 }
 
 // Values
-pub fn clone_bytes(Array[Byte]) -> Bytes
-
-pub fn clone_params(Array[UInt16]) -> ReadOnlyArray[UInt16]
 
 // Errors
 
@@ -32,20 +29,20 @@ type ActionList
 pub fn ActionList::op_get(Self, Int) -> Action?
 
 pub(all) struct Csi {
-  intermediates : Bytes
-  params : ReadOnlyArray[UInt16]
+  intermediates : ArrayView[Byte]
+  params : ArrayView[UInt16]
   params_sep : SepList
   final_byte : Byte
 }
 
 pub(all) struct Dcs {
-  intermediates : Bytes
-  params : ReadOnlyArray[UInt16]
+  intermediates : ArrayView[Byte]
+  params : ArrayView[UInt16]
   final_byte : Byte
 }
 
 pub(all) struct Esc {
-  intermediates : Bytes
+  intermediates : ArrayView[Byte]
   final_byte : Byte
 }
 

@@ -40,29 +40,24 @@ fn ParserState::ordinal(self : ParserState) -> Int {
 }
 
 ///|
-fn parser_state_from_int(value : Int) -> ParserState? {
+fn parser_state_from_int(value : Int) -> ParserState {
   match value {
-    0 => Some(Ground)
-    1 => Some(Escape)
-    2 => Some(EscapeIntermediate)
-    3 => Some(CsiEntry)
-    4 => Some(CsiIntermediate)
-    5 => Some(CsiParam)
-    6 => Some(CsiIgnore)
-    7 => Some(DcsEntry)
-    8 => Some(DcsParam)
-    9 => Some(DcsIntermediate)
-    10 => Some(DcsPassthrough)
-    11 => Some(DcsIgnore)
-    12 => Some(OscString)
-    13 => Some(SosPmApcString)
-    _ => None
+    0 => Ground
+    1 => Escape
+    2 => EscapeIntermediate
+    3 => CsiEntry
+    4 => CsiIntermediate
+    5 => CsiParam
+    6 => CsiIgnore
+    7 => DcsEntry
+    8 => DcsParam
+    9 => DcsIntermediate
+    10 => DcsPassthrough
+    11 => DcsIgnore
+    12 => OscString
+    13 => SosPmApcString
+    _ => abort("invalid parse table state code")
   }
-}
-
-///|
-fn parser_state_count() -> Int {
-  ParserStateCount
 }
 
 ///|
@@ -81,24 +76,25 @@ priv enum TransitionAction {
 }
 
 ///|
-fn transition_action_from_int(value : Int) -> TransitionAction? {
+fn transition_action_from_int(value : Int) -> TransitionAction {
   match value {
-    0 => Some(None)
-    1 => Some(Ignore)
-    2 => Some(Print)
-    3 => Some(Execute)
-    4 => Some(Collect)
-    5 => Some(Param)
-    6 => Some(EscDispatch)
-    7 => Some(CsiDispatch)
-    8 => Some(Put)
-    9 => Some(OscPut)
-    10 => Some(ApcPut)
-    _ => None
+    0 => None
+    1 => Ignore
+    2 => Print
+    3 => Execute
+    4 => Collect
+    5 => Param
+    6 => EscDispatch
+    7 => CsiDispatch
+    8 => Put
+    9 => OscPut
+    10 => ApcPut
+    _ => abort("invalid parse table action code")
   }
 }
 
 ///|
+#valtype
 priv struct Transition {
   state : ParserState
   action : TransitionAction

@@ -45,23 +45,34 @@ pub fn SepList::count(self : SepList) -> Int {
 }
 
 ///|
+/// Dispatch payload borrowing the parser's reused accumulators. Like upstream
+/// (`Parser.zig`: `self.intermediates[0..idx]`, `self.params[0..idx]`), the
+/// `intermediates` / `params` views alias the parser's `Array` buffers and are
+/// only valid for the synchronous dispatch window — the next `Parser::next`
+/// rewinds and overwrites those buffers via `clear()`. Consumers must read them
+/// during dispatch and copy (not store) anything that must outlive it.
 pub(all) struct Csi {
-  intermediates : Bytes
-  params : ReadOnlyArray[UInt16]
+  intermediates : ArrayView[Byte]
+  params : ArrayView[UInt16]
   params_sep : SepList
   final_byte : Byte
 }
 
 ///|
+/// Borrowed dispatch payload; see `Csi` for the aliasing/lifetime contract.
 pub(all) struct Esc {
-  intermediates : Bytes
+  intermediates : ArrayView[Byte]
   final_byte : Byte
 }
 
 ///|
+/// Borrowed dispatch payload; see `Csi` for the aliasing/lifetime contract.
+/// The stream layer copies these views into an owned `DcsHookPayload` because
+/// the DCS hook outlives the synchronous dispatch (mirrors upstream
+/// `dcs.zig`'s copy-into-Command).
 pub(all) struct Dcs {
-  intermediates : Bytes
-  params : ReadOnlyArray[UInt16]
+  intermediates : ArrayView[Byte]
+  params : ArrayView[UInt16]
   final_byte : Byte
 }
 
@@ -204,8 +215,8 @@ pub fn Parser::next(self : Parser, c : Byte) -> ActionList {
           }
           Some(
             DcsHook({
-              intermediates: clone_bytes(self.intermediates),
-              params: clone_params(self.params),
+              intermediates: self.intermediates,
+              params: self.params,
               final_byte: c,
             }),
           )
@@ -259,8 +270,8 @@ fn Parser::do_action(
         } else {
           Some(
             CsiDispatch({
-              intermediates: clone_bytes(self.intermediates),
-              params: clone_params(self.params),
+              intermediates: self.intermediates,
+              params: self.params,
               params_sep: self.params_sep,
               final_byte: c,
             }),
@@ -268,12 +279,7 @@ fn Parser::do_action(
         }
       }
     EscDispatch =>
-      Some(
-        EscDispatch({
-          intermediates: clone_bytes(self.intermediates),
-          final_byte: c,
-        }),
-      )
+      Some(EscDispatch({ intermediates: self.intermediates, final_byte: c }))
     Put => Some(DcsPut(c))
     ApcPut => Some(ApcPut(c))
   }
@@ -306,9 +312,10 @@ fn Parser::consume_param(self : Parser, c : Byte) -> Action? {
 ///|
 fn Parser::clear(self : Parser) -> Unit {
   // Reset length to zero while keeping the backing buffers, mirroring upstream's
-  // fixed-size arrays + length counters (`clear()` just rewinds the counts). The
-  // dispatched `Csi`/`Esc`/`Dcs` payloads are deep copies (`clone_bytes` /
-  // `clone_params`), so they never alias these buffers and reuse is safe.
+  // fixed-size arrays + length counters (`clear()` just rewinds the counts).
+  // The dispatched `Csi`/`Esc`/`Dcs` payloads borrow views into these buffers
+  // (like upstream's slices) and are consumed synchronously before the next
+  // `next()` rewinds them here, so reuse is safe.
   self.intermediates.clear()
   self.params.clear()
   self.params_sep = SepList::init_empty()
@@ -324,29 +331,4 @@ fn saturating_param_append(value : UInt16, digit : Byte) -> UInt16 {
   } else {
     next_value.to_uint16()
   }
-}
-
-///|
-/// Shared empty payloads for the common no-intermediate / no-param dispatch
-/// (e.g. `\x1b[c`). Both are immutable, so handing the same instance to every
-/// such action is safe and avoids a per-dispatch allocation.
-let empty_intermediates : Bytes = b""
-
-///|
-let empty_params : ReadOnlyArray[UInt16] = []
-
-///|
-pub fn clone_bytes(source : Array[Byte]) -> Bytes {
-  if source.is_empty() {
-    return empty_intermediates
-  }
-  Bytes::from_array(source)
-}
-
-///|
-pub fn clone_params(source : Array[UInt16]) -> ReadOnlyArray[UInt16] {
-  if source.is_empty() {
-    return empty_params
-  }
-  ReadOnlyArray::from_array(source)
 }

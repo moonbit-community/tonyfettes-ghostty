@@ -1036,6 +1036,7 @@ pub type CellCountInt = UInt16
 // Traits
 pub(open) trait StreamHandler {
   fn vt(Self, StreamAction) -> Unit
+  fn print(Self, UInt) -> Unit
   fn deinit(Self) -> Unit
 }
 

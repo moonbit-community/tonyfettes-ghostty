@@ -1,6 +1,4 @@
 ///|
-
-///|
 fn TransitionAction::ordinal(self : TransitionAction) -> Int {
   match self {
     None => 0
@@ -36,19 +34,12 @@ test "parser core types/parser state roundtrip and count" {
     (SosPmApcString, 13),
   ]
 
-  assert_eq(parser_state_count(), states.length())
+  assert_eq(ParserStateCount, states.length())
   for entry in states {
     assert_eq(entry.0.ordinal(), entry.1)
-    guard parser_state_from_int(entry.1) == Some(entry.0) else {
+    guard parser_state_from_int(entry.1) == entry.0 else {
       fail("expected parser state roundtrip for \{entry.1}")
     }
-  }
-
-  guard parser_state_from_int(-1) == None else {
-    fail("expected negative parser state to be rejected")
-  }
-  guard parser_state_from_int(parser_state_count()) == None else {
-    fail("expected parser state overflow to be rejected")
   }
 }
 
@@ -70,16 +61,8 @@ test "parser core types/transition action roundtrip" {
 
   for entry in actions {
     assert_eq(entry.0.ordinal(), entry.1)
-    guard transition_action_from_int(entry.1) is Some(found) &&
-      found.ordinal() == entry.1 else {
+    guard transition_action_from_int(entry.1).ordinal() == entry.1 else {
       fail("expected transition action roundtrip for \{entry.1}")
     }
-  }
-
-  guard transition_action_from_int(-1) is None else {
-    fail("expected negative transition action to be rejected")
-  }
-  guard transition_action_from_int(actions.length()) is None else {
-    fail("expected transition action overflow to be rejected")
   }
 }

@@ -15,12 +15,14 @@ pub(all) struct ConfigureCharsetAction {
 pub(all) struct CursorMovement(UInt16) derive(Eq, Debug)
 
 ///|
+#valtype
 pub(all) struct CursorPosition {
   row : UInt16
   col : UInt16
 } derive(Eq, Debug)
 
 ///|
+#valtype
 pub(all) struct Margin {
   top_left : UInt16
   bottom_right : UInt16
@@ -30,6 +32,13 @@ pub(all) struct Margin {
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, Debug)
 
 ///|
+/// Owned DCS-hook payload. The `@parser.Dcs` it is built from borrows the
+/// parser's reused buffers, but the hook crosses the public `StreamHandler`
+/// boundary and a handler typically keeps DCS state across the following
+/// `dcs_put` / `dcs_unhook` bytes (which rewind those buffers), so the views are
+/// copied into owned storage here — mirroring upstream `dcs.zig` copying the
+/// slices into its stored Command. DCS hooks are rare, so this is off the hot
+/// path.
 struct DcsHookPayload {
   intermediates : Bytes
   params : ReadOnlyArray[UInt16]
@@ -39,8 +48,8 @@ struct DcsHookPayload {
 ///|
 fn DcsHookPayload::from_dcs(dcs : @parser.Dcs) -> DcsHookPayload {
   {
-    intermediates: dcs.intermediates,
-    params: dcs.params,
+    intermediates: Bytes::from_array(dcs.intermediates.to_owned()),
+    params: ReadOnlyArray::from_array(dcs.params.to_owned()),
     final_byte: dcs.final_byte,
   }
 }
@@ -160,6 +169,12 @@ pub(all) enum StreamAction {
 ///|
 pub(open) trait StreamHandler {
   fn vt(Self, StreamAction) -> Unit
+  // Print hot-path fast lane: the single most frequent action (one call per
+  // printable codepoint) bypasses the boxed `StreamAction` union. Routing it
+  // through a dedicated typed method avoids allocating + dropping a
+  // `StreamPrint` box per character (the generic `vt` path boxes; this does
+  // not). Mirrors upstream's comptime-specialized `vt(.print, …)`.
+  fn print(Self, UInt) -> Unit
   fn deinit(Self) -> Unit
 }
 
@@ -253,10 +268,11 @@ fn[H : StreamHandler] Stream::consume_until_ground(
   input : Bytes,
   start : Int,
 ) -> Int {
+  let input_length = input.length()
   let mut offset = start
   while !self.parser.is_ground() {
-    if offset >= input.length() {
-      return input.length() - start
+    if offset >= input_length {
+      return input_length - start
     }
     self.next_non_utf8(input[offset])
     offset += 1
@@ -352,13 +368,18 @@ fn[H : StreamHandler] Stream::emit(
 
 ///|
 fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit {
-  self.emit(StreamPrint(codepoint))
+  // Fast lane: call the handler's typed `print` directly instead of
+  // `emit(StreamPrint(codepoint))`, which would box the action. Both the
+  // ground-state codepoint path (`handle_codepoint`) and the parser-dispatched
+  // `Print` action (`dispatch_action`) funnel through here, so both stop
+  // allocating a per-character `StreamPrint`.
+  H::print(self.handler, codepoint)
 }
 
 ///|
 fn[H : StreamHandler] Stream::emit_sgr(
   self : Stream[H],
-  params : ReadOnlyArray[UInt16],
+  params : ArrayView[UInt16],
   params_sep : @parser.SepList,
 ) -> Unit {
   let parser = @sgr.SgrParser::from_params(params, params_sep)
@@ -397,58 +418,58 @@ fn[H : StreamHandler] Stream::csi_dispatch(
 ) -> Unit {
   match csi.final_byte {
     b'A' | b'k' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorUp(CursorMovement(value)))
         }
       }
     b'B' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorDown(CursorMovement(value)))
         }
       }
     b'C' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         let value = default_single_param(csi.params)
         if value is Some(value) {
           self.emit(StreamCursorRight(CursorMovement(value)))
         }
       }
     b'D' | b'j' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorLeft(CursorMovement(value)))
         }
       }
     b'E' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorDown(CursorMovement(value)))
           self.emit(StreamCarriageReturn)
         }
       }
     b'F' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorUp(CursorMovement(value)))
           self.emit(StreamCarriageReturn)
         }
       }
     b'G' | b'`' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorCol(CursorMovement(value)))
         }
       }
     b'H' | b'f' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if cursor_position(csi.params) is Some(position) {
           self.emit(StreamCursorPos(position))
         }
       }
     b'I' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamHorizontalTab(value))
         }
@@ -478,31 +499,31 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         }
       }
     b'L' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamInsertLines(value))
         }
       }
     b'M' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamDeleteLines(value))
         }
       }
     b'P' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamDeleteChars(value))
         }
       }
     b'S' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamScrollUp(value))
         }
       }
     b'T' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamScrollDown(value))
         }
@@ -526,7 +547,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
     b'n' =>
       if device_status_request(csi.intermediates, csi.params) is Some(request) {
         self.emit(StreamDeviceStatus(request))
-      } else if csi.intermediates == [b'>'] {
+      } else if csi.intermediates is [b'>'] {
         self.emit(StreamModifyKeyFormat(OtherKeysNumericExcept))
       }
     b'm' =>
@@ -586,25 +607,25 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         _ => ()
       }
     b'X' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamEraseChars(value))
         }
       }
     b'Z' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamHorizontalTabBack(value))
         }
       }
     b'a' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorColRelative(CursorMovement(value)))
         }
       }
     b'b' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamPrintRepeat(value))
         }
@@ -614,19 +635,19 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         self.emit(StreamDeviceAttributes(request))
       }
     b'd' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorRow(CursorMovement(value)))
         }
       }
     b'e' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         if default_single_param(csi.params) is Some(value) {
           self.emit(StreamCursorRowRelative(CursorMovement(value)))
         }
       }
     b'g' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         match tab_clear_mode(csi.params) {
           Some(0) => self.emit(StreamTabClearCurrent)
           Some(3) => self.emit(StreamTabClearAll)
@@ -657,7 +678,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         _ => ()
       }
     b't' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         match xtwinops_action(csi.params) {
           Some(StreamSizeReport(style)) => self.emit(StreamSizeReport(style))
           Some(StreamTitlePush(index)) => self.emit(StreamTitlePush(index))
@@ -684,14 +705,14 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         _ => ()
       }
     b'@' =>
-      if csi.intermediates == [] {
+      if csi.intermediates is [] {
         match insert_blanks_count(csi.params) {
           Some(value) => self.emit(StreamInsertBlanks(value))
           None => ()
         }
       }
     b'}' =>
-      if csi.intermediates == [b'$'] {
+      if csi.intermediates is [b'$'] {
         if active_status_display(csi.params) is Some(display) {
           self.emit(StreamActiveStatusDisplay(display))
         }
@@ -709,57 +730,57 @@ fn[H : StreamHandler] Stream::esc_dispatch(
     b'B' => self.configure_charset(esc.intermediates, Ascii)
     b'A' => self.configure_charset(esc.intermediates, British)
     b'0' => self.configure_charset(esc.intermediates, DecSpecial)
-    b'7' => if esc.intermediates == [] { self.emit(StreamSaveCursor) }
+    b'7' => if esc.intermediates is [] { self.emit(StreamSaveCursor) }
     b'8' =>
       match esc.intermediates {
         [] => self.emit(StreamRestoreCursor)
         [b'#'] => self.emit(StreamDecaln)
         _ => ()
       }
-    b'D' => if esc.intermediates == [] { self.emit(StreamIndex) }
-    b'E' => if esc.intermediates == [] { self.emit(StreamNextLine) }
-    b'H' => if esc.intermediates == [] { self.emit(StreamTabSet) }
-    b'M' => if esc.intermediates == [] { self.emit(StreamReverseIndex) }
+    b'D' => if esc.intermediates is [] { self.emit(StreamIndex) }
+    b'E' => if esc.intermediates is [] { self.emit(StreamNextLine) }
+    b'H' => if esc.intermediates is [] { self.emit(StreamTabSet) }
+    b'M' => if esc.intermediates is [] { self.emit(StreamReverseIndex) }
     b'N' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit_invoke_charset(Gl, G2, true)
       }
     b'O' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit_invoke_charset(Gl, G3, true)
       }
     b'n' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit_invoke_charset(Gl, G2, false)
       }
     b'o' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit_invoke_charset(Gl, G3, false)
       }
     b'~' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit_invoke_charset(Gr, G1, false)
       }
     b'}' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit_invoke_charset(Gr, G2, false)
       }
     b'|' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit_invoke_charset(Gr, G3, false)
       }
-    b'=' => if esc.intermediates == [] { self.emit(StreamSetMode(KeypadKeys)) }
+    b'=' => if esc.intermediates is [] { self.emit(StreamSetMode(KeypadKeys)) }
     b'>' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit(StreamResetMode(KeypadKeys))
       }
-    b'V' => if esc.intermediates == [] { self.emit(StreamProtectedModeIso) }
-    b'W' => if esc.intermediates == [] { self.emit(StreamProtectedModeOff) }
+    b'V' => if esc.intermediates is [] { self.emit(StreamProtectedModeIso) }
+    b'W' => if esc.intermediates is [] { self.emit(StreamProtectedModeOff) }
     b'Z' =>
-      if esc.intermediates == [] {
+      if esc.intermediates is [] {
         self.emit(StreamDeviceAttributes(Primary))
       }
-    b'c' => if esc.intermediates == [] { self.emit(StreamFullReset) }
+    b'c' => if esc.intermediates is [] { self.emit(StreamFullReset) }
     b'\\' => ()
     _ => ()
   }
@@ -850,7 +871,7 @@ fn[H : StreamHandler] Stream::emit_invoke_charset(
 ///|
 fn[H : StreamHandler] Stream::configure_charset(
   self : Stream[H],
-  intermediates : Bytes,
+  intermediates : ArrayView[Byte],
   charset : @charsets.Charset,
 ) -> Unit {
   match intermediates {
@@ -863,7 +884,7 @@ fn[H : StreamHandler] Stream::configure_charset(
 }
 
 ///|
-fn default_single_param(params : ReadOnlyArray[UInt16]) -> UInt16? {
+fn default_single_param(params : ArrayView[UInt16]) -> UInt16? {
   match params {
     [] => Some(1)
     [value] => Some(value)
@@ -872,7 +893,7 @@ fn default_single_param(params : ReadOnlyArray[UInt16]) -> UInt16? {
 }
 
 ///|
-fn cursor_position(params : ReadOnlyArray[UInt16]) -> CursorPosition? {
+fn cursor_position(params : ArrayView[UInt16]) -> CursorPosition? {
   match params {
     [] => Some({ row: 1, col: 1 })
     [row] => Some({ row, col: 1 })
@@ -882,7 +903,7 @@ fn cursor_position(params : ReadOnlyArray[UInt16]) -> CursorPosition? {
 }
 
 ///|
-fn top_and_bottom_margin(params : ReadOnlyArray[UInt16]) -> Margin? {
+fn top_and_bottom_margin(params : ArrayView[UInt16]) -> Margin? {
   match params {
     [] => Some({ top_left: 0, bottom_right: 0 })
     [top] => Some({ top_left: top, bottom_right: 0 })
@@ -892,7 +913,7 @@ fn top_and_bottom_margin(params : ReadOnlyArray[UInt16]) -> Margin? {
 }
 
 ///|
-fn erase_protected(intermediates : Bytes) -> Bool? {
+fn erase_protected(intermediates : ArrayView[Byte]) -> Bool? {
   match intermediates {
     [] => Some(false)
     [b'?'] => Some(true)
@@ -901,7 +922,7 @@ fn erase_protected(intermediates : Bytes) -> Bool? {
 }
 
 ///|
-fn erase_display_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
+fn erase_display_mode(params : ArrayView[UInt16]) -> UInt16? {
   match params {
     [] => Some(0)
     [value] => Some(value)
@@ -910,7 +931,9 @@ fn erase_display_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
 }
 
 ///|
-fn device_attributes_request(intermediates : Bytes) -> DeviceAttributeRequest? {
+fn device_attributes_request(
+  intermediates : ArrayView[Byte],
+) -> DeviceAttributeRequest? {
   match intermediates {
     [] => Some(Primary)
     [b'>'] => Some(Secondary)
@@ -921,8 +944,8 @@ fn device_attributes_request(intermediates : Bytes) -> DeviceAttributeRequest? {
 
 ///|
 fn device_status_request(
-  intermediates : Bytes,
-  params : ReadOnlyArray[UInt16],
+  intermediates : ArrayView[Byte],
+  params : ArrayView[UInt16],
 ) -> DeviceStatusRequest? {
   match (intermediates, params) {
     ([], [value]) => device_status_request_from_int(value, false)
@@ -933,8 +956,8 @@ fn device_status_request(
 
 ///|
 fn request_mode_tag(
-  intermediates : Bytes,
-  params : ReadOnlyArray[UInt16],
+  intermediates : ArrayView[Byte],
+  params : ArrayView[UInt16],
 ) -> ModeTag? {
   match (intermediates, params) {
     ([b'$'], [value]) => Some(mode_tag(value, true))
@@ -944,7 +967,7 @@ fn request_mode_tag(
 }
 
 ///|
-fn modify_key_format_action(params : ReadOnlyArray[UInt16]) -> ModifyKeyFormat? {
+fn modify_key_format_action(params : ArrayView[UInt16]) -> ModifyKeyFormat? {
   match params {
     [] | [0] => Some(Legacy)
     [1] => Some(CursorKeys)
@@ -968,9 +991,7 @@ fn kitty_keyboard_flags(value : UInt16) -> KittyKeyboardFlags? {
 }
 
 ///|
-fn kitty_keyboard_push_flags(
-  params : ReadOnlyArray[UInt16],
-) -> KittyKeyboardFlags? {
+fn kitty_keyboard_push_flags(params : ArrayView[UInt16]) -> KittyKeyboardFlags? {
   match params {
     [value] => kitty_keyboard_flags(value)
     [] => Some(KittyKeyboardFlags(0))
@@ -979,7 +1000,7 @@ fn kitty_keyboard_push_flags(
 }
 
 ///|
-fn kitty_keyboard_pop_count(params : ReadOnlyArray[UInt16]) -> UInt16 {
+fn kitty_keyboard_pop_count(params : ArrayView[UInt16]) -> UInt16 {
   match params {
     [value] => value
     _ => 1
@@ -987,7 +1008,7 @@ fn kitty_keyboard_pop_count(params : ReadOnlyArray[UInt16]) -> UInt16 {
 }
 
 ///|
-fn kitty_keyboard_set_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
+fn kitty_keyboard_set_action(params : ArrayView[UInt16]) -> StreamAction? {
   let flags = if params.length() >= 1 {
     kitty_keyboard_flags(params[0])
   } else {
@@ -1003,7 +1024,7 @@ fn kitty_keyboard_set_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
 }
 
 ///|
-fn protected_mode_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
+fn protected_mode_action(params : ArrayView[UInt16]) -> StreamAction? {
   match params {
     [] => Some(StreamProtectedModeOff)
     [0] | [2] => Some(StreamProtectedModeOff)
@@ -1013,7 +1034,7 @@ fn protected_mode_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
 }
 
 ///|
-fn erase_line_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
+fn erase_line_mode(params : ArrayView[UInt16]) -> UInt16? {
   match params {
     [] => Some(0)
     [value] => Some(value)
@@ -1022,7 +1043,7 @@ fn erase_line_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
 }
 
 ///|
-fn tab_clear_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
+fn tab_clear_mode(params : ArrayView[UInt16]) -> UInt16? {
   match params {
     [value] => Some(value)
     _ => None
@@ -1030,7 +1051,7 @@ fn tab_clear_mode(params : ReadOnlyArray[UInt16]) -> UInt16? {
 }
 
 ///|
-fn insert_blanks_count(params : ReadOnlyArray[UInt16]) -> UInt16? {
+fn insert_blanks_count(params : ArrayView[UInt16]) -> UInt16? {
   match params {
     [] => Some(1)
     [value] => if value == 0 { Some(1) } else { Some(value) }
@@ -1039,7 +1060,7 @@ fn insert_blanks_count(params : ReadOnlyArray[UInt16]) -> UInt16? {
 }
 
 ///|
-fn active_status_display(params : ReadOnlyArray[UInt16]) -> StatusDisplay? {
+fn active_status_display(params : ArrayView[UInt16]) -> StatusDisplay? {
   match params {
     [value] => status_display_from_int(value.to_int())
     _ => None
@@ -1047,7 +1068,7 @@ fn active_status_display(params : ReadOnlyArray[UInt16]) -> StatusDisplay? {
 }
 
 ///|
-fn xtwinops_action(params : ReadOnlyArray[UInt16]) -> StreamAction? {
+fn xtwinops_action(params : ArrayView[UInt16]) -> StreamAction? {
   match params {
     [14] => Some(StreamSizeReport(Csi14t))
     [16] => Some(StreamSizeReport(Csi16t))
@@ -1080,7 +1101,7 @@ fn title_pop_action(scope : UInt16, index : UInt16) -> StreamAction? {
 }
 
 ///|
-fn mode_ansi(intermediates : Bytes) -> Bool? {
+fn mode_ansi(intermediates : ArrayView[Byte]) -> Bool? {
   match intermediates {
     [] => Some(true)
     [b'?'] => Some(false)

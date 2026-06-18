@@ -214,6 +214,11 @@ impl StreamHandler for BridgeStreamRecorder with fn vt(self, action) {
 }
 
 ///|
+impl StreamHandler for BridgeStreamRecorder with fn print(self, codepoint) {
+  self.actions.push(StreamPrint(codepoint))
+}
+
+///|
 impl StreamHandler for BridgeStreamRecorder with fn deinit(_self) {
   ()
 }
