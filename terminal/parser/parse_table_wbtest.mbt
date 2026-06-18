@@ -189,12 +189,20 @@ test "parse table/decode transition unpacks state and action nibbles" {
   expect_transition(decoded, CsiParam, Put, "expected packed transition decode")
 }
 
+// `decode_transition` aborts on the invalid nibble before it returns, so the
+// `.state` field access is dead code — it is there only to *use* the result
+// instead of discarding it. Discarding a multi-field `#valtype` return whole
+// (`ignore(...)` or `let _ = ...`) miscompiles on the Wasm backend ("expected N
+// elements on the stack for fallthru, found N+1"); touching a field sidesteps
+// it. Native is unaffected. Minimal repro: a 2-field `#valtype` returned and
+// then `ignore`d.
+
 ///|
 test "panic parse table/decode transition rejects invalid state nibble" {
-  ignore(decode_transition(0xE0))
+  ignore(decode_transition(0xE0).state)
 }
 
 ///|
 test "panic parse table/decode transition rejects invalid action nibble" {
-  ignore(decode_transition(0x0B))
+  ignore(decode_transition(0x0B).state)
 }
