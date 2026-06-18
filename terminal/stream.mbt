@@ -169,6 +169,12 @@ pub(all) enum StreamAction {
 ///|
 pub(open) trait StreamHandler {
   fn vt(Self, StreamAction) -> Unit
+  // Print hot-path fast lane: the single most frequent action (one call per
+  // printable codepoint) bypasses the boxed `StreamAction` union. Routing it
+  // through a dedicated typed method avoids allocating + dropping a
+  // `StreamPrint` box per character (the generic `vt` path boxes; this does
+  // not). Mirrors upstream's comptime-specialized `vt(.print, …)`.
+  fn print(Self, UInt) -> Unit
   fn deinit(Self) -> Unit
 }
 
@@ -362,7 +368,12 @@ fn[H : StreamHandler] Stream::emit(
 
 ///|
 fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit {
-  self.emit(StreamPrint(codepoint))
+  // Fast lane: call the handler's typed `print` directly instead of
+  // `emit(StreamPrint(codepoint))`, which would box the action. Both the
+  // ground-state codepoint path (`handle_codepoint`) and the parser-dispatched
+  // `Print` action (`dispatch_action`) funnel through here, so both stop
+  // allocating a per-character `StreamPrint`.
+  H::print(self.handler, codepoint)
 }
 
 ///|

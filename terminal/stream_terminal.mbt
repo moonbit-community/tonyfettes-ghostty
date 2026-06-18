@@ -9,6 +9,14 @@ impl StreamHandler for StreamTerminalHandler with fn vt(self, action) {
 }
 
 ///|
+// Print fast lane: `apply(StreamPrint(cp))` just calls `bridge.print(cp)` and
+// returns `true` (which `vt` ignores), so go straight to it and skip building
+// then matching a `StreamPrint` box on the per-character hot path.
+impl StreamHandler for StreamTerminalHandler with fn print(self, codepoint) {
+  self.bridge.print(codepoint)
+}
+
+///|
 impl StreamHandler for StreamTerminalHandler with fn deinit(_self) {
   ()
 }

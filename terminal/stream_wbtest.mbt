@@ -9,6 +9,11 @@ impl StreamHandler for WhiteboxRecorder with fn vt(self, action) {
 }
 
 ///|
+impl StreamHandler for WhiteboxRecorder with fn print(self, codepoint) {
+  self.actions.push(StreamPrint(codepoint))
+}
+
+///|
 impl StreamHandler for WhiteboxRecorder with fn deinit(_self) {
   ()
 }

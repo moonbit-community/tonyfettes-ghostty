@@ -10,6 +10,11 @@ impl StreamHandler for Recorder with fn vt(self, action) {
 }
 
 ///|
+impl StreamHandler for Recorder with fn print(self, codepoint) {
+  self.actions.push(StreamPrint(codepoint))
+}
+
+///|
 impl StreamHandler for Recorder with fn deinit(self) {
   self.deinitialized.push(true)
 }
