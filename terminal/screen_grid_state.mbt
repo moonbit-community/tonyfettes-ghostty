@@ -48,8 +48,8 @@ priv struct ScreenGridState {
   cols : CellCountInt
   // Parallel per-row arrays: `descs[i]` and `cells[i]` are row `i`'s descriptor
   // and cell buffer. See the comment above for why they are split.
-  descs : Array[PageRowState]
-  cells : Array[FixedArray[PageCellState]]
+  descs : FixedArray[PageRowState]
+  cells : FixedArray[FixedArray[PageCellState]]
   // Free list of `cols`-wide cell arrays harvested from rows evicted out of
   // scrollback, reused in place as the blank rows scrolled in at the bottom.
   // At a full scrollback buffer this makes a line feed allocation-free: the row
@@ -65,12 +65,14 @@ fn ScreenGridState::new(
 ) -> ScreenGridState {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
-  let descs : Array[PageRowState] = []
-  let cells : Array[FixedArray[PageCellState]] = []
-  for _ in 0..<actual_rows.to_int() {
-    descs.push(PageRowState::new())
-    cells.push(make_row_cells(actual_cols.to_int()))
-  }
+  let descs : FixedArray[PageRowState] = FixedArray::makei(
+    actual_rows.to_int(),
+    _ => PageRowState::new(),
+  )
+  let cells : FixedArray[FixedArray[PageCellState]] = FixedArray::makei(
+    actual_rows.to_int(),
+    _ => make_row_cells(actual_cols.to_int()),
+  )
   { rows: actual_rows, cols: actual_cols, descs, cells, cell_pool: [] }
 }
 
@@ -887,13 +889,17 @@ fn ScreenGridState::shift_full_width_down(
     // Slide the survivor rows down by `count`: descriptors (scalar) and cell
     // buffers (by reference) move in lockstep. blit_to picks the overlap-safe
     // (here backward) copy direction.
-    self.descs[start_y:bottom - count + 1].blit_to(
+    self.descs.unsafe_blit(
+      start_y + count,
       self.descs,
-      dst_offset=start_y + count,
+      start_y,
+      bottom - count + 1 - start_y,
     )
-    self.cells[start_y:bottom - count + 1].blit_to(
+    self.cells.unsafe_blit(
+      start_y + count,
       self.cells,
-      dst_offset=start_y + count,
+      start_y,
+      bottom - count + 1 - start_y,
     )
   }
   // Fresh blank rows scroll in at the top (reusing pooled cell arrays).
@@ -982,13 +988,17 @@ fn ScreenGridState::shift_full_width_up(
     // overwrites the scrolled-off slots — those buffers were already harvested
     // into history by reference, so the overwrite just drops the now-dead slot
     // ref. blit_to picks the overlap-safe copy direction.
-    self.descs[start_y + count:bottom + 1].blit_to(
+    self.descs.unsafe_blit(
+      start_y,
       self.descs,
-      dst_offset=start_y,
+      start_y + count,
+      bottom + 1 - count - start_y,
     )
-    self.cells[start_y + count:bottom + 1].blit_to(
+    self.cells.unsafe_blit(
+      start_y,
       self.cells,
-      dst_offset=start_y,
+      start_y + count,
+      bottom + 1 - count - start_y,
     )
   }
   // Fresh blank rows scroll in at the bottom (reusing pooled cell arrays).
@@ -1180,10 +1190,8 @@ fn ScreenGridState::clear_full_row(
     // would reload (and refcount) the `FixedArray` reference out of the parallel
     // `cells` array on every cell.
     let row_cells = self.cells[row_idx]
-    let mut col_idx = 0
-    while col_idx < self.cols.to_int() {
+    for col_idx in 0..<self.cols.to_int() {
       row_cells[col_idx] = blank_cell(style)
-      col_idx += 1
     }
     // Reset to a blank descriptor, then restore `styled`: `full_reset` cleared
     // it, but a colored erase fills the row with bg-styled blanks, so the flag

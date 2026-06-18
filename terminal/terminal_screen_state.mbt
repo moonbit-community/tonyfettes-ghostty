@@ -11,8 +11,8 @@ priv struct PageListPage {
   // Parallel per-row arrays, mirroring `ScreenGridState`: `descs[i]`/`cells[i]`
   // are row `i`'s descriptor and cell buffer. The active page shares these two
   // arrays with the grid by reference (see `active_grid`).
-  descs : Array[PageRowState]
-  cells : Array[FixedArray[PageCellState]]
+  descs : FixedArray[PageRowState]
+  cells : FixedArray[FixedArray[PageCellState]]
 }
 
 ///|
@@ -118,12 +118,14 @@ priv struct PageListPreservedCursor {
 fn PageListPage::new(rows : CellCountInt, cols : CellCountInt) -> PageListPage {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
-  let descs : Array[PageRowState] = []
-  let cells : Array[FixedArray[PageCellState]] = []
-  for _ in 0..<actual_rows.to_int() {
-    descs.push(PageRowState::new())
-    cells.push(make_row_cells(actual_cols.to_int()))
-  }
+  let descs : FixedArray[PageRowState] = FixedArray::makei(
+    actual_rows.to_int(),
+    _ => PageRowState::new(),
+  )
+  let cells : FixedArray[FixedArray[PageCellState]] = FixedArray::makei(
+    actual_rows.to_int(),
+    _ => make_row_cells(actual_cols.to_int()),
+  )
   { rows: actual_rows, cols: actual_cols, descs, cells }
 }
 
