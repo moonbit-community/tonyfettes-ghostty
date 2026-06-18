@@ -126,7 +126,7 @@ pub fn SgrParser::set_params(
   self.params_sep = @parser.SepList::init_empty()
   for index in 0..<separators.length() {
     if separators[index] == b':' {
-      self.params_sep.set(index)
+      self.params_sep = self.params_sep.set(index)
     }
   }
   self.idx = 0
