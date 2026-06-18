@@ -13,9 +13,9 @@ fn parser_with_colons(
   params : ReadOnlyArray[UInt16],
   colon_indices : Array[Int],
 ) -> SgrParser {
-  let params_sep = @parser.SepList::init_empty()
+  let mut params_sep = @parser.SepList::init_empty()
   for index in colon_indices {
-    params_sep.set(index)
+    params_sep = params_sep.set(index)
   }
   { params, params_sep, idx: 0 }
 }
@@ -182,10 +182,10 @@ test "sgr/private helpers and fallback branches" {
     params_sep: @parser.SepList::init_empty(),
     idx: 1,
   }
-  impossible_colorspace.params_sep.set(1)
-  impossible_colorspace.params_sep.set(2)
-  impossible_colorspace.params_sep.set(3)
-  impossible_colorspace.params_sep.set(4)
+  impossible_colorspace.params_sep = impossible_colorspace.params_sep.set(1)
+  impossible_colorspace.params_sep = impossible_colorspace.params_sep.set(2)
+  impossible_colorspace.params_sep = impossible_colorspace.params_sep.set(3)
+  impossible_colorspace.params_sep = impossible_colorspace.params_sep.set(4)
   guard impossible_colorspace.parse_direct_color(1, true) == None else {
     fail("expected short colorspace path to return none")
   }
