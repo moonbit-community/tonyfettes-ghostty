@@ -268,16 +268,20 @@ fn[H : StreamHandler] Stream::consume_until_ground(
   input : Bytes,
   start : Int,
 ) -> Int {
-  let input_length = input.length()
-  let mut offset = start
-  while !self.parser.is_ground() {
-    if offset >= input_length {
-      return input_length - start
+  // Iterate the tail view rather than indexing `input[offset]`: the view
+  // iterator carries its own bound, so the byte load is emitted without a
+  // per-byte bounds check (an `input[offset]` index re-checks `offset` against
+  // the length and panics on every byte). `consumed` counts only bytes actually
+  // fed, so it is the single return value whether we stop at ground or run out.
+  let mut consumed = 0
+  for b in input[start:] {
+    if self.parser.is_ground() {
+      break
     }
-    self.next_non_utf8(input[offset])
-    offset += 1
+    self.next_non_utf8(b)
+    consumed = consumed + 1
   }
-  offset - start
+  consumed
 }
 
 ///|
