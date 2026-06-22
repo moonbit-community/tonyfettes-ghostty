@@ -179,10 +179,20 @@ pub(open) trait StreamHandler {
 }
 
 ///|
+// Maximum codepoints decoded per `next_slice_capped` call. Mirrors upstream's
+// `cp_buf: [4096]u32` in `nextSlice` (src/terminal/stream.zig) — somewhat
+// arbitrary; `next_slice` chunks the input so each capped call's plain-text run
+// fits, letting the ground decode reuse one buffer with no per-call allocation.
+const CP_BUF_LEN = 4096
+
+///|
 struct Stream[H] {
   handler : H
   parser : @parser.Parser
   utf8decoder : @utf8_decoder.Utf8Decoder
+  // Reused UTF-32 scratch for the ground-state bulk decode
+  // (`decode_utf8_until_control_seq`). Allocated once; never escapes the stream.
+  cp_buf : FixedArray[UInt]
 }
 
 ///|
@@ -191,6 +201,7 @@ pub fn[H] Stream::new(handler : H) -> Stream[H] {
     handler,
     parser: @parser.Parser::new(),
     utf8decoder: @utf8_decoder.Utf8Decoder::new(),
+    cp_buf: FixedArray::make(CP_BUF_LEN, 0U),
   }
 }
 
@@ -205,52 +216,89 @@ pub fn[H : StreamHandler] Stream::next_slice(
   self : Stream[H],
   input : Bytes,
 ) -> Unit {
-  self.next_slice_capped(input)
+  // Split the input into chunks that fit `cp_buf`, exactly like upstream's
+  // `nextSlice`. Each chunk's ground run decodes into the reused `cp_buf`
+  // (one codepoint per input byte at most), so it must not exceed `CP_BUF_LEN`.
+  // Partial UTF-8 / escape state straddling a chunk boundary is carried in the
+  // decoder/parser and resolved by the next chunk's prologue.
+  let total = input.length()
+  let mut i = 0
+  while i < total {
+    let len = if total - i < CP_BUF_LEN { total - i } else { CP_BUF_LEN }
+    self.next_slice_capped(input[i:i + len])
+    i += len
+  }
 }
 
 ///|
 fn[H : StreamHandler] Stream::next_slice_capped(
   self : Stream[H],
-  input : Bytes,
+  input : BytesView,
 ) -> Unit {
+  let len = input.length()
   let mut offset = 0
 
   while !self.utf8decoder.is_accept_state() {
-    if offset >= input.length() {
+    if offset >= len {
       return
     }
     self.next_utf8(input[offset])
     offset += 1
   }
-  if offset >= input.length() {
+  if offset >= len {
     return
   }
 
   offset += self.consume_until_ground(input, offset)
-  if offset >= input.length() {
+  if offset >= len {
     return
   }
 
   offset += self.consume_all_escapes(input, offset)
 
-  while offset < input.length() {
-    if self.parser.is_ground() {
-      self.next_utf8(input[offset])
-      offset += 1
-    } else {
-      offset += self.consume_until_ground(input, offset)
+  // Ground-state fast path, mirroring upstream's `nextSliceCapped` loop: the
+  // fused `decode_utf8_until_control_seq` scans to the next ESC and bulk-decodes
+  // the plain-text run before it into `cp_buf` in a single pass, then we drain
+  // the escapes. The parser is always in the ground state at the top here —
+  // `consume_all_escapes` only stops on a non-ESC byte or on exhaustion, and the
+  // print/execute path never leaves it non-ground.
+  while offset < len {
+    let res = @utf8_decoder.decode_utf8_until_control_seq(
+      input[offset:],
+      self.cp_buf,
+    )
+    for i in 0..<res.decoded {
+      let cp = self.cp_buf[i]
+      // C0 controls <= 0x0F execute; everything else (incl. 0x10-0x1F and
+      // ill-formed U+FFFD) prints. Matches upstream's `cp <= 0xF` dispatch.
+      if cp <= 0x0FU {
+        self.execute(cp.to_byte())
+      } else {
+        self.print(cp)
+      }
+    }
+    offset += res.consumed
+    if offset >= len {
+      break
     }
 
-    if offset < input.length() && self.parser.is_ground() {
-      offset += self.consume_all_escapes(input, offset)
+    // The decoder stopped before ESC: a partial UTF-8 sequence at the chunk's
+    // tail. Hand the remainder to the scalar decoder, which buffers it so the
+    // next chunk's prologue completes it. (Matches upstream.)
+    if input[offset] != 0x1B {
+      for b in input[offset:] {
+        self.next_utf8(b)
+      }
+      break
     }
+    offset += self.consume_all_escapes(input, offset)
   }
 }
 
 ///|
 fn[H : StreamHandler] Stream::consume_all_escapes(
   self : Stream[H],
-  input : Bytes,
+  input : BytesView,
   start : Int,
 ) -> Int {
   let mut offset = start
@@ -265,7 +313,7 @@ fn[H : StreamHandler] Stream::consume_all_escapes(
 ///|
 fn[H : StreamHandler] Stream::consume_until_ground(
   self : Stream[H],
-  input : Bytes,
+  input : BytesView,
   start : Int,
 ) -> Int {
   // Iterate the tail view rather than indexing `input[offset]`: the view
@@ -295,11 +343,13 @@ pub fn[H : StreamHandler] Stream::next(self : Stream[H], byte : Byte) -> Unit {
 
 ///|
 fn[H : StreamHandler] Stream::next_utf8(self : Stream[H], byte : Byte) -> Unit {
-  if self.utf8decoder.is_accept_state() && byte >= 0x80 && byte <= 0x9F {
-    self.execute(byte)
-    return
-  }
-
+  // No special case for 8-bit C1 controls (0x80-0x9F): in a UTF-8 stream those
+  // bytes are continuation bytes, so a standalone one is ill-formed UTF-8. We
+  // match upstream's `nextUtf8` (src/terminal/stream.zig) and feed every
+  // ground-state byte to the decoder, which yields U+FFFD for the lone C1 and
+  // `handle_codepoint` prints it. C1 controls only execute via the parser
+  // (non-ground) path; the 7-bit `ESC <final>` form is how a UTF-8 stream
+  // invokes them.
   let decoded = self.utf8decoder.next(byte)
   if decoded.value is Some(codepoint) {
     self.handle_codepoint(codepoint)

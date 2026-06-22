@@ -539,12 +539,28 @@ test "stream/esc invoke charset subset" {
 }
 
 ///|
-test "stream/c1 execute delegates through esc dispatch" {
+test "stream/c1 byte executes via parser when non-ground" {
+  // While the parser is mid-sequence (non-ground) a C1 control byte is executed
+  // through the VT "anywhere" transition: 0x84 (IND) -> ESC D -> Index. This is
+  // the only path that reaches `execute`'s C1 branch now that ground-state lone
+  // C1 bytes decode to U+FFFD (a C1 in ground never reaches the parser).
+  let (stream, actions, _) = new_stream()
+  stream.next_slice(b"\x1B[\x84")
+  guard actions == [StreamIndex] else {
+    fail("expected C1 IND in a CSI to execute as Index")
+  }
+}
+
+///|
+test "stream/lone c1 byte decodes to U+FFFD in ground state" {
+  // A standalone 8-bit C1 control (0x8E here) is a UTF-8 continuation byte with
+  // no lead, i.e. ill-formed UTF-8. Matching upstream's `nextUtf8`, the ground
+  // path decodes it to U+FFFD and prints it rather than executing it as a C1
+  // control. C1 controls only execute via the 7-bit `ESC <final>` form.
   let (stream, actions, _) = new_stream()
   stream.next_slice([0x8E])
-  guard actions ==
-    [StreamInvokeCharset({ bank: Gl, charset: G2, locking: true })] else {
-    fail("expected C1 byte to route through ESC dispatch")
+  guard actions == [StreamPrint(0xFFFDU)] else {
+    fail("expected lone C1 byte to decode to U+FFFD and print")
   }
 }
 
