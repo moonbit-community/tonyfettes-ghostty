@@ -67,6 +67,10 @@ priv struct ScreenGridState {
   // a `HyperlinkId` into it (0 = no link), writes intern here, the rare full-link
   // read resolves here. See `HyperlinkTable`.
   hyperlink_table : HyperlinkTable
+  // The grapheme intern table, shared the same way: cells store a `GraphemeId`
+  // (0 = no combining marks), the append path interns here, and text emission
+  // resolves the marks here. See `GraphemeTable`.
+  grapheme_table : GraphemeTable
 }
 
 ///|
@@ -75,6 +79,7 @@ fn ScreenGridState::new_with_table(
   cols : CellCountInt,
   style_table : @style.StyleTable,
   hyperlink_table : HyperlinkTable,
+  grapheme_table : GraphemeTable,
 ) -> ScreenGridState {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
@@ -94,6 +99,7 @@ fn ScreenGridState::new_with_table(
     cell_pool: [],
     style_table,
     hyperlink_table,
+    grapheme_table,
   }
 }
 
@@ -363,7 +369,9 @@ fn ScreenGridState::append_grapheme(
       (codepoint == 0xFE0EU && base_is_wide) {
       return
     }
-    self.cells[row_idx][target_x] = cell.with_grapheme_appended(codepoint)
+    self.cells[row_idx][target_x] = cell.with_grapheme_id(
+      self.grapheme_table.append(cell.grapheme_id(), codepoint),
+    )
     self.descs[row_idx] = self.descs[row_idx]
       .with_grapheme(true)
       .with_dirty(true)
@@ -1296,7 +1304,9 @@ fn ScreenGridState::write_cell(
   // inline memcpy with no allocation at all.)
   self.cells[row_idx][col_idx] = {
     codepoint,
-    grapheme_extras: None,
+    // A printed base char has no combining marks yet; they are appended later via
+    // the grapheme table. (`write_cell` is never the grapheme-append path.)
+    grapheme_id: no_grapheme_id,
     // Intern the incoming style into the screen's shared table; the cell keeps
     // only the id. Default/unstyled prints hit the table's pre-seeded id 0.
     style_id: self.style_table.intern(style),

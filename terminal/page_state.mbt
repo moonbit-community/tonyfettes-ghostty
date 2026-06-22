@@ -338,7 +338,12 @@ struct PageCellState {
   // grapheme cluster pays for the array. `ReadOnlyArray` so it can never be
   // mutated in place — together with the immutable cell that means copying a
   // cell into another slot is a plain value share, with no deep copy needed.
-  grapheme_extras : ReadOnlyArray[UInt]?
+  // The cell's combining codepoints as a `GraphemeId` into the screen's shared
+  // `GraphemeTable` (0 = not a grapheme cell). Presence (`has_grapheme`) is a
+  // plain id compare; the actual marks are resolved through the grid/screen only
+  // when emitting text. This is the cell's last non-scalar field removed — the
+  // struct is now all-scalar.
+  grapheme_id : GraphemeId
   // The cell's style as a `StyleId` index into the screen's shared `StyleTable`,
   // not an inline style. `0` (the default style) needs no lookup. This removes a
   // refcounted pointer from the cell — a prerequisite for the eventual flat
@@ -375,10 +380,12 @@ pub fn PageCellState::new(
 ) -> PageCellState {
   {
     codepoint,
-    grapheme_extras: if grapheme {
-      Some([])
+    // `grapheme` only ever flags an *empty* cluster here (marks are appended
+    // later through the grid), so the reserved empty id sets it with no table.
+    grapheme_id: if grapheme {
+      empty_grapheme_id
     } else {
-      None
+      no_grapheme_id
     },
     style_id,
     flags: PageCellFlags::pack(wide, protected_flag, semantic_content),
@@ -398,9 +405,18 @@ pub fn PageCellState::with_codepoint(
   grapheme : Bool,
 ) -> PageCellState {
   // `grapheme` marks the start of a cluster; the combining marks arrive later
-  // via with_grapheme_appended. `Some([])` records "this is a grapheme cell"
-  // before any extras land. Either way this overwrite drops any prior extras.
-  { ..self, codepoint, grapheme_extras: if grapheme { Some([]) } else { None } }
+  // through the grid (`GraphemeTable::append`). The reserved empty id records
+  // "this is a grapheme cell" before any marks land. Either way this overwrite
+  // drops any prior extras.
+  {
+    ..self,
+    codepoint,
+    grapheme_id: if grapheme {
+      empty_grapheme_id
+    } else {
+      no_grapheme_id
+    },
+  }
 }
 
 ///|
@@ -520,43 +536,20 @@ pub fn PageCellState::is_empty(self : PageCellState) -> Bool {
 
 ///|
 pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
-  self.grapheme_extras is Some(_)
+  !self.grapheme_id.is_none()
 }
 
 ///|
-// The cell's combining codepoints (empty when the cell is not a grapheme
-// cluster). Returns the cell's `ReadOnlyArray` directly — no copy on the render
-// hot path, and the type itself forbids `push`/element-set, so callers cannot
-// resize or mutate the cell's grapheme run (which would desync
-// `PageRowState::grapheme`/dirty flags). Callers that need a mutable copy should
-// `.iter().collect()` first.
-pub fn PageCellState::grapheme_codepoints(
-  self : PageCellState,
-) -> ReadOnlyArray[UInt] {
-  match self.grapheme_extras {
-    Some(extras) => extras
-    None => []
-  }
+// The cell's grapheme id. The combining codepoints themselves are resolved by the
+// grid/screen that owns the table — see `ScreenGridState::cell_grapheme_codepoints`.
+pub fn PageCellState::grapheme_id(self : PageCellState) -> GraphemeId {
+  self.grapheme_id
 }
 
 ///|
-// Return a copy of this cell with one more combining codepoint. Seeds the
-// extras on the first mark; subsequent marks extend a *fresh* array so the
-// returned cell never shares storage with `self` (value-semantics safe). Callers
-// only invoke this on a cell that already has a base glyph.
-fn PageCellState::with_grapheme_appended(
+pub fn PageCellState::with_grapheme_id(
   self : PageCellState,
-  codepoint : UInt,
+  value : GraphemeId,
 ) -> PageCellState {
-  let extras : Array[UInt] = match self.grapheme_extras {
-    Some(existing) => {
-      let copy = Array::make(existing.length() + 1, codepoint)
-      for index in 0..<existing.length() {
-        copy[index] = existing.at(index)
-      }
-      copy
-    }
-    None => [codepoint]
-  }
-  { ..self, grapheme_extras: Some(ReadOnlyArray::from_array(extras)) }
+  { ..self, grapheme_id: value }
 }

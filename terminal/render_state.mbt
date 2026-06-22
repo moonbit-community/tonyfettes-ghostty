@@ -29,6 +29,9 @@ struct RenderState {
   // `row_cells` carry `StyleId`s minted from it, so it resolves their styles for
   // the renderer/formatter. Grow-only and shared, so ids captured here stay valid.
   mut style_table : @style.StyleTable
+  // The active screen's grapheme table, captured the same way: the VT-framebuffer
+  // formatter resolves each cell's combining marks through it.
+  mut grapheme_table : GraphemeTable
 }
 
 ///|
@@ -53,6 +56,7 @@ pub fn RenderState::new() -> RenderState {
     row_states: [],
     row_cells: [],
     style_table: @style.StyleTable::new(),
+    grapheme_table: GraphemeTable::new(),
   }
 }
 
@@ -183,6 +187,7 @@ pub fn RenderState::update(
 
   self.initialized = true
   self.style_table = terminal.active_style_table()
+  self.grapheme_table = terminal.active_grapheme_table()
   self.rows = rows
   self.columns = columns
   self.screen = screen

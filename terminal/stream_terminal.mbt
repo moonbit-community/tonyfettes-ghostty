@@ -542,6 +542,20 @@ pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
 }
 
 ///|
+// Resolve the combining codepoints of the snapshot cell at (row, col), empty if
+// the cell is absent or not a grapheme cluster. Cells store only a `GraphemeId`.
+pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(
+  self : StreamTerminal,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> ReadOnlyArray[UInt] {
+  match self.bridge().screen_cell_snapshot(row, col) {
+    Some(cell) => self.active_grapheme_table().get(cell.grapheme_id())
+    None => []
+  }
+}
+
+///|
 fn StreamTerminal::bridge(self : StreamTerminal) -> StreamTerminalBridgeState {
   self.stream.handler.bridge
 }
@@ -562,4 +576,12 @@ fn StreamTerminal::active_hyperlink_table(
   self : StreamTerminal,
 ) -> HyperlinkTable {
   self.bridge().grid.hyperlink_table
+}
+
+///|
+// The active screen's grapheme intern table (see `active_style_table`).
+fn StreamTerminal::active_grapheme_table(
+  self : StreamTerminal,
+) -> GraphemeTable {
+  self.bridge().grid.grapheme_table
 }

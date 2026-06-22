@@ -1,42 +1,47 @@
 ///|
 test "page cell state/append_grapheme combines combining codepoints" {
+  // The extras live in a `GraphemeTable` now; the cell holds an id. Appending is
+  // `GraphemeTable::append` (the old `with_grapheme_appended`), resolution is
+  // `get`.
+  let graphemes = GraphemeTable::new()
   // Base: 'e' (U+0065) + combining acute accent (U+0301) → é
   let mut cell = PageCellState::init(0x65U)
-  guard !cell.has_grapheme() && cell.grapheme_codepoints() == [] else {
+  guard !cell.has_grapheme() && graphemes.get(cell.grapheme_id()) == [] else {
     fail("expected no grapheme before append")
   }
 
-  cell = cell.with_grapheme_appended(0x301U)
+  cell = cell.with_grapheme_id(graphemes.append(cell.grapheme_id(), 0x301U))
   guard cell.has_grapheme() &&
     cell.codepoint() == 0x65U &&
-    cell.grapheme_codepoints() == [0x301U] else {
+    graphemes.get(cell.grapheme_id()) == [0x301U] else {
     fail("expected single combining codepoint after first append")
   }
 
   // Second combining codepoint accumulates
-  cell = cell.with_grapheme_appended(0x300U)
-  guard cell.grapheme_codepoints() == [0x301U, 0x300U] else {
+  cell = cell.with_grapheme_id(graphemes.append(cell.grapheme_id(), 0x300U))
+  guard graphemes.get(cell.grapheme_id()) == [0x301U, 0x300U] else {
     fail("expected two combining codepoints after second append")
   }
 
-  // with_codepoint clears grapheme extras
+  // with_codepoint clears grapheme extras (id back to none)
   cell = cell.with_codepoint(0x61U, false)
-  guard !cell.has_grapheme() && cell.grapheme_codepoints() == [] else {
+  guard !cell.has_grapheme() && graphemes.get(cell.grapheme_id()) == [] else {
     fail("expected grapheme cleared after with_codepoint")
   }
 }
 
 ///|
 test "page cell state/a fresh cell has no grapheme extras" {
+  let graphemes = GraphemeTable::new()
   let mut cell = PageCellState::init(0x41U)
-  cell = cell.with_grapheme_appended(0x301U)
+  cell = cell.with_grapheme_id(graphemes.append(cell.grapheme_id(), 0x301U))
   guard cell.has_grapheme() else {
     fail("precondition: cell should have grapheme")
   }
   // A blank cell is a fresh value (full_reset is gone); it carries no extras.
   cell = PageCellState::new()
   guard !cell.has_grapheme() &&
-    cell.grapheme_codepoints() == [] &&
+    graphemes.get(cell.grapheme_id()) == [] &&
     cell.codepoint() == 0U else {
     fail("expected a fresh cell to have no grapheme extras")
   }

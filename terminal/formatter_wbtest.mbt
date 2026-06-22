@@ -55,6 +55,7 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     cell_pool: [],
     style_table: @style.StyleTable::new(),
     hyperlink_table: HyperlinkTable::new(),
+    grapheme_table: GraphemeTable::new(),
   }
   guard formatter_selection_bounds(formatter, state, 1U) is None else {
     fail("expected zero-column guard to reject formatting")
@@ -385,6 +386,7 @@ test "formatter helpers/cover explicit empty format guard" {
     cell_pool: [],
     style_table: @style.StyleTable::new(),
     hyperlink_table: HyperlinkTable::new(),
+    grapheme_table: GraphemeTable::new(),
   }
   state.scrollback = PageList::new(0, 0, 0)
   let formatter = plain_formatter(terminal)

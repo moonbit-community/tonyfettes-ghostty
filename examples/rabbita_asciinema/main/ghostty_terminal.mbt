@@ -323,13 +323,15 @@ fn GhosttyTerminal::cell_text(
   if !cell.has_text() {
     return " "
   }
-  ignore(self)
-  ignore(row)
-  ignore(col)
   // Base codepoint followed by any stored grapheme extras (combining marks,
   // emoji skin-tone modifiers, …) so the rendered text keeps the full cluster.
+  // The cell holds only a grapheme id; resolve the marks through the terminal.
   let codepoints = [cell.codepoint()]
-  for cp in cell.grapheme_codepoints() {
+  for
+    cp in self.terminal.screen_cell_grapheme_codepoints_snapshot(
+      row.to_uint16(),
+      col.to_uint16(),
+    ) {
     codepoints.push(cp)
   }
   codepoints_to_string(codepoints)

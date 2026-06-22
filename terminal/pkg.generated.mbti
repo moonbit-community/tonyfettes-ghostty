@@ -233,6 +233,8 @@ pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_reg
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
 
+type GraphemeId derive(Eq, Hash, @debug.Debug)
+
 type HyperlinkId derive(Eq, Hash, @debug.Debug)
 
 pub(all) struct InvokeCharsetAction {
@@ -482,7 +484,7 @@ type PageCellFlags derive(Eq, @debug.Debug)
 
 type PageCellState derive(Eq, @debug.Debug)
 pub fn PageCellState::codepoint(Self) -> UInt
-pub fn PageCellState::grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
+pub fn PageCellState::grapheme_id(Self) -> GraphemeId
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
 pub fn PageCellState::has_hyperlink(Self) -> Bool
@@ -498,6 +500,7 @@ pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::style_id(Self) -> @style.StyleId
 pub fn PageCellState::wide(Self) -> PageCellWide
 pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
+pub fn PageCellState::with_grapheme_id(Self, GraphemeId) -> Self
 pub fn PageCellState::with_hyperlink_id(Self, HyperlinkId) -> Self
 pub fn PageCellState::with_protected(Self, Bool) -> Self
 pub fn PageCellState::with_style_id(Self, @style.StyleId) -> Self
@@ -578,6 +581,7 @@ pub(all) enum RenderDirty {
 type RenderRowCells
 pub fn RenderRowCells::background_color(Self) -> @color.RGB?
 pub fn RenderRowCells::cell(Self) -> PageCellState?
+pub fn RenderRowCells::cell_grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
 pub fn RenderRowCells::cell_style(Self) -> @style.CellStyle?
 pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
 pub fn RenderRowCells::next(Self) -> Bool
@@ -900,6 +904,7 @@ pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
+pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(Self, UInt16, UInt16) -> ReadOnlyArray[UInt]
 pub fn StreamTerminal::screen_cell_hyperlink_snapshot(Self, UInt16, UInt16) -> CellHyperlink?
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
 pub fn StreamTerminal::screen_cell_style_snapshot(Self, UInt16, UInt16) -> @style.CellStyle?

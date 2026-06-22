@@ -118,6 +118,18 @@ pub fn RenderRowCells::cell_style(self : RenderRowCells) -> @style.CellStyle? {
 }
 
 ///|
+// The resolved combining codepoints of the current cell, via the render state's
+// grapheme table. Empty when the cell is not a grapheme cluster.
+pub fn RenderRowCells::cell_grapheme_codepoints(
+  self : RenderRowCells,
+) -> ReadOnlyArray[UInt] {
+  match render_cell_at(self.state, self.row, self.x) {
+    Some(cell) => self.state.grapheme_table.get(cell.grapheme_id())
+    None => []
+  }
+}
+
+///|
 pub fn RenderRowCells::background_color(self : RenderRowCells) -> @color.RGB? {
   render_cell_background_color_at(self.state, self.row, self.x)
 }

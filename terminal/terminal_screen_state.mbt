@@ -82,6 +82,8 @@ priv struct PageList {
   style_table : @style.StyleTable
   // The hyperlink intern table, owned and shared exactly like `style_table`.
   hyperlink_table : HyperlinkTable
+  // The grapheme intern table, owned and shared exactly like `style_table`.
+  grapheme_table : GraphemeTable
 }
 
 ///|
@@ -162,6 +164,7 @@ fn PageList::new(
     viewport_pin_row_offset: None,
     style_table: @style.StyleTable::new(),
     hyperlink_table: HyperlinkTable::new(),
+    grapheme_table: GraphemeTable::new(),
   }
   state.viewport_pin = Some(state.track_pin(active_node, 0, 0))
   state
@@ -179,6 +182,7 @@ fn PageList::active_grid(self : PageList) -> ScreenGridState {
     cell_pool: [],
     style_table: self.style_table,
     hyperlink_table: self.hyperlink_table,
+    grapheme_table: self.grapheme_table,
   }
 }
 
@@ -1058,6 +1062,7 @@ fn PageList::resize_without_reflow(
     grid_rows,
     self.style_table,
     self.hyperlink_table,
+    self.grapheme_table,
   )
   let active_node = PageListNode::new({
     rows: resized_grid.rows,
@@ -1197,6 +1202,7 @@ fn PageList::resize_cols(
     grid_rows,
     self.style_table,
     self.hyperlink_table,
+    self.grapheme_table,
   )
   let active_node = PageListNode::new({
     rows: resized_grid.rows,
@@ -2030,11 +2036,12 @@ fn screen_grid_from_rows(
   pinned_rows : Array[PageListRow],
   style_table : @style.StyleTable,
   hyperlink_table : HyperlinkTable,
+  grapheme_table : GraphemeTable,
 ) -> ScreenGridState {
-  // Share the screen's tables: the pinned rows carry `StyleId`/`HyperlinkId`s
-  // minted from them, so the rebuilt grid must resolve against the same tables.
+  // Share the screen's tables: the pinned rows carry ids minted from them, so the
+  // rebuilt grid must resolve against the same tables.
   let grid = ScreenGridState::new_with_table(
-    rows, cols, style_table, hyperlink_table,
+    rows, cols, style_table, hyperlink_table, grapheme_table,
   )
   let row_count = min_int(rows.to_int(), pinned_rows.length())
   for row_idx in 0..<row_count {

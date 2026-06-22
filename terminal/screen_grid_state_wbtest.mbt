@@ -15,6 +15,7 @@ fn ScreenGridState::new(
     cols,
     @style.StyleTable::new(),
     HyperlinkTable::new(),
+    GraphemeTable::new(),
   )
 }
 
