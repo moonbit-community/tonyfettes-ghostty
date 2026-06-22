@@ -215,11 +215,19 @@ fn[H : StreamHandler] Stream::next_slice_capped(
 ) -> Unit {
   let mut offset = 0
 
-  while !self.utf8decoder.is_accept_state() {
-    if offset >= input.length() {
-      return
+  // Drain any in-flight UTF-8 continuation bytes by iterating from the start of
+  // `input` rather than indexing `input[offset]`: the view iterator carries its
+  // own bound, so the byte load is emitted without a per-byte bounds check
+  // (mirrors `consume_until_ground`). `offset` counts only bytes fed, so it
+  // equals the cursor position on exit. If the decoder never reaches accept
+  // before the input runs out, the loop ends naturally and the shared
+  // `offset >= input.length()` guard below returns — same as the old in-loop
+  // early return.
+  for b in input {
+    if self.utf8decoder.is_accept_state() {
+      break
     }
-    self.next_utf8(input[offset])
+    self.next_utf8(b)
     offset += 1
   }
   if offset >= input.length() {
@@ -233,14 +241,17 @@ fn[H : StreamHandler] Stream::next_slice_capped(
 
   offset += self.consume_all_escapes(input, offset)
 
-  while offset < input.length() {
-    if self.parser.is_ground() {
-      self.next_utf8(input[offset])
-      offset += 1
-    } else {
-      offset += self.consume_until_ground(input, offset)
-    }
-
+  // Ground-state fast path: print until a control sequence (or input) runs out.
+  // The loop condition mirrors upstream's `while (parser.state == .ground and
+  // offset < input.len)` (stream.zig). `consume_all_escapes` below always leaves
+  // the parser in the ground state whenever bytes remain (it only stops on a
+  // non-0x1B byte or on exhaustion), and `next_utf8` can leave it non-ground only
+  // by printing 0x1B — which the loop-top byte is never equal to — so the parser
+  // is always ground here when `offset < length`. Upstream encodes that invariant
+  // as the loop condition rather than a mid-loop non-ground branch.
+  while self.parser.is_ground() && offset < input.length() {
+    self.next_utf8(input[offset])
+    offset += 1
     if offset < input.length() && self.parser.is_ground() {
       offset += self.consume_all_escapes(input, offset)
     }
