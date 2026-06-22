@@ -476,8 +476,9 @@ pub(all) enum OptionAsAlt {
   True
 } derive(Eq, @debug.Debug)
 
+type PageCellFlags derive(Eq, @debug.Debug)
+
 type PageCellState derive(Eq, @debug.Debug)
-pub fn PageCellState::background_rgb(Self) -> @color.RGB?
 pub fn PageCellState::codepoint(Self) -> UInt
 pub fn PageCellState::grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
 pub fn PageCellState::grid_width(Self) -> Int
@@ -489,15 +490,14 @@ pub fn PageCellState::init(UInt) -> Self
 pub fn PageCellState::is_empty(Self) -> Bool
 pub fn PageCellState::is_protected(Self) -> Bool
 pub fn PageCellState::is_zero(Self) -> Bool
-pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style? : @style.CellStyle, wide? : PageCellWide, protected_flag? : Bool, hyperlink? : CellHyperlink?, semantic_content? : SemanticContent) -> Self
-pub fn PageCellState::palette_index(Self) -> Byte?
+pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink? : CellHyperlink?, semantic_content? : SemanticContent) -> Self
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
-pub fn PageCellState::style(Self) -> @style.CellStyle
+pub fn PageCellState::style_id(Self) -> @style.StyleId
 pub fn PageCellState::wide(Self) -> PageCellWide
 pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
 pub fn PageCellState::with_hyperlink(Self, CellHyperlink?) -> Self
 pub fn PageCellState::with_protected(Self, Bool) -> Self
-pub fn PageCellState::with_style(Self, @style.CellStyle) -> Self
+pub fn PageCellState::with_style_id(Self, @style.StyleId) -> Self
 pub fn PageCellState::with_wide(Self, PageCellWide) -> Self
 
 pub(all) enum PageCellWide {
@@ -575,6 +575,7 @@ pub(all) enum RenderDirty {
 type RenderRowCells
 pub fn RenderRowCells::background_color(Self) -> @color.RGB?
 pub fn RenderRowCells::cell(Self) -> PageCellState?
+pub fn RenderRowCells::cell_style(Self) -> @style.CellStyle?
 pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
 pub fn RenderRowCells::next(Self) -> Bool
 pub fn RenderRowCells::select(Self, UInt16) -> Bool
@@ -897,6 +898,7 @@ pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
+pub fn StreamTerminal::screen_cell_style_snapshot(Self, UInt16, UInt16) -> @style.CellStyle?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> PageRowState?
 pub fn StreamTerminal::scroll_viewport_bottom(Self) -> Unit
 pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit

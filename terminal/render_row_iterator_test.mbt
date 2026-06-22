@@ -116,7 +116,7 @@ test "render row cells/select and next resolve style and content colors" {
   }
   let third = cells.cell().unwrap()
   guard !third.has_text() &&
-    third.palette_index() is Some(_) &&
+    cells.cell_style().unwrap().bg_color().palette_index() is Some(_) &&
     cells.foreground_color() == None &&
     cells.background_color() == Some(@color.Name::Blue.default_rgb()) else {
     fail("expected content-tag background resolution on blank cell")
@@ -154,7 +154,7 @@ test "render row cells/resolve direct rgb colors" {
   }
 
   guard cells.select(1) &&
-    cells.cell().unwrap().background_rgb() is Some(_) &&
+    cells.cell_style().unwrap().bg_color().rgb_value() is Some(_) &&
     cells.foreground_color() == None &&
     cells.background_color() == Some(@color.RGB::new(4, 5, 6)) else {
     fail("expected background-rgb content resolution")

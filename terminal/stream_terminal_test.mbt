@@ -89,7 +89,7 @@ test "stream terminal/applies bytes across split escape writes" {
   }
   guard expect_terminal_cell(terminal, 0, 0).codepoint() == b'H'.to_uint() &&
     expect_terminal_cell(terminal, 0, 6).codepoint() == b'B'.to_uint() &&
-    expect_terminal_cell(terminal, 0, 6).style().bold() &&
+    terminal.screen_cell_style_snapshot(0, 6).unwrap().bold() &&
     expect_terminal_cell(terminal, 0, 9).codepoint() == b'd'.to_uint() else {
     fail("expected split escape sequence to preserve parser state")
   }

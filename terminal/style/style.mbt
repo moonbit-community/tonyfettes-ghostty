@@ -6,7 +6,7 @@
 /// `packed == 0`. Being a scalar (not a `#valtype` enum) lets it sit inline in
 /// a `#valtype` `CellStyle`; its representation stays internal to this package,
 /// reached only through the constructors and accessors below.
-struct StyleColor(UInt) derive(Eq, Debug)
+struct StyleColor(UInt) derive(Eq, Debug, Hash)
 
 ///|
 const StyleColorTagShift : Int = 24
@@ -157,13 +157,12 @@ fn underline_decode(bits : UInt) -> @sgr.SgrUnderline {
 // in a `new().with_*()` chain are stack copies, not allocations.
 
 ///|
-#valtype
-struct CellStyle {
-  fg_color : StyleColor
-  bg_color : StyleColor
-  underline_color : StyleColor
-  flags : UInt
-} derive(Eq, Debug)
+pub struct CellStyle {
+  priv fg_color : StyleColor
+  priv bg_color : StyleColor
+  priv underline_color : StyleColor
+  priv flags : UInt
+} derive(Eq, Debug, Hash)
 
 ///|
 fn CellStyle::has_flag(self : CellStyle, mask : UInt) -> Bool {

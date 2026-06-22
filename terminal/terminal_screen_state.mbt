@@ -73,6 +73,13 @@ priv struct PageList {
   mut tracked_pins : Array[PageListPin]
   mut viewport_pin : PageListPin?
   mut viewport_pin_row_offset : Int?
+  // The single style intern table for this screen, shared by reference into every
+  // grid view (`active_grid`, resize results) and used to resolve scrollback-row
+  // styles. Owned here because the `PageList` owns both the active page and the
+  // history; one table keeps a cell's `StyleId` valid as its row scrolls between
+  // them. Primary and alternate screens have distinct `PageList`s and thus
+  // distinct tables, which is fine — cells never migrate between them.
+  style_table : @style.StyleTable
 }
 
 ///|
@@ -151,6 +158,7 @@ fn PageList::new(
     tracked_pins: [],
     viewport_pin: None,
     viewport_pin_row_offset: None,
+    style_table: @style.StyleTable::new(),
   }
   state.viewport_pin = Some(state.track_pin(active_node, 0, 0))
   state
@@ -166,6 +174,7 @@ fn PageList::active_grid(self : PageList) -> ScreenGridState {
     descs: self.active_node.page.descs,
     cells: self.active_node.page.cells,
     cell_pool: [],
+    style_table: self.style_table,
   }
 }
 
@@ -1039,7 +1048,12 @@ fn PageList::resize_without_reflow(
 
   self.trim_history() |> ignore
 
-  let resized_grid = screen_grid_from_rows(rows, cols, grid_rows)
+  let resized_grid = screen_grid_from_rows(
+    rows,
+    cols,
+    grid_rows,
+    self.style_table,
+  )
   let active_node = PageListNode::new({
     rows: resized_grid.rows,
     cols: resized_grid.cols,
@@ -1172,7 +1186,12 @@ fn PageList::resize_cols(
     grid_rows.push(reflowed[index])
   }
 
-  let resized_grid = screen_grid_from_rows(self.rows, cols, grid_rows)
+  let resized_grid = screen_grid_from_rows(
+    self.rows,
+    cols,
+    grid_rows,
+    self.style_table,
+  )
   let active_node = PageListNode::new({
     rows: resized_grid.rows,
     cols: resized_grid.cols,
@@ -2003,8 +2022,11 @@ fn screen_grid_from_rows(
   rows : CellCountInt,
   cols : CellCountInt,
   pinned_rows : Array[PageListRow],
+  style_table : @style.StyleTable,
 ) -> ScreenGridState {
-  let grid = ScreenGridState::new(rows, cols)
+  // Share the screen's table: the pinned rows carry `StyleId`s minted from it,
+  // so the rebuilt grid must resolve against the same table.
+  let grid = ScreenGridState::new_with_table(rows, cols, style_table)
   let row_count = min_int(rows.to_int(), pinned_rows.length())
   for row_idx in 0..<row_count {
     grid.descs[row_idx] = pinned_rows[row_idx].row

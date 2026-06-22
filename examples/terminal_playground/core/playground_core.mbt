@@ -244,6 +244,7 @@ pub fn playground_cell_json(handle : Int, row : Int, col : Int) -> String {
       "rowState": json_row_state(session.terminal.screen_row_snapshot(row_u16)),
       "cell": json_cell_state(
         session.terminal.screen_cell_snapshot(row_u16, col_u16),
+        session.terminal.screen_cell_style_snapshot(row_u16, col_u16),
       ),
     }
     value.stringify()
@@ -464,11 +465,14 @@ fn semantic_content_json(value : @terminal.SemanticContent) -> Json {
 }
 
 ///|
-fn cell_content_tag_json(cell : @terminal.PageCellState) -> Json {
+fn cell_content_tag_json(
+  cell : @terminal.PageCellState,
+  style : @style.CellStyle,
+) -> Json {
   Json::string(
-    if cell.palette_index() is Some(_) {
+    if style.bg_color().palette_index() is Some(_) {
       "background_palette"
-    } else if cell.background_rgb() is Some(_) {
+    } else if style.bg_color().rgb_value() is Some(_) {
       "background_rgb"
     } else if cell.has_grapheme() {
       "codepoint_grapheme"
@@ -524,13 +528,21 @@ fn json_row_state(row : @terminal.PageRowState?) -> Json {
 }
 
 ///|
-fn json_cell_state(cell : @terminal.PageCellState?) -> Json {
+fn json_cell_state(
+  cell : @terminal.PageCellState?,
+  style : @style.CellStyle?,
+) -> Json {
   match cell {
     Some(cell) => {
-      let style = cell.style()
+      // The cell stores only a style id now; the resolved style is passed in
+      // alongside it (defaulting to the unstyled style if absent).
+      let style = match style {
+        Some(style) => style
+        None => @style.CellStyle::new()
+      }
       {
         "codepoint": uint_to_int(cell.codepoint()),
-        "contentTag": cell_content_tag_json(cell),
+        "contentTag": cell_content_tag_json(cell, style),
         "gridWidth": cell.grid_width(),
         "hasGrapheme": cell.has_grapheme(),
         "hasStyling": cell.has_styling(),
@@ -539,8 +551,8 @@ fn json_cell_state(cell : @terminal.PageCellState?) -> Json {
         "isProtected": cell.is_protected(),
         "isZero": cell.is_zero(),
         "wide": page_cell_wide_json(cell.wide()),
-        "paletteIndex": json_byte_or_null(cell.palette_index()),
-        "backgroundRgb": json_rgb(cell.background_rgb()),
+        "paletteIndex": json_byte_or_null(style.bg_color().palette_index()),
+        "backgroundRgb": json_rgb(style.bg_color().rgb_value()),
         "semanticContent": semantic_content_json(cell.semantic_content()),
         "hyperlink": json_hyperlink(cell.hyperlink()),
         "style": {

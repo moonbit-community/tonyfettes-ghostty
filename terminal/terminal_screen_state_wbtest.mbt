@@ -56,7 +56,7 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
   let cell = scrollback.cell(grid, 0, 0).unwrap()
   guard row.styled() &&
     cell.codepoint() == b'h'.to_uint() &&
-    cell.style().bold() &&
+    grid.style_table.get(cell.style_id()).bold() &&
     cell.hyperlink() == Some(hyperlink) else {
     fail("expected scrollback history snapshots")
   }

@@ -56,12 +56,20 @@ priv struct ScreenGridState {
   // evicted from history becomes the new blank row instead of being GC'd while
   // a fresh 80-cell row is allocated. Bounded to the screen height.
   cell_pool : Array[FixedArray[PageCellState]]
+  // The style intern table shared with the owning `PageList` (and thus with every
+  // other grid view and scrollback row of the same screen). Cells store a
+  // `StyleId` into this table rather than an inline style; writes intern here and
+  // reads resolve here. A standalone grid (tests, fresh screen) owns its own
+  // table; grids that share rows with a `PageList` must share its table, or a
+  // cell's id would resolve against the wrong table after a scroll/resize.
+  style_table : @style.StyleTable
 }
 
 ///|
-fn ScreenGridState::new(
+fn ScreenGridState::new_with_table(
   rows : CellCountInt,
   cols : CellCountInt,
+  style_table : @style.StyleTable,
 ) -> ScreenGridState {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
@@ -73,7 +81,14 @@ fn ScreenGridState::new(
     actual_rows.to_int(),
     _ => make_row_cells(actual_cols.to_int()),
   )
-  { rows: actual_rows, cols: actual_cols, descs, cells, cell_pool: [] }
+  {
+    rows: actual_rows,
+    cols: actual_cols,
+    descs,
+    cells,
+    cell_pool: [],
+    style_table,
+  }
 }
 
 ///|
@@ -108,11 +123,11 @@ fn ScreenGridState::set_blank_row(
       // Reuse the pooled array buffer, refilling every slot with a fresh blank
       // cell value (cells are immutable, so we replace rather than reset).
       for index in 0..<cells.length() {
-        cells[index] = blank_cell(style)
+        cells[index] = blank_cell(style, self.style_table)
       }
       cells
     }
-    None => make_blank_row_cells(self.cols.to_int(), style)
+    None => make_blank_row_cells(self.cols.to_int(), style, self.style_table)
   }
   self.descs[row_idx] = PageRowState::new().with_styled(
     blank_row_is_styled(style),
@@ -1191,7 +1206,7 @@ fn ScreenGridState::clear_full_row(
     // `cells` array on every cell.
     let row_cells = self.cells[row_idx]
     for col_idx in 0..<self.cols.to_int() {
-      row_cells[col_idx] = blank_cell(style)
+      row_cells[col_idx] = blank_cell(style, self.style_table)
     }
     // Reset to a blank descriptor, then restore `styled`: `full_reset` cleared
     // it, but a colored erase fills the row with bg-styled blanks, so the flag
@@ -1218,7 +1233,7 @@ fn ScreenGridState::clear_row_range(
   while col_idx < limit {
     let cell = row_cells[col_idx]
     if !respect_protected || !cell.is_protected() {
-      row_cells[col_idx] = blank_cell(style)
+      row_cells[col_idx] = blank_cell(style, self.style_table)
     }
     col_idx += 1
   }
@@ -1276,11 +1291,11 @@ fn ScreenGridState::write_cell(
   self.cells[row_idx][col_idx] = {
     codepoint,
     grapheme_extras: None,
-    style,
-    wide,
-    protected_flag,
+    // Intern the incoming style into the screen's shared table; the cell keeps
+    // only the id. Default/unstyled prints hit the table's pre-seeded id 0.
+    style_id: self.style_table.intern(style),
+    flags: PageCellFlags::pack(wide, protected_flag, semantic_content),
     hyperlink,
-    semantic_content,
   }
 }
 
@@ -1378,14 +1393,18 @@ fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
 // A blank cell that carries the erase style's background color (and nothing
 // else): a glyph-less cell whose `style` holds just the bg, so a run of them
 // renders as a colored gap.
-fn blank_cell(style : @style.CellStyle) -> PageCellState {
+fn blank_cell(
+  style : @style.CellStyle,
+  style_table : @style.StyleTable,
+) -> PageCellState {
   let bg = style.bg_color()
-  // Common case (erase with no SGR background): the shared blank cell, no alloc.
-  // Only a colored erase pays to construct a bg-only style.
+  // Common case (erase with no SGR background): the shared blank cell, no alloc
+  // and no intern. Only a colored erase pays to intern a bg-only style.
   if bg.is_default() {
     default_page_cell_state
   } else {
-    PageCellState::new(style=@style.CellStyle::new().with_bg_color(bg))
+    let bg_style = @style.CellStyle::new().with_bg_color(bg)
+    PageCellState::new(style_id=style_table.intern(bg_style))
   }
 }
 
@@ -1410,9 +1429,10 @@ fn blank_row_is_styled(style : @style.CellStyle) -> Bool {
 fn make_blank_row_cells(
   cols : Int,
   style : @style.CellStyle,
+  style_table : @style.StyleTable,
 ) -> FixedArray[PageCellState] {
   // One allocation filled with the blank cell value, instead of growing an empty
   // array by `push` (which reallocs and ref-blits ~log2(cols) times). This is the
   // hot path for a line feed when the cell pool is empty (scrollback not yet full).
-  FixedArray::make(cols, blank_cell(style))
+  FixedArray::make(cols, blank_cell(style, style_table))
 }

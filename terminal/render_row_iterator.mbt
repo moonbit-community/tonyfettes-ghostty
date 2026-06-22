@@ -108,6 +108,16 @@ pub fn RenderRowCells::cell(self : RenderRowCells) -> PageCellState? {
 }
 
 ///|
+// The resolved style of the current cell, via the render state's style table.
+// Cells store only a `StyleId`, so style reads go through the table here.
+pub fn RenderRowCells::cell_style(self : RenderRowCells) -> @style.CellStyle? {
+  match render_cell_at(self.state, self.row, self.x) {
+    Some(cell) => Some(self.state.style_table.get(cell.style_id()))
+    None => None
+  }
+}
+
+///|
 pub fn RenderRowCells::background_color(self : RenderRowCells) -> @color.RGB? {
   render_cell_background_color_at(self.state, self.row, self.x)
 }

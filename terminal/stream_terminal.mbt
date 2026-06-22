@@ -513,6 +513,31 @@ pub fn StreamTerminal::screen_cell_snapshot(
 }
 
 ///|
+// Resolve the style of the snapshot cell at (row, col) through the active screen's
+// table. Cells store only a `StyleId`, so callers that want the full `CellStyle`
+// (color, attributes) go through here rather than the cell directly.
+pub fn StreamTerminal::screen_cell_style_snapshot(
+  self : StreamTerminal,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> @style.CellStyle? {
+  match self.bridge().screen_cell_snapshot(row, col) {
+    Some(cell) => Some(self.active_style_table().get(cell.style_id()))
+    None => None
+  }
+}
+
+///|
 fn StreamTerminal::bridge(self : StreamTerminal) -> StreamTerminalBridgeState {
   self.stream.handler.bridge
+}
+
+///|
+// The active screen's style intern table. Snapshotted cells carry `StyleId`s
+// minted from it, so renderers/formatters resolve their styles through it. The
+// active grid shares its `PageList`'s table, which also covers scrollback rows.
+fn StreamTerminal::active_style_table(
+  self : StreamTerminal,
+) -> @style.StyleTable {
+  self.bridge().grid.style_table
 }

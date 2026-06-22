@@ -67,7 +67,14 @@ test "kitty graphics wb/rect guards impossible zero-row state" {
   let bridge = StreamTerminalBridgeState::with_effects(
     StreamTerminalBridgeEffects::new(),
   )
-  bridge.grid = { rows: 0, cols: 1, descs: [], cells: [], cell_pool: [] }
+  bridge.grid = {
+    rows: 0,
+    cols: 1,
+    descs: [],
+    cells: [],
+    cell_pool: [],
+    style_table: @style.StyleTable::new(),
+  }
 
   let placement : KittyPlacement = {
     bridge,

@@ -91,7 +91,8 @@ test "stream terminal parity/vt_write split escape sequence" {
 
   expect_ascii_text(terminal, 0, 0, b"Hello Bold")
   let row = terminal.screen_row_snapshot(0).unwrap()
-  guard row.styled() && expect_parity_cell(terminal, 0, 6).style().bold() else {
+  guard row.styled() &&
+    terminal.screen_cell_style_snapshot(0, 6).unwrap().bold() else {
     fail("expected split escape sequence parity")
   }
 

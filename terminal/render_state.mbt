@@ -25,6 +25,10 @@ struct RenderState {
   mut cursor_viewport_wide_tail : Bool
   mut row_states : Array[PageRowState]
   mut row_cells : Array[FixedArray[PageCellState]]
+  // The active screen's style table, captured each `update`. The snapshotted
+  // `row_cells` carry `StyleId`s minted from it, so it resolves their styles for
+  // the renderer/formatter. Grow-only and shared, so ids captured here stay valid.
+  mut style_table : @style.StyleTable
 }
 
 ///|
@@ -48,6 +52,7 @@ pub fn RenderState::new() -> RenderState {
     cursor_viewport_wide_tail: false,
     row_states: [],
     row_cells: [],
+    style_table: @style.StyleTable::new(),
   }
 }
 
@@ -177,6 +182,7 @@ pub fn RenderState::update(
   }
 
   self.initialized = true
+  self.style_table = terminal.active_style_table()
   self.rows = rows
   self.columns = columns
   self.screen = screen
@@ -437,7 +443,11 @@ fn render_cell_background_color_at(
   col_idx : Int,
 ) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
-    Some(cell) => render_cell_background_color(cell, state.palette)
+    Some(cell) =>
+      render_cell_background_color(
+        state.style_table.get(cell.style_id()),
+        state.palette,
+      )
     None => None
   }
 }
@@ -449,27 +459,31 @@ fn render_cell_foreground_color_at(
   col_idx : Int,
 ) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
-    Some(cell) => render_cell_foreground_color(cell, state.palette)
+    Some(cell) =>
+      render_cell_foreground_color(
+        state.style_table.get(cell.style_id()),
+        state.palette,
+      )
     None => None
   }
 }
 
 ///|
 fn render_cell_background_color(
-  cell : PageCellState,
+  style : @style.CellStyle,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
   // Every cell keeps its background in the style now (no separate background
   // content kind), so this is just the style's resolved bg.
-  cell.style.bg_color_rgb(palette)
+  style.bg_color_rgb(palette)
 }
 
 ///|
 fn render_cell_foreground_color(
-  cell : PageCellState,
+  style : @style.CellStyle,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
-  cell.style.fg_rgb(palette)
+  style.fg_rgb(palette)
 }
 
 ///|

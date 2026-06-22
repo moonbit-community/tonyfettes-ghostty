@@ -306,6 +306,16 @@ fn expect_bridge_cell(
 }
 
 ///|
+// Resolve a snapshot cell's style through the active grid's shared table.
+fn expect_bridge_cell_style(
+  state : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> @style.CellStyle {
+  state.grid.style_table.get(expect_bridge_cell(state, row, col).style_id())
+}
+
+///|
 test "stream terminal bridge/applies printable semantic hyperlink actions" {
   let state = StreamTerminalBridgeState::new()
 
@@ -338,10 +348,11 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
   }
 
   let first = expect_bridge_cell(state, 0, 0)
+  let first_style = expect_bridge_cell_style(state, 0, 0)
   guard first.codepoint() == b'A'.to_uint() &&
     first.semantic_content() == Prompt &&
-    first.style().bold() &&
-    first.style().bg_color().palette_index() == Some(@color.Name::Cyan.code()) else {
+    first_style.bold() &&
+    first_style.bg_color().palette_index() == Some(@color.Name::Cyan.code()) else {
     fail("expected first cell style and semantic metadata")
   }
   let first_link_ok = match first.hyperlink() {
@@ -550,7 +561,8 @@ test "stream terminal bridge/applies edit and scroll mutations" {
   guard apply_stream_bytes(state, b"\x1B[X") else {
     fail("expected erase-char bytes to be handled")
   }
-  guard expect_bridge_cell(state, 0, 3).palette_index() == Some(5) else {
+  guard expect_bridge_cell_style(state, 0, 3).bg_color().palette_index() ==
+    Some(5) else {
     fail("expected erase chars to preserve current background style")
   }
 
@@ -815,7 +827,8 @@ test "stream terminal bridge/covers erase and insertion bridge arms" {
     state.apply(StreamEraseLineRightUnlessPendingWrap(false)) else {
     fail("expected erase-line-right-unless-pending-wrap action")
   }
-  guard expect_bridge_cell(state, 0, 2).palette_index() == Some(4) else {
+  guard expect_bridge_cell_style(state, 0, 2).bg_color().palette_index() ==
+    Some(4) else {
     fail(
       "expected erase-line-right-unless-pending-wrap to erase when not pending wrap",
     )

@@ -216,7 +216,10 @@ fn formatter_write_render_state_frame_row(
             blank_cells = 0
           }
 
-          output.sync_vt_style(cell.style(), buffer)
+          output.sync_vt_style(
+            cells.state.style_table.get(cell.style_id()),
+            buffer,
+          )
           formatter_write_cell_text(Vt, cell, buffer)
         }
       }
@@ -458,7 +461,7 @@ fn formatter_write_content(
                     blank_cells = 0
                   }
 
-                  let style = cell.style()
+                  let style = state.grid.style_table.get(cell.style_id())
                   let hyperlink = if formatter.opts.emit == Html {
                     match cell.hyperlink() {
                       Some(link) => Some(link.uri())
