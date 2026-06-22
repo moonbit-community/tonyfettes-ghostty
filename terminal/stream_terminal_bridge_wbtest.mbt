@@ -316,6 +316,18 @@ fn expect_bridge_cell_style(
 }
 
 ///|
+// Resolve a snapshot cell's hyperlink through the active grid's shared table.
+fn expect_bridge_cell_hyperlink(
+  state : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> CellHyperlink? {
+  state.grid.hyperlink_table.get(
+    expect_bridge_cell(state, row, col).hyperlink_id(),
+  )
+}
+
+///|
 test "stream terminal bridge/applies printable semantic hyperlink actions" {
   let state = StreamTerminalBridgeState::new()
 
@@ -355,7 +367,7 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
     first_style.bg_color().palette_index() == Some(@color.Name::Cyan.code()) else {
     fail("expected first cell style and semantic metadata")
   }
-  let first_link_ok = match first.hyperlink() {
+  let first_link_ok = match expect_bridge_cell_hyperlink(state, 0, 0) {
     Some(link) =>
       link.uri() == "https://example.com" &&
       link.explicit_id() == None &&
@@ -367,7 +379,7 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
   guard expect_bridge_cell(state, 0, 1).codepoint() == b'A'.to_uint() &&
     expect_bridge_cell(state, 0, 2).codepoint() == b'A'.to_uint() &&
     expect_bridge_cell(state, 0, 3).codepoint() == b'B'.to_uint() &&
-    expect_bridge_cell(state, 0, 3).hyperlink() == None else {
+    expect_bridge_cell_hyperlink(state, 0, 3) == None else {
     fail("expected repeat-print and hyperlink end behavior")
   }
 }
@@ -732,7 +744,7 @@ test "stream terminal bridge/covers semantic prompt variants and explicit hyperl
     state.hyperlink_implicit_id() == None else {
     fail("expected explicit hyperlink accessors")
   }
-  let explicit_link_ok = match expect_bridge_cell(state, 1, 0).hyperlink() {
+  let explicit_link_ok = match expect_bridge_cell_hyperlink(state, 1, 0) {
     Some(link) =>
       link.uri() == "http://example.com" && link.explicit_id() == Some("foo")
     None => false

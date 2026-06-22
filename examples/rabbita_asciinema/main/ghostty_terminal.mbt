@@ -288,7 +288,9 @@ fn GhosttyTerminal::cell_view(
       (
         self.cell_text(row, col, cell),
         self.cell_style(row, col, cell, palette),
-        cell.hyperlink().map(link => link.uri()),
+        self.terminal
+        .screen_cell_hyperlink_snapshot(row.to_uint16(), col.to_uint16())
+        .map(link => link.uri()),
       )
     None => {
       let empty_style : Array[String] = []

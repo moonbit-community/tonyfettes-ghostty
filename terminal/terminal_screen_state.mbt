@@ -80,6 +80,8 @@ priv struct PageList {
   // them. Primary and alternate screens have distinct `PageList`s and thus
   // distinct tables, which is fine — cells never migrate between them.
   style_table : @style.StyleTable
+  // The hyperlink intern table, owned and shared exactly like `style_table`.
+  hyperlink_table : HyperlinkTable
 }
 
 ///|
@@ -159,6 +161,7 @@ fn PageList::new(
     viewport_pin: None,
     viewport_pin_row_offset: None,
     style_table: @style.StyleTable::new(),
+    hyperlink_table: HyperlinkTable::new(),
   }
   state.viewport_pin = Some(state.track_pin(active_node, 0, 0))
   state
@@ -175,6 +178,7 @@ fn PageList::active_grid(self : PageList) -> ScreenGridState {
     cells: self.active_node.page.cells,
     cell_pool: [],
     style_table: self.style_table,
+    hyperlink_table: self.hyperlink_table,
   }
 }
 
@@ -1053,6 +1057,7 @@ fn PageList::resize_without_reflow(
     cols,
     grid_rows,
     self.style_table,
+    self.hyperlink_table,
   )
   let active_node = PageListNode::new({
     rows: resized_grid.rows,
@@ -1191,6 +1196,7 @@ fn PageList::resize_cols(
     cols,
     grid_rows,
     self.style_table,
+    self.hyperlink_table,
   )
   let active_node = PageListNode::new({
     rows: resized_grid.rows,
@@ -1990,7 +1996,7 @@ fn apply_cell_flags_to_row(
     if cell.has_styling() {
       styled = true
     }
-    if cell.hyperlink() != None {
+    if cell.has_hyperlink() {
       hyperlink = true
     }
   }
@@ -2013,7 +2019,7 @@ fn reflow_cell_has_content(cell : PageCellState) -> Bool {
   !cell.is_empty() ||
   cell.has_styling() ||
   cell.is_protected() ||
-  cell.hyperlink() != None ||
+  cell.has_hyperlink() ||
   cell.semantic_content() != Output
 }
 
@@ -2023,10 +2029,13 @@ fn screen_grid_from_rows(
   cols : CellCountInt,
   pinned_rows : Array[PageListRow],
   style_table : @style.StyleTable,
+  hyperlink_table : HyperlinkTable,
 ) -> ScreenGridState {
-  // Share the screen's table: the pinned rows carry `StyleId`s minted from it,
-  // so the rebuilt grid must resolve against the same table.
-  let grid = ScreenGridState::new_with_table(rows, cols, style_table)
+  // Share the screen's tables: the pinned rows carry `StyleId`/`HyperlinkId`s
+  // minted from them, so the rebuilt grid must resolve against the same tables.
+  let grid = ScreenGridState::new_with_table(
+    rows, cols, style_table, hyperlink_table,
+  )
   let row_count = min_int(rows.to_int(), pinned_rows.length())
   for row_idx in 0..<row_count {
     grid.descs[row_idx] = pinned_rows[row_idx].row

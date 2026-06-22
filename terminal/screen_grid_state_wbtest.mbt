@@ -10,7 +10,12 @@ fn ScreenGridState::new(
   rows : CellCountInt,
   cols : CellCountInt,
 ) -> ScreenGridState {
-  ScreenGridState::new_with_table(rows, cols, @style.StyleTable::new())
+  ScreenGridState::new_with_table(
+    rows,
+    cols,
+    @style.StyleTable::new(),
+    HyperlinkTable::new(),
+  )
 }
 
 ///|
@@ -23,6 +28,16 @@ fn ScreenGridState::cell_style(
   col : Int,
 ) -> @style.CellStyle {
   self.style_table.get(self.cells[row][col].style_id())
+}
+
+///|
+// Resolve the hyperlink of the cell at (row, col) through the shared table.
+fn ScreenGridState::cell_hyperlink(
+  self : ScreenGridState,
+  row : Int,
+  col : Int,
+) -> CellHyperlink? {
+  self.hyperlink_table.get(self.cells[row][col].hyperlink_id())
 }
 
 ///|
@@ -129,7 +144,7 @@ test "screen grid/print stores metadata and repeat clamps zero count" {
   guard cell.codepoint() == b'A'.to_uint() &&
     grid.cell_style(0, 0).bold() &&
     cell.is_protected() &&
-    cell.hyperlink() == Some(hyperlink) &&
+    grid.cell_hyperlink(0, 0) == Some(hyperlink) &&
     cell.semantic_content() == Prompt else {
     fail("expected printed cell metadata")
   }
@@ -1014,7 +1029,11 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let cell = expect_cell(grid, 0, 0)
     .with_codepoint(b'G'.to_uint(), true)
     .with_style_id(grid.style_table.intern(style))
-    .with_hyperlink(Some(CellHyperlink::implicit("https://example.com", 9)))
+    .with_hyperlink_id(
+      grid.hyperlink_table.intern(
+        Some(CellHyperlink::implicit("https://example.com", 9)),
+      ),
+    )
   set_test_cell(grid, 0, 0, cell)
   grid.recompute_row_flags(0)
   let row = expect_row(grid, 0)

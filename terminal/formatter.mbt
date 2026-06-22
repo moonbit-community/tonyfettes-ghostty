@@ -463,7 +463,7 @@ fn formatter_write_content(
 
                   let style = state.grid.style_table.get(cell.style_id())
                   let hyperlink = if formatter.opts.emit == Html {
-                    match cell.hyperlink() {
+                    match state.grid.hyperlink_table.get(cell.hyperlink_id()) {
                       Some(link) => Some(link.uri())
                       None => None
                     }

@@ -245,6 +245,7 @@ pub fn playground_cell_json(handle : Int, row : Int, col : Int) -> String {
       "cell": json_cell_state(
         session.terminal.screen_cell_snapshot(row_u16, col_u16),
         session.terminal.screen_cell_style_snapshot(row_u16, col_u16),
+        session.terminal.screen_cell_hyperlink_snapshot(row_u16, col_u16),
       ),
     }
     value.stringify()
@@ -531,6 +532,7 @@ fn json_row_state(row : @terminal.PageRowState?) -> Json {
 fn json_cell_state(
   cell : @terminal.PageCellState?,
   style : @style.CellStyle?,
+  hyperlink : @terminal.CellHyperlink?,
 ) -> Json {
   match cell {
     Some(cell) => {
@@ -554,7 +556,7 @@ fn json_cell_state(
         "paletteIndex": json_byte_or_null(style.bg_color().palette_index()),
         "backgroundRgb": json_rgb(style.bg_color().rgb_value()),
         "semanticContent": semantic_content_json(cell.semantic_content()),
-        "hyperlink": json_hyperlink(cell.hyperlink()),
+        "hyperlink": json_hyperlink(hyperlink),
         "style": {
           "bold": style.bold(),
           "faint": style.faint(),

@@ -63,6 +63,10 @@ priv struct ScreenGridState {
   // table; grids that share rows with a `PageList` must share its table, or a
   // cell's id would resolve against the wrong table after a scroll/resize.
   style_table : @style.StyleTable
+  // The hyperlink intern table, shared the same way as `style_table`: cells store
+  // a `HyperlinkId` into it (0 = no link), writes intern here, the rare full-link
+  // read resolves here. See `HyperlinkTable`.
+  hyperlink_table : HyperlinkTable
 }
 
 ///|
@@ -70,6 +74,7 @@ fn ScreenGridState::new_with_table(
   rows : CellCountInt,
   cols : CellCountInt,
   style_table : @style.StyleTable,
+  hyperlink_table : HyperlinkTable,
 ) -> ScreenGridState {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
@@ -88,6 +93,7 @@ fn ScreenGridState::new_with_table(
     cells,
     cell_pool: [],
     style_table,
+    hyperlink_table,
   }
 }
 
@@ -745,7 +751,7 @@ fn ScreenGridState::print_cell(
   // can decide. Capture before write_cell replaces the cell object.
   let lost_grapheme = current.has_grapheme()
   let lost_styled = current.has_styling()
-  let lost_hyperlink = current.hyperlink() is Some(_)
+  let lost_hyperlink = current.has_hyperlink()
   self.write_cell(
     row_idx, col_idx, codepoint, wide, style, protected_flag, semantic_content, hyperlink,
   )
@@ -774,7 +780,7 @@ fn ScreenGridState::update_row_flags_after_write(
   let cell = self.cells[row_idx][col_idx]
   let has_grapheme = cell.has_grapheme()
   let has_styled = cell.has_styling()
-  let has_hyperlink = cell.hyperlink() is Some(_)
+  let has_hyperlink = cell.has_hyperlink()
   if (lost_grapheme && !has_grapheme) ||
     (lost_styled && !has_styled) ||
     (lost_hyperlink && !has_hyperlink) {
@@ -1295,7 +1301,8 @@ fn ScreenGridState::write_cell(
     // only the id. Default/unstyled prints hit the table's pre-seeded id 0.
     style_id: self.style_table.intern(style),
     flags: PageCellFlags::pack(wide, protected_flag, semantic_content),
-    hyperlink,
+    // Intern the optional link; `None` is the free fast path → id 0.
+    hyperlink_id: self.hyperlink_table.intern(hyperlink),
   }
 }
 
@@ -1329,7 +1336,7 @@ fn ScreenGridState::recompute_row_flags(
     if cell.has_styling() {
       styled = true
     }
-    if cell.hyperlink() != None {
+    if cell.has_hyperlink() {
       hyperlink = true
     }
     col_idx += 1

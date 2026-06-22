@@ -57,7 +57,7 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
   guard row.styled() &&
     cell.codepoint() == b'h'.to_uint() &&
     grid.style_table.get(cell.style_id()).bold() &&
-    cell.hyperlink() == Some(hyperlink) else {
+    grid.hyperlink_table.get(cell.hyperlink_id()) == Some(hyperlink) else {
     fail("expected scrollback history snapshots")
   }
 

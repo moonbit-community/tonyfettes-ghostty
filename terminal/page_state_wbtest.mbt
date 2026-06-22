@@ -86,3 +86,40 @@ test "page row state/with builders pack and unpack flags" {
     fail("expected a blank descriptor to clear every flag")
   }
 }
+
+///|
+test "hyperlink table interns, dedups runs, and round-trips through a cell" {
+  let table = HyperlinkTable::new()
+  // None is the free fast path: no entry, id 0, resolves back to None.
+  let none_id = table.intern(None)
+  guard none_id.is_none() && table.get(none_id) == None else {
+    fail("None must intern to the no-hyperlink id")
+  }
+
+  // A real link gets a non-zero id; the same link (a run under one OSC 8 span)
+  // re-interns to the same id.
+  let link = CellHyperlink::implicit("https://example.com", 7)
+  let id = table.intern(Some(link))
+  guard !id.is_none() && table.intern(Some(link)) == id else {
+    fail("re-interning the same link must be idempotent")
+  }
+
+  // A distinct link gets a distinct id.
+  let other = CellHyperlink::explicit("https://other.example", "x")
+  let other_id = table.intern(Some(other))
+  guard other_id != id else { fail("distinct links must get distinct ids") }
+
+  // The id round-trips through a cell and resolves back to the link.
+  let cell = PageCellState::new().with_hyperlink_id(id)
+  guard cell.has_hyperlink() &&
+    cell.hyperlink_id() == id &&
+    table.get(cell.hyperlink_id()) == Some(link) else {
+    fail("cell hyperlink id must resolve back to the interned link")
+  }
+
+  // A cell with the no-hyperlink id reports no link.
+  let blank = PageCellState::new()
+  guard !blank.has_hyperlink() && table.get(blank.hyperlink_id()) == None else {
+    fail("a fresh cell must carry no hyperlink")
+  }
+}

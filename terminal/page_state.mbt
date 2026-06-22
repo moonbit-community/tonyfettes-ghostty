@@ -11,7 +11,7 @@ struct CellHyperlink {
   uri : String
   explicit_id : String?
   implicit_id : Int?
-} derive(Eq, Debug)
+} derive(Eq, Debug, Hash)
 
 ///|
 pub fn CellHyperlink::explicit(uri : String, id : String) -> CellHyperlink {
@@ -350,7 +350,11 @@ struct PageCellState {
   // `PageCellFlags`. Three separate fields would push the struct to seven and
   // break the native `#valtype` six-field cap.
   flags : PageCellFlags
-  hyperlink : CellHyperlink?
+  // The cell's hyperlink as a `HyperlinkId` into the screen's shared
+  // `HyperlinkTable` (0 = no link). Like `style_id`, this removes a pointer from
+  // the cell; presence is a plain id compare and the uri is resolved through the
+  // grid/screen only when actually needed (HTML export).
+  hyperlink_id : HyperlinkId
 } derive(Eq, Debug)
 
 ///|
@@ -366,7 +370,7 @@ pub fn PageCellState::new(
   style_id? : @style.StyleId = @style.default_style_id,
   wide? : PageCellWide = Narrow,
   protected_flag? : Bool = false,
-  hyperlink? : CellHyperlink? = None,
+  hyperlink_id? : HyperlinkId = no_hyperlink_id,
   semantic_content? : SemanticContent = Output,
 ) -> PageCellState {
   {
@@ -378,7 +382,7 @@ pub fn PageCellState::new(
     },
     style_id,
     flags: PageCellFlags::pack(wide, protected_flag, semantic_content),
-    hyperlink,
+    hyperlink_id,
   }
 }
 
@@ -456,16 +460,24 @@ pub fn PageCellState::with_protected(
 }
 
 ///|
-pub fn PageCellState::hyperlink(self : PageCellState) -> CellHyperlink? {
-  self.hyperlink
+// The cell's hyperlink id. Resolution to the full `CellHyperlink` is done by the
+// grid/screen that owns the table — see `ScreenGridState::cell_hyperlink`.
+pub fn PageCellState::hyperlink_id(self : PageCellState) -> HyperlinkId {
+  self.hyperlink_id
 }
 
 ///|
-pub fn PageCellState::with_hyperlink(
+// Whether this cell is part of a hyperlink. A plain id compare — no table lookup.
+pub fn PageCellState::has_hyperlink(self : PageCellState) -> Bool {
+  !self.hyperlink_id.is_none()
+}
+
+///|
+pub fn PageCellState::with_hyperlink_id(
   self : PageCellState,
-  value : CellHyperlink?,
+  value : HyperlinkId,
 ) -> PageCellState {
-  { ..self, hyperlink: value }
+  { ..self, hyperlink_id: value }
 }
 
 ///|

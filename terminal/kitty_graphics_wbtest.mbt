@@ -74,6 +74,7 @@ test "kitty graphics wb/rect guards impossible zero-row state" {
     cells: [],
     cell_pool: [],
     style_table: @style.StyleTable::new(),
+    hyperlink_table: HyperlinkTable::new(),
   }
 
   let placement : KittyPlacement = {

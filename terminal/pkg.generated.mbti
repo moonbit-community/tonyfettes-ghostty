@@ -93,7 +93,7 @@ pub(all) enum C0 {
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
 
-type CellHyperlink derive(Eq, @debug.Debug)
+type CellHyperlink derive(Eq, Hash, @debug.Debug)
 pub fn CellHyperlink::explicit(String, String) -> Self
 pub fn CellHyperlink::explicit_id(Self) -> String?
 pub fn CellHyperlink::implicit(String, Int) -> Self
@@ -232,6 +232,8 @@ pub fn FormatterTerminalExtra::all() -> Self
 pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
+
+type HyperlinkId derive(Eq, Hash, @debug.Debug)
 
 pub(all) struct InvokeCharsetAction {
   bank : @charsets.ActiveSlot
@@ -483,19 +485,20 @@ pub fn PageCellState::codepoint(Self) -> UInt
 pub fn PageCellState::grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
+pub fn PageCellState::has_hyperlink(Self) -> Bool
 pub fn PageCellState::has_styling(Self) -> Bool
 pub fn PageCellState::has_text(Self) -> Bool
-pub fn PageCellState::hyperlink(Self) -> CellHyperlink?
+pub fn PageCellState::hyperlink_id(Self) -> HyperlinkId
 pub fn PageCellState::init(UInt) -> Self
 pub fn PageCellState::is_empty(Self) -> Bool
 pub fn PageCellState::is_protected(Self) -> Bool
 pub fn PageCellState::is_zero(Self) -> Bool
-pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink? : CellHyperlink?, semantic_content? : SemanticContent) -> Self
+pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink_id? : HyperlinkId, semantic_content? : SemanticContent) -> Self
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::style_id(Self) -> @style.StyleId
 pub fn PageCellState::wide(Self) -> PageCellWide
 pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
-pub fn PageCellState::with_hyperlink(Self, CellHyperlink?) -> Self
+pub fn PageCellState::with_hyperlink_id(Self, HyperlinkId) -> Self
 pub fn PageCellState::with_protected(Self, Bool) -> Self
 pub fn PageCellState::with_style_id(Self, @style.StyleId) -> Self
 pub fn PageCellState::with_wide(Self, PageCellWide) -> Self
@@ -897,6 +900,7 @@ pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
+pub fn StreamTerminal::screen_cell_hyperlink_snapshot(Self, UInt16, UInt16) -> CellHyperlink?
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
 pub fn StreamTerminal::screen_cell_style_snapshot(Self, UInt16, UInt16) -> @style.CellStyle?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> PageRowState?

@@ -21,7 +21,7 @@ test "page cell state/defaults and zero helpers" {
     cell.style_id().is_default() &&
     cell.wide() == Narrow &&
     !cell.is_protected() &&
-    cell.hyperlink() == None &&
+    !cell.has_hyperlink() &&
     cell.semantic_content() == Output &&
     cell.is_zero() &&
     !cell.has_text() &&
@@ -113,20 +113,20 @@ test "page cell state/style hyperlink semantic and full reset" {
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   let styles = @style.StyleTable::new()
-  let hyperlink = CellHyperlink::implicit("https://example.com", 3)
   let mut cell = PageCellState::new(
     style_id=styles.intern(style),
     protected_flag=true,
-    hyperlink=Some(hyperlink),
     semantic_content=Prompt,
   )
 
+  // Hyperlink round-trips through the shared table, which is package-internal;
+  // that path is covered white-box in `page_state_wbtest.mbt`.
   guard styles.get(cell.style_id()).bold() &&
     cell.has_styling() &&
     cell.is_protected() &&
-    cell.hyperlink() == Some(hyperlink) &&
+    !cell.has_hyperlink() &&
     cell.semantic_content() == Prompt else {
-    fail("expected style, hyperlink, protection, and semantic state")
+    fail("expected style, protection, and semantic state")
   }
 
   // A blank cell is just a fresh value now (full_reset is gone).
@@ -135,7 +135,7 @@ test "page cell state/style hyperlink semantic and full reset" {
     cell.style_id().is_default() &&
     cell.wide() == Narrow &&
     !cell.is_protected() &&
-    cell.hyperlink() == None &&
+    !cell.has_hyperlink() &&
     cell.semantic_content() == Output else {
     fail("expected page cell full reset")
   }
