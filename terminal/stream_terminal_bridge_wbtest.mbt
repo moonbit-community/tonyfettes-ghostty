@@ -2295,3 +2295,44 @@ test "stream terminal bridge/semantic_prompt_row_range row layout" {
   guard range1 == Some((1, 2)) else { fail("range(1) should be (1,2)") }
   guard range2 == Some((1, 2)) else { fail("range(2) should be (1,2)") }
 }
+
+///|
+test "stream terminal bridge/a full clear reclaims the intern id space" {
+  let state = StreamTerminalBridgeState::new()
+
+  // Enter the alternate screen. DECSET 1049 clears it on entry, minting fresh
+  // intern tables; capture those so we can prove the next clear swaps them out.
+  state.mode_set(AltScreenSaveCursorClearEnter, true)
+  let first_style_table = state.grid.style_table
+  let first_hyperlink_table = state.grid.hyperlink_table
+  let first_grapheme_table = state.grid.grapheme_table
+
+  // Intern several distinct non-default styles into the alt screen's table.
+  let a = @style.CellStyle::new().apply_attribute(Color256Bg(1))
+  let b = @style.CellStyle::new().apply_attribute(Color256Bg(2))
+  let c = @style.CellStyle::new().apply_attribute(Color256Bg(3))
+  state.grid.write_cell(0, 0, b'A'.to_uint(), Narrow, a, false, Output, None)
+  state.grid.write_cell(0, 1, b'B'.to_uint(), Narrow, b, false, Output, None)
+  state.grid.write_cell(0, 2, b'C'.to_uint(), Narrow, c, false, Output, None)
+  guard state.grid.style_table.len() > 1 else {
+    fail("expected distinct styles to grow the alt-screen style table")
+  }
+
+  // Leave, then re-enter: the second entry clears the alternate screen again. That
+  // clear must reclaim the id space with fresh tables instead of letting the prior
+  // session's ids accumulate toward the 16-bit ceiling.
+  state.mode_set(AltScreenSaveCursorClearEnter, false)
+  state.mode_set(AltScreenSaveCursorClearEnter, true)
+  guard state.grid.style_table.len() == 1 else {
+    fail("expected a full clear to reclaim the style id space")
+  }
+
+  // Fresh tables means new identities, so the active grid resolves against the
+  // same tables the prints intern into, and RenderState's table-reset damage check
+  // repaints rather than trusting reused low ids.
+  guard !physical_equal(state.grid.style_table, first_style_table) &&
+    !physical_equal(state.grid.hyperlink_table, first_hyperlink_table) &&
+    !physical_equal(state.grid.grapheme_table, first_grapheme_table) else {
+    fail("expected the clear to swap in fresh intern tables")
+  }
+}

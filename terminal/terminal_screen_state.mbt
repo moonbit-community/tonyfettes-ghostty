@@ -86,11 +86,13 @@ priv struct PageList {
   // history; one table keeps a cell's `StyleId` valid as its row scrolls between
   // them. Primary and alternate screens have distinct `PageList`s and thus
   // distinct tables, which is fine — cells never migrate between them.
-  style_table : @style.StyleTable
+  // `mut` only so `full_reset` can swap in fresh empty tables once the screen is
+  // wholly cleared (see there); steady-state printing never reassigns them.
+  mut style_table : @style.StyleTable
   // The hyperlink intern table, owned and shared exactly like `style_table`.
-  hyperlink_table : HyperlinkTable
+  mut hyperlink_table : HyperlinkTable
   // The grapheme intern table, owned and shared exactly like `style_table`.
-  grapheme_table : GraphemeTable
+  mut grapheme_table : GraphemeTable
 }
 
 ///|
@@ -475,6 +477,22 @@ fn PageList::full_reset(self : PageList, _rows : CellCountInt) -> Unit {
   for index in 0..<self.tracked_pins.length() {
     self.mark_pin_garbage(index)
   }
+  // The history is now empty and the caller (`clear_active_screen`) has already
+  // blanked the active grid, so no cell — in this list or its grid views — still
+  // references an interned id. Reclaim the grow-only intern tables by minting
+  // fresh empty ones; otherwise repeated full clears (e.g. DECSET 1049 alt-screen
+  // churn that prints many distinct styles/links/grapheme runs) keep consuming
+  // 16-bit ids for content that no longer exists and eventually exhaust them,
+  // degrading later cells to default/no-link/dropped-marks on an empty screen.
+  // We mint *new* tables rather than clearing in place on purpose: the swap flips
+  // their identity, which `RenderState` keys on (`physical_equal`) to force a
+  // repaint after the reset — an in-place clear that reused the same low ids for
+  // new content would otherwise read as unchanged. The grid still holds the old
+  // table refs it copied at construction, so `clear_active_screen` rebuilds it
+  // from the page to pick these up.
+  self.style_table = @style.StyleTable::new()
+  self.hyperlink_table = HyperlinkTable::new()
+  self.grapheme_table = GraphemeTable::new()
 }
 
 ///|
