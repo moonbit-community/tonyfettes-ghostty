@@ -11,41 +11,6 @@ const MaxParamDigits : Int = 255
 const MaxParamValue : UInt16 = 65535
 
 ///|
-/// Abstract (no `pub`): a colon-vs-semicolon separator bitset built and read
-/// only through `init_empty`/`set`/`is_set`/`count`, so its backing word stays
-/// sealed across the package boundary. An immutable `UInt64` newtype — like
-/// upstream's `SepList = std.StaticBitSet(MAX_PARAMS)` (an `IntegerBitSet`, i.e.
-/// an inline integer value), `set` returns a new bitset and the holder rebinds
-/// its field, so the value is unboxed with no per-sequence heap allocation.
-struct SepList(UInt64) derive(Debug)
-
-///|
-pub fn SepList::init_empty() -> SepList {
-  0UL
-}
-
-///|
-pub fn SepList::set(self : SepList, index : Int) -> SepList {
-  self.0 | (1UL << index)
-}
-
-///|
-pub fn SepList::is_set(self : SepList, index : Int) -> Bool {
-  (self.0 & (1UL << index)) != 0UL
-}
-
-///|
-pub fn SepList::count(self : SepList) -> Int {
-  let mut result = 0
-  for index in 0..<MaxParams {
-    if self.is_set(index) {
-      result += 1
-    }
-  }
-  result
-}
-
-///|
 /// Dispatch payload borrowing the parser's reused accumulators. Like upstream
 /// (`Parser.zig`: `self.intermediates[0..idx]`, `self.params[0..idx]`), the
 /// `intermediates` / `params` views alias the parser's `Array` buffers and are
@@ -55,7 +20,7 @@ pub fn SepList::count(self : SepList) -> Int {
 pub(all) struct Csi {
   intermediates : ArrayView[Byte]
   params : ArrayView[UInt16]
-  params_sep : SepList
+  params_sep : @seplist.SepList
   final_byte : Byte
 }
 
@@ -125,7 +90,7 @@ struct Parser {
   mut state : ParserState
   intermediates : Array[Byte]
   params : Array[UInt16]
-  mut params_sep : SepList
+  mut params_sep : @seplist.SepList
   mut param_acc : UInt16
   mut param_acc_idx : Int
   osc_parser : @osc.OscParser
@@ -137,7 +102,7 @@ pub fn Parser::new() -> Parser {
     state: Ground,
     intermediates: [],
     params: [],
-    params_sep: SepList::init_empty(),
+    params_sep: @seplist.SepList::init_empty(),
     param_acc: 0,
     param_acc_idx: 0,
     osc_parser: @osc.OscParser::new(),
@@ -319,7 +284,7 @@ fn Parser::clear(self : Parser) -> Unit {
   // `next()` rewinds them here, so reuse is safe.
   self.intermediates.clear()
   self.params.clear()
-  self.params_sep = SepList::init_empty()
+  self.params_sep = @seplist.SepList::init_empty()
   self.param_acc = 0
   self.param_acc_idx = 0
 }

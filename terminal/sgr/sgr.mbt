@@ -63,7 +63,7 @@ pub(all) enum SgrAttribute {
 /// sealed across the package boundary.
 struct SgrParser {
   mut params : ArrayView[UInt16]
-  mut params_sep : @parser.SepList
+  mut params_sep : @seplist.SepList
   mut idx : Int
 } derive(Debug)
 
@@ -76,7 +76,7 @@ let empty_sgr_params : ArrayView[UInt16] = ([] : Array[UInt16])
 fn SgrParser::empty() -> SgrParser {
   {
     params: empty_sgr_params,
-    params_sep: @parser.SepList::init_empty(),
+    params_sep: @seplist.SepList::init_empty(),
     idx: 0,
   }
 }
@@ -91,7 +91,7 @@ fn SgrParser::empty() -> SgrParser {
 /// param data — the rare `Unknown` — is copied out in `make_unknown`.
 pub fn SgrParser::from_params(
   params : ArrayView[UInt16],
-  params_sep : @parser.SepList,
+  params_sep : @seplist.SepList,
 ) -> SgrParser {
   { params, params_sep, idx: 0 }
 }
@@ -123,7 +123,7 @@ pub fn SgrParser::set_params(
   // Snapshot the caller's params into an independent buffer; the stored view
   // keeps that copy alive and is decoupled from later caller mutation.
   self.params = params.copy()
-  self.params_sep = @parser.SepList::init_empty()
+  self.params_sep = @seplist.SepList::init_empty()
   for index in 0..<separators.length() {
     if separators[index] == b':' {
       self.params_sep = self.params_sep.set(index)

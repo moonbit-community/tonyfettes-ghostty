@@ -434,7 +434,7 @@ fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit 
 fn[H : StreamHandler] Stream::emit_sgr(
   self : Stream[H],
   params : ArrayView[UInt16],
-  params_sep : @parser.SepList,
+  params_sep : @seplist.SepList,
 ) -> Unit {
   let parser = @sgr.SgrParser::from_params(params, params_sep)
   while parser.next() is Some(attribute) {
