@@ -93,7 +93,7 @@ test "page row state/with builders pack and unpack flags" {
 }
 
 ///|
-test "hyperlink table interns, dedups runs, and round-trips through a cell" {
+test "hyperlink table interns, dedups runs, and the cell carries a presence bit" {
   let table = HyperlinkTable::new()
   // None is the free fast path: no entry, id 0, resolves back to None.
   let none_id = table.intern(None)
@@ -114,17 +114,22 @@ test "hyperlink table interns, dedups runs, and round-trips through a cell" {
   let other_id = table.intern(Some(other))
   guard other_id != id else { fail("distinct links must get distinct ids") }
 
-  // The id round-trips through a cell and resolves back to the link.
-  let cell = PageCellState::new().with_hyperlink_id(id)
-  guard cell.has_hyperlink() &&
-    cell.hyperlink_id() == id &&
-    table.get(cell.hyperlink_id()) == Some(link) else {
-    fail("cell hyperlink id must resolve back to the interned link")
+  // The interned id resolves back to its link through the table. (The id is
+  // stored in the grid's per-row `link_ids` side array, not in the cell — the
+  // cell carries only a presence bit; see the grid round-trip test.)
+  guard table.get(id) == Some(link) else {
+    fail("interned hyperlink id must resolve back to its link")
   }
 
-  // A cell with the no-hyperlink id reports no link.
+  // The cell records hyperlink membership as a flag bit, independent of any id.
+  let cell = PageCellState::new().with_hyperlink_present(true)
+  guard cell.has_hyperlink() else {
+    fail("with_hyperlink_present must set the cell's presence bit")
+  }
+
+  // A fresh cell reports no link.
   let blank = PageCellState::new()
-  guard !blank.has_hyperlink() && table.get(blank.hyperlink_id()) == None else {
+  guard !blank.has_hyperlink() else {
     fail("a fresh cell must carry no hyperlink")
   }
 }

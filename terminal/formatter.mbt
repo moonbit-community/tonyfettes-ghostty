@@ -468,7 +468,14 @@ fn formatter_write_content(
 
                   let style = state.grid.style_table.get(cell.style_id())
                   let hyperlink = if formatter.opts.emit == Html {
-                    match state.grid.hyperlink_table.get(cell.hyperlink_id()) {
+                    // The id lives in the row's `link_ids` side array, resolved by
+                    // position (the cell carries only a presence bit).
+                    match
+                      state.scrollback.screen_cell_hyperlink(
+                        state.grid,
+                        y.to_uint16(),
+                        x.to_uint16(),
+                      ) {
                       Some(link) => Some(link.uri())
                       None => None
                     }

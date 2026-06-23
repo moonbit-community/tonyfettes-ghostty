@@ -316,15 +316,14 @@ fn expect_bridge_cell_style(
 }
 
 ///|
-// Resolve a snapshot cell's hyperlink through the active grid's shared table.
+// Resolve a snapshot cell's hyperlink by position — the id lives in the row's
+// `link_ids` side array now, not in the cell.
 fn expect_bridge_cell_hyperlink(
   state : StreamTerminalBridgeState,
   row : CellCountInt,
   col : CellCountInt,
 ) -> CellHyperlink? {
-  state.grid.hyperlink_table.get(
-    expect_bridge_cell(state, row, col).hyperlink_id(),
-  )
+  state.screen_cell_hyperlink_snapshot(row, col)
 }
 
 ///|

@@ -473,6 +473,15 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
 }
 
 ///|
+fn StreamTerminalBridgeState::screen_cell_hyperlink_snapshot(
+  self : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> CellHyperlink? {
+  self.scrollback.cell_hyperlink(self.grid, row, col)
+}
+
+///|
 // Return the [start, end] viewport row range of the semantic zone containing
 // `row`. A semantic zone is a maximal run of rows with compatible prompt state:
 //   - None rows form an output zone

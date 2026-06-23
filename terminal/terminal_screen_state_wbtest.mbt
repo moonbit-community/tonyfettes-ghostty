@@ -23,7 +23,12 @@ fn fill_terminal_screen_row(
 
 ///|
 test "terminal screen state/scrollback snapshots and viewport movement" {
-  let grid = ScreenGridState::new(2, 5)
+  // Use the page list's own active grid so the grid and scrollback share one set
+  // of intern tables — as they always do in production. (A standalone grid would
+  // mint a separate hyperlink table, and a row's id would not resolve once it
+  // scrolled into this list's history, which resolves against the list's table.)
+  let scrollback = PageList::new(2, 5, 1)
+  let grid = scrollback.active_grid()
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   let hyperlink = CellHyperlink::explicit("https://example.com", "id")
@@ -41,8 +46,6 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
     @style.CellStyle::new(),
     None,
   )
-
-  let scrollback = PageList::new(2, 5, 1)
   guard scrollback.row(grid, 3) == None &&
     scrollback.cell(grid, 0, 9) == None &&
     scrollback.cell(grid, 3, 0) == None else {
@@ -56,8 +59,9 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
   let cell = scrollback.cell(grid, 0, 0).unwrap()
   guard row.styled() &&
     cell.codepoint() == b'h'.to_uint() &&
+    cell.has_hyperlink() &&
     grid.style_table.get(cell.style_id()).bold() &&
-    grid.hyperlink_table.get(cell.hyperlink_id()) == Some(hyperlink) else {
+    scrollback.cell_hyperlink(grid, 0, 0) == Some(hyperlink) else {
     fail("expected scrollback history snapshots")
   }
 

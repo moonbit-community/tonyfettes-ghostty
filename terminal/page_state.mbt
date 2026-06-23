@@ -225,7 +225,9 @@ const EmptyCodepoint : UInt = 0
 //
 //   bit 0-1 : wide              (Narrow=0 Wide=1 SpacerTail=2 SpacerHead=3)
 //   bit 2   : protected
-//   bit 3   : reserved (hyperlink)
+//   bit 3   : hyperlink_present (the cell is part of a hyperlink; the actual
+//             `HyperlinkId` lives in a per-row side array, not in the cell — see
+//             `ScreenGridState.link_ids`)
 //   bit 4-5 : semantic_content  (Output=0 Input=1 Prompt=2)
 struct PageCellFlags(Int) derive(Eq, Debug)
 
@@ -234,6 +236,9 @@ const CellWideMask : Int = 0x03
 
 ///|
 const CellProtectedBit : Int = 0x04
+
+///|
+const CellHyperlinkBit : Int = 0x08
 
 ///|
 const CellSemanticShift : Int = 4
@@ -274,6 +279,23 @@ fn PageCellFlags::wide(self : PageCellFlags) -> PageCellWide {
 ///|
 fn PageCellFlags::is_protected(self : PageCellFlags) -> Bool {
   (self.0 & CellProtectedBit) != 0
+}
+
+///|
+fn PageCellFlags::has_hyperlink(self : PageCellFlags) -> Bool {
+  (self.0 & CellHyperlinkBit) != 0
+}
+
+///|
+fn PageCellFlags::with_hyperlink_present(
+  self : PageCellFlags,
+  value : Bool,
+) -> PageCellFlags {
+  if value {
+    PageCellFlags(self.0 | CellHyperlinkBit)
+  } else {
+    PageCellFlags(self.0 & CellHyperlinkBit.lnot())
+  }
 }
 
 ///|
@@ -351,15 +373,14 @@ struct PageCellState {
   // `CellStyle` through the grid/screen that owns the table (the cell alone
   // cannot, by design).
   style_id : @style.StyleId
-  // `wide`, `protected`, and `semantic_content` packed into one word — see
-  // `PageCellFlags`. Three separate fields would push the struct to seven and
-  // break the native `#valtype` six-field cap.
+  // `wide`, `protected`, `hyperlink_present`, and `semantic_content` packed into
+  // one word — see `PageCellFlags`. The hyperlink is now just a presence *bit*
+  // here: the actual `HyperlinkId` lives in a per-row side array keyed by column
+  // (`ScreenGridState.link_ids` / `PageListRow.link_ids`), not in the cell. That
+  // is the last id evicted so the whole cell fits a `u64` — a `HyperlinkId` can
+  // accumulate unboundedly over a session (e.g. `ls --hyperlink`), so unlike the
+  // bounded style/grapheme ids it cannot share the 64-bit budget.
   flags : PageCellFlags
-  // The cell's hyperlink as a `HyperlinkId` into the screen's shared
-  // `HyperlinkTable` (0 = no link). Like `style_id`, this removes a pointer from
-  // the cell; presence is a plain id compare and the uri is resolved through the
-  // grid/screen only when actually needed (HTML export).
-  hyperlink_id : HyperlinkId
 } derive(Eq, Debug)
 
 ///|
@@ -375,7 +396,7 @@ pub fn PageCellState::new(
   style_id? : @style.StyleId = @style.default_style_id,
   wide? : PageCellWide = Narrow,
   protected_flag? : Bool = false,
-  hyperlink_id? : HyperlinkId = no_hyperlink_id,
+  hyperlink_present? : Bool = false,
   semantic_content? : SemanticContent = Output,
 ) -> PageCellState {
   {
@@ -388,8 +409,9 @@ pub fn PageCellState::new(
       no_grapheme_id
     },
     style_id,
-    flags: PageCellFlags::pack(wide, protected_flag, semantic_content),
-    hyperlink_id,
+    flags: PageCellFlags::pack(wide, protected_flag, semantic_content).with_hyperlink_present(
+      hyperlink_present,
+    ),
   }
 }
 
@@ -476,24 +498,21 @@ pub fn PageCellState::with_protected(
 }
 
 ///|
-// The cell's hyperlink id. Resolution to the full `CellHyperlink` is done by the
-// grid/screen that owns the table — see `ScreenGridState::cell_hyperlink`.
-pub fn PageCellState::hyperlink_id(self : PageCellState) -> HyperlinkId {
-  self.hyperlink_id
-}
-
-///|
-// Whether this cell is part of a hyperlink. A plain id compare — no table lookup.
+// Whether this cell is part of a hyperlink. A single flag-bit test — no table
+// lookup. The actual `HyperlinkId` lives in the owning grid/row's `link_ids` side
+// array, resolved by position via `ScreenGridState::cell_hyperlink`.
 pub fn PageCellState::has_hyperlink(self : PageCellState) -> Bool {
-  !self.hyperlink_id.is_none()
+  self.flags.has_hyperlink()
 }
 
 ///|
-pub fn PageCellState::with_hyperlink_id(
+// Set/clear the hyperlink-presence bit. The id itself is stored separately, keyed
+// by the cell's column, in the owning grid/row's `link_ids` array.
+pub fn PageCellState::with_hyperlink_present(
   self : PageCellState,
-  value : HyperlinkId,
+  value : Bool,
 ) -> PageCellState {
-  { ..self, hyperlink_id: value }
+  { ..self, flags: self.flags.with_hyperlink_present(value) }
 }
 
 ///|

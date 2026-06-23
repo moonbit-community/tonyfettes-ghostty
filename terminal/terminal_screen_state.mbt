@@ -9,10 +9,13 @@ priv struct PageListPage {
   rows : CellCountInt
   cols : CellCountInt
   // Parallel per-row arrays, mirroring `ScreenGridState`: `descs[i]`/`cells[i]`
-  // are row `i`'s descriptor and cell buffer. The active page shares these two
+  // are row `i`'s descriptor and cell buffer. The active page shares these
   // arrays with the grid by reference (see `active_grid`).
   descs : FixedArray[PageRowState]
   cells : FixedArray[FixedArray[PageCellState]]
+  // Per-row hyperlink ids, parallel to `cells` (see `ScreenGridState.link_ids`).
+  // Shared with the active grid by reference, exactly like `cells`.
+  link_ids : FixedArray[FixedArray[HyperlinkId]?]
 }
 
 ///|
@@ -24,6 +27,10 @@ priv struct PageListNode {
 priv struct PageListRow {
   mut row : PageRowState
   cells : FixedArray[PageCellState]
+  // The row's hyperlink ids keyed by column, or `None` when the row has no links
+  // (the common case). Mirrors `ScreenGridState.link_ids`'s per-row entry; travels
+  // with `cells` when the row moves between the active grid and history.
+  link_ids : FixedArray[HyperlinkId]?
   node : PageListNode
   y : CellCountInt
 }
@@ -137,7 +144,13 @@ fn PageListPage::new(rows : CellCountInt, cols : CellCountInt) -> PageListPage {
     actual_rows.to_int(),
     _ => make_row_cells(actual_cols.to_int()),
   )
-  { rows: actual_rows, cols: actual_cols, descs, cells }
+  {
+    rows: actual_rows,
+    cols: actual_cols,
+    descs,
+    cells,
+    link_ids: FixedArray::make(actual_rows.to_int(), None),
+  }
 }
 
 ///|
@@ -179,6 +192,7 @@ fn PageList::active_grid(self : PageList) -> ScreenGridState {
     cols: self.cols,
     descs: self.active_node.page.descs,
     cells: self.active_node.page.cells,
+    link_ids: self.active_node.page.link_ids,
     cell_pool: [],
     style_table: self.style_table,
     hyperlink_table: self.hyperlink_table,
@@ -273,6 +287,63 @@ fn PageList::screen_cell(
   match self.screen_row_source(grid, row.to_int()) {
     Some(History(index)) => Some(self.history[index].cells[col_idx])
     Some(Screen(index)) => Some(grid.cells[index][col_idx])
+    None => None
+  }
+}
+
+///|
+/// Resolve the hyperlink id at a visible `(row, col)` from whichever source — the
+/// active grid or a history row — backs it. The id lives in that source's
+/// `link_ids` side array, not in the cell. `cell` / `screen_cell` return only the
+/// presence bit; this is the rare resolution path (HTML export / snapshots).
+fn PageList::link_id_at_source(
+  self : PageList,
+  grid : ScreenGridState,
+  source : PageListRowSource,
+  col_idx : Int,
+) -> HyperlinkId {
+  match source {
+    History(index) =>
+      match self.history[index].link_ids {
+        Some(links) => links[col_idx]
+        None => no_hyperlink_id
+      }
+    Screen(index) => grid.link_id_at(index, col_idx)
+  }
+}
+
+///|
+fn PageList::cell_hyperlink(
+  self : PageList,
+  grid : ScreenGridState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> CellHyperlink? {
+  let col_idx = col.to_int()
+  if col_idx < 0 || col_idx >= grid.cols.to_int() {
+    return None
+  }
+  match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
+    Some(source) =>
+      self.hyperlink_table.get(self.link_id_at_source(grid, source, col_idx))
+    None => None
+  }
+}
+
+///|
+fn PageList::screen_cell_hyperlink(
+  self : PageList,
+  grid : ScreenGridState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> CellHyperlink? {
+  let col_idx = col.to_int()
+  if col_idx < 0 || col_idx >= grid.cols.to_int() {
+    return None
+  }
+  match self.screen_row_source(grid, row.to_int()) {
+    Some(source) =>
+      self.hyperlink_table.get(self.link_id_at_source(grid, source, col_idx))
     None => None
   }
 }
@@ -948,6 +1019,7 @@ fn PageList::resize_without_reflow(
       let resized = make_pinned_row(
         row.row,
         row.cells,
+        row.link_ids,
         cols,
         row.row.wrap(),
         row.row.wrap_continuation(),
@@ -965,6 +1037,7 @@ fn PageList::resize_without_reflow(
     active_rows.push({
       row: row.row,
       cells: row.cells,
+      link_ids: row.link_ids,
       node: self.active_node,
       y: row_idx.to_uint16(),
     })
@@ -989,6 +1062,7 @@ fn PageList::resize_without_reflow(
         let history_row = make_pinned_row(
           source.row,
           source.cells,
+          source.link_ids,
           cols,
           source.row.wrap(),
           source.row.wrap_continuation(),
@@ -1041,6 +1115,7 @@ fn PageList::resize_without_reflow(
       let row = make_pinned_row(
         PageRowState::new(),
         [],
+        None,
         cols,
         false,
         false,
@@ -1069,6 +1144,7 @@ fn PageList::resize_without_reflow(
     cols: resized_grid.cols,
     descs: resized_grid.descs,
     cells: resized_grid.cells,
+    link_ids: resized_grid.link_ids,
   })
   self.active_node = active_node
   self.rows = resized_grid.rows
@@ -1109,6 +1185,7 @@ fn PageList::resize_cols(
     source_rows.push({
       row: row.row,
       cells: row.cells,
+      link_ids: row.link_ids,
       node: self.active_node,
       y: row_idx.to_uint16(),
     })
@@ -1121,7 +1198,7 @@ fn PageList::resize_cols(
   let reflowed = cursor.finish(self)
   while cursor.total_rows < self.rows.to_int() {
     reflowed.push(
-      make_pinned_row(PageRowState::new(), [], cols, false, false, false),
+      make_pinned_row(PageRowState::new(), [], None, cols, false, false, false),
     )
     cursor.total_rows += 1
   }
@@ -1160,6 +1237,7 @@ fn PageList::resize_cols(
                   make_pinned_row(
                     PageRowState::new(),
                     [],
+                    None,
                     cols,
                     false,
                     false,
@@ -1209,6 +1287,7 @@ fn PageList::resize_cols(
     cols: resized_grid.cols,
     descs: resized_grid.descs,
     cells: resized_grid.cells,
+    link_ids: resized_grid.link_ids,
   })
   self.active_node = active_node
   self.rows = resized_grid.rows
@@ -1247,6 +1326,7 @@ fn PageListReflowCursor::row(self : PageListReflowCursor) -> PageListRow {
   {
     row: self.node.page.descs[0],
     cells: self.node.page.cells[0],
+    link_ids: self.node.page.link_ids[0],
     node: self.node,
     y: 0,
   }
@@ -1331,7 +1411,7 @@ fn PageListReflowCursor::reflow_row(
 
     let target_node = self.node
     let target_x = self.x
-    match self.write_cell(source.cells[x]) {
+    match self.write_cell(source.cells[x], link_at(source.link_ids, x)) {
       Success => {
         list.move_pins_for_cell(
           source.node,
@@ -1377,21 +1457,26 @@ fn PageListReflowCursor::reflow_row(
 fn PageListReflowCursor::write_cell(
   self : PageListReflowCursor,
   cell : PageCellState,
+  link_id : HyperlinkId,
 ) -> PageListReflowWriteResult {
   match cell.wide() {
     Narrow => {
       self.node.page.cells[0][self.x] = cell
+      self.write_link(link_id)
       self.cursor_forward()
       Success
     }
     Wide =>
       if self.cols.to_int() > 1 {
         if self.x == self.cols.to_int() - 1 {
+          // The wide char doesn't fit; place a spacer head (no link) and re-emit
+          // the real cell — with its link — on the next row (Repeat keeps `x`).
           self.node.page.cells[0][self.x] = reflow_spacer_head_cell()
           self.cursor_forward()
           Repeat
         } else {
           self.node.page.cells[0][self.x] = cell
+          self.write_link(link_id)
           self.cursor_forward()
           Success
         }
@@ -1403,6 +1488,7 @@ fn PageListReflowCursor::write_cell(
     SpacerTail =>
       if self.cols.to_int() > 1 {
         self.node.page.cells[0][self.x] = cell
+        self.write_link(link_id)
         self.cursor_forward()
         Success
       } else {
@@ -1410,6 +1496,28 @@ fn PageListReflowCursor::write_cell(
       }
     SpacerHead => Success
   }
+}
+
+///|
+/// Store the source cell's hyperlink id at the current column of the row being
+/// reflowed, allocating the destination row's link array on first use. A no-op
+/// for the common link-free cell — the spacer/blank placeholders never call it.
+fn PageListReflowCursor::write_link(
+  self : PageListReflowCursor,
+  link_id : HyperlinkId,
+) -> Unit {
+  if link_id.is_none() {
+    return
+  }
+  let links = match self.node.page.link_ids[0] {
+    Some(links) => links
+    None => {
+      let links = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+      self.node.page.link_ids[0] = Some(links)
+      links
+    }
+  }
+  links[self.x] = link_id
 }
 
 ///|
@@ -1824,6 +1932,7 @@ fn snapshot_scrollback_row(
   make_pinned_row(
     grid.descs[row_idx],
     cells,
+    grid.link_ids[row_idx],
     grid.cols,
     grid.descs[row_idx].wrap(),
     grid.descs[row_idx].wrap_continuation(),
@@ -1846,6 +1955,7 @@ fn harvest_scrollback_row(grid : ScreenGridState, row_idx : Int) -> PageListRow 
   make_pinned_row_owned(
     desc,
     grid.cells[row_idx],
+    grid.link_ids[row_idx],
     grid.cols,
     desc.wrap(),
     desc.wrap_continuation(),
@@ -1914,18 +2024,26 @@ fn copy_pinned_row(source : PageListRow, cols : CellCountInt) -> PageListRow {
   let copied = make_pinned_row(
     source.row,
     source.cells,
+    source.link_ids,
     cols,
     source.row.wrap(),
     source.row.wrap_continuation(),
     false,
   )
-  { row: copied.row, cells: copied.cells, node: source.node, y: source.y }
+  {
+    row: copied.row,
+    cells: copied.cells,
+    link_ids: copied.link_ids,
+    node: source.node,
+    y: source.y,
+  }
 }
 
 ///|
 fn make_pinned_row(
   row_template : PageRowState,
   source_cells : FixedArray[PageCellState],
+  source_link_ids : FixedArray[HyperlinkId]?,
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
@@ -1940,6 +2058,10 @@ fn make_pinned_row(
   for col in 0..<copy_len {
     cells[col] = source_cells[col]
   }
+  // Carry the source row's hyperlink ids into a fresh width-sized array, keeping
+  // them column-aligned with the (possibly truncated) cells. A link-free source
+  // stays `None` — no allocation for the common row.
+  let link_ids = make_pinned_link_ids(source_link_ids, width, copy_len)
   let mut row = row_template
     .with_wrap(wrap)
     .with_wrap_continuation(wrap_continuation)
@@ -1949,8 +2071,36 @@ fn make_pinned_row(
     row = row.with_semantic_prompt(PromptContinuation)
   }
   row = apply_cell_flags_to_row(row, cells)
-  let node = PageListNode::new({ rows: 1, cols, descs: [row], cells: [cells] })
-  { row, cells, node, y: 0 }
+  let node = PageListNode::new({
+    rows: 1,
+    cols,
+    descs: [row],
+    cells: [cells],
+    link_ids: [link_ids],
+  })
+  { row, cells, link_ids, node, y: 0 }
+}
+
+///|
+/// Copy a source row's hyperlink ids into a fresh `width`-wide array (aligned by
+/// column, truncated/zero-padded to `width`), or `None` when the source has no
+/// link array — the common link-free row, which then needs no allocation.
+fn make_pinned_link_ids(
+  source_link_ids : FixedArray[HyperlinkId]?,
+  width : Int,
+  copy_len : Int,
+) -> FixedArray[HyperlinkId]? {
+  match source_link_ids {
+    None => None
+    Some(source) => {
+      let links = FixedArray::make(width, no_hyperlink_id)
+      let len = min_int(copy_len, source.length())
+      for col in 0..<len {
+        links[col] = source[col]
+      }
+      Some(links)
+    }
+  }
 }
 
 ///|
@@ -1962,6 +2112,7 @@ fn make_pinned_row(
 fn make_pinned_row_owned(
   row_template : PageRowState,
   cells : FixedArray[PageCellState],
+  link_ids : FixedArray[HyperlinkId]?,
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
@@ -1977,13 +2128,36 @@ fn make_pinned_row_owned(
   let row = row_template
     .with_wrap(wrap)
     .with_wrap_continuation(wrap_continuation)
-  let node = PageListNode::new({ rows: 1, cols, descs: [row], cells: [cells] })
-  { row, cells, node, y: 0 }
+  // The link array is taken by reference alongside the cells (it was harvested
+  // from the same live grid row).
+  let node = PageListNode::new({
+    rows: 1,
+    cols,
+    descs: [row],
+    cells: [cells],
+    link_ids: [link_ids],
+  })
+  { row, cells, link_ids, node, y: 0 }
 }
 
 ///|
 fn reflow_spacer_head_cell() -> PageCellState {
   PageCellState::new(wide=SpacerHead)
+}
+
+///|
+/// Read the hyperlink id at `col` from an optional per-row link array, returning
+/// `no_hyperlink_id` when the row has none or the column is out of range.
+fn link_at(link_ids : FixedArray[HyperlinkId]?, col : Int) -> HyperlinkId {
+  match link_ids {
+    Some(links) =>
+      if col >= 0 && col < links.length() {
+        links[col]
+      } else {
+        no_hyperlink_id
+      }
+    None => no_hyperlink_id
+  }
 }
 
 ///|
@@ -2049,6 +2223,9 @@ fn screen_grid_from_rows(
     for col_idx in 0..<cols.to_int() {
       grid.cells[row_idx][col_idx] = pinned_rows[row_idx].cells[col_idx]
     }
+    // Carry the row's hyperlink ids by reference; the pinned row owns a fresh
+    // width-matched array (or `None`), so the grid can take it directly.
+    grid.link_ids[row_idx] = pinned_rows[row_idx].link_ids
   }
   grid
 }

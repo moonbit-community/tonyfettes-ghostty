@@ -50,6 +50,14 @@ priv struct ScreenGridState {
   // and cell buffer. See the comment above for why they are split.
   descs : FixedArray[PageRowState]
   cells : FixedArray[FixedArray[PageCellState]]
+  // Per-row hyperlink ids, parallel to `cells`. `link_ids[i]` is `None` for the
+  // overwhelmingly common link-free row (no allocation, the hot path), otherwise
+  // a `cols`-wide array whose `[col]` is the cell's `HyperlinkId`. Only meaningful
+  // where the cell's `has_hyperlink()` presence bit is set; entries under a
+  // link-free cell are dead and never read. The id is stored out-of-cell so the
+  // cell fits a `u64`; this side array travels with `cells` through every
+  // scroll/blit/shift so a cell keeps its link as its row moves.
+  link_ids : FixedArray[FixedArray[HyperlinkId]?]
   // Free list of `cols`-wide cell arrays harvested from rows evicted out of
   // scrollback, reused in place as the blank rows scrolled in at the bottom.
   // At a full scrollback buffer this makes a line feed allocation-free: the row
@@ -96,11 +104,50 @@ fn ScreenGridState::new_with_table(
     cols: actual_cols,
     descs,
     cells,
+    link_ids: FixedArray::make(actual_rows.to_int(), None),
     cell_pool: [],
     style_table,
     hyperlink_table,
     grapheme_table,
   }
+}
+
+///|
+/// Read the `HyperlinkId` stored for the cell at `(row_idx, col_idx)`. Returns
+/// `no_hyperlink_id` when the row has no link array (the common case). Callers
+/// should gate on the cell's `has_hyperlink()` presence bit; a non-none result
+/// here always coincides with that bit being set, but the converse read of a
+/// dead slot is harmless.
+fn ScreenGridState::link_id_at(
+  self : ScreenGridState,
+  row_idx : Int,
+  col_idx : Int,
+) -> HyperlinkId {
+  match self.link_ids[row_idx] {
+    Some(row) => row[col_idx]
+    None => no_hyperlink_id
+  }
+}
+
+///|
+/// Store `id` for the cell at `(row_idx, col_idx)`, allocating the row's link
+/// array on first use. Only called when `id` is a real link; the caller also sets
+/// the cell's `has_hyperlink()` presence bit.
+fn ScreenGridState::set_link_id(
+  self : ScreenGridState,
+  row_idx : Int,
+  col_idx : Int,
+  id : HyperlinkId,
+) -> Unit {
+  let row = match self.link_ids[row_idx] {
+    Some(row) => row
+    None => {
+      let row = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+      self.link_ids[row_idx] = Some(row)
+      row
+    }
+  }
+  row[col_idx] = id
 }
 
 ///|
@@ -145,6 +192,8 @@ fn ScreenGridState::set_blank_row(
     blank_row_is_styled(style),
   )
   self.cells[row_idx] = cells
+  // A blank row carries no hyperlinks; drop any link array the recycled slot had.
+  self.link_ids[row_idx] = None
 }
 
 ///|
@@ -421,7 +470,7 @@ fn ScreenGridState::insert_blanks(
 
     let mut col = end_col
     while col >= x {
-      self.set_cell(row_idx, col + adjusted_count, self.cells[row_idx][col])
+      self.move_cell_in_row(row_idx, col + adjusted_count, col)
       if col == x {
         break
       }
@@ -463,7 +512,7 @@ fn ScreenGridState::delete_chars(
     let mut col = x
     let last = x + scroll_amount - 1
     while col <= last {
-      self.set_cell(row_idx, col, self.cells[row_idx][col + count])
+      self.move_cell_in_row(row_idx, col, col + count)
       col += 1
     }
   }
@@ -930,6 +979,13 @@ fn ScreenGridState::shift_full_width_down(
       start_y,
       bottom - count + 1 - start_y,
     )
+    // The per-row link arrays move by reference in lockstep with their cells.
+    self.link_ids.unsafe_blit(
+      start_y + count,
+      self.link_ids,
+      start_y,
+      bottom - count + 1 - start_y,
+    )
   }
   // Fresh blank rows scroll in at the top (reusing pooled cell arrays).
   let mut row_idx = start_y
@@ -1026,6 +1082,13 @@ fn ScreenGridState::shift_full_width_up(
     self.cells.unsafe_blit(
       start_y,
       self.cells,
+      start_y + count,
+      bottom + 1 - count - start_y,
+    )
+    // The per-row link arrays move by reference in lockstep with their cells.
+    self.link_ids.unsafe_blit(
+      start_y,
+      self.link_ids,
       start_y + count,
       bottom + 1 - count - start_y,
     )
@@ -1269,6 +1332,25 @@ fn ScreenGridState::copy_row_region(
     dst_cells[col_idx] = src_cells[col_idx]
     col_idx += 1
   }
+  // Carry the hyperlink ids for the moved column range. Only the source rows that
+  // actually hold links allocate a destination array; a link-free source leaves
+  // the destination untouched, since its copied cells have no presence bit and any
+  // stale destination slot is dead.
+  if self.link_ids[src_row] is Some(src_links) {
+    let dst_links = match self.link_ids[dst_row] {
+      Some(row) => row
+      None => {
+        let row = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+        self.link_ids[dst_row] = Some(row)
+        row
+      }
+    }
+    let mut col = left
+    while col <= right {
+      dst_links[col] = src_links[col]
+      col += 1
+    }
+  }
 }
 
 ///|
@@ -1297,6 +1379,11 @@ fn ScreenGridState::write_cell(
   semantic_content : SemanticContent,
   hyperlink : CellHyperlink?,
 ) -> Unit {
+  // Intern the optional link; `None` is the free fast path → id 0. The id is kept
+  // in the per-row `link_ids` side array (not the cell); the cell only records
+  // its presence as a flag bit.
+  let link_id = self.hyperlink_table.intern(hyperlink)
+  let has_link = !link_id.is_none()
   // A printed character fully defines the cell, so build one fresh immutable
   // value and store it into the slot — there is nothing to read from the old
   // cell. One record literal is a single allocation, versus chaining six
@@ -1310,22 +1397,33 @@ fn ScreenGridState::write_cell(
     // Intern the incoming style into the screen's shared table; the cell keeps
     // only the id. Default/unstyled prints hit the table's pre-seeded id 0.
     style_id: self.style_table.intern(style),
-    flags: PageCellFlags::pack(wide, protected_flag, semantic_content),
-    // Intern the optional link; `None` is the free fast path → id 0.
-    hyperlink_id: self.hyperlink_table.intern(hyperlink),
+    flags: PageCellFlags::pack(wide, protected_flag, semantic_content).with_hyperlink_present(
+      has_link,
+    ),
+  }
+  // Record the link id by column only when there is one; a link-free write leaves
+  // the row's (possibly absent) link array untouched, since the cleared presence
+  // bit makes any stale slot dead.
+  if has_link {
+    self.set_link_id(row_idx, col_idx, link_id)
   }
 }
 
 ///|
-fn ScreenGridState::set_cell(
+/// Move the cell (and its hyperlink id) from `src_col` to `dst_col` within one
+/// row — the per-cell step of the intra-row shifts (`insert_blanks` /
+/// `delete_chars`). The cell value carries its own presence bit; the link id
+/// lives in the row's side array, so it is moved alongside when the row has one.
+fn ScreenGridState::move_cell_in_row(
   self : ScreenGridState,
   row_idx : Int,
-  col_idx : Int,
-  source : PageCellState,
+  dst_col : Int,
+  src_col : Int,
 ) -> Unit {
-  // A cell is an immutable value with no in-place mutation anywhere, so storing
-  // the source into the slot can share it directly — no defensive copy.
-  self.cells[row_idx][col_idx] = source
+  self.cells[row_idx][dst_col] = self.cells[row_idx][src_col]
+  if self.link_ids[row_idx] is Some(links) {
+    links[dst_col] = links[src_col]
+  }
 }
 
 ///|

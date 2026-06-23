@@ -490,18 +490,17 @@ pub fn PageCellState::has_grapheme(Self) -> Bool
 pub fn PageCellState::has_hyperlink(Self) -> Bool
 pub fn PageCellState::has_styling(Self) -> Bool
 pub fn PageCellState::has_text(Self) -> Bool
-pub fn PageCellState::hyperlink_id(Self) -> HyperlinkId
 pub fn PageCellState::init(UInt) -> Self
 pub fn PageCellState::is_empty(Self) -> Bool
 pub fn PageCellState::is_protected(Self) -> Bool
 pub fn PageCellState::is_zero(Self) -> Bool
-pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink_id? : HyperlinkId, semantic_content? : SemanticContent) -> Self
+pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink_present? : Bool, semantic_content? : SemanticContent) -> Self
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::style_id(Self) -> @style.StyleId
 pub fn PageCellState::wide(Self) -> PageCellWide
 pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
 pub fn PageCellState::with_grapheme_id(Self, GraphemeId) -> Self
-pub fn PageCellState::with_hyperlink_id(Self, HyperlinkId) -> Self
+pub fn PageCellState::with_hyperlink_present(Self, Bool) -> Self
 pub fn PageCellState::with_protected(Self, Bool) -> Self
 pub fn PageCellState::with_style_id(Self, @style.StyleId) -> Self
 pub fn PageCellState::with_wide(Self, PageCellWide) -> Self

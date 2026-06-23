@@ -529,16 +529,14 @@ pub fn StreamTerminal::screen_cell_style_snapshot(
 
 ///|
 // Resolve the hyperlink of the snapshot cell at (row, col), or `None` if the cell
-// is absent or carries no link. Cells store only a `HyperlinkId`.
+// is absent or carries no link. The id is stored out-of-cell in the row's
+// `link_ids` side array, so this resolves by position, not from the cell value.
 pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
 ) -> CellHyperlink? {
-  match self.bridge().screen_cell_snapshot(row, col) {
-    Some(cell) => self.active_hyperlink_table().get(cell.hyperlink_id())
-    None => None
-  }
+  self.bridge().screen_cell_hyperlink_snapshot(row, col)
 }
 
 ///|
@@ -568,14 +566,6 @@ fn StreamTerminal::active_style_table(
   self : StreamTerminal,
 ) -> @style.StyleTable {
   self.bridge().grid.style_table
-}
-
-///|
-// The active screen's hyperlink intern table (see `active_style_table`).
-fn StreamTerminal::active_hyperlink_table(
-  self : StreamTerminal,
-) -> HyperlinkTable {
-  self.bridge().grid.hyperlink_table
 }
 
 ///|

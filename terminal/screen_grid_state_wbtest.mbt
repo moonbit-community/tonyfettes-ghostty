@@ -32,13 +32,14 @@ fn ScreenGridState::cell_style(
 }
 
 ///|
-// Resolve the hyperlink of the cell at (row, col) through the shared table.
+// Resolve the hyperlink of the cell at (row, col): presence is the cell's flag
+// bit; the id lives in the grid's per-row `link_ids` side array.
 fn ScreenGridState::cell_hyperlink(
   self : ScreenGridState,
   row : Int,
   col : Int,
 ) -> CellHyperlink? {
-  self.hyperlink_table.get(self.cells[row][col].hyperlink_id())
+  self.hyperlink_table.get(self.link_id_at(row, col))
 }
 
 ///|
@@ -1030,11 +1031,7 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let cell = expect_cell(grid, 0, 0)
     .with_codepoint(b'G'.to_uint(), true)
     .with_style_id(grid.style_table.intern(style))
-    .with_hyperlink_id(
-      grid.hyperlink_table.intern(
-        Some(CellHyperlink::implicit("https://example.com", 9)),
-      ),
-    )
+    .with_hyperlink_present(true)
   set_test_cell(grid, 0, 0, cell)
   grid.recompute_row_flags(0)
   let row = expect_row(grid, 0)
