@@ -46,28 +46,23 @@ fn HyperlinkTable::intern(
   self : HyperlinkTable,
   hyperlink : CellHyperlink?,
 ) -> HyperlinkId {
-  match hyperlink {
-    None => no_hyperlink_id
-    Some(link) => {
-      if self.last_link is Some(last) && last == link {
-        return self.last_id
-      }
-      let id = match self.index.get(link) {
-        Some(id) => id
-        None => {
-          // id is 1-based: the new entry lands at the current length, so its id is
-          // length + 1 (id 0 is reserved for "no hyperlink").
-          let id = HyperlinkId((self.list.length() + 1).to_uint16())
-          self.list.push(link)
-          self.index[link] = id
-          id
-        }
-      }
-      self.last_link = Some(link)
-      self.last_id = id
-      id
-    }
+  guard hyperlink is Some(link) else { no_hyperlink_id }
+  if self.last_link is Some(last) && last == link {
+    return self.last_id
   }
+  let id = if self.index.get(link) is Some(id) {
+    id
+  } else {
+    // id is 1-based: the new entry lands at the current length, so its id is
+    // length + 1 (id 0 is reserved for "no hyperlink").
+    let id = HyperlinkId((self.list.length() + 1).to_uint16())
+    self.list.push(link)
+    self.index[link] = id
+    id
+  }
+  self.last_link = Some(link)
+  self.last_id = id
+  id
 }
 
 ///|
