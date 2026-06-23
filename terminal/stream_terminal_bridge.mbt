@@ -356,7 +356,7 @@ fn StreamTerminalBridgeState::modify_other_keys_2(
 ///|
 fn StreamTerminalBridgeState::kitty_keyboard_flags(
   self : StreamTerminalBridgeState,
-) -> KittyKeyboardFlags {
+) -> @stream.KittyKeyboardFlags {
   self.kitty_keyboard.current()
 }
 
@@ -917,7 +917,7 @@ fn StreamTerminalBridgeState::scroll_viewport_delta(
 ///|
 fn StreamTerminalBridgeState::apply(
   self : StreamTerminalBridgeState,
-  action : StreamAction,
+  action : @stream.StreamAction,
 ) -> Bool {
   match action {
     StreamPrint(codepoint) => {
@@ -2621,7 +2621,7 @@ fn StreamTerminalBridgeState::horizontal_tab_back_once(
 ///|
 fn StreamTerminalBridgeState::cursor_up(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   self.cursor.set_pending_wrap(false)
   let y = self.cursor.y().to_int()
@@ -2638,7 +2638,7 @@ fn StreamTerminalBridgeState::cursor_up(
 ///|
 fn StreamTerminalBridgeState::cursor_down(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   self.cursor.set_pending_wrap(false)
   let y = self.cursor.y().to_int()
@@ -2655,7 +2655,7 @@ fn StreamTerminalBridgeState::cursor_down(
 ///|
 fn StreamTerminalBridgeState::cursor_right(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   self.cursor.set_pending_wrap(false)
   let x = self.cursor.x().to_int()
@@ -2672,7 +2672,7 @@ fn StreamTerminalBridgeState::cursor_right(
 ///|
 fn StreamTerminalBridgeState::cursor_left(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   let wrap_mode = if !self.modes.get(Wraparound) {
     0
@@ -2980,7 +2980,7 @@ fn StreamTerminalBridgeState::apply_color_reset(
 }
 
 ///|
-fn movement_count(movement : CursorMovement) -> CellCountInt {
+fn movement_count(movement : @stream.CursorMovement) -> CellCountInt {
   if movement.0 == 0 {
     1
   } else {
@@ -2989,7 +2989,7 @@ fn movement_count(movement : CursorMovement) -> CellCountInt {
 }
 
 ///|
-fn movement_count_int(movement : CursorMovement) -> Int {
+fn movement_count_int(movement : @stream.CursorMovement) -> Int {
   movement_count(movement).to_int()
 }
 

@@ -206,6 +206,14 @@ pub fn[H] Stream::new(handler : H) -> Stream[H] {
 }
 
 ///|
+/// The handler this stream dispatches to. `Stream` is abstract across the
+/// package boundary, so consumers that own the handler (e.g. the terminal
+/// bridge reaching its `StreamTerminalBridgeState`) read it back through here.
+pub fn[H] Stream::handler(self : Stream[H]) -> H {
+  self.handler
+}
+
+///|
 pub fn[H : StreamHandler] Stream::deinit(self : Stream[H]) -> Unit {
   self.parser.deinit()
   H::deinit(self.handler)

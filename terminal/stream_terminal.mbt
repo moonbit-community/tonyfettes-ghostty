@@ -4,7 +4,7 @@ priv struct StreamTerminalHandler {
 }
 
 ///|
-impl StreamHandler for StreamTerminalHandler with fn vt(self, action) {
+impl @stream.StreamHandler for StreamTerminalHandler with fn vt(self, action) {
   ignore(self.bridge.apply(action))
 }
 
@@ -12,18 +12,21 @@ impl StreamHandler for StreamTerminalHandler with fn vt(self, action) {
 // Print fast lane: `apply(StreamPrint(cp))` just calls `bridge.print(cp)` and
 // returns `true` (which `vt` ignores), so go straight to it and skip building
 // then matching a `StreamPrint` box on the per-character hot path.
-impl StreamHandler for StreamTerminalHandler with fn print(self, codepoint) {
+impl @stream.StreamHandler for StreamTerminalHandler with fn print(
+  self,
+  codepoint,
+) {
   self.bridge.print(codepoint)
 }
 
 ///|
-impl StreamHandler for StreamTerminalHandler with fn deinit(_self) {
+impl @stream.StreamHandler for StreamTerminalHandler with fn deinit(_self) {
   ()
 }
 
 ///|
 struct StreamTerminal {
-  stream : Stream[StreamTerminalHandler]
+  stream : @stream.Stream[StreamTerminalHandler]
 }
 
 ///|
@@ -49,7 +52,7 @@ pub fn StreamTerminal::new(
       xtversion~,
     ),
   )
-  { stream: Stream::new({ bridge, }) }
+  { stream: @stream.Stream::new({ bridge, }) }
 }
 
 ///|
@@ -148,7 +151,7 @@ pub fn StreamTerminal::cursor_right_margin(
 ///|
 pub fn StreamTerminal::kitty_keyboard_flags(
   self : StreamTerminal,
-) -> KittyKeyboardFlags {
+) -> @stream.KittyKeyboardFlags {
   self.bridge().kitty_keyboard_flags()
 }
 
@@ -571,7 +574,7 @@ pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(
 
 ///|
 fn StreamTerminal::bridge(self : StreamTerminal) -> StreamTerminalBridgeState {
-  self.stream.handler.bridge
+  self.stream.handler().bridge
 }
 
 ///|

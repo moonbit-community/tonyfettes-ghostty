@@ -5,21 +5,23 @@ import {
   "tonyfettes/ghostty/terminal/ansi",
   "tonyfettes/ghostty/terminal/ascii",
   "tonyfettes/ghostty/terminal/charsets",
-  "tonyfettes/ghostty/terminal/csi",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/csi",
   "tonyfettes/ghostty/terminal/device",
   "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
   "tonyfettes/ghostty/terminal/mode",
   "tonyfettes/ghostty/terminal/osc",
   "tonyfettes/ghostty/terminal/page",
-  "tonyfettes/ghostty/terminal/parser",
   "tonyfettes/ghostty/terminal/result_code",
-  "tonyfettes/ghostty/terminal/seplist",
   "tonyfettes/ghostty/terminal/sgr",
+  "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
-  "tonyfettes/ghostty/terminal/utf8_decoder",
 }
+
+import {
+  "tonyfettes/ghostty/terminal/parser",
+} for "wbtest"
 
 options(
   targets: {

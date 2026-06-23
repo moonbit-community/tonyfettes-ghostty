@@ -1,15 +1,18 @@
 ///|
 struct ScreenSemanticPromptRecorder {
-  actions : Array[StreamAction]
+  actions : Array[@stream.StreamAction]
 }
 
 ///|
-impl StreamHandler for ScreenSemanticPromptRecorder with fn vt(self, action) {
+impl @stream.StreamHandler for ScreenSemanticPromptRecorder with fn vt(
+  self,
+  action,
+) {
   self.actions.push(action)
 }
 
 ///|
-impl StreamHandler for ScreenSemanticPromptRecorder with fn print(
+impl @stream.StreamHandler for ScreenSemanticPromptRecorder with fn print(
   self,
   codepoint,
 ) {
@@ -17,15 +20,17 @@ impl StreamHandler for ScreenSemanticPromptRecorder with fn print(
 }
 
 ///|
-impl StreamHandler for ScreenSemanticPromptRecorder with fn deinit(_self) {
+impl @stream.StreamHandler for ScreenSemanticPromptRecorder with fn deinit(
+  _self,
+) {
   ()
 }
 
 ///|
 fn expect_screen_semantic_prompt(bytes : Bytes) -> @osc.SemanticPrompt raise {
-  let actions : Array[StreamAction] = []
+  let actions : Array[@stream.StreamAction] = []
   let recorder : ScreenSemanticPromptRecorder = { actions, }
-  let stream = Stream::new(recorder)
+  let stream = @stream.Stream::new(recorder)
   stream.next_slice(bytes)
   stream.deinit()
 
