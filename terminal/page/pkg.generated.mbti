@@ -1,0 +1,94 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/page"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/style",
+}
+
+// Values
+pub let default_page_cell_state : PageCellState
+
+pub let no_grapheme_id : GraphemeId
+
+// Errors
+
+// Types and methods
+type GraphemeId derive(Eq, Hash, @debug.Debug)
+
+pub struct GraphemeTable {
+  // private fields
+}
+pub fn GraphemeTable::append(Self, GraphemeId, UInt) -> GraphemeId
+pub fn GraphemeTable::get(Self, GraphemeId) -> ReadOnlyArray[UInt]
+pub fn GraphemeTable::new() -> Self
+
+type PageCellFlags derive(Eq, @debug.Debug)
+
+type PageCellState derive(Eq, @debug.Debug)
+pub fn PageCellState::codepoint(Self) -> UInt
+pub fn PageCellState::grapheme_id(Self) -> GraphemeId
+pub fn PageCellState::grid_width(Self) -> Int
+pub fn PageCellState::has_grapheme(Self) -> Bool
+pub fn PageCellState::has_hyperlink(Self) -> Bool
+pub fn PageCellState::has_styling(Self) -> Bool
+pub fn PageCellState::has_text(Self) -> Bool
+pub fn PageCellState::init(UInt) -> Self
+pub fn PageCellState::is_empty(Self) -> Bool
+pub fn PageCellState::is_protected(Self) -> Bool
+pub fn PageCellState::is_zero(Self) -> Bool
+pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink_present? : Bool, semantic_content? : SemanticContent) -> Self
+pub fn PageCellState::semantic_content(Self) -> SemanticContent
+pub fn PageCellState::style_id(Self) -> @style.StyleId
+pub fn PageCellState::wide(Self) -> PageCellWide
+pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
+pub fn PageCellState::with_grapheme_id(Self, GraphemeId) -> Self
+pub fn PageCellState::with_hyperlink_present(Self, Bool) -> Self
+pub fn PageCellState::with_protected(Self, Bool) -> Self
+pub fn PageCellState::with_style_id(Self, @style.StyleId) -> Self
+pub fn PageCellState::with_wide(Self, PageCellWide) -> Self
+
+pub(all) enum PageCellWide {
+  Narrow
+  Wide
+  SpacerTail
+  SpacerHead
+} derive(Eq, @debug.Debug)
+
+type PageRowState derive(Eq, @debug.Debug)
+pub fn PageRowState::dirty(Self) -> Bool
+pub fn PageRowState::equals_ignoring_dirty(Self, Self) -> Bool
+pub fn PageRowState::grapheme(Self) -> Bool
+pub fn PageRowState::hyperlink(Self) -> Bool
+pub fn PageRowState::kitty_virtual_placeholder(Self) -> Bool
+pub fn PageRowState::managed_memory(Self) -> Bool
+pub fn PageRowState::new() -> Self
+pub fn PageRowState::semantic_prompt(Self) -> RowSemanticPrompt
+pub fn PageRowState::styled(Self) -> Bool
+pub fn PageRowState::with_dirty(Self, Bool) -> Self
+pub fn PageRowState::with_grapheme(Self, Bool) -> Self
+pub fn PageRowState::with_hyperlink(Self, Bool) -> Self
+pub fn PageRowState::with_kitty_virtual_placeholder(Self, Bool) -> Self
+pub fn PageRowState::with_semantic_prompt(Self, RowSemanticPrompt) -> Self
+pub fn PageRowState::with_styled(Self, Bool) -> Self
+pub fn PageRowState::with_wrap(Self, Bool) -> Self
+pub fn PageRowState::with_wrap_continuation(Self, Bool) -> Self
+pub fn PageRowState::wrap(Self) -> Bool
+pub fn PageRowState::wrap_continuation(Self) -> Bool
+
+pub(all) enum RowSemanticPrompt {
+  None
+  Prompt
+  PromptContinuation
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SemanticContent {
+  Output
+  Input
+  Prompt
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

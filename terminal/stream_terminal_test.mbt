@@ -48,7 +48,7 @@ fn expect_terminal_cell(
   terminal : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState {
+) -> @page.PageCellState {
   terminal.screen_cell_snapshot(row, col).unwrap()
 }
 

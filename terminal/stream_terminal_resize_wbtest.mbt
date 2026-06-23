@@ -26,7 +26,7 @@ fn cell_wide(
   term : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellWide {
+) -> @page.PageCellWide {
   term.screen_cell_snapshot(row, col).unwrap().wide()
 }
 

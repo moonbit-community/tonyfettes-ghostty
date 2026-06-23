@@ -444,7 +444,7 @@ fn terminal_screen_json(value : @terminal.TerminalScreen) -> Json {
 }
 
 ///|
-fn row_prompt_json(value : @terminal.RowSemanticPrompt) -> Json {
+fn row_prompt_json(value : @page.RowSemanticPrompt) -> Json {
   Json::string(
     match value {
       None => "none"
@@ -455,7 +455,7 @@ fn row_prompt_json(value : @terminal.RowSemanticPrompt) -> Json {
 }
 
 ///|
-fn semantic_content_json(value : @terminal.SemanticContent) -> Json {
+fn semantic_content_json(value : @page.SemanticContent) -> Json {
   Json::string(
     match value {
       Output => "output"
@@ -467,7 +467,7 @@ fn semantic_content_json(value : @terminal.SemanticContent) -> Json {
 
 ///|
 fn cell_content_tag_json(
-  cell : @terminal.PageCellState,
+  cell : @page.PageCellState,
   style : @style.CellStyle,
 ) -> Json {
   Json::string(
@@ -484,7 +484,7 @@ fn cell_content_tag_json(
 }
 
 ///|
-fn page_cell_wide_json(value : @terminal.PageCellWide) -> Json {
+fn page_cell_wide_json(value : @page.PageCellWide) -> Json {
   Json::string(
     match value {
       Narrow => "narrow"
@@ -510,7 +510,7 @@ fn sgr_underline_json(value : @sgr.SgrUnderline) -> Json {
 }
 
 ///|
-fn json_row_state(row : @terminal.PageRowState?) -> Json {
+fn json_row_state(row : @page.PageRowState?) -> Json {
   match row {
     Some(row) =>
       {
@@ -530,7 +530,7 @@ fn json_row_state(row : @terminal.PageRowState?) -> Json {
 
 ///|
 fn json_cell_state(
-  cell : @terminal.PageCellState?,
+  cell : @page.PageCellState?,
   style : @style.CellStyle?,
   hyperlink : @terminal.CellHyperlink?,
 ) -> Json {

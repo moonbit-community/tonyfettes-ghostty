@@ -88,7 +88,7 @@ fn StreamTerminalBridgeState::semantic_click_mode(
 ///|
 fn StreamTerminalBridgeState::semantic_cursor_content(
   self : StreamTerminalBridgeState,
-) -> SemanticContent {
+) -> @page.SemanticContent {
   self.semantic.cursor_content()
 }
 
@@ -102,7 +102,7 @@ fn StreamTerminalBridgeState::semantic_cursor_content_clear_eol(
 ///|
 fn StreamTerminalBridgeState::semantic_row_prompt(
   self : StreamTerminalBridgeState,
-) -> RowSemanticPrompt {
+) -> @page.RowSemanticPrompt {
   self.semantic.row_prompt()
 }
 
@@ -292,7 +292,7 @@ fn apply_stream_bytes(state : StreamTerminalBridgeState, bytes : Bytes) -> Bool 
 fn expect_bridge_row(
   state : StreamTerminalBridgeState,
   row : CellCountInt,
-) -> PageRowState {
+) -> @page.PageRowState {
   state.screen_row_snapshot(row).unwrap()
 }
 
@@ -301,7 +301,7 @@ fn expect_bridge_cell(
   state : StreamTerminalBridgeState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState {
+) -> @page.PageCellState {
   state.screen_cell_snapshot(row, col).unwrap()
 }
 
@@ -2286,8 +2286,12 @@ test "stream terminal bridge/semantic_prompt_row_range row layout" {
   let r2 = expect_bridge_row(state, 2).semantic_prompt()
   let r3 = expect_bridge_row(state, 3).semantic_prompt()
   guard r0 == Prompt else { fail("row 0 should be Prompt") }
-  guard r1 == (None : RowSemanticPrompt) else { fail("row 1 should be None") }
-  guard r2 == (None : RowSemanticPrompt) else { fail("row 2 should be None") }
+  guard r1 == (None : @page.RowSemanticPrompt) else {
+    fail("row 1 should be None")
+  }
+  guard r2 == (None : @page.RowSemanticPrompt) else {
+    fail("row 2 should be None")
+  }
   guard r3 == Prompt else { fail("row 3 should be Prompt") }
 
   let range1 = state.semantic_prompt_row_range(1)

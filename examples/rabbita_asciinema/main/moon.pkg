@@ -10,6 +10,7 @@ import {
   "moonbitlang/core/string",
   "tonyfettes/ghostty/terminal",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/sgr",
   "tonyfettes/ghostty/terminal/style",
 }

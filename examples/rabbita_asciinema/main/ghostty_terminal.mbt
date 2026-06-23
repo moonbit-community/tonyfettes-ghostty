@@ -314,7 +314,7 @@ fn GhosttyTerminal::cell_text(
   self : GhosttyTerminal,
   row : Int,
   col : Int,
-  cell : @terminal.PageCellState,
+  cell : @page.PageCellState,
 ) -> String {
   match cell.wide() {
     SpacerHead | SpacerTail => return " "

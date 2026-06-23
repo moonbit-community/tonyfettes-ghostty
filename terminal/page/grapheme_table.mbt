@@ -9,7 +9,7 @@ struct GraphemeId(UInt16) derive(Eq, Debug, Hash)
 
 ///|
 /// The id meaning "this cell has no combining codepoints".
-let no_grapheme_id : GraphemeId = GraphemeId(0)
+pub let no_grapheme_id : GraphemeId = GraphemeId(0)
 
 ///|
 /// The id meaning "this cell is a grapheme cluster but carries no marks yet".
@@ -28,18 +28,18 @@ fn GraphemeId::is_none(self : GraphemeId) -> Bool {
 /// hyperlink tables it never reclaims and is position-independent, so a cell's id
 /// stays valid as its row scrolls into history. The empty run is pre-seeded at id
 /// 1 (`empty_grapheme_id`); real runs get ids from 2.
-priv struct GraphemeTable {
+pub struct GraphemeTable {
   // id-1 indexed: `list[id - 1]` is the extras for id >= 1. `list[0]` is the
   // empty run (id 1). There is no entry for id 0 ("not a grapheme cell").
-  list : Array[ReadOnlyArray[UInt]]
-  index : Map[ReadOnlyArray[UInt], GraphemeId]
+  priv list : Array[ReadOnlyArray[UInt]]
+  priv index : Map[ReadOnlyArray[UInt], GraphemeId]
   // One-entry cache of the last interned run.
-  mut last_extras : ReadOnlyArray[UInt]?
-  mut last_id : GraphemeId
+  priv mut last_extras : ReadOnlyArray[UInt]?
+  priv mut last_id : GraphemeId
 }
 
 ///|
-fn GraphemeTable::new() -> GraphemeTable {
+pub fn GraphemeTable::new() -> GraphemeTable {
   let empty : ReadOnlyArray[UInt] = []
   let index : Map[ReadOnlyArray[UInt], GraphemeId] = Map([])
   index[empty] = empty_grapheme_id
@@ -83,7 +83,7 @@ fn GraphemeTable::intern(
 ///|
 /// Resolve an id to its combining run. `no_grapheme_id` (and the empty run id)
 /// resolve to the empty array.
-fn GraphemeTable::get(
+pub fn GraphemeTable::get(
   self : GraphemeTable,
   id : GraphemeId,
 ) -> ReadOnlyArray[UInt] {
@@ -98,7 +98,7 @@ fn GraphemeTable::get(
 /// Return the id for `id`'s run extended by one more combining codepoint. Reads
 /// the current extras, appends, and interns the result — the table counterpart to
 /// the old `PageCellState::with_grapheme_appended`.
-fn GraphemeTable::append(
+pub fn GraphemeTable::append(
   self : GraphemeTable,
   id : GraphemeId,
   codepoint : UInt,

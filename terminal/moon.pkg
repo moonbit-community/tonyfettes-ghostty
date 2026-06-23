@@ -7,6 +7,7 @@ import {
   "tonyfettes/ghostty/terminal/color",
   "tonyfettes/ghostty/terminal/input",
   "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/parser",
   "tonyfettes/ghostty/terminal/result_code",
   "tonyfettes/ghostty/terminal/sgr",

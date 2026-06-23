@@ -56,7 +56,7 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     cell_pool: [],
     style_table: @style.StyleTable::new(),
     hyperlink_table: HyperlinkTable::new(),
-    grapheme_table: GraphemeTable::new(),
+    grapheme_table: @page.GraphemeTable::new(),
   }
   guard formatter_selection_bounds(formatter, state, 1U) is None else {
     fail("expected zero-column guard to reject formatting")
@@ -215,7 +215,7 @@ test "formatter helpers/cover style and palette encoders" {
   }
 
   let styles = @style.StyleTable::new()
-  let palette_cell = PageCellState::new(
+  let palette_cell = @page.PageCellState::new(
     style_id=styles.intern(
       @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
     ),
@@ -388,7 +388,7 @@ test "formatter helpers/cover explicit empty format guard" {
     cell_pool: [],
     style_table: @style.StyleTable::new(),
     hyperlink_table: HyperlinkTable::new(),
-    grapheme_table: GraphemeTable::new(),
+    grapheme_table: @page.GraphemeTable::new(),
   }
   state.scrollback = PageList::new(0, 0, 0)
   let formatter = plain_formatter(terminal)

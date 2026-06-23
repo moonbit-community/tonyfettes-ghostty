@@ -37,7 +37,7 @@ pub fn RenderRowIterator::y(self : RenderRowIterator) -> CellCountInt? {
 }
 
 ///|
-pub fn RenderRowIterator::row(self : RenderRowIterator) -> PageRowState? {
+pub fn RenderRowIterator::row(self : RenderRowIterator) -> @page.PageRowState? {
   render_row_at(self.state, self.y)
 }
 
@@ -103,7 +103,7 @@ pub fn RenderRowCells::x(self : RenderRowCells) -> CellCountInt? {
 }
 
 ///|
-pub fn RenderRowCells::cell(self : RenderRowCells) -> PageCellState? {
+pub fn RenderRowCells::cell(self : RenderRowCells) -> @page.PageCellState? {
   render_cell_at(self.state, self.row, self.x)
 }
 

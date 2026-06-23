@@ -1,5 +1,5 @@
 ///|
-fn expect_row(grid : ScreenGridState, row : CellCountInt) -> PageRowState {
+fn expect_row(grid : ScreenGridState, row : CellCountInt) -> @page.PageRowState {
   grid.row(row).unwrap()
 }
 
@@ -15,7 +15,7 @@ fn ScreenGridState::new(
     cols,
     @style.StyleTable::new(),
     HyperlinkTable::new(),
-    GraphemeTable::new(),
+    @page.GraphemeTable::new(),
   )
 }
 
@@ -53,7 +53,7 @@ fn ScreenGridState::cell(
   self : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   let row_idx = row.to_int()
   let col_idx = col.to_int()
   if row_idx < 0 ||
@@ -71,7 +71,7 @@ fn expect_cell(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState {
+) -> @page.PageCellState {
   grid.cell(row, col).unwrap()
 }
 
@@ -82,7 +82,7 @@ fn set_test_cell(
   grid : ScreenGridState,
   row : Int,
   col : Int,
-  cell : PageCellState,
+  cell : @page.PageCellState,
 ) -> Unit {
   grid.cells[row][col] = cell
 }

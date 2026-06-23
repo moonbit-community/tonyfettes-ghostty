@@ -1,4 +1,41 @@
 ///|
+/// A resolved hyperlink: the URI plus its OSC 8 id (explicit `id=` param, or an
+/// implicit per-anchor id when none was given). Lives with the hyperlink intern
+/// table rather than the cell, since the cell carries only a presence bit (the
+/// id is kept in the grid's per-row `link_ids` side array). Mirrors upstream
+/// Ghostty's split between `hyperlink.zig` and the cell in `page.zig`.
+struct CellHyperlink {
+  uri : String
+  explicit_id : String?
+  implicit_id : Int?
+} derive(Eq, Debug, Hash)
+
+///|
+pub fn CellHyperlink::explicit(uri : String, id : String) -> CellHyperlink {
+  { uri, explicit_id: Some(id), implicit_id: None }
+}
+
+///|
+pub fn CellHyperlink::implicit(uri : String, id : Int) -> CellHyperlink {
+  { uri, explicit_id: None, implicit_id: Some(id) }
+}
+
+///|
+pub fn CellHyperlink::uri(self : CellHyperlink) -> String {
+  self.uri
+}
+
+///|
+pub fn CellHyperlink::explicit_id(self : CellHyperlink) -> String? {
+  self.explicit_id
+}
+
+///|
+pub fn CellHyperlink::implicit_id(self : CellHyperlink) -> Int? {
+  self.implicit_id
+}
+
+///|
 /// A hyperlink id: a small handle stored in a cell that stands in for a
 /// `CellHyperlink`. `0` means "no hyperlink", so the common (linkless) cell needs
 /// no table entry and no lookup — only a presence check (`!is_none()`). Real ids

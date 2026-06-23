@@ -339,7 +339,7 @@ pub fn StreamTerminal::set_default_palette(
 pub fn StreamTerminal::screen_row_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
-) -> PageRowState? {
+) -> @page.PageRowState? {
   self.bridge().screen_row_snapshot(row)
 }
 
@@ -508,7 +508,7 @@ pub fn StreamTerminal::screen_cell_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   self.bridge().screen_cell_snapshot(row, col)
 }
 
@@ -554,7 +554,7 @@ pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
 
 ///|
 // Resolve the combining codepoints of the snapshot cell at (row, col), empty if
-// the cell is absent or not a grapheme cluster. Cells store only a `GraphemeId`.
+// the cell is absent or not a grapheme cluster. Cells store only a `@page.GraphemeId`.
 pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
@@ -585,7 +585,7 @@ fn StreamTerminal::active_style_table(
 // The active screen's grapheme intern table (see `active_style_table`).
 fn StreamTerminal::active_grapheme_table(
   self : StreamTerminal,
-) -> GraphemeTable {
+) -> @page.GraphemeTable {
   self.bridge().grid.grapheme_table
 }
 
