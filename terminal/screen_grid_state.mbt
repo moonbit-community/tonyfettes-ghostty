@@ -52,12 +52,12 @@ priv struct ScreenGridState {
   cells : FixedArray[FixedArray[@page.PageCellState]]
   // Per-row hyperlink ids, parallel to `cells`. `link_ids[i]` is `None` for the
   // overwhelmingly common link-free row (no allocation, the hot path), otherwise
-  // a `cols`-wide array whose `[col]` is the cell's `HyperlinkId`. Only meaningful
+  // a `cols`-wide array whose `[col]` is the cell's `@hyperlink.HyperlinkId`. Only meaningful
   // where the cell's `has_hyperlink()` presence bit is set; entries under a
   // link-free cell are dead and never read. The id is stored out-of-cell so the
   // cell fits a `u64`; this side array travels with `cells` through every
   // scroll/blit/shift so a cell keeps its link as its row moves.
-  link_ids : FixedArray[FixedArray[HyperlinkId]?]
+  link_ids : FixedArray[FixedArray[@hyperlink.HyperlinkId]?]
   // Free list of `cols`-wide cell arrays harvested from rows evicted out of
   // scrollback, reused in place as the blank rows scrolled in at the bottom.
   // At a full scrollback buffer this makes a line feed allocation-free: the row
@@ -72,9 +72,9 @@ priv struct ScreenGridState {
   // cell's id would resolve against the wrong table after a scroll/resize.
   style_table : @style.StyleTable
   // The hyperlink intern table, shared the same way as `style_table`: cells store
-  // a `HyperlinkId` into it (0 = no link), writes intern here, the rare full-link
-  // read resolves here. See `HyperlinkTable`.
-  hyperlink_table : HyperlinkTable
+  // a `@hyperlink.HyperlinkId` into it (0 = no link), writes intern here, the rare full-link
+  // read resolves here. See `@hyperlink.HyperlinkTable`.
+  hyperlink_table : @hyperlink.HyperlinkTable
   // The grapheme intern table, shared the same way: cells store a `@page.GraphemeId`
   // (0 = no combining marks), the append path interns here, and text emission
   // resolves the marks here. See `@page.GraphemeTable`.
@@ -86,7 +86,7 @@ fn ScreenGridState::new_with_table(
   rows : CellCountInt,
   cols : CellCountInt,
   style_table : @style.StyleTable,
-  hyperlink_table : HyperlinkTable,
+  hyperlink_table : @hyperlink.HyperlinkTable,
   grapheme_table : @page.GraphemeTable,
 ) -> ScreenGridState {
   let actual_rows = screen_dimension(rows)
@@ -113,8 +113,8 @@ fn ScreenGridState::new_with_table(
 }
 
 ///|
-/// Read the `HyperlinkId` stored for the cell at `(row_idx, col_idx)`. Returns
-/// `no_hyperlink_id` when the row has no link array (the common case). Callers
+/// Read the `@hyperlink.HyperlinkId` stored for the cell at `(row_idx, col_idx)`. Returns
+/// `@hyperlink.no_hyperlink_id` when the row has no link array (the common case). Callers
 /// should gate on the cell's `has_hyperlink()` presence bit; a non-none result
 /// here always coincides with that bit being set, but the converse read of a
 /// dead slot is harmless.
@@ -122,10 +122,10 @@ fn ScreenGridState::link_id_at(
   self : ScreenGridState,
   row_idx : Int,
   col_idx : Int,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   match self.link_ids[row_idx] {
     Some(row) => row[col_idx]
-    None => no_hyperlink_id
+    None => @hyperlink.no_hyperlink_id
   }
 }
 
@@ -137,12 +137,12 @@ fn ScreenGridState::set_link_id(
   self : ScreenGridState,
   row_idx : Int,
   col_idx : Int,
-  id : HyperlinkId,
+  id : @hyperlink.HyperlinkId,
 ) -> Unit {
   let row = match self.link_ids[row_idx] {
     Some(row) => row
     None => {
-      let row = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+      let row = FixedArray::make(self.cols.to_int(), @hyperlink.no_hyperlink_id)
       self.link_ids[row_idx] = Some(row)
       row
     }
@@ -234,7 +234,7 @@ fn ScreenGridState::print(
   protected_flag : Bool,
   semantic_content : @page.SemanticContent,
   row_prompt : @page.RowSemanticPrompt,
-  hyperlink : CellHyperlink?,
+  hyperlink : @hyperlink.CellHyperlink?,
   wraparound : Bool,
   insert_mode : Bool,
 ) -> Unit {
@@ -359,7 +359,7 @@ fn ScreenGridState::print_repeat(
   protected_flag : Bool,
   semantic_content : @page.SemanticContent,
   row_prompt : @page.RowSemanticPrompt,
-  hyperlink : CellHyperlink?,
+  hyperlink : @hyperlink.CellHyperlink?,
   wraparound : Bool,
   insert_mode : Bool,
   count_req : UInt16,
@@ -775,7 +775,7 @@ fn ScreenGridState::print_cell(
   style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : @page.SemanticContent,
-  hyperlink : CellHyperlink?,
+  hyperlink : @hyperlink.CellHyperlink?,
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   let col_idx = cursor.x.to_int()
@@ -1340,7 +1340,10 @@ fn ScreenGridState::copy_row_region(
     let dst_links = match self.link_ids[dst_row] {
       Some(row) => row
       None => {
-        let row = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+        let row = FixedArray::make(
+          self.cols.to_int(),
+          @hyperlink.no_hyperlink_id,
+        )
         self.link_ids[dst_row] = Some(row)
         row
       }
@@ -1377,7 +1380,7 @@ fn ScreenGridState::write_cell(
   style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : @page.SemanticContent,
-  hyperlink : CellHyperlink?,
+  hyperlink : @hyperlink.CellHyperlink?,
 ) -> Unit {
   // Intern the optional link; `None` is the free fast path → id 0. The id is kept
   // in the per-row `link_ids` side array (not the cell); the cell only records

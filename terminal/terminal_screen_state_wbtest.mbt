@@ -4,7 +4,7 @@ fn fill_terminal_screen_row(
   row : Int,
   chars : Array[Byte],
   style : @style.CellStyle,
-  hyperlink : CellHyperlink?,
+  hyperlink : @hyperlink.CellHyperlink?,
 ) -> Unit {
   for index in 0..<chars.length() {
     grid.write_cell(
@@ -31,7 +31,9 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
   let grid = scrollback.active_grid()
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
-  let hyperlink = CellHyperlink::explicit("https://example.com", "id")
+  let hyperlink = @hyperlink.CellHyperlink::explicit(
+    "https://example.com", "id",
+  )
   fill_terminal_screen_row(
     grid,
     0,

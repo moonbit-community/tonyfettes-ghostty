@@ -532,7 +532,7 @@ fn json_row_state(row : @page.PageRowState?) -> Json {
 fn json_cell_state(
   cell : @page.PageCellState?,
   style : @style.CellStyle?,
-  hyperlink : @terminal.CellHyperlink?,
+  hyperlink : @hyperlink.CellHyperlink?,
 ) -> Json {
   match cell {
     Some(cell) => {
@@ -586,7 +586,7 @@ fn json_byte_or_null(value : Byte?) -> Json {
 }
 
 ///|
-fn json_hyperlink(value : @terminal.CellHyperlink?) -> Json {
+fn json_hyperlink(value : @hyperlink.CellHyperlink?) -> Json {
   match value {
     Some(link) =>
       {

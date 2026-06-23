@@ -322,7 +322,7 @@ fn expect_bridge_cell_hyperlink(
   state : StreamTerminalBridgeState,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   state.screen_cell_hyperlink_snapshot(row, col)
 }
 

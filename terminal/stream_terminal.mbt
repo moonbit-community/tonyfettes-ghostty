@@ -513,7 +513,7 @@ pub fn StreamTerminal::screen_cell_snapshot(
 }
 
 ///|
-// The raw `HyperlinkId` of the snapshot cell at (row, col) — package-private, for
+// The raw `@hyperlink.HyperlinkId` of the snapshot cell at (row, col) — package-private, for
 // `RenderState`'s damage diff (a hyperlink-only change leaves the packed cell
 // equal, so the id is compared alongside it). The full link still resolves via
 // `screen_cell_hyperlink_snapshot`.
@@ -521,7 +521,7 @@ fn StreamTerminal::screen_cell_hyperlink_id_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   self.bridge().screen_cell_hyperlink_id_snapshot(row, col)
 }
 
@@ -548,7 +548,7 @@ pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   self.bridge().screen_cell_hyperlink_snapshot(row, col)
 }
 
@@ -595,6 +595,6 @@ fn StreamTerminal::active_grapheme_table(
 // uri from the snapshot alone, the same way it resolves styles and graphemes.
 fn StreamTerminal::active_hyperlink_table(
   self : StreamTerminal,
-) -> HyperlinkTable {
+) -> @hyperlink.HyperlinkTable {
   self.bridge().grid.hyperlink_table
 }

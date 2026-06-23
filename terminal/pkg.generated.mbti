@@ -5,6 +5,7 @@ import {
   "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
   "tonyfettes/ghostty/terminal/osc",
   "tonyfettes/ghostty/terminal/page",
@@ -93,13 +94,6 @@ pub(all) enum C0 {
   Si
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
-
-type CellHyperlink derive(Eq, Hash, @debug.Debug)
-pub fn CellHyperlink::explicit(String, String) -> Self
-pub fn CellHyperlink::explicit_id(Self) -> String?
-pub fn CellHyperlink::implicit(String, Int) -> Self
-pub fn CellHyperlink::implicit_id(Self) -> Int?
-pub fn CellHyperlink::uri(Self) -> String
 
 pub(all) enum ColorScheme {
   Light
@@ -233,8 +227,6 @@ pub fn FormatterTerminalExtra::all() -> Self
 pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
-
-type HyperlinkId derive(Eq, Hash, @debug.Debug)
 
 pub(all) struct InvokeCharsetAction {
   bank : @charsets.ActiveSlot
@@ -536,7 +528,7 @@ type RenderRowCells
 pub fn RenderRowCells::background_color(Self) -> @color.RGB?
 pub fn RenderRowCells::cell(Self) -> @page.PageCellState?
 pub fn RenderRowCells::cell_grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
-pub fn RenderRowCells::cell_hyperlink(Self) -> CellHyperlink?
+pub fn RenderRowCells::cell_hyperlink(Self) -> @hyperlink.CellHyperlink?
 pub fn RenderRowCells::cell_style(Self) -> @style.CellStyle?
 pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
 pub fn RenderRowCells::next(Self) -> Bool
@@ -848,7 +840,7 @@ pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
 pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(Self, UInt16, UInt16) -> ReadOnlyArray[UInt]
-pub fn StreamTerminal::screen_cell_hyperlink_snapshot(Self, UInt16, UInt16) -> CellHyperlink?
+pub fn StreamTerminal::screen_cell_hyperlink_snapshot(Self, UInt16, UInt16) -> @hyperlink.CellHyperlink?
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> @page.PageCellState?
 pub fn StreamTerminal::screen_cell_style_snapshot(Self, UInt16, UInt16) -> @style.CellStyle?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> @page.PageRowState?

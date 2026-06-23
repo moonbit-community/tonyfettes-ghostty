@@ -1,0 +1,4 @@
+// The hyperlink data layer, mirroring upstream Ghostty's `hyperlink.zig`: the
+// resolved `CellHyperlink`, its `HyperlinkId` handle, and the `HyperlinkTable`
+// intern set. Core-only (no style/color deps), so it is a leaf sibling of the
+// `style` and `page` packages.

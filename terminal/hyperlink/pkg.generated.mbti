@@ -1,0 +1,34 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/hyperlink"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let no_hyperlink_id : HyperlinkId
+
+// Errors
+
+// Types and methods
+type CellHyperlink derive(Eq, Hash, @debug.Debug)
+pub fn CellHyperlink::explicit(String, String) -> Self
+pub fn CellHyperlink::explicit_id(Self) -> String?
+pub fn CellHyperlink::implicit(String, Int) -> Self
+pub fn CellHyperlink::implicit_id(Self) -> Int?
+pub fn CellHyperlink::uri(Self) -> String
+
+type HyperlinkId derive(Eq, Hash, @debug.Debug)
+pub fn HyperlinkId::is_none(Self) -> Bool
+
+pub struct HyperlinkTable {
+  // private fields
+}
+pub fn HyperlinkTable::get(Self, HyperlinkId) -> CellHyperlink?
+pub fn HyperlinkTable::intern(Self, CellHyperlink?) -> HyperlinkId
+pub fn HyperlinkTable::new() -> Self
+
+// Type aliases
+
+// Traits
+

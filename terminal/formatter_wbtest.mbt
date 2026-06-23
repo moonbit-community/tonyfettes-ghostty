@@ -55,7 +55,7 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     link_ids: [],
     cell_pool: [],
     style_table: @style.StyleTable::new(),
-    hyperlink_table: HyperlinkTable::new(),
+    hyperlink_table: @hyperlink.HyperlinkTable::new(),
     grapheme_table: @page.GraphemeTable::new(),
   }
   guard formatter_selection_bounds(formatter, state, 1U) is None else {
@@ -387,7 +387,7 @@ test "formatter helpers/cover explicit empty format guard" {
     link_ids: [],
     cell_pool: [],
     style_table: @style.StyleTable::new(),
-    hyperlink_table: HyperlinkTable::new(),
+    hyperlink_table: @hyperlink.HyperlinkTable::new(),
     grapheme_table: @page.GraphemeTable::new(),
   }
   state.scrollback = PageList::new(0, 0, 0)

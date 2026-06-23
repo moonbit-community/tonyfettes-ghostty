@@ -15,7 +15,7 @@ priv struct PageListPage {
   cells : FixedArray[FixedArray[@page.PageCellState]]
   // Per-row hyperlink ids, parallel to `cells` (see `ScreenGridState.link_ids`).
   // Shared with the active grid by reference, exactly like `cells`.
-  link_ids : FixedArray[FixedArray[HyperlinkId]?]
+  link_ids : FixedArray[FixedArray[@hyperlink.HyperlinkId]?]
 }
 
 ///|
@@ -30,7 +30,7 @@ priv struct PageListRow {
   // The row's hyperlink ids keyed by column, or `None` when the row has no links
   // (the common case). Mirrors `ScreenGridState.link_ids`'s per-row entry; travels
   // with `cells` when the row moves between the active grid and history.
-  link_ids : FixedArray[HyperlinkId]?
+  link_ids : FixedArray[@hyperlink.HyperlinkId]?
   node : PageListNode
   y : CellCountInt
 }
@@ -90,7 +90,7 @@ priv struct PageList {
   // wholly cleared (see there); steady-state printing never reassigns them.
   mut style_table : @style.StyleTable
   // The hyperlink intern table, owned and shared exactly like `style_table`.
-  mut hyperlink_table : HyperlinkTable
+  mut hyperlink_table : @hyperlink.HyperlinkTable
   // The grapheme intern table, owned and shared exactly like `style_table`.
   mut grapheme_table : @page.GraphemeTable
 }
@@ -178,7 +178,7 @@ fn PageList::new(
     viewport_pin: None,
     viewport_pin_row_offset: None,
     style_table: @style.StyleTable::new(),
-    hyperlink_table: HyperlinkTable::new(),
+    hyperlink_table: @hyperlink.HyperlinkTable::new(),
     grapheme_table: @page.GraphemeTable::new(),
   }
   state.viewport_pin = Some(state.track_pin(active_node, 0, 0))
@@ -308,23 +308,23 @@ fn PageList::link_id_at_source(
   grid : ScreenGridState,
   source : PageListRowSource,
   col_idx : Int,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   match source {
     History(index) => {
       let row = self.history[index]
       if !row.cells[col_idx].has_hyperlink() {
-        return no_hyperlink_id
+        return @hyperlink.no_hyperlink_id
       }
       match row.link_ids {
         Some(links) => links[col_idx]
-        None => no_hyperlink_id
+        None => @hyperlink.no_hyperlink_id
       }
     }
     Screen(index) =>
       if grid.cells[index][col_idx].has_hyperlink() {
         grid.link_id_at(index, col_idx)
       } else {
-        no_hyperlink_id
+        @hyperlink.no_hyperlink_id
       }
   }
 }
@@ -335,7 +335,7 @@ fn PageList::cell_hyperlink(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
@@ -348,24 +348,24 @@ fn PageList::cell_hyperlink(
 }
 
 ///|
-/// The raw (gated) `HyperlinkId` at a visible `(row, col)` — the cheap u16 key the
+/// The raw (gated) `@hyperlink.HyperlinkId` at a visible `(row, col)` — the cheap u16 key the
 /// render-snapshot diff compares to notice a hyperlink-only change (the packed
 /// cell carries only a presence bit, so two cells under different URIs are equal).
 /// Uses the same visible source as `cell` so it lines up with the render cell
-/// snapshot. Returns `no_hyperlink_id` for an unlinked cell.
+/// snapshot. Returns `@hyperlink.no_hyperlink_id` for an unlinked cell.
 fn PageList::cell_hyperlink_id(
   self : PageList,
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
-    return no_hyperlink_id
+    return @hyperlink.no_hyperlink_id
   }
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(source) => self.link_id_at_source(grid, source, col_idx)
-    None => no_hyperlink_id
+    None => @hyperlink.no_hyperlink_id
   }
 }
 
@@ -375,7 +375,7 @@ fn PageList::screen_cell_hyperlink(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
@@ -491,7 +491,7 @@ fn PageList::full_reset(self : PageList, _rows : CellCountInt) -> Unit {
   // table refs it copied at construction, so `clear_active_screen` rebuilds it
   // from the page to pick these up.
   self.style_table = @style.StyleTable::new()
-  self.hyperlink_table = HyperlinkTable::new()
+  self.hyperlink_table = @hyperlink.HyperlinkTable::new()
   self.grapheme_table = @page.GraphemeTable::new()
 }
 
@@ -1520,7 +1520,7 @@ fn PageListReflowCursor::reflow_row(
 fn PageListReflowCursor::write_cell(
   self : PageListReflowCursor,
   cell : @page.PageCellState,
-  link_id : HyperlinkId,
+  link_id : @hyperlink.HyperlinkId,
 ) -> PageListReflowWriteResult {
   match cell.wide() {
     Narrow => {
@@ -1567,7 +1567,7 @@ fn PageListReflowCursor::write_cell(
 /// for the common link-free cell — the spacer/blank placeholders never call it.
 fn PageListReflowCursor::write_link(
   self : PageListReflowCursor,
-  link_id : HyperlinkId,
+  link_id : @hyperlink.HyperlinkId,
 ) -> Unit {
   if link_id.is_none() {
     return
@@ -1575,7 +1575,10 @@ fn PageListReflowCursor::write_link(
   let links = match self.node.page.link_ids[0] {
     Some(links) => links
     None => {
-      let links = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+      let links = FixedArray::make(
+        self.cols.to_int(),
+        @hyperlink.no_hyperlink_id,
+      )
       self.node.page.link_ids[0] = Some(links)
       links
     }
@@ -2106,7 +2109,7 @@ fn copy_pinned_row(source : PageListRow, cols : CellCountInt) -> PageListRow {
 fn make_pinned_row(
   row_template : @page.PageRowState,
   source_cells : FixedArray[@page.PageCellState],
-  source_link_ids : FixedArray[HyperlinkId]?,
+  source_link_ids : FixedArray[@hyperlink.HyperlinkId]?,
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
@@ -2149,14 +2152,14 @@ fn make_pinned_row(
 /// column, truncated/zero-padded to `width`), or `None` when the source has no
 /// link array — the common link-free row, which then needs no allocation.
 fn make_pinned_link_ids(
-  source_link_ids : FixedArray[HyperlinkId]?,
+  source_link_ids : FixedArray[@hyperlink.HyperlinkId]?,
   width : Int,
   copy_len : Int,
-) -> FixedArray[HyperlinkId]? {
+) -> FixedArray[@hyperlink.HyperlinkId]? {
   match source_link_ids {
     None => None
     Some(source) => {
-      let links = FixedArray::make(width, no_hyperlink_id)
+      let links = FixedArray::make(width, @hyperlink.no_hyperlink_id)
       let len = min_int(copy_len, source.length())
       for col in 0..<len {
         links[col] = source[col]
@@ -2175,7 +2178,7 @@ fn make_pinned_link_ids(
 fn make_pinned_row_owned(
   row_template : @page.PageRowState,
   cells : FixedArray[@page.PageCellState],
-  link_ids : FixedArray[HyperlinkId]?,
+  link_ids : FixedArray[@hyperlink.HyperlinkId]?,
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
@@ -2210,16 +2213,19 @@ fn reflow_spacer_head_cell() -> @page.PageCellState {
 
 ///|
 /// Read the hyperlink id at `col` from an optional per-row link array, returning
-/// `no_hyperlink_id` when the row has none or the column is out of range.
-fn link_at(link_ids : FixedArray[HyperlinkId]?, col : Int) -> HyperlinkId {
+/// `@hyperlink.no_hyperlink_id` when the row has none or the column is out of range.
+fn link_at(
+  link_ids : FixedArray[@hyperlink.HyperlinkId]?,
+  col : Int,
+) -> @hyperlink.HyperlinkId {
   match link_ids {
     Some(links) =>
       if col >= 0 && col < links.length() {
         links[col]
       } else {
-        no_hyperlink_id
+        @hyperlink.no_hyperlink_id
       }
-    None => no_hyperlink_id
+    None => @hyperlink.no_hyperlink_id
   }
 }
 
@@ -2272,7 +2278,7 @@ fn screen_grid_from_rows(
   cols : CellCountInt,
   pinned_rows : Array[PageListRow],
   style_table : @style.StyleTable,
-  hyperlink_table : HyperlinkTable,
+  hyperlink_table : @hyperlink.HyperlinkTable,
   grapheme_table : @page.GraphemeTable,
 ) -> ScreenGridState {
   // Share the screen's tables: the pinned rows carry ids minted from them, so the

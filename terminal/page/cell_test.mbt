@@ -171,6 +171,22 @@ test "page cell state/set_codepoint clears grapheme extras" {
 }
 
 ///|
+test "page cell state/hyperlink presence is a flag bit independent of any id" {
+  // The cell records hyperlink membership as a flag bit only; the actual id lives
+  // in the grid's per-row side array, not the cell.
+  let linked = PageCellState::new().with_hyperlink_present(true)
+  guard linked.has_hyperlink() else {
+    fail("with_hyperlink_present(true) must set the presence bit")
+  }
+  guard !linked.with_hyperlink_present(false).has_hyperlink() else {
+    fail("with_hyperlink_present(false) must clear the presence bit")
+  }
+  guard !PageCellState::new().has_hyperlink() else {
+    fail("a fresh cell must carry no hyperlink")
+  }
+}
+
+///|
 test "page cell state/background color lives in the style" {
   // A background-color cell is a glyph-less cell whose style carries the bg, so
   // it has no text and is `is_empty()` (no glyph) but `has_styling()`.

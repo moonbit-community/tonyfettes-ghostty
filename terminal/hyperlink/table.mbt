@@ -44,10 +44,10 @@ struct HyperlinkId(UInt16) derive(Eq, Debug, Hash)
 
 ///|
 /// The id meaning "this cell has no hyperlink".
-let no_hyperlink_id : HyperlinkId = HyperlinkId(0)
+pub let no_hyperlink_id : HyperlinkId = HyperlinkId(0)
 
 ///|
-fn HyperlinkId::is_none(self : HyperlinkId) -> Bool {
+pub fn HyperlinkId::is_none(self : HyperlinkId) -> Bool {
   self.0 == 0
 }
 
@@ -59,27 +59,27 @@ fn HyperlinkId::is_none(self : HyperlinkId) -> Bool {
 /// `CellHyperlink` value, so they intern to one id that stays valid as their row
 /// scrolls into history. One table is shared across a `PageList`'s active page
 /// and scrollback.
-priv struct HyperlinkTable {
+pub struct HyperlinkTable {
   // Real entries, id-1 indexed: `list[id - 1]` is the hyperlink for id >= 1.
   // There is no entry for id 0 (it means "no hyperlink").
-  list : Array[CellHyperlink]
+  priv list : Array[CellHyperlink]
   // Reverse map for dedup.
-  index : Map[CellHyperlink, HyperlinkId]
+  priv index : Map[CellHyperlink, HyperlinkId]
   // One-entry cache of the last interned link — a run of cells under one OSC 8
   // link interns with a single struct compare instead of re-hashing per cell.
-  mut last_link : CellHyperlink?
-  mut last_id : HyperlinkId
+  priv mut last_link : CellHyperlink?
+  priv mut last_id : HyperlinkId
 }
 
 ///|
-fn HyperlinkTable::new() -> HyperlinkTable {
+pub fn HyperlinkTable::new() -> HyperlinkTable {
   { list: [], index: Map([]), last_link: None, last_id: no_hyperlink_id }
 }
 
 ///|
 /// Intern an optional hyperlink, returning its id. `None` is the free fast path
 /// (no hash) and yields `no_hyperlink_id`; a real link is deduped by content.
-fn HyperlinkTable::intern(
+pub fn HyperlinkTable::intern(
   self : HyperlinkTable,
   hyperlink : CellHyperlink?,
 ) -> HyperlinkId {
@@ -113,7 +113,7 @@ fn HyperlinkTable::intern(
 
 ///|
 /// Resolve an id back to its hyperlink. `no_hyperlink_id` resolves to `None`.
-fn HyperlinkTable::get(
+pub fn HyperlinkTable::get(
   self : HyperlinkTable,
   id : HyperlinkId,
 ) -> CellHyperlink? {

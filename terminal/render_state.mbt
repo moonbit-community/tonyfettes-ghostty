@@ -30,7 +30,7 @@ struct RenderState {
   // presence bit, so two cells under different URIs are equal and `row_cells`
   // alone would miss it. `None` for a row with no links (the common case → no
   // allocation). The full link still resolves via the terminal-level snapshot.
-  mut row_link_ids : Array[FixedArray[HyperlinkId]?]
+  mut row_link_ids : Array[FixedArray[@hyperlink.HyperlinkId]?]
   // The active screen's style table, captured each `update`. The snapshotted
   // `row_cells` carry `StyleId`s minted from it, so it resolves their styles for
   // the renderer/formatter. Grow-only and shared, so ids captured here stay valid.
@@ -41,7 +41,7 @@ struct RenderState {
   // The active screen's hyperlink table, captured the same way so a snapshot-driven
   // renderer can resolve each cell's uri from `row_link_ids` without reaching back
   // into the live terminal (symmetric with style/grapheme resolution).
-  mut hyperlink_table : HyperlinkTable
+  mut hyperlink_table : @hyperlink.HyperlinkTable
 }
 
 ///|
@@ -68,7 +68,7 @@ pub fn RenderState::new() -> RenderState {
     row_link_ids: [],
     style_table: @style.StyleTable::new(),
     grapheme_table: @page.GraphemeTable::new(),
-    hyperlink_table: HyperlinkTable::new(),
+    hyperlink_table: @hyperlink.HyperlinkTable::new(),
   }
 }
 
@@ -241,7 +241,7 @@ fn RenderState::snapshot_all_rows(
 ) -> Unit {
   let row_states : Array[@page.PageRowState] = []
   let row_cells : Array[FixedArray[@page.PageCellState]] = []
-  let row_link_ids : Array[FixedArray[HyperlinkId]?] = []
+  let row_link_ids : Array[FixedArray[@hyperlink.HyperlinkId]?] = []
   let mut row_idx = 0
   while row_idx < rows.to_int() {
     let snapshot = snapshot_render_row(terminal, row_idx.to_uint16()).with_dirty(
@@ -407,18 +407,18 @@ fn snapshot_render_link_ids(
   terminal : StreamTerminal,
   row : CellCountInt,
   cells : FixedArray[@page.PageCellState],
-) -> FixedArray[HyperlinkId]? {
+) -> FixedArray[@hyperlink.HyperlinkId]? {
   // Only a row that actually holds a hyperlinked cell allocates an id array; the
   // common linkless row stays `None`. The id is fetched solely for cells whose
   // presence bit is set (read off the already-snapshotted `cells`), so a
   // link-free frame does no extra lookups.
-  let mut links : FixedArray[HyperlinkId]? = None
+  let mut links : FixedArray[@hyperlink.HyperlinkId]? = None
   for col_idx in 0..<cells.length() {
     if cells[col_idx].has_hyperlink() {
       let arr = match links {
         Some(arr) => arr
         None => {
-          let arr = FixedArray::make(cells.length(), no_hyperlink_id)
+          let arr = FixedArray::make(cells.length(), @hyperlink.no_hyperlink_id)
           links = Some(arr)
           arr
         }
@@ -434,8 +434,8 @@ fn snapshot_render_link_ids(
 
 ///|
 fn render_link_ids_equal(
-  left : FixedArray[HyperlinkId]?,
-  right : FixedArray[HyperlinkId]?,
+  left : FixedArray[@hyperlink.HyperlinkId]?,
+  right : FixedArray[@hyperlink.HyperlinkId]?,
 ) -> Bool {
   match (left, right) {
     (None, None) => true
@@ -543,13 +543,13 @@ fn render_cell_hyperlink_at(
   state : RenderState,
   row_idx : Int,
   col_idx : Int,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   match render_cell_at(state, row_idx, col_idx) {
     Some(cell) =>
       if cell.has_hyperlink() {
         let id = match state.row_link_ids[row_idx] {
           Some(links) => links[col_idx]
-          None => no_hyperlink_id
+          None => @hyperlink.no_hyperlink_id
         }
         state.hyperlink_table.get(id)
       } else {
