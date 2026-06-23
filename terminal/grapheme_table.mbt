@@ -58,6 +58,15 @@ fn GraphemeTable::intern(
   let id = match self.index.get(extras) {
     Some(id) => id
     None => {
+      // Ids are 16 bit (they pack into the `u64` cell). Once all are spent, `(length
+      // + 1).to_uint16()` would wrap to 0 ("not a grapheme") or an earlier id, so a
+      // copied/formatted cell would lose its marks or resolve to an unrelated run.
+      // Degrade instead: map further distinct runs to `no_grapheme_id` — the base
+      // codepoint still renders, only the combining marks are dropped. (65 k
+      // distinct clusters in one session is already pathological.)
+      if self.list.length() + 1 > 0xFFFF {
+        return no_grapheme_id
+      }
       // New run lands at the current length; its id is length + 1 (id 0 is
       // reserved for "not a grapheme cell", id 1 for the pre-seeded empty run).
       let id = GraphemeId((self.list.length() + 1).to_uint16())

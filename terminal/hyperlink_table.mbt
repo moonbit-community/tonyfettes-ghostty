@@ -53,6 +53,15 @@ fn HyperlinkTable::intern(
   let id = if self.index.get(link) is Some(id) {
     id
   } else {
+    // Ids are 16 bit. Once all 65 535 real ids are spent, `(length + 1)
+    // .to_uint16()` would wrap (the first overflow lands on 0 = "no link", later
+    // ones collide with earlier links). Degrade instead: drop the link on further
+    // distinct uris — the cell renders unlinked rather than resolving to a wrong
+    // uri. (65 k distinct links in one session is already pathological; the
+    // side-array id could be widened past 16 bits if this ever bites.)
+    if self.list.length() + 1 > 0xFFFF {
+      return no_hyperlink_id
+    }
     // id is 1-based: the new entry lands at the current length, so its id is
     // length + 1 (id 0 is reserved for "no hyperlink").
     let id = HyperlinkId((self.list.length() + 1).to_uint16())

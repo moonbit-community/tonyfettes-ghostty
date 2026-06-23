@@ -294,8 +294,13 @@ fn PageList::screen_cell(
 ///|
 /// Resolve the hyperlink id at a visible `(row, col)` from whichever source — the
 /// active grid or a history row — backs it. The id lives in that source's
-/// `link_ids` side array, not in the cell. `cell` / `screen_cell` return only the
-/// presence bit; this is the rare resolution path (HTML export / snapshots).
+/// `link_ids` side array, not in the cell.
+///
+/// Gated on the cell's `has_hyperlink()` presence bit: the side array deliberately
+/// keeps dead entries under cells whose presence bit was cleared (a link-free
+/// overwrite, clear, or region copy never scrubs the old id), so resolving without
+/// the gate would report a stale OSC 8 link for an unlinked cell. The bit is the
+/// source of truth; the array is read only when it is set.
 fn PageList::link_id_at_source(
   self : PageList,
   grid : ScreenGridState,
@@ -303,12 +308,22 @@ fn PageList::link_id_at_source(
   col_idx : Int,
 ) -> HyperlinkId {
   match source {
-    History(index) =>
-      match self.history[index].link_ids {
+    History(index) => {
+      let row = self.history[index]
+      if !row.cells[col_idx].has_hyperlink() {
+        return no_hyperlink_id
+      }
+      match row.link_ids {
         Some(links) => links[col_idx]
         None => no_hyperlink_id
       }
-    Screen(index) => grid.link_id_at(index, col_idx)
+    }
+    Screen(index) =>
+      if grid.cells[index][col_idx].has_hyperlink() {
+        grid.link_id_at(index, col_idx)
+      } else {
+        no_hyperlink_id
+      }
   }
 }
 

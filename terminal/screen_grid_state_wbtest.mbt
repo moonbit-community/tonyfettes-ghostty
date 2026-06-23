@@ -33,13 +33,19 @@ fn ScreenGridState::cell_style(
 
 ///|
 // Resolve the hyperlink of the cell at (row, col): presence is the cell's flag
-// bit; the id lives in the grid's per-row `link_ids` side array.
+// bit (the source of truth); the id lives in the grid's per-row `link_ids` side
+// array, which is read only when the bit is set (dead entries linger under cells
+// that were unlinked without scrubbing the array).
 fn ScreenGridState::cell_hyperlink(
   self : ScreenGridState,
   row : Int,
   col : Int,
 ) -> CellHyperlink? {
-  self.hyperlink_table.get(self.link_id_at(row, col))
+  if self.cells[row][col].has_hyperlink() {
+    self.hyperlink_table.get(self.link_id_at(row, col))
+  } else {
+    None
+  }
 }
 
 ///|
@@ -1037,6 +1043,42 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   let row = expect_row(grid, 0)
   guard row.grapheme() && row.styled() && row.hyperlink() else {
     fail("expected recompute row flags to notice graphemes, styles, and links")
+  }
+}
+
+///|
+test "screen grid/cell_hyperlink gates on the presence bit after an unlinked overwrite" {
+  let grid = ScreenGridState::new(1, 3)
+  let link = CellHyperlink::implicit("https://example.com", 1)
+  // Write a hyperlinked cell, then overwrite it with link-free text at the same
+  // column. The side array keeps the stale id (the unlinked write never scrubs
+  // it), so resolution must gate on the cell's now-cleared presence bit.
+  grid.write_cell(
+    0,
+    0,
+    b'A'.to_uint(),
+    Narrow,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    Some(link),
+  )
+  guard grid.cell_hyperlink(0, 0) == Some(link) else {
+    fail("expected the linked cell to resolve its hyperlink")
+  }
+  grid.write_cell(
+    0,
+    0,
+    b'B'.to_uint(),
+    Narrow,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
+  guard !expect_cell(grid, 0, 0).has_hyperlink() &&
+    grid.cell_hyperlink(0, 0) == None else {
+    fail("expected an unlinked overwrite to drop the stale hyperlink")
   }
 }
 

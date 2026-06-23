@@ -83,6 +83,14 @@ pub fn StyleTable::intern(self : StyleTable, style : CellStyle) -> StyleId {
   let id = match self.index.get(style) {
     Some(id) => id
     None => {
+      // Ids are 16 bit (they pack into the `u64` cell). Once all 65 536 are spent,
+      // minting `length.to_uint16()` would wrap to an existing id and silently
+      // resolve later cells to the wrong style. Degrade instead: map further
+      // distinct styles to the default (unstyled) id — a visible loss, but never a
+      // wrong color. (65 k distinct styles in one session is already pathological.)
+      if self.list.length() > 0xFFFF {
+        return default_style_id
+      }
       let id = StyleId(self.list.length().to_uint16())
       self.list.push(style)
       self.index[style] = id
