@@ -109,6 +109,34 @@ test "render state/update becomes partial after terminal mutation" {
 }
 
 ///|
+test "render state/hyperlink-only uri change dirties the row" {
+  let terminal = StreamTerminal::new()
+  let state = RenderState::new()
+
+  // Print 'A' carrying an OSC 8 hyperlink, snapshot, and settle to clean.
+  terminal.next_slice(b"\x1B]8;;https://a.example\x07A\x1B]8;;\x07")
+  state.update(terminal)
+  state.set_dirty(False)
+  // A stable re-snapshot stays clean (the link id matches).
+  state.update(terminal)
+  guard state.dirty() == False else {
+    fail("expected a stable snapshot to stay clean")
+  }
+
+  // Rewrite the SAME glyph + style at the same cell under a DIFFERENT uri. Only
+  // the out-of-cell hyperlink id changes — the packed `PageCellState` is byte-for-
+  // byte identical and the row flags are unchanged — so the damage diff must flag
+  // the row via the snapshotted link ids, not the cells.
+  terminal.next_slice(b"\r\x1B]8;;https://b.example\x07A\x1B]8;;\x07")
+  state.update(terminal)
+  guard state.dirty() == Partial else {
+    fail("expected a hyperlink-only uri change to mark the row dirty")
+  }
+
+  terminal.deinit()
+}
+
+///|
 test "render state/cursor viewport follows terminal viewport" {
   let terminal = StreamTerminal::new()
   guard terminal.resize(5, 2, 0U, 0U) == Success else {

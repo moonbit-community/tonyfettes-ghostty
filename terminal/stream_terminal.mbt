@@ -513,6 +513,19 @@ pub fn StreamTerminal::screen_cell_snapshot(
 }
 
 ///|
+// The raw `HyperlinkId` of the snapshot cell at (row, col) — package-private, for
+// `RenderState`'s damage diff (a hyperlink-only change leaves the packed cell
+// equal, so the id is compared alongside it). The full link still resolves via
+// `screen_cell_hyperlink_snapshot`.
+fn StreamTerminal::screen_cell_hyperlink_id_snapshot(
+  self : StreamTerminal,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> HyperlinkId {
+  self.bridge().screen_cell_hyperlink_id_snapshot(row, col)
+}
+
+///|
 // Resolve the style of the snapshot cell at (row, col) through the active screen's
 // table. Cells store only a `StyleId`, so callers that want the full `CellStyle`
 // (color, attributes) go through here rather than the cell directly.

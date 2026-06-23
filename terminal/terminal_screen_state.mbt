@@ -346,6 +346,28 @@ fn PageList::cell_hyperlink(
 }
 
 ///|
+/// The raw (gated) `HyperlinkId` at a visible `(row, col)` — the cheap u16 key the
+/// render-snapshot diff compares to notice a hyperlink-only change (the packed
+/// cell carries only a presence bit, so two cells under different URIs are equal).
+/// Uses the same visible source as `cell` so it lines up with the render cell
+/// snapshot. Returns `no_hyperlink_id` for an unlinked cell.
+fn PageList::cell_hyperlink_id(
+  self : PageList,
+  grid : ScreenGridState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> HyperlinkId {
+  let col_idx = col.to_int()
+  if col_idx < 0 || col_idx >= grid.cols.to_int() {
+    return no_hyperlink_id
+  }
+  match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
+    Some(source) => self.link_id_at_source(grid, source, col_idx)
+    None => no_hyperlink_id
+  }
+}
+
+///|
 fn PageList::screen_cell_hyperlink(
   self : PageList,
   grid : ScreenGridState,

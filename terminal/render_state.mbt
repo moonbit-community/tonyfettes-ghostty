@@ -25,6 +25,12 @@ struct RenderState {
   mut cursor_viewport_wide_tail : Bool
   mut row_states : Array[PageRowState]
   mut row_cells : Array[FixedArray[PageCellState]]
+  // Per-row hyperlink ids, parallel to `row_cells`, captured each snapshot so the
+  // damage diff notices a hyperlink-only change: the packed cell carries only a
+  // presence bit, so two cells under different URIs are equal and `row_cells`
+  // alone would miss it. `None` for a row with no links (the common case → no
+  // allocation). The full link still resolves via the terminal-level snapshot.
+  mut row_link_ids : Array[FixedArray[HyperlinkId]?]
   // The active screen's style table, captured each `update`. The snapshotted
   // `row_cells` carry `StyleId`s minted from it, so it resolves their styles for
   // the renderer/formatter. Grow-only and shared, so ids captured here stay valid.
@@ -55,6 +61,7 @@ pub fn RenderState::new() -> RenderState {
     cursor_viewport_wide_tail: false,
     row_states: [],
     row_cells: [],
+    row_link_ids: [],
     style_table: @style.StyleTable::new(),
     grapheme_table: GraphemeTable::new(),
   }
@@ -215,19 +222,23 @@ fn RenderState::snapshot_all_rows(
 ) -> Unit {
   let row_states : Array[PageRowState] = []
   let row_cells : Array[FixedArray[PageCellState]] = []
+  let row_link_ids : Array[FixedArray[HyperlinkId]?] = []
   let mut row_idx = 0
   while row_idx < rows.to_int() {
     let snapshot = snapshot_render_row(terminal, row_idx.to_uint16()).with_dirty(
       true,
     )
+    let cells = snapshot_render_cells(terminal, row_idx.to_uint16(), columns)
     row_states.push(snapshot)
-    row_cells.push(
-      snapshot_render_cells(terminal, row_idx.to_uint16(), columns),
+    row_link_ids.push(
+      snapshot_render_link_ids(terminal, row_idx.to_uint16(), cells),
     )
+    row_cells.push(cells)
     row_idx += 1
   }
   self.row_states = row_states
   self.row_cells = row_cells
+  self.row_link_ids = row_link_ids
 }
 
 ///|
@@ -242,10 +253,17 @@ fn RenderState::update_changed_rows(
   while row_idx < rows.to_int() {
     let snapshot = snapshot_render_row(terminal, row_idx.to_uint16())
     let cells = snapshot_render_cells(terminal, row_idx.to_uint16(), columns)
+    let link_ids = snapshot_render_link_ids(
+      terminal,
+      row_idx.to_uint16(),
+      cells,
+    )
     if !render_row_snapshot_equals(self.row_states[row_idx], snapshot) ||
-      !render_row_cells_equal(self.row_cells[row_idx], cells) {
+      !render_row_cells_equal(self.row_cells[row_idx], cells) ||
+      !render_link_ids_equal(self.row_link_ids[row_idx], link_ids) {
       self.row_states[row_idx] = snapshot.with_dirty(true)
       self.row_cells[row_idx] = cells
+      self.row_link_ids[row_idx] = link_ids
       any_row_dirty = true
     }
     row_idx += 1
@@ -363,6 +381,62 @@ fn snapshot_render_cells(
     }
   }
   result
+}
+
+///|
+fn snapshot_render_link_ids(
+  terminal : StreamTerminal,
+  row : CellCountInt,
+  cells : FixedArray[PageCellState],
+) -> FixedArray[HyperlinkId]? {
+  // Only a row that actually holds a hyperlinked cell allocates an id array; the
+  // common linkless row stays `None`. The id is fetched solely for cells whose
+  // presence bit is set (read off the already-snapshotted `cells`), so a
+  // link-free frame does no extra lookups.
+  let mut links : FixedArray[HyperlinkId]? = None
+  for col_idx in 0..<cells.length() {
+    if cells[col_idx].has_hyperlink() {
+      let arr = match links {
+        Some(arr) => arr
+        None => {
+          let arr = FixedArray::make(cells.length(), no_hyperlink_id)
+          links = Some(arr)
+          arr
+        }
+      }
+      arr[col_idx] = terminal.screen_cell_hyperlink_id_snapshot(
+        row,
+        col_idx.to_uint16(),
+      )
+    }
+  }
+  links
+}
+
+///|
+fn render_link_ids_equal(
+  left : FixedArray[HyperlinkId]?,
+  right : FixedArray[HyperlinkId]?,
+) -> Bool {
+  match (left, right) {
+    (None, None) => true
+    (Some(left), Some(right)) => {
+      if left.length() != right.length() {
+        return false
+      }
+      let mut index = 0
+      while index < left.length() {
+        if left[index] != right[index] {
+          return false
+        }
+        index += 1
+      }
+      true
+    }
+    // One row gained or lost all its links (e.g. an unlinked overwrite cleared the
+    // row's last presence bit): the side differs, so the row is dirty.
+    _ => false
+  }
 }
 
 ///|
