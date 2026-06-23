@@ -306,6 +306,27 @@ fn expect_bridge_cell(
 }
 
 ///|
+// Resolve a snapshot cell's style through the active grid's shared table.
+fn expect_bridge_cell_style(
+  state : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> @style.CellStyle {
+  state.grid.style_table.get(expect_bridge_cell(state, row, col).style_id())
+}
+
+///|
+// Resolve a snapshot cell's hyperlink by position — the id lives in the row's
+// `link_ids` side array now, not in the cell.
+fn expect_bridge_cell_hyperlink(
+  state : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> CellHyperlink? {
+  state.screen_cell_hyperlink_snapshot(row, col)
+}
+
+///|
 test "stream terminal bridge/applies printable semantic hyperlink actions" {
   let state = StreamTerminalBridgeState::new()
 
@@ -338,13 +359,14 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
   }
 
   let first = expect_bridge_cell(state, 0, 0)
+  let first_style = expect_bridge_cell_style(state, 0, 0)
   guard first.codepoint() == b'A'.to_uint() &&
     first.semantic_content() == Prompt &&
-    first.style().bold() &&
-    first.style().bg_color().palette_index() == Some(@color.Name::Cyan.code()) else {
+    first_style.bold() &&
+    first_style.bg_color().palette_index() == Some(@color.Name::Cyan.code()) else {
     fail("expected first cell style and semantic metadata")
   }
-  let first_link_ok = match first.hyperlink() {
+  let first_link_ok = match expect_bridge_cell_hyperlink(state, 0, 0) {
     Some(link) =>
       link.uri() == "https://example.com" &&
       link.explicit_id() == None &&
@@ -356,7 +378,7 @@ test "stream terminal bridge/applies printable semantic hyperlink actions" {
   guard expect_bridge_cell(state, 0, 1).codepoint() == b'A'.to_uint() &&
     expect_bridge_cell(state, 0, 2).codepoint() == b'A'.to_uint() &&
     expect_bridge_cell(state, 0, 3).codepoint() == b'B'.to_uint() &&
-    expect_bridge_cell(state, 0, 3).hyperlink() == None else {
+    expect_bridge_cell_hyperlink(state, 0, 3) == None else {
     fail("expected repeat-print and hyperlink end behavior")
   }
 }
@@ -550,7 +572,8 @@ test "stream terminal bridge/applies edit and scroll mutations" {
   guard apply_stream_bytes(state, b"\x1B[X") else {
     fail("expected erase-char bytes to be handled")
   }
-  guard expect_bridge_cell(state, 0, 3).palette_index() == Some(5) else {
+  guard expect_bridge_cell_style(state, 0, 3).bg_color().palette_index() ==
+    Some(5) else {
     fail("expected erase chars to preserve current background style")
   }
 
@@ -720,7 +743,7 @@ test "stream terminal bridge/covers semantic prompt variants and explicit hyperl
     state.hyperlink_implicit_id() == None else {
     fail("expected explicit hyperlink accessors")
   }
-  let explicit_link_ok = match expect_bridge_cell(state, 1, 0).hyperlink() {
+  let explicit_link_ok = match expect_bridge_cell_hyperlink(state, 1, 0) {
     Some(link) =>
       link.uri() == "http://example.com" && link.explicit_id() == Some("foo")
     None => false
@@ -815,7 +838,8 @@ test "stream terminal bridge/covers erase and insertion bridge arms" {
     state.apply(StreamEraseLineRightUnlessPendingWrap(false)) else {
     fail("expected erase-line-right-unless-pending-wrap action")
   }
-  guard expect_bridge_cell(state, 0, 2).palette_index() == Some(4) else {
+  guard expect_bridge_cell_style(state, 0, 2).bg_color().palette_index() ==
+    Some(4) else {
     fail(
       "expected erase-line-right-unless-pending-wrap to erase when not pending wrap",
     )
@@ -2270,4 +2294,45 @@ test "stream terminal bridge/semantic_prompt_row_range row layout" {
   let range2 = state.semantic_prompt_row_range(2)
   guard range1 == Some((1, 2)) else { fail("range(1) should be (1,2)") }
   guard range2 == Some((1, 2)) else { fail("range(2) should be (1,2)") }
+}
+
+///|
+test "stream terminal bridge/a full clear reclaims the intern id space" {
+  let state = StreamTerminalBridgeState::new()
+
+  // Enter the alternate screen. DECSET 1049 clears it on entry, minting fresh
+  // intern tables; capture those so we can prove the next clear swaps them out.
+  state.mode_set(AltScreenSaveCursorClearEnter, true)
+  let first_style_table = state.grid.style_table
+  let first_hyperlink_table = state.grid.hyperlink_table
+  let first_grapheme_table = state.grid.grapheme_table
+
+  // Intern several distinct non-default styles into the alt screen's table.
+  let a = @style.CellStyle::new().apply_attribute(Color256Bg(1))
+  let b = @style.CellStyle::new().apply_attribute(Color256Bg(2))
+  let c = @style.CellStyle::new().apply_attribute(Color256Bg(3))
+  state.grid.write_cell(0, 0, b'A'.to_uint(), Narrow, a, false, Output, None)
+  state.grid.write_cell(0, 1, b'B'.to_uint(), Narrow, b, false, Output, None)
+  state.grid.write_cell(0, 2, b'C'.to_uint(), Narrow, c, false, Output, None)
+  guard state.grid.style_table.len() > 1 else {
+    fail("expected distinct styles to grow the alt-screen style table")
+  }
+
+  // Leave, then re-enter: the second entry clears the alternate screen again. That
+  // clear must reclaim the id space with fresh tables instead of letting the prior
+  // session's ids accumulate toward the 16-bit ceiling.
+  state.mode_set(AltScreenSaveCursorClearEnter, false)
+  state.mode_set(AltScreenSaveCursorClearEnter, true)
+  guard state.grid.style_table.len() == 1 else {
+    fail("expected a full clear to reclaim the style id space")
+  }
+
+  // Fresh tables means new identities, so the active grid resolves against the
+  // same tables the prints intern into, and RenderState's table-reset damage check
+  // repaints rather than trusting reused low ids.
+  guard !physical_equal(state.grid.style_table, first_style_table) &&
+    !physical_equal(state.grid.hyperlink_table, first_hyperlink_table) &&
+    !physical_equal(state.grid.grapheme_table, first_grapheme_table) else {
+    fail("expected the clear to swap in fresh intern tables")
+  }
 }

@@ -47,7 +47,17 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     rectangle: false,
   }
 
-  state.grid = { rows: 24, cols: 0, descs: [], cells: [], cell_pool: [] }
+  state.grid = {
+    rows: 24,
+    cols: 0,
+    descs: [],
+    cells: [],
+    link_ids: [],
+    cell_pool: [],
+    style_table: @style.StyleTable::new(),
+    hyperlink_table: HyperlinkTable::new(),
+    grapheme_table: GraphemeTable::new(),
+  }
   guard formatter_selection_bounds(formatter, state, 1U) is None else {
     fail("expected zero-column guard to reject formatting")
   }
@@ -204,10 +214,13 @@ test "formatter helpers/cover style and palette encoders" {
     fail("expected HTML helper to encode style properties")
   }
 
+  let styles = @style.StyleTable::new()
   let palette_cell = PageCellState::new(
-    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
+    style_id=styles.intern(
+      @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
+    ),
   )
-  let palette_style = palette_cell.style()
+  let palette_style = styles.get(palette_cell.style_id())
   guard palette_style.bg_color().palette_index() == Some(7) else {
     fail("expected background-palette cell helper")
   }
@@ -366,7 +379,17 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
 test "formatter helpers/cover explicit empty format guard" {
   let terminal = StreamTerminal::new()
   let state = terminal.bridge()
-  state.grid = { rows: 0, cols: 0, descs: [], cells: [], cell_pool: [] }
+  state.grid = {
+    rows: 0,
+    cols: 0,
+    descs: [],
+    cells: [],
+    link_ids: [],
+    cell_pool: [],
+    style_table: @style.StyleTable::new(),
+    hyperlink_table: HyperlinkTable::new(),
+    grapheme_table: GraphemeTable::new(),
+  }
   state.scrollback = PageList::new(0, 0, 0)
   let formatter = plain_formatter(terminal)
   guard formatter.format() == b"" else {

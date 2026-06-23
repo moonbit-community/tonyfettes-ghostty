@@ -4,6 +4,51 @@ fn expect_row(grid : ScreenGridState, row : CellCountInt) -> PageRowState {
 }
 
 ///|
+// Standalone test grid: mints its own style table. Production paths that must
+// share a table with a `PageList` use `new_with_table` instead.
+fn ScreenGridState::new(
+  rows : CellCountInt,
+  cols : CellCountInt,
+) -> ScreenGridState {
+  ScreenGridState::new_with_table(
+    rows,
+    cols,
+    @style.StyleTable::new(),
+    HyperlinkTable::new(),
+    GraphemeTable::new(),
+  )
+}
+
+///|
+// Resolve the style of the cell at (row, col) through the shared table — the
+// grid-method counterpart to the old `cell.style()`, since the cell now holds
+// only a `StyleId`.
+fn ScreenGridState::cell_style(
+  self : ScreenGridState,
+  row : Int,
+  col : Int,
+) -> @style.CellStyle {
+  self.style_table.get(self.cells[row][col].style_id())
+}
+
+///|
+// Resolve the hyperlink of the cell at (row, col): presence is the cell's flag
+// bit (the source of truth); the id lives in the grid's per-row `link_ids` side
+// array, which is read only when the bit is set (dead entries linger under cells
+// that were unlinked without scrubbing the array).
+fn ScreenGridState::cell_hyperlink(
+  self : ScreenGridState,
+  row : Int,
+  col : Int,
+) -> CellHyperlink? {
+  if self.cells[row][col].has_hyperlink() {
+    self.hyperlink_table.get(self.link_id_at(row, col))
+  } else {
+    None
+  }
+}
+
+///|
 fn ScreenGridState::cell(
   self : ScreenGridState,
   row : CellCountInt,
@@ -105,9 +150,9 @@ test "screen grid/print stores metadata and repeat clamps zero count" {
 
   let cell = expect_cell(grid, 0, 0)
   guard cell.codepoint() == b'A'.to_uint() &&
-    cell.style().bold() &&
+    grid.cell_style(0, 0).bold() &&
     cell.is_protected() &&
-    cell.hyperlink() == Some(hyperlink) &&
+    grid.cell_hyperlink(0, 0) == Some(hyperlink) &&
     cell.semantic_content() == Prompt else {
     fail("expected printed cell metadata")
   }
@@ -351,7 +396,7 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   cursor.x = 1
   grid.insert_blanks(cursor, bg_style, 1)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() &&
-    expect_cell(grid, 0, 1).palette_index() == Some(3) &&
+    grid.cell_style(0, 1).bg_color().palette_index() == Some(3) &&
     expect_cell(grid, 0, 2).codepoint() == b'B'.to_uint() &&
     expect_cell(grid, 0, 4).codepoint() == b'D'.to_uint() &&
     !cursor.pending_wrap() else {
@@ -377,7 +422,7 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   cursor.x = 1
   grid.erase_chars(cursor, bg_style, Iso, 2)
   guard expect_cell(grid, 0, 1).codepoint() == b'B'.to_uint() &&
-    expect_cell(grid, 0, 2).palette_index() == Some(3) else {
+    grid.cell_style(0, 2).bg_color().palette_index() == Some(3) else {
     fail("expected erase chars to respect iso protection")
   }
 }
@@ -448,9 +493,9 @@ test "screen grid/char editing edge branches and helper math" {
   cursor.left_margin = 0
   cursor.right_margin = 3
   grid.insert_blanks(cursor, style, 1)
-  guard expect_cell(grid, 0, 0).palette_index() == Some(5) &&
-    expect_cell(grid, 0, 1).palette_index() == Some(5) &&
-    expect_cell(grid, 0, 4).palette_index() == Some(5) else {
+  guard grid.cell_style(0, 0).bg_color().palette_index() == Some(5) &&
+    grid.cell_style(0, 1).bg_color().palette_index() == Some(5) &&
+    grid.cell_style(0, 4).bg_color().palette_index() == Some(5) else {
     fail(
       "expected insert blanks to clear spacer-tail and right-edge wide boundaries",
     )
@@ -481,19 +526,19 @@ test "screen grid/char editing edge branches and helper math" {
   )
   end_cursor.x = 1
   end_grid.insert_blanks(end_cursor, style, 1)
-  guard expect_cell(end_grid, 0, 4).palette_index() == Some(5) else {
+  guard end_grid.cell_style(0, 4).bg_color().palette_index() == Some(5) else {
     fail("expected insert blanks to clear a wide cell at the shift end")
   }
 
   grid.delete_chars(cursor, style, 0)
-  guard expect_cell(grid, 0, 0).palette_index() == Some(5) else {
+  guard grid.cell_style(0, 0).bg_color().palette_index() == Some(5) else {
     fail("expected delete chars zero count to no-op")
   }
   cursor.x = 4
   cursor.left_margin = 0
   cursor.right_margin = 3
   grid.delete_chars(cursor, style, 1)
-  guard expect_cell(grid, 0, 4).palette_index() == Some(5) else {
+  guard grid.cell_style(0, 4).bg_color().palette_index() == Some(5) else {
     fail("expected delete chars outside margins to no-op")
   }
 
@@ -512,8 +557,8 @@ test "screen grid/char editing edge branches and helper math" {
   )
   erase_cursor.x = 1
   erase_grid.erase_chars(erase_cursor, style, Off, 0)
-  guard expect_cell(erase_grid, 0, 1).palette_index() == Some(5) &&
-    expect_cell(erase_grid, 0, 2).palette_index() == Some(5) else {
+  guard erase_grid.cell_style(0, 1).bg_color().palette_index() == Some(5) &&
+    erase_grid.cell_style(0, 2).bg_color().palette_index() == Some(5) else {
     fail("expected erase chars to extend over wide tails")
   }
 
@@ -531,7 +576,7 @@ test "screen grid/char editing edge branches and helper math" {
     None,
   )
   wrap_grid.cursor_reset_wrap(wrap_cursor, style)
-  guard expect_cell(wrap_grid, 0, 3).palette_index() == Some(5) &&
+  guard wrap_grid.cell_style(0, 3).bg_color().palette_index() == Some(5) &&
     !expect_row(wrap_grid, 0).wrap() else {
     fail("expected cursor reset wrap to clear spacer heads")
   }
@@ -545,7 +590,10 @@ test "screen grid/char editing edge branches and helper math" {
 
   let mut rgb_style = @style.CellStyle::new()
   rgb_style = rgb_style.apply_attribute(DirectColorBg(@color.RGB::new(1, 2, 3)))
-  guard blank_cell(rgb_style).background_rgb() == Some(@color.RGB::new(1, 2, 3)) else {
+  let styles = @style.StyleTable::new()
+  let bc = blank_cell(rgb_style, styles)
+  guard styles.get(bc.style_id()).bg_color().rgb_value() ==
+    Some(@color.RGB::new(1, 2, 3)) else {
     fail("expected rgb blank cell")
   }
 }
@@ -589,9 +637,9 @@ test "screen grid/erase line and display modes" {
   right_grid.recompute_row_flags(0)
   right_cursor.x = 1
   right_grid.erase_line(right_cursor, bg_style, Right, Off, false)
-  guard expect_cell(right_grid, 0, 0).palette_index() == Some(4) &&
-    expect_cell(right_grid, 0, 1).palette_index() == Some(4) &&
-    expect_cell(right_grid, 0, 2).palette_index() == Some(4) else {
+  guard right_grid.cell_style(0, 0).bg_color().palette_index() == Some(4) &&
+    right_grid.cell_style(0, 1).bg_color().palette_index() == Some(4) &&
+    right_grid.cell_style(0, 2).bg_color().palette_index() == Some(4) else {
     fail("expected erase line right to clear from spacer tail boundary")
   }
 
@@ -660,8 +708,8 @@ test "screen grid/erase line and display modes" {
   above_cursor.x = 1
   above_grid.erase_display(above_cursor, bg_style, Above, Iso, false)
   guard expect_cell(above_grid, 0, 0).codepoint() == b'A'.to_uint() &&
-    expect_cell(above_grid, 0, 1).palette_index() == Some(4) &&
-    expect_cell(above_grid, 1, 0).palette_index() == Some(4) else {
+    above_grid.cell_style(0, 1).bg_color().palette_index() == Some(4) &&
+    above_grid.cell_style(1, 0).bg_color().palette_index() == Some(4) else {
     fail("expected erase display above to respect protection")
   }
 
@@ -700,8 +748,8 @@ test "screen grid/erase line and display modes" {
   fill_ascii(below_grid, 1, [b'D', b'E', b'F'])
   below_cursor.x = 1
   below_grid.erase_display(below_cursor, bg_style, Below, Off, false)
-  guard expect_cell(below_grid, 0, 1).palette_index() == Some(4) &&
-    expect_cell(below_grid, 1, 0).palette_index() == Some(4) else {
+  guard below_grid.cell_style(0, 1).bg_color().palette_index() == Some(4) &&
+    below_grid.cell_style(1, 0).bg_color().palette_index() == Some(4) else {
     fail("expected erase display below to clear current-right and rows below")
   }
 }
@@ -783,7 +831,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
   )
   boundary_grid.descs[0] = boundary_grid.descs[0].with_wrap(true)
   boundary_grid.split_cell_boundary(0, 4, style)
-  guard expect_cell(boundary_grid, 0, 3).palette_index() == Some(6) else {
+  guard boundary_grid.cell_style(0, 3).bg_color().palette_index() == Some(6) else {
     fail("expected split boundary at row end to clear spacer head")
   }
 
@@ -809,7 +857,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
   )
   boundary_grid.descs[1] = boundary_grid.descs[1].with_wrap_continuation(true)
   boundary_grid.split_cell_boundary(1, 0, style)
-  guard expect_cell(boundary_grid, 0, 3).palette_index() == Some(6) else {
+  guard boundary_grid.cell_style(0, 3).bg_color().palette_index() == Some(6) else {
     fail("expected split boundary at row start to clear previous spacer head")
   }
 
@@ -834,8 +882,8 @@ test "screen grid/line shifts scroll and helper boundaries" {
     None,
   )
   boundary_grid.split_cell_boundary(1, 1, style)
-  guard expect_cell(boundary_grid, 1, 0).palette_index() == Some(6) &&
-    expect_cell(boundary_grid, 1, 1).palette_index() == Some(6) else {
+  guard boundary_grid.cell_style(1, 0).bg_color().palette_index() == Some(6) &&
+    boundary_grid.cell_style(1, 1).bg_color().palette_index() == Some(6) else {
     fail("expected split boundary in row middle to clear wide pair")
   }
 
@@ -880,10 +928,10 @@ test "screen grid/line shifts scroll and helper boundaries" {
     None,
   )
   boundary_grid.row_will_be_shifted(0, 1, 2, style)
-  guard expect_cell(boundary_grid, 0, 0).palette_index() == Some(6) &&
-    expect_cell(boundary_grid, 0, 1).palette_index() == Some(6) &&
-    expect_cell(boundary_grid, 0, 2).palette_index() == Some(6) &&
-    expect_cell(boundary_grid, 0, 3).palette_index() == Some(6) else {
+  guard boundary_grid.cell_style(0, 0).bg_color().palette_index() == Some(6) &&
+    boundary_grid.cell_style(0, 1).bg_color().palette_index() == Some(6) &&
+    boundary_grid.cell_style(0, 2).bg_color().palette_index() == Some(6) &&
+    boundary_grid.cell_style(0, 3).bg_color().palette_index() == Some(6) else {
     fail("expected row-will-be-shifted to clear split wide boundaries")
   }
 }
@@ -988,13 +1036,49 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
   style = style.apply_attribute(Bold)
   let cell = expect_cell(grid, 0, 0)
     .with_codepoint(b'G'.to_uint(), true)
-    .with_style(style)
-    .with_hyperlink(Some(CellHyperlink::implicit("https://example.com", 9)))
+    .with_style_id(grid.style_table.intern(style))
+    .with_hyperlink_present(true)
   set_test_cell(grid, 0, 0, cell)
   grid.recompute_row_flags(0)
   let row = expect_row(grid, 0)
   guard row.grapheme() && row.styled() && row.hyperlink() else {
     fail("expected recompute row flags to notice graphemes, styles, and links")
+  }
+}
+
+///|
+test "screen grid/cell_hyperlink gates on the presence bit after an unlinked overwrite" {
+  let grid = ScreenGridState::new(1, 3)
+  let link = CellHyperlink::implicit("https://example.com", 1)
+  // Write a hyperlinked cell, then overwrite it with link-free text at the same
+  // column. The side array keeps the stale id (the unlinked write never scrubs
+  // it), so resolution must gate on the cell's now-cleared presence bit.
+  grid.write_cell(
+    0,
+    0,
+    b'A'.to_uint(),
+    Narrow,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    Some(link),
+  )
+  guard grid.cell_hyperlink(0, 0) == Some(link) else {
+    fail("expected the linked cell to resolve its hyperlink")
+  }
+  grid.write_cell(
+    0,
+    0,
+    b'B'.to_uint(),
+    Narrow,
+    @style.CellStyle::new(),
+    false,
+    Output,
+    None,
+  )
+  guard !expect_cell(grid, 0, 0).has_hyperlink() &&
+    grid.cell_hyperlink(0, 0) == None else {
+    fail("expected an unlinked overwrite to drop the stale hyperlink")
   }
 }
 
@@ -1039,8 +1123,8 @@ test "screen grid/print cell clears prior wide and spacer forms" {
   )
   grid.print_cell(cursor, b'N'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 1).codepoint() == b'N'.to_uint() &&
-    expect_cell(grid, 1, 2).palette_index() == Some(8) &&
-    expect_cell(grid, 0, 3).palette_index() == Some(8) else {
+    grid.cell_style(1, 2).bg_color().palette_index() == Some(8) &&
+    grid.cell_style(0, 3).bg_color().palette_index() == Some(8) else {
     fail(
       "expected print cell to clear prior wide cells and previous spacer heads",
     )
@@ -1078,9 +1162,9 @@ test "screen grid/print cell clears prior wide and spacer forms" {
   )
   cursor.x = 1
   grid.print_cell(cursor, b'S'.to_uint(), Narrow, style, false, Output, None)
-  guard expect_cell(grid, 1, 0).palette_index() == Some(8) &&
+  guard grid.cell_style(1, 0).bg_color().palette_index() == Some(8) &&
     expect_cell(grid, 1, 1).codepoint() == b'S'.to_uint() &&
-    expect_cell(grid, 0, 3).palette_index() == Some(8) else {
+    grid.cell_style(0, 3).bg_color().palette_index() == Some(8) else {
     fail(
       "expected print cell to clear prior spacer tails and previous spacer heads",
     )
@@ -1112,9 +1196,9 @@ test "screen grid/decaln and full reset" {
   grid.decaln(fill_style)
   guard expect_cell(grid, 0, 0).codepoint() == b'E'.to_uint() &&
     expect_cell(grid, 1, 2).codepoint() == b'E'.to_uint() &&
-    expect_cell(grid, 0, 0).style().fg_color().palette_index() ==
+    grid.cell_style(0, 0).fg_color().palette_index() ==
     Some(@color.Name::Red.code()) &&
-    expect_cell(grid, 0, 0).style().bg_color().palette_index() == Some(2) &&
+    grid.cell_style(0, 0).bg_color().palette_index() == Some(2) &&
     expect_row(grid, 0).dirty() &&
     expect_row(grid, 1).dirty() else {
     fail("expected decaln fill")

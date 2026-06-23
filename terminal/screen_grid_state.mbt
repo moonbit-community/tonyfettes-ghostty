@@ -50,18 +50,44 @@ priv struct ScreenGridState {
   // and cell buffer. See the comment above for why they are split.
   descs : FixedArray[PageRowState]
   cells : FixedArray[FixedArray[PageCellState]]
+  // Per-row hyperlink ids, parallel to `cells`. `link_ids[i]` is `None` for the
+  // overwhelmingly common link-free row (no allocation, the hot path), otherwise
+  // a `cols`-wide array whose `[col]` is the cell's `HyperlinkId`. Only meaningful
+  // where the cell's `has_hyperlink()` presence bit is set; entries under a
+  // link-free cell are dead and never read. The id is stored out-of-cell so the
+  // cell fits a `u64`; this side array travels with `cells` through every
+  // scroll/blit/shift so a cell keeps its link as its row moves.
+  link_ids : FixedArray[FixedArray[HyperlinkId]?]
   // Free list of `cols`-wide cell arrays harvested from rows evicted out of
   // scrollback, reused in place as the blank rows scrolled in at the bottom.
   // At a full scrollback buffer this makes a line feed allocation-free: the row
   // evicted from history becomes the new blank row instead of being GC'd while
   // a fresh 80-cell row is allocated. Bounded to the screen height.
   cell_pool : Array[FixedArray[PageCellState]]
+  // The style intern table shared with the owning `PageList` (and thus with every
+  // other grid view and scrollback row of the same screen). Cells store a
+  // `StyleId` into this table rather than an inline style; writes intern here and
+  // reads resolve here. A standalone grid (tests, fresh screen) owns its own
+  // table; grids that share rows with a `PageList` must share its table, or a
+  // cell's id would resolve against the wrong table after a scroll/resize.
+  style_table : @style.StyleTable
+  // The hyperlink intern table, shared the same way as `style_table`: cells store
+  // a `HyperlinkId` into it (0 = no link), writes intern here, the rare full-link
+  // read resolves here. See `HyperlinkTable`.
+  hyperlink_table : HyperlinkTable
+  // The grapheme intern table, shared the same way: cells store a `GraphemeId`
+  // (0 = no combining marks), the append path interns here, and text emission
+  // resolves the marks here. See `GraphemeTable`.
+  grapheme_table : GraphemeTable
 }
 
 ///|
-fn ScreenGridState::new(
+fn ScreenGridState::new_with_table(
   rows : CellCountInt,
   cols : CellCountInt,
+  style_table : @style.StyleTable,
+  hyperlink_table : HyperlinkTable,
+  grapheme_table : GraphemeTable,
 ) -> ScreenGridState {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
@@ -73,7 +99,55 @@ fn ScreenGridState::new(
     actual_rows.to_int(),
     _ => make_row_cells(actual_cols.to_int()),
   )
-  { rows: actual_rows, cols: actual_cols, descs, cells, cell_pool: [] }
+  {
+    rows: actual_rows,
+    cols: actual_cols,
+    descs,
+    cells,
+    link_ids: FixedArray::make(actual_rows.to_int(), None),
+    cell_pool: [],
+    style_table,
+    hyperlink_table,
+    grapheme_table,
+  }
+}
+
+///|
+/// Read the `HyperlinkId` stored for the cell at `(row_idx, col_idx)`. Returns
+/// `no_hyperlink_id` when the row has no link array (the common case). Callers
+/// should gate on the cell's `has_hyperlink()` presence bit; a non-none result
+/// here always coincides with that bit being set, but the converse read of a
+/// dead slot is harmless.
+fn ScreenGridState::link_id_at(
+  self : ScreenGridState,
+  row_idx : Int,
+  col_idx : Int,
+) -> HyperlinkId {
+  match self.link_ids[row_idx] {
+    Some(row) => row[col_idx]
+    None => no_hyperlink_id
+  }
+}
+
+///|
+/// Store `id` for the cell at `(row_idx, col_idx)`, allocating the row's link
+/// array on first use. Only called when `id` is a real link; the caller also sets
+/// the cell's `has_hyperlink()` presence bit.
+fn ScreenGridState::set_link_id(
+  self : ScreenGridState,
+  row_idx : Int,
+  col_idx : Int,
+  id : HyperlinkId,
+) -> Unit {
+  let row = match self.link_ids[row_idx] {
+    Some(row) => row
+    None => {
+      let row = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+      self.link_ids[row_idx] = Some(row)
+      row
+    }
+  }
+  row[col_idx] = id
 }
 
 ///|
@@ -108,16 +182,18 @@ fn ScreenGridState::set_blank_row(
       // Reuse the pooled array buffer, refilling every slot with a fresh blank
       // cell value (cells are immutable, so we replace rather than reset).
       for index in 0..<cells.length() {
-        cells[index] = blank_cell(style)
+        cells[index] = blank_cell(style, self.style_table)
       }
       cells
     }
-    None => make_blank_row_cells(self.cols.to_int(), style)
+    None => make_blank_row_cells(self.cols.to_int(), style, self.style_table)
   }
   self.descs[row_idx] = PageRowState::new().with_styled(
     blank_row_is_styled(style),
   )
   self.cells[row_idx] = cells
+  // A blank row carries no hyperlinks; drop any link array the recycled slot had.
+  self.link_ids[row_idx] = None
 }
 
 ///|
@@ -342,7 +418,9 @@ fn ScreenGridState::append_grapheme(
       (codepoint == 0xFE0EU && base_is_wide) {
       return
     }
-    self.cells[row_idx][target_x] = cell.with_grapheme_appended(codepoint)
+    self.cells[row_idx][target_x] = cell.with_grapheme_id(
+      self.grapheme_table.append(cell.grapheme_id(), codepoint),
+    )
     self.descs[row_idx] = self.descs[row_idx]
       .with_grapheme(true)
       .with_dirty(true)
@@ -392,7 +470,7 @@ fn ScreenGridState::insert_blanks(
 
     let mut col = end_col
     while col >= x {
-      self.set_cell(row_idx, col + adjusted_count, self.cells[row_idx][col])
+      self.move_cell_in_row(row_idx, col + adjusted_count, col)
       if col == x {
         break
       }
@@ -434,7 +512,7 @@ fn ScreenGridState::delete_chars(
     let mut col = x
     let last = x + scroll_amount - 1
     while col <= last {
-      self.set_cell(row_idx, col, self.cells[row_idx][col + count])
+      self.move_cell_in_row(row_idx, col, col + count)
       col += 1
     }
   }
@@ -730,7 +808,7 @@ fn ScreenGridState::print_cell(
   // can decide. Capture before write_cell replaces the cell object.
   let lost_grapheme = current.has_grapheme()
   let lost_styled = current.has_styling()
-  let lost_hyperlink = current.hyperlink() is Some(_)
+  let lost_hyperlink = current.has_hyperlink()
   self.write_cell(
     row_idx, col_idx, codepoint, wide, style, protected_flag, semantic_content, hyperlink,
   )
@@ -759,7 +837,7 @@ fn ScreenGridState::update_row_flags_after_write(
   let cell = self.cells[row_idx][col_idx]
   let has_grapheme = cell.has_grapheme()
   let has_styled = cell.has_styling()
-  let has_hyperlink = cell.hyperlink() is Some(_)
+  let has_hyperlink = cell.has_hyperlink()
   if (lost_grapheme && !has_grapheme) ||
     (lost_styled && !has_styled) ||
     (lost_hyperlink && !has_hyperlink) {
@@ -901,6 +979,13 @@ fn ScreenGridState::shift_full_width_down(
       start_y,
       bottom - count + 1 - start_y,
     )
+    // The per-row link arrays move by reference in lockstep with their cells.
+    self.link_ids.unsafe_blit(
+      start_y + count,
+      self.link_ids,
+      start_y,
+      bottom - count + 1 - start_y,
+    )
   }
   // Fresh blank rows scroll in at the top (reusing pooled cell arrays).
   let mut row_idx = start_y
@@ -997,6 +1082,13 @@ fn ScreenGridState::shift_full_width_up(
     self.cells.unsafe_blit(
       start_y,
       self.cells,
+      start_y + count,
+      bottom + 1 - count - start_y,
+    )
+    // The per-row link arrays move by reference in lockstep with their cells.
+    self.link_ids.unsafe_blit(
+      start_y,
+      self.link_ids,
       start_y + count,
       bottom + 1 - count - start_y,
     )
@@ -1191,7 +1283,7 @@ fn ScreenGridState::clear_full_row(
     // `cells` array on every cell.
     let row_cells = self.cells[row_idx]
     for col_idx in 0..<self.cols.to_int() {
-      row_cells[col_idx] = blank_cell(style)
+      row_cells[col_idx] = blank_cell(style, self.style_table)
     }
     // Reset to a blank descriptor, then restore `styled`: `full_reset` cleared
     // it, but a colored erase fills the row with bg-styled blanks, so the flag
@@ -1218,7 +1310,7 @@ fn ScreenGridState::clear_row_range(
   while col_idx < limit {
     let cell = row_cells[col_idx]
     if !respect_protected || !cell.is_protected() {
-      row_cells[col_idx] = blank_cell(style)
+      row_cells[col_idx] = blank_cell(style, self.style_table)
     }
     col_idx += 1
   }
@@ -1239,6 +1331,25 @@ fn ScreenGridState::copy_row_region(
   while col_idx <= right {
     dst_cells[col_idx] = src_cells[col_idx]
     col_idx += 1
+  }
+  // Carry the hyperlink ids for the moved column range. Only the source rows that
+  // actually hold links allocate a destination array; a link-free source leaves
+  // the destination untouched, since its copied cells have no presence bit and any
+  // stale destination slot is dead.
+  if self.link_ids[src_row] is Some(src_links) {
+    let dst_links = match self.link_ids[dst_row] {
+      Some(row) => row
+      None => {
+        let row = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+        self.link_ids[dst_row] = Some(row)
+        row
+      }
+    }
+    let mut col = left
+    while col <= right {
+      dst_links[col] = src_links[col]
+      col += 1
+    }
   }
 }
 
@@ -1268,32 +1379,49 @@ fn ScreenGridState::write_cell(
   semantic_content : SemanticContent,
   hyperlink : CellHyperlink?,
 ) -> Unit {
-  // A printed character fully defines the cell, so build one fresh immutable
-  // value and store it into the slot — there is nothing to read from the old
-  // cell. One record literal is a single allocation, versus chaining six
-  // `with_*` builders. (Whole-cell `#valtype` will turn this store into an
-  // inline memcpy with no allocation at all.)
-  self.cells[row_idx][col_idx] = {
+  // Intern the optional link; `None` is the free fast path → id 0. The id is kept
+  // in the per-row `link_ids` side array (not the cell); the cell only records
+  // its presence as a flag bit.
+  let link_id = self.hyperlink_table.intern(hyperlink)
+  let has_link = !link_id.is_none()
+  // A printed character fully defines the cell, so pack one fresh `u64` and store
+  // it into the slot — there is nothing to read from the old cell. The store is a
+  // single inline word write, no allocation.
+  self.cells[row_idx][col_idx] = PageCellState::pack(
     codepoint,
-    grapheme_extras: None,
-    style,
-    wide,
-    protected_flag,
-    hyperlink,
-    semantic_content,
+    // A printed base char has no combining marks yet; they are appended later via
+    // the grapheme table. (`write_cell` is never the grapheme-append path.)
+    no_grapheme_id,
+    // Intern the incoming style into the screen's shared table; the cell keeps
+    // only the id. Default/unstyled prints hit the table's pre-seeded id 0.
+    self.style_table.intern(style),
+    PageCellFlags::pack(wide, protected_flag, semantic_content).with_hyperlink_present(
+      has_link,
+    ),
+  )
+  // Record the link id by column only when there is one; a link-free write leaves
+  // the row's (possibly absent) link array untouched, since the cleared presence
+  // bit makes any stale slot dead.
+  if has_link {
+    self.set_link_id(row_idx, col_idx, link_id)
   }
 }
 
 ///|
-fn ScreenGridState::set_cell(
+/// Move the cell (and its hyperlink id) from `src_col` to `dst_col` within one
+/// row — the per-cell step of the intra-row shifts (`insert_blanks` /
+/// `delete_chars`). The cell value carries its own presence bit; the link id
+/// lives in the row's side array, so it is moved alongside when the row has one.
+fn ScreenGridState::move_cell_in_row(
   self : ScreenGridState,
   row_idx : Int,
-  col_idx : Int,
-  source : PageCellState,
+  dst_col : Int,
+  src_col : Int,
 ) -> Unit {
-  // A cell is an immutable value with no in-place mutation anywhere, so storing
-  // the source into the slot can share it directly — no defensive copy.
-  self.cells[row_idx][col_idx] = source
+  self.cells[row_idx][dst_col] = self.cells[row_idx][src_col]
+  if self.link_ids[row_idx] is Some(links) {
+    links[dst_col] = links[src_col]
+  }
 }
 
 ///|
@@ -1314,7 +1442,7 @@ fn ScreenGridState::recompute_row_flags(
     if cell.has_styling() {
       styled = true
     }
-    if cell.hyperlink() != None {
+    if cell.has_hyperlink() {
       hyperlink = true
     }
     col_idx += 1
@@ -1378,14 +1506,18 @@ fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
 // A blank cell that carries the erase style's background color (and nothing
 // else): a glyph-less cell whose `style` holds just the bg, so a run of them
 // renders as a colored gap.
-fn blank_cell(style : @style.CellStyle) -> PageCellState {
+fn blank_cell(
+  style : @style.CellStyle,
+  style_table : @style.StyleTable,
+) -> PageCellState {
   let bg = style.bg_color()
-  // Common case (erase with no SGR background): the shared blank cell, no alloc.
-  // Only a colored erase pays to construct a bg-only style.
+  // Common case (erase with no SGR background): the shared blank cell, no alloc
+  // and no intern. Only a colored erase pays to intern a bg-only style.
   if bg.is_default() {
     default_page_cell_state
   } else {
-    PageCellState::new(style=@style.CellStyle::new().with_bg_color(bg))
+    let bg_style = @style.CellStyle::new().with_bg_color(bg)
+    PageCellState::new(style_id=style_table.intern(bg_style))
   }
 }
 
@@ -1410,9 +1542,10 @@ fn blank_row_is_styled(style : @style.CellStyle) -> Bool {
 fn make_blank_row_cells(
   cols : Int,
   style : @style.CellStyle,
+  style_table : @style.StyleTable,
 ) -> FixedArray[PageCellState] {
   // One allocation filled with the blank cell value, instead of growing an empty
   // array by `push` (which reallocs and ref-blits ~log2(cols) times). This is the
   // hot path for a line feed when the cell pool is empty (scrollback not yet full).
-  FixedArray::make(cols, blank_cell(style))
+  FixedArray::make(cols, blank_cell(style, style_table))
 }

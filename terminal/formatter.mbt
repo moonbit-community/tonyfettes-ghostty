@@ -216,8 +216,16 @@ fn formatter_write_render_state_frame_row(
             blank_cells = 0
           }
 
-          output.sync_vt_style(cell.style(), buffer)
-          formatter_write_cell_text(Vt, cell, buffer)
+          output.sync_vt_style(
+            cells.state.style_table.get(cell.style_id()),
+            buffer,
+          )
+          formatter_write_cell_text(
+            Vt,
+            cell,
+            cells.state.grapheme_table.get(cell.grapheme_id()),
+            buffer,
+          )
         }
       }
       x += 1
@@ -458,9 +466,16 @@ fn formatter_write_content(
                     blank_cells = 0
                   }
 
-                  let style = cell.style()
+                  let style = state.grid.style_table.get(cell.style_id())
                   let hyperlink = if formatter.opts.emit == Html {
-                    match cell.hyperlink() {
+                    // The id lives in the row's `link_ids` side array, resolved by
+                    // position (the cell carries only a presence bit).
+                    match
+                      state.scrollback.screen_cell_hyperlink(
+                        state.grid,
+                        y.to_uint16(),
+                        x.to_uint16(),
+                      ) {
                       Some(link) => Some(link.uri())
                       None => None
                     }
@@ -474,7 +489,12 @@ fn formatter_write_content(
                     Html => output.sync_html_run(style, hyperlink, buffer)
                   }
 
-                  formatter_write_cell_text(formatter.opts.emit, cell, buffer)
+                  formatter_write_cell_text(
+                    formatter.opts.emit,
+                    cell,
+                    state.grid.grapheme_table.get(cell.grapheme_id()),
+                    buffer,
+                  )
                   x += 1
                 }
               }
@@ -591,6 +611,7 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
 fn formatter_write_cell_text(
   emit : Format,
   cell : PageCellState,
+  grapheme_codepoints : ReadOnlyArray[UInt],
   buffer : @buffer.Buffer,
 ) -> Unit {
   if !cell.has_text() {
@@ -600,8 +621,9 @@ fn formatter_write_cell_text(
 
   formatter_write_codepoint(emit, buffer, cell.codepoint())
   // Emit combining marks so graphemes (é, 👍🏽, ZWJ sequences) survive
-  // copy/format and VT-framebuffer serialization.
-  for cp in cell.grapheme_codepoints() {
+  // copy/format and VT-framebuffer serialization. The marks are resolved from the
+  // grapheme table by the caller, since the cell holds only an id.
+  for cp in grapheme_codepoints {
     formatter_write_codepoint(emit, buffer, cp)
   }
 }

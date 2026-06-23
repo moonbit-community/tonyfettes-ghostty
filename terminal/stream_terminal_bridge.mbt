@@ -473,6 +473,24 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
 }
 
 ///|
+fn StreamTerminalBridgeState::screen_cell_hyperlink_snapshot(
+  self : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> CellHyperlink? {
+  self.scrollback.cell_hyperlink(self.grid, row, col)
+}
+
+///|
+fn StreamTerminalBridgeState::screen_cell_hyperlink_id_snapshot(
+  self : StreamTerminalBridgeState,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> HyperlinkId {
+  self.scrollback.cell_hyperlink_id(self.grid, row, col)
+}
+
+///|
 // Return the [start, end] viewport row range of the semantic zone containing
 // `row`. A semantic zone is a maximal run of rows with compatible prompt state:
 //   - None rows form an output zone
@@ -2430,6 +2448,14 @@ fn StreamTerminalBridgeState::clear_active_screen(
   self.kitty_graphics.full_reset(self.scrollback)
   self.grid.full_reset()
   self.scrollback.full_reset(self.grid.rows)
+  // `full_reset` minted fresh intern tables on the now-blank scrollback to reclaim
+  // the 16-bit id space. The active grid still holds the *old* table refs it copied
+  // when it was built, so rebuild it from the page: prints must intern into — and
+  // RenderState must resolve against — the same fresh tables. `active_grid` shares
+  // the page's (now blank) desc/cell/link arrays by reference, so no content is
+  // lost, and writing it back keeps the active screen storage consistent.
+  self.grid = self.scrollback.active_grid()
+  self.store_active_screen()
   // Wiping the screen also wipes the per-row OSC 133 markers, so the active
   // screen's semantic state machine must reset too — otherwise a reused
   // alternate screen keeps seen()=true and reports a phantom output zone.

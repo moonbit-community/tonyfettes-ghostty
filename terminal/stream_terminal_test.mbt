@@ -89,7 +89,7 @@ test "stream terminal/applies bytes across split escape writes" {
   }
   guard expect_terminal_cell(terminal, 0, 0).codepoint() == b'H'.to_uint() &&
     expect_terminal_cell(terminal, 0, 6).codepoint() == b'B'.to_uint() &&
-    expect_terminal_cell(terminal, 0, 6).style().bold() &&
+    terminal.screen_cell_style_snapshot(0, 6).unwrap().bold() &&
     expect_terminal_cell(terminal, 0, 9).codepoint() == b'd'.to_uint() else {
     fail("expected split escape sequence to preserve parser state")
   }
@@ -296,7 +296,7 @@ test "stream terminal/combining codepoints accumulate as grapheme extras" {
   let cell = expect_terminal_cell(terminal, 0, 0)
   guard cell.codepoint() == 0x65U &&
     cell.has_grapheme() &&
-    cell.grapheme_codepoints() == [0x301U] else {
+    terminal.screen_cell_grapheme_codepoints_snapshot(0, 0) == [0x301U] else {
     fail(
       "expected combining accent to be stored as grapheme extra on the base cell",
     )
@@ -306,14 +306,15 @@ test "stream terminal/combining codepoints accumulate as grapheme extras" {
   terminal.next_slice(@utf8.encode("\u{0300}"))
   let cell2 = expect_terminal_cell(terminal, 0, 0)
   guard cell2.codepoint() == 0x65U &&
-    cell2.grapheme_codepoints() == [0x301U, 0x300U] else {
+    terminal.screen_cell_grapheme_codepoints_snapshot(0, 0) == [0x301U, 0x300U] else {
     fail("expected second combining codepoint to accumulate")
   }
 
   // A new printable character at the next column has no grapheme extras
   terminal.next_slice(b"a")
   let cell3 = expect_terminal_cell(terminal, 0, 1)
-  guard !cell3.has_grapheme() && cell3.grapheme_codepoints() == [] else {
+  guard !cell3.has_grapheme() &&
+    terminal.screen_cell_grapheme_codepoints_snapshot(0, 1) == [] else {
     fail("expected adjacent plain cell to have no grapheme extras")
   }
 
@@ -367,7 +368,7 @@ test "stream terminal/mode 2027 still combines zero-width codepoints" {
   let cell = expect_terminal_cell(terminal, 0, 0)
   guard cell.codepoint() == b'e'.to_uint() &&
     cell.has_grapheme() &&
-    cell.grapheme_codepoints() == [0x301U] else {
+    terminal.screen_cell_grapheme_codepoints_snapshot(0, 0) == [0x301U] else {
     fail("expected combining codepoint combined when mode 2027 is on")
   }
 
@@ -375,7 +376,8 @@ test "stream terminal/mode 2027 still combines zero-width codepoints" {
   terminal.mode_set(GraphemeCluster, false)
   terminal.next_slice(@utf8.encode("e\u{0301}"))
   let cell2 = expect_terminal_cell(terminal, 0, 1)
-  guard cell2.has_grapheme() && cell2.grapheme_codepoints() == [0x301U] else {
+  guard cell2.has_grapheme() &&
+    terminal.screen_cell_grapheme_codepoints_snapshot(0, 1) == [0x301U] else {
     fail("expected combining codepoint appended when mode 2027 is off")
   }
 
@@ -516,7 +518,7 @@ test "stream terminal/grapheme_codepoints visible through row iterator" {
   let cell = cells.cell().unwrap()
   guard cell.codepoint() == b'n'.to_uint() &&
     cell.has_grapheme() &&
-    cell.grapheme_codepoints() == [0x303U] else {
+    cells.cell_grapheme_codepoints() == [0x303U] else {
     fail("expected grapheme codepoints accessible through render row iterator")
   }
 
@@ -534,7 +536,7 @@ test "stream terminal/emoji skin-tone modifier combines onto base emoji" {
   let cell = expect_terminal_cell(terminal, 0, 0)
   guard cell.codepoint() == 0x1F44DU &&
     cell.has_grapheme() &&
-    cell.grapheme_codepoints() == [0x1F3FDU] else {
+    terminal.screen_cell_grapheme_codepoints_snapshot(0, 0) == [0x1F3FDU] else {
     fail("expected skin-tone modifier combined onto the base emoji")
   }
 

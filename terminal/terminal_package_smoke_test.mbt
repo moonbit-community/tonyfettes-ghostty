@@ -104,7 +104,7 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
 
   guard terminal.screen_cell_snapshot(0, 1).unwrap().codepoint() ==
     b'B'.to_uint() &&
-    terminal.screen_cell_snapshot(0, 1).unwrap().style().is_default() else {
+    terminal.screen_cell_style_snapshot(0, 1).unwrap().is_default() else {
     fail("expected terminal cell query surface")
   }
 

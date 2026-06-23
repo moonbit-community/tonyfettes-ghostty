@@ -83,20 +83,14 @@ test "ghostty terminal adapter direct cell style branches" {
   let terminal = GhosttyTerminal::new(cols=4, rows=2)
   terminal.set_theme(background="#000000", foreground="#ffffff")
 
-  let mut style = @style.CellStyle::new()
-  style = style.apply_attribute(Bold)
-  style = style.apply_attribute(Italic)
-  style = style.apply_attribute(Faint)
-  style = style.apply_attribute(Invisible)
-  style = style.apply_attribute(Inverse)
-  style = style.apply_attribute(Strikethrough)
-  style = style.apply_attribute(Overline)
-  style = style.apply_attribute(DirectColorFg(@color.RGB::new(1, 2, 3)))
-  style = style.apply_attribute(DirectColorBg(@color.RGB::new(4, 5, 6)))
-  let styled = @terminal.PageCellState::new(codepoint=b'X'.to_uint(), style~)
-  let css = terminal
-    .cell_style(0, 0, styled, @color.default_palette())
-    .join(";")
+  // The cell stores only a `StyleId`; `cell_style` resolves the full style by
+  // position through the terminal's shared table. So drive the styles through the
+  // VT stream and read them back by column, rather than constructing styled cells.
+  //
+  // Column 0: every rich attribute at once (bold 1, faint 2, italic 3, inverse 7,
+  // invisible 8, strikethrough 9, overline 53).
+  terminal.write_text("\u{1B}[1;2;3;7;8;9;53mX\u{1B}[0m")
+  let css = terminal.cell_style(0, 0, @color.default_palette()).join(";")
   guard css.contains("font-weight") &&
     css.contains("font-style") &&
     css.contains("opacity") &&
@@ -106,23 +100,19 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected rich style css")
   }
 
-  let palette_cell = @terminal.PageCellState::new(
-    style=@style.CellStyle::new().with_bg_color(@style.StyleColor::palette(1)),
-  )
+  // Column 1: a 256-color palette background (SGR 48;5;1).
+  terminal.write_text("\u{1B}[48;5;1mY\u{1B}[0m")
   guard terminal
-    .cell_style(0, 0, palette_cell, @color.default_palette())
+    .cell_style(0, 1, @color.default_palette())
     .join(";")
     .contains("background-color") else {
     fail("expected palette background")
   }
 
-  let rgb_cell = @terminal.PageCellState::new(
-    style=@style.CellStyle::new().with_bg_color(
-      @style.StyleColor::rgb(@color.RGB::new(8, 9, 10)),
-    ),
-  )
+  // Column 2: a direct-color (rgb) background (SGR 48;2;8;9;10).
+  terminal.write_text("\u{1B}[48;2;8;9;10mZ\u{1B}[0m")
   guard terminal
-    .cell_style(0, 0, rgb_cell, @color.default_palette())
+    .cell_style(0, 2, @color.default_palette())
     .join(";")
     .contains("rgb(8, 9, 10)") else {
     fail("expected rgb background")

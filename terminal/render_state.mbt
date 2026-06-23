@@ -25,6 +25,23 @@ struct RenderState {
   mut cursor_viewport_wide_tail : Bool
   mut row_states : Array[PageRowState]
   mut row_cells : Array[FixedArray[PageCellState]]
+  // Per-row hyperlink ids, parallel to `row_cells`, captured each snapshot so the
+  // damage diff notices a hyperlink-only change: the packed cell carries only a
+  // presence bit, so two cells under different URIs are equal and `row_cells`
+  // alone would miss it. `None` for a row with no links (the common case → no
+  // allocation). The full link still resolves via the terminal-level snapshot.
+  mut row_link_ids : Array[FixedArray[HyperlinkId]?]
+  // The active screen's style table, captured each `update`. The snapshotted
+  // `row_cells` carry `StyleId`s minted from it, so it resolves their styles for
+  // the renderer/formatter. Grow-only and shared, so ids captured here stay valid.
+  mut style_table : @style.StyleTable
+  // The active screen's grapheme table, captured the same way: the VT-framebuffer
+  // formatter resolves each cell's combining marks through it.
+  mut grapheme_table : GraphemeTable
+  // The active screen's hyperlink table, captured the same way so a snapshot-driven
+  // renderer can resolve each cell's uri from `row_link_ids` without reaching back
+  // into the live terminal (symmetric with style/grapheme resolution).
+  mut hyperlink_table : HyperlinkTable
 }
 
 ///|
@@ -48,6 +65,10 @@ pub fn RenderState::new() -> RenderState {
     cursor_viewport_wide_tail: false,
     row_states: [],
     row_cells: [],
+    row_link_ids: [],
+    style_table: @style.StyleTable::new(),
+    grapheme_table: GraphemeTable::new(),
+    hyperlink_table: HyperlinkTable::new(),
   }
 }
 
@@ -144,7 +165,17 @@ pub fn RenderState::update(
   let (cursor_viewport, cursor_viewport_wide_tail) = resolve_cursor_viewport(
     terminal,
   )
-
+  // The snapshot diff compares the *numeric* ids packed in each cell (style,
+  // grapheme) plus the raw hyperlink id. Those ids are only stable while the
+  // intern tables that mint them are. A full reset (RIS) rebuilds the screen
+  // storage, so `PageList::new` mints brand-new tables whose ids restart from the
+  // same small values — a redraw of a different glyph/style/link can then reuse an
+  // old id and read as unchanged. Treat a change of table identity as full damage.
+  // (A primary/alternate switch also swaps tables, but `self.screen` already
+  // covers that; tables persist across resize and ordinary printing.)
+  let style_table = terminal.active_style_table()
+  let grapheme_table = terminal.active_grapheme_table()
+  let hyperlink_table = terminal.active_hyperlink_table()
   let full_dirty = !self.initialized ||
     self.rows != rows ||
     self.columns != columns ||
@@ -153,6 +184,9 @@ pub fn RenderState::update(
     self.background != background ||
     self.foreground != foreground ||
     !render_palette_equals(self.palette, palette) ||
+    !physical_equal(self.style_table, style_table) ||
+    !physical_equal(self.grapheme_table, grapheme_table) ||
+    !physical_equal(self.hyperlink_table, hyperlink_table) ||
     !render_row_storage_matches(self, rows, columns)
 
   let cursor_dirty = self.cursor_color != cursor_color ||
@@ -177,6 +211,9 @@ pub fn RenderState::update(
   }
 
   self.initialized = true
+  self.style_table = style_table
+  self.grapheme_table = grapheme_table
+  self.hyperlink_table = hyperlink_table
   self.rows = rows
   self.columns = columns
   self.screen = screen
@@ -204,19 +241,23 @@ fn RenderState::snapshot_all_rows(
 ) -> Unit {
   let row_states : Array[PageRowState] = []
   let row_cells : Array[FixedArray[PageCellState]] = []
+  let row_link_ids : Array[FixedArray[HyperlinkId]?] = []
   let mut row_idx = 0
   while row_idx < rows.to_int() {
     let snapshot = snapshot_render_row(terminal, row_idx.to_uint16()).with_dirty(
       true,
     )
+    let cells = snapshot_render_cells(terminal, row_idx.to_uint16(), columns)
     row_states.push(snapshot)
-    row_cells.push(
-      snapshot_render_cells(terminal, row_idx.to_uint16(), columns),
+    row_link_ids.push(
+      snapshot_render_link_ids(terminal, row_idx.to_uint16(), cells),
     )
+    row_cells.push(cells)
     row_idx += 1
   }
   self.row_states = row_states
   self.row_cells = row_cells
+  self.row_link_ids = row_link_ids
 }
 
 ///|
@@ -231,10 +272,17 @@ fn RenderState::update_changed_rows(
   while row_idx < rows.to_int() {
     let snapshot = snapshot_render_row(terminal, row_idx.to_uint16())
     let cells = snapshot_render_cells(terminal, row_idx.to_uint16(), columns)
+    let link_ids = snapshot_render_link_ids(
+      terminal,
+      row_idx.to_uint16(),
+      cells,
+    )
     if !render_row_snapshot_equals(self.row_states[row_idx], snapshot) ||
-      !render_row_cells_equal(self.row_cells[row_idx], cells) {
+      !render_row_cells_equal(self.row_cells[row_idx], cells) ||
+      !render_link_ids_equal(self.row_link_ids[row_idx], link_ids) {
       self.row_states[row_idx] = snapshot.with_dirty(true)
       self.row_cells[row_idx] = cells
+      self.row_link_ids[row_idx] = link_ids
       any_row_dirty = true
     }
     row_idx += 1
@@ -355,6 +403,62 @@ fn snapshot_render_cells(
 }
 
 ///|
+fn snapshot_render_link_ids(
+  terminal : StreamTerminal,
+  row : CellCountInt,
+  cells : FixedArray[PageCellState],
+) -> FixedArray[HyperlinkId]? {
+  // Only a row that actually holds a hyperlinked cell allocates an id array; the
+  // common linkless row stays `None`. The id is fetched solely for cells whose
+  // presence bit is set (read off the already-snapshotted `cells`), so a
+  // link-free frame does no extra lookups.
+  let mut links : FixedArray[HyperlinkId]? = None
+  for col_idx in 0..<cells.length() {
+    if cells[col_idx].has_hyperlink() {
+      let arr = match links {
+        Some(arr) => arr
+        None => {
+          let arr = FixedArray::make(cells.length(), no_hyperlink_id)
+          links = Some(arr)
+          arr
+        }
+      }
+      arr[col_idx] = terminal.screen_cell_hyperlink_id_snapshot(
+        row,
+        col_idx.to_uint16(),
+      )
+    }
+  }
+  links
+}
+
+///|
+fn render_link_ids_equal(
+  left : FixedArray[HyperlinkId]?,
+  right : FixedArray[HyperlinkId]?,
+) -> Bool {
+  match (left, right) {
+    (None, None) => true
+    (Some(left), Some(right)) => {
+      if left.length() != right.length() {
+        return false
+      }
+      let mut index = 0
+      while index < left.length() {
+        if left[index] != right[index] {
+          return false
+        }
+        index += 1
+      }
+      true
+    }
+    // One row gained or lost all its links (e.g. an unlinked overwrite cleared the
+    // row's last presence bit): the side differs, so the row is dirty.
+    _ => false
+  }
+}
+
+///|
 fn render_row_snapshot_equals(
   left : PageRowState,
   right : PageRowState,
@@ -431,13 +535,42 @@ fn render_cell_at(
 }
 
 ///|
+// The resolved hyperlink of the snapshot cell at (row, col), or `None` when it
+// carries no link. Gated on the cell's presence bit (the snapshot's source of
+// truth); the id comes from the parallel `row_link_ids` and resolves through the
+// captured `hyperlink_table`, so no live-terminal access is needed.
+fn render_cell_hyperlink_at(
+  state : RenderState,
+  row_idx : Int,
+  col_idx : Int,
+) -> CellHyperlink? {
+  match render_cell_at(state, row_idx, col_idx) {
+    Some(cell) =>
+      if cell.has_hyperlink() {
+        let id = match state.row_link_ids[row_idx] {
+          Some(links) => links[col_idx]
+          None => no_hyperlink_id
+        }
+        state.hyperlink_table.get(id)
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
 fn render_cell_background_color_at(
   state : RenderState,
   row_idx : Int,
   col_idx : Int,
 ) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
-    Some(cell) => render_cell_background_color(cell, state.palette)
+    Some(cell) =>
+      render_cell_background_color(
+        state.style_table.get(cell.style_id()),
+        state.palette,
+      )
     None => None
   }
 }
@@ -449,27 +582,31 @@ fn render_cell_foreground_color_at(
   col_idx : Int,
 ) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
-    Some(cell) => render_cell_foreground_color(cell, state.palette)
+    Some(cell) =>
+      render_cell_foreground_color(
+        state.style_table.get(cell.style_id()),
+        state.palette,
+      )
     None => None
   }
 }
 
 ///|
 fn render_cell_background_color(
-  cell : PageCellState,
+  style : @style.CellStyle,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
   // Every cell keeps its background in the style now (no separate background
   // content kind), so this is just the style's resolved bg.
-  cell.style.bg_color_rgb(palette)
+  style.bg_color_rgb(palette)
 }
 
 ///|
 fn render_cell_foreground_color(
-  cell : PageCellState,
+  style : @style.CellStyle,
   palette : Array[@color.RGB],
 ) -> @color.RGB? {
-  cell.style.fg_rgb(palette)
+  style.fg_rgb(palette)
 }
 
 ///|

@@ -513,6 +513,88 @@ pub fn StreamTerminal::screen_cell_snapshot(
 }
 
 ///|
+// The raw `HyperlinkId` of the snapshot cell at (row, col) — package-private, for
+// `RenderState`'s damage diff (a hyperlink-only change leaves the packed cell
+// equal, so the id is compared alongside it). The full link still resolves via
+// `screen_cell_hyperlink_snapshot`.
+fn StreamTerminal::screen_cell_hyperlink_id_snapshot(
+  self : StreamTerminal,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> HyperlinkId {
+  self.bridge().screen_cell_hyperlink_id_snapshot(row, col)
+}
+
+///|
+// Resolve the style of the snapshot cell at (row, col) through the active screen's
+// table. Cells store only a `StyleId`, so callers that want the full `CellStyle`
+// (color, attributes) go through here rather than the cell directly.
+pub fn StreamTerminal::screen_cell_style_snapshot(
+  self : StreamTerminal,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> @style.CellStyle? {
+  match self.bridge().screen_cell_snapshot(row, col) {
+    Some(cell) => Some(self.active_style_table().get(cell.style_id()))
+    None => None
+  }
+}
+
+///|
+// Resolve the hyperlink of the snapshot cell at (row, col), or `None` if the cell
+// is absent or carries no link. The id is stored out-of-cell in the row's
+// `link_ids` side array, so this resolves by position, not from the cell value.
+pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
+  self : StreamTerminal,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> CellHyperlink? {
+  self.bridge().screen_cell_hyperlink_snapshot(row, col)
+}
+
+///|
+// Resolve the combining codepoints of the snapshot cell at (row, col), empty if
+// the cell is absent or not a grapheme cluster. Cells store only a `GraphemeId`.
+pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(
+  self : StreamTerminal,
+  row : CellCountInt,
+  col : CellCountInt,
+) -> ReadOnlyArray[UInt] {
+  match self.bridge().screen_cell_snapshot(row, col) {
+    Some(cell) => self.active_grapheme_table().get(cell.grapheme_id())
+    None => []
+  }
+}
+
+///|
 fn StreamTerminal::bridge(self : StreamTerminal) -> StreamTerminalBridgeState {
   self.stream.handler.bridge
+}
+
+///|
+// The active screen's style intern table. Snapshotted cells carry `StyleId`s
+// minted from it, so renderers/formatters resolve their styles through it. The
+// active grid shares its `PageList`'s table, which also covers scrollback rows.
+fn StreamTerminal::active_style_table(
+  self : StreamTerminal,
+) -> @style.StyleTable {
+  self.bridge().grid.style_table
+}
+
+///|
+// The active screen's grapheme intern table (see `active_style_table`).
+fn StreamTerminal::active_grapheme_table(
+  self : StreamTerminal,
+) -> GraphemeTable {
+  self.bridge().grid.grapheme_table
+}
+
+///|
+// The active screen's hyperlink intern table (see `active_style_table`). Captured
+// by `RenderState` so a render-snapshot-driven renderer can resolve a cell's OSC 8
+// uri from the snapshot alone, the same way it resolves styles and graphemes.
+fn StreamTerminal::active_hyperlink_table(
+  self : StreamTerminal,
+) -> HyperlinkTable {
+  self.bridge().grid.hyperlink_table
 }

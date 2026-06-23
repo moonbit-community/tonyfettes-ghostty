@@ -8,11 +8,14 @@ import {
 }
 
 // Values
+pub let default_style_id : StyleId
 
 // Errors
 
 // Types and methods
-type CellStyle derive(Eq, @debug.Debug)
+pub struct CellStyle {
+  // private fields
+} derive(Eq, Hash, @debug.Debug)
 pub fn CellStyle::apply_attribute(Self, @sgr.SgrAttribute) -> Self
 pub fn CellStyle::bg_color(Self) -> StyleColor
 pub fn CellStyle::bg_color_rgb(Self, Array[@color.RGB]) -> @color.RGB?
@@ -33,7 +36,7 @@ pub fn CellStyle::underline_color(Self) -> StyleColor
 pub fn CellStyle::with_bg_color(Self, StyleColor) -> Self
 pub fn CellStyle::with_fg_color(Self, StyleColor) -> Self
 
-type StyleColor derive(Eq, @debug.Debug)
+type StyleColor derive(Eq, Hash, @debug.Debug)
 pub fn StyleColor::is_default(Self) -> Bool
 pub fn StyleColor::none() -> Self
 pub fn StyleColor::palette(Byte) -> Self
@@ -41,6 +44,19 @@ pub fn StyleColor::palette_index(Self) -> Byte?
 pub fn StyleColor::resolve(Self, Array[@color.RGB]) -> @color.RGB?
 pub fn StyleColor::rgb(@color.RGB) -> Self
 pub fn StyleColor::rgb_value(Self) -> @color.RGB?
+
+type StyleId derive(Eq, Hash, @debug.Debug)
+pub fn StyleId::from_uint16(UInt16) -> Self
+pub fn StyleId::is_default(Self) -> Bool
+pub fn StyleId::to_uint16(Self) -> UInt16
+
+pub struct StyleTable {
+  // private fields
+}
+pub fn StyleTable::get(Self, StyleId) -> CellStyle
+pub fn StyleTable::intern(Self, CellStyle) -> StyleId
+pub fn StyleTable::len(Self) -> Int
+pub fn StyleTable::new() -> Self
 
 // Type aliases
 

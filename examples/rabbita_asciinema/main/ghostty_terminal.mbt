@@ -287,8 +287,10 @@ fn GhosttyTerminal::cell_view(
     Some(cell) =>
       (
         self.cell_text(row, col, cell),
-        self.cell_style(row, col, cell, palette),
-        cell.hyperlink().map(link => link.uri()),
+        self.cell_style(row, col, palette),
+        self.terminal
+        .screen_cell_hyperlink_snapshot(row.to_uint16(), col.to_uint16())
+        .map(link => link.uri()),
       )
     None => {
       let empty_style : Array[String] = []
@@ -321,13 +323,15 @@ fn GhosttyTerminal::cell_text(
   if !cell.has_text() {
     return " "
   }
-  ignore(self)
-  ignore(row)
-  ignore(col)
   // Base codepoint followed by any stored grapheme extras (combining marks,
   // emoji skin-tone modifiers, …) so the rendered text keeps the full cluster.
+  // The cell holds only a grapheme id; resolve the marks through the terminal.
   let codepoints = [cell.codepoint()]
-  for cp in cell.grapheme_codepoints() {
+  for
+    cp in self.terminal.screen_cell_grapheme_codepoints_snapshot(
+      row.to_uint16(),
+      col.to_uint16(),
+    ) {
     codepoints.push(cp)
   }
   codepoints_to_string(codepoints)
@@ -336,15 +340,20 @@ fn GhosttyTerminal::cell_text(
 ///|
 fn GhosttyTerminal::cell_style(
   self : GhosttyTerminal,
-  _row : Int,
-  _col : Int,
-  cell : @terminal.PageCellState,
+  row : Int,
+  col : Int,
   palette : Array[@color.RGB],
 ) -> Array[String] {
   let styles : Array[String] = []
-  let style = cell.style()
+  // The cell holds only a `StyleId`; resolve the full `CellStyle` through the
+  // terminal's shared style table by position.
+  let style = self.terminal
+    .screen_cell_style_snapshot(row.to_uint16(), col.to_uint16())
+    .unwrap_or(@style.CellStyle::new())
   let fg = style_color_css(style.fg_color(), palette)
-  let bg = cell_background_css(cell, palette, style)
+  // The background color lives entirely in the style now (no separate
+  // background-cell kind), so resolve it from `style.bg_color()`.
+  let bg = style_color_css(style.bg_color(), palette)
   let (resolved_fg, resolved_bg) = if style.inverse() {
     (Some(bg.unwrap_or(self.background)), Some(fg.unwrap_or(self.foreground)))
   } else {
@@ -400,22 +409,6 @@ fn codepoints_to_string(codepoints : Array[UInt]) -> String {
     }
   }
   @utf8.decode_lossy(out.contents())
-}
-
-///|
-fn cell_background_css(
-  cell : @terminal.PageCellState,
-  palette : Array[@color.RGB],
-  style : @style.CellStyle,
-) -> String? {
-  match cell.palette_index() {
-    Some(index) => Some(rgb_css(palette[index.to_int()]))
-    None =>
-      match cell.background_rgb() {
-        Some(rgb) => Some(rgb_css(rgb))
-        None => style_color_css(style.bg_color(), palette)
-      }
-  }
 }
 
 ///|
