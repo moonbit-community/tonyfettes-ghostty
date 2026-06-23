@@ -160,7 +160,16 @@ pub fn RenderState::update(
   let (cursor_viewport, cursor_viewport_wide_tail) = resolve_cursor_viewport(
     terminal,
   )
-
+  // The snapshot diff compares the *numeric* ids packed in each cell (style,
+  // grapheme) plus the raw hyperlink id. Those ids are only stable while the
+  // intern tables that mint them are. A full reset (RIS) rebuilds the screen
+  // storage, so `PageList::new` mints brand-new tables whose ids restart from the
+  // same small values — a redraw of a different glyph/style/link can then reuse an
+  // old id and read as unchanged. Treat a change of table identity as full damage.
+  // (A primary/alternate switch also swaps tables, but `self.screen` already
+  // covers that; tables persist across resize and ordinary printing.)
+  let style_table = terminal.active_style_table()
+  let grapheme_table = terminal.active_grapheme_table()
   let full_dirty = !self.initialized ||
     self.rows != rows ||
     self.columns != columns ||
@@ -169,6 +178,8 @@ pub fn RenderState::update(
     self.background != background ||
     self.foreground != foreground ||
     !render_palette_equals(self.palette, palette) ||
+    !physical_equal(self.style_table, style_table) ||
+    !physical_equal(self.grapheme_table, grapheme_table) ||
     !render_row_storage_matches(self, rows, columns)
 
   let cursor_dirty = self.cursor_color != cursor_color ||
@@ -193,8 +204,8 @@ pub fn RenderState::update(
   }
 
   self.initialized = true
-  self.style_table = terminal.active_style_table()
-  self.grapheme_table = terminal.active_grapheme_table()
+  self.style_table = style_table
+  self.grapheme_table = grapheme_table
   self.rows = rows
   self.columns = columns
   self.screen = screen
