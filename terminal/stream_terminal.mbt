@@ -588,3 +588,13 @@ fn StreamTerminal::active_grapheme_table(
 ) -> GraphemeTable {
   self.bridge().grid.grapheme_table
 }
+
+///|
+// The active screen's hyperlink intern table (see `active_style_table`). Captured
+// by `RenderState` so a render-snapshot-driven renderer can resolve a cell's OSC 8
+// uri from the snapshot alone, the same way it resolves styles and graphemes.
+fn StreamTerminal::active_hyperlink_table(
+  self : StreamTerminal,
+) -> HyperlinkTable {
+  self.bridge().grid.hyperlink_table
+}

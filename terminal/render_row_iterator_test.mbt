@@ -191,3 +191,34 @@ test "render state/viewport movement without cursor change still forces full" {
 
   terminal.deinit()
 }
+
+///|
+test "render row iterator/resolves a cell hyperlink from the snapshot alone" {
+  let terminal = StreamTerminal::new()
+  // 'A' carries an OSC 8 link; 'B' (printed after the close) does not.
+  terminal.next_slice(b"\x1B]8;;https://example.com\x07A\x1B]8;;\x07B")
+
+  let state = RenderState::new()
+  state.update(terminal)
+
+  let rows = state.row_iterator()
+  guard rows.next() else { fail("expected first render row") }
+  let cells = rows.cells().unwrap()
+
+  // The linked cell resolves its uri through the render state's captured table —
+  // no live-terminal access — mirroring cell_style/cell_grapheme_codepoints.
+  guard cells.select(0) else { fail("expected to select the linked cell") }
+  guard cells.cell().unwrap().has_hyperlink() &&
+    cells.cell_hyperlink() is Some(link) &&
+    link.uri() == "https://example.com" else {
+    fail("expected the render snapshot to resolve the cell's hyperlink")
+  }
+
+  // The unlinked neighbour resolves to no hyperlink.
+  guard cells.select(1) else { fail("expected to select the unlinked cell") }
+  guard !cells.cell().unwrap().has_hyperlink() && cells.cell_hyperlink() == None else {
+    fail("expected an unlinked cell to resolve to no hyperlink")
+  }
+
+  terminal.deinit()
+}

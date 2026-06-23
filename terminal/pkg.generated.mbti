@@ -581,6 +581,7 @@ type RenderRowCells
 pub fn RenderRowCells::background_color(Self) -> @color.RGB?
 pub fn RenderRowCells::cell(Self) -> PageCellState?
 pub fn RenderRowCells::cell_grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
+pub fn RenderRowCells::cell_hyperlink(Self) -> CellHyperlink?
 pub fn RenderRowCells::cell_style(Self) -> @style.CellStyle?
 pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
 pub fn RenderRowCells::next(Self) -> Bool

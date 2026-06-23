@@ -130,6 +130,15 @@ pub fn RenderRowCells::cell_grapheme_codepoints(
 }
 
 ///|
+// The resolved hyperlink of the current cell, via the render state's hyperlink
+// table. `None` when the cell carries no link. The cell stores only a presence
+// bit; the id is held in the render state's per-row `link_ids` snapshot, so this
+// resolves from the snapshot alone (no live-terminal access), like `cell_style`.
+pub fn RenderRowCells::cell_hyperlink(self : RenderRowCells) -> CellHyperlink? {
+  render_cell_hyperlink_at(self.state, self.row, self.x)
+}
+
+///|
 pub fn RenderRowCells::background_color(self : RenderRowCells) -> @color.RGB? {
   render_cell_background_color_at(self.state, self.row, self.x)
 }

@@ -38,6 +38,10 @@ struct RenderState {
   // The active screen's grapheme table, captured the same way: the VT-framebuffer
   // formatter resolves each cell's combining marks through it.
   mut grapheme_table : GraphemeTable
+  // The active screen's hyperlink table, captured the same way so a snapshot-driven
+  // renderer can resolve each cell's uri from `row_link_ids` without reaching back
+  // into the live terminal (symmetric with style/grapheme resolution).
+  mut hyperlink_table : HyperlinkTable
 }
 
 ///|
@@ -64,6 +68,7 @@ pub fn RenderState::new() -> RenderState {
     row_link_ids: [],
     style_table: @style.StyleTable::new(),
     grapheme_table: GraphemeTable::new(),
+    hyperlink_table: HyperlinkTable::new(),
   }
 }
 
@@ -170,6 +175,7 @@ pub fn RenderState::update(
   // covers that; tables persist across resize and ordinary printing.)
   let style_table = terminal.active_style_table()
   let grapheme_table = terminal.active_grapheme_table()
+  let hyperlink_table = terminal.active_hyperlink_table()
   let full_dirty = !self.initialized ||
     self.rows != rows ||
     self.columns != columns ||
@@ -180,6 +186,7 @@ pub fn RenderState::update(
     !render_palette_equals(self.palette, palette) ||
     !physical_equal(self.style_table, style_table) ||
     !physical_equal(self.grapheme_table, grapheme_table) ||
+    !physical_equal(self.hyperlink_table, hyperlink_table) ||
     !render_row_storage_matches(self, rows, columns)
 
   let cursor_dirty = self.cursor_color != cursor_color ||
@@ -206,6 +213,7 @@ pub fn RenderState::update(
   self.initialized = true
   self.style_table = style_table
   self.grapheme_table = grapheme_table
+  self.hyperlink_table = hyperlink_table
   self.rows = rows
   self.columns = columns
   self.screen = screen
@@ -524,6 +532,31 @@ fn render_cell_at(
     return None
   }
   Some(state.row_cells[row_idx][col_idx])
+}
+
+///|
+// The resolved hyperlink of the snapshot cell at (row, col), or `None` when it
+// carries no link. Gated on the cell's presence bit (the snapshot's source of
+// truth); the id comes from the parallel `row_link_ids` and resolves through the
+// captured `hyperlink_table`, so no live-terminal access is needed.
+fn render_cell_hyperlink_at(
+  state : RenderState,
+  row_idx : Int,
+  col_idx : Int,
+) -> CellHyperlink? {
+  match render_cell_at(state, row_idx, col_idx) {
+    Some(cell) =>
+      if cell.has_hyperlink() {
+        let id = match state.row_link_ids[row_idx] {
+          Some(links) => links[col_idx]
+          None => no_hyperlink_id
+        }
+        state.hyperlink_table.get(id)
+      } else {
+        None
+      }
+    None => None
+  }
 }
 
 ///|
