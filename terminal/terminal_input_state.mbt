@@ -40,7 +40,7 @@ pub fn TerminalInputFlags::set_mouse_shift_capture(
 ///|
 pub fn TerminalInputFlags::apply_modify_key_format(
   self : TerminalInputFlags,
-  format : ModifyKeyFormat,
+  format : @ansi.ModifyKeyFormat,
 ) -> Unit {
   self.modify_other_keys_2 = false
   match format {

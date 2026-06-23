@@ -1,0 +1,99 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/mode"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn mode_from_int(UInt16, Bool) -> Mode?
+
+pub fn mode_tag(UInt16, Bool) -> ModeTag
+
+pub fn mode_tag_from_raw(UInt16) -> ModeTag
+
+// Errors
+
+// Types and methods
+pub(all) enum Mode {
+  DisableKeyboard
+  Insert
+  SendReceiveMode
+  Linefeed
+  CursorKeys
+  Mode132Column
+  SlowScroll
+  ReverseColors
+  Origin
+  Wraparound
+  Autorepeat
+  MouseEventX10
+  CursorBlinking
+  CursorVisible
+  EnableMode3
+  ReverseWrap
+  AltScreenLegacy
+  KeypadKeys
+  BackarrowKeyMode
+  EnableLeftAndRightMargin
+  MouseEventNormal
+  MouseEventButton
+  MouseEventAny
+  FocusEvent
+  MouseFormatUtf8
+  MouseFormatSgr
+  MouseAlternateScroll
+  MouseFormatUrxvt
+  MouseFormatSgrPixels
+  IgnoreKeypadWithNumlock
+  AltEscPrefix
+  AltSendsEscape
+  ReverseWrapExtended
+  AltScreen
+  SaveCursor
+  AltScreenSaveCursorClearEnter
+  BracketedPaste
+  SynchronizedOutput
+  GraphemeCluster
+  ReportColorScheme
+  InBandSizeReports
+} derive(Eq, @debug.Debug)
+pub fn Mode::tag(Self) -> ModeTag
+
+type ModePacked derive(Eq, @debug.Debug)
+pub fn ModePacked::default() -> Self
+pub fn ModePacked::empty() -> Self
+pub fn ModePacked::get(Self, Mode) -> Bool
+pub fn ModePacked::set(Self, Mode, Bool) -> Self
+
+type ModeState derive(Eq, @debug.Debug)
+pub fn ModeState::get(Self, Mode) -> Bool
+pub fn ModeState::get_report(Self, ModeTag) -> Report
+pub fn ModeState::new() -> Self
+pub fn ModeState::save(Self, Mode) -> Self
+pub fn ModeState::saved_value(Self, Mode) -> Bool
+pub fn ModeState::set(Self, Mode, Bool) -> Self
+
+type ModeTag derive(Eq, @debug.Debug)
+pub fn ModeTag::ansi(Self) -> Bool
+pub fn ModeTag::raw(Self) -> UInt16
+pub fn ModeTag::value(Self) -> UInt16
+
+type Report derive(Eq, @debug.Debug)
+pub fn Report::encode(Self) -> Bytes
+pub fn Report::state(Self) -> ReportState
+pub fn Report::tag(Self) -> ModeTag
+
+pub(all) enum ReportState {
+  NotRecognized
+  Set
+  Reset
+  PermanentlySet
+  PermanentlyReset
+} derive(Eq, @debug.Debug)
+pub fn ReportState::code(Self) -> Int
+
+// Type aliases
+
+// Traits
+

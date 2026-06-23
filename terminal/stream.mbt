@@ -89,10 +89,10 @@ pub(all) enum StreamAction {
   StreamRestoreCursor
   StreamDecaln
   StreamFullReset
-  StreamSetMode(Mode)
-  StreamResetMode(Mode)
-  StreamRequestMode(Mode)
-  StreamRequestModeUnknown(ModeTag)
+  StreamSetMode(@mode.Mode)
+  StreamResetMode(@mode.Mode)
+  StreamRequestMode(@mode.Mode)
+  StreamRequestModeUnknown(@mode.ModeTag)
   StreamCursorUp(CursorMovement)
   StreamCursorDown(CursorMovement)
   StreamCursorLeft(CursorMovement)
@@ -115,7 +115,7 @@ pub(all) enum StreamAction {
   StreamEraseChars(UInt16)
   StreamInsertLines(UInt16)
   StreamSetAttribute(@sgr.SgrAttribute)
-  StreamCursorStyle(CursorStyle)
+  StreamCursorStyle(@ansi.CursorStyle)
   StreamTabSet
   StreamTabClearCurrent
   StreamTabClearAll
@@ -124,17 +124,17 @@ pub(all) enum StreamAction {
   StreamDeleteLines(UInt16)
   StreamScrollUp(UInt16)
   StreamScrollDown(UInt16)
-  StreamSaveMode(Mode)
-  StreamRestoreMode(Mode)
+  StreamSaveMode(@mode.Mode)
+  StreamRestoreMode(@mode.Mode)
   StreamTopAndBottomMargin(Margin)
   StreamLeftAndRightMargin(Margin)
   StreamLeftAndRightMarginAmbiguous
-  StreamModifyKeyFormat(ModifyKeyFormat)
+  StreamModifyKeyFormat(@ansi.ModifyKeyFormat)
   StreamMouseShiftCapture(Bool)
   StreamProtectedModeOff
   StreamProtectedModeIso
   StreamProtectedModeDec
-  StreamSizeReport(SizeReportStyle)
+  StreamSizeReport(@csi.SizeReportStyle)
   StreamTitlePush(UInt16)
   StreamTitlePop(UInt16)
   StreamXtversion
@@ -149,9 +149,9 @@ pub(all) enum StreamAction {
   StreamKittyColorReport(@osc.KittyColorOsc)
   StreamColorOperation(@osc.ColorCommand)
   StreamSemanticPrompt(@osc.SemanticPrompt)
-  StreamDeviceAttributes(DeviceAttributeRequest)
-  StreamDeviceStatus(DeviceStatusRequest)
-  StreamActiveStatusDisplay(StatusDisplay)
+  StreamDeviceAttributes(@device.DeviceAttributeRequest)
+  StreamDeviceStatus(@device.DeviceStatusRequest)
+  StreamActiveStatusDisplay(@ansi.StatusDisplay)
   StreamKittyKeyboardQuery
   StreamKittyKeyboardPush(KittyKeyboardFlags)
   StreamKittyKeyboardPop(UInt16)
@@ -449,7 +449,7 @@ fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
     return
   }
 
-  match c0_from_byte(byte) {
+  match @ansi.c0_from_byte(byte) {
     Some(Nul) | Some(Soh) | Some(Stx) => ()
     Some(Enq) => self.emit(StreamEnquiry)
     Some(Bel) => self.emit(StreamBell)
@@ -585,7 +585,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
     b'h' =>
       if mode_ansi(csi.intermediates) is Some(ansi_mode) {
         for value in csi.params {
-          if mode_from_int(value, ansi_mode) is Some(mode) {
+          if @mode.mode_from_int(value, ansi_mode) is Some(mode) {
             self.emit(StreamSetMode(mode))
           }
         }
@@ -593,7 +593,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
     b'l' =>
       if mode_ansi(csi.intermediates) is Some(ansi_mode) {
         for value in csi.params {
-          if mode_from_int(value, ansi_mode) is Some(mode) {
+          if @mode.mode_from_int(value, ansi_mode) is Some(mode) {
             self.emit(StreamResetMode(mode))
           }
         }
@@ -615,7 +615,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
       }
     b'p' =>
       if request_mode_tag(csi.intermediates, csi.params) is Some(tag) {
-        match mode_from_int(tag.value(), tag.ansi()) {
+        match @mode.mode_from_int(tag.value(), tag.ansi()) {
           Some(mode) => self.emit(StreamRequestMode(mode))
           None => self.emit(StreamRequestModeUnknown(tag))
         }
@@ -626,7 +626,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           match csi.params {
             [] => self.emit(StreamCursorStyle(Default))
             [value] =>
-              if cursor_style_from_int(value.to_int()) is Some(style) {
+              if @ansi.cursor_style_from_int(value.to_int()) is Some(style) {
                 self.emit(StreamCursorStyle(style))
               }
             _ => ()
@@ -646,7 +646,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           }
         [b'?'] =>
           for value in csi.params {
-            if mode_from_int(value, false) is Some(mode) {
+            if @mode.mode_from_int(value, false) is Some(mode) {
               self.emit(StreamRestoreMode(mode))
             }
           }
@@ -722,7 +722,7 @@ fn[H : StreamHandler] Stream::csi_dispatch(
           )
         ([b'?'], _) =>
           for value in csi.params {
-            if mode_from_int(value, false) is Some(mode) {
+            if @mode.mode_from_int(value, false) is Some(mode) {
               self.emit(StreamSaveMode(mode))
             }
           }
@@ -987,7 +987,7 @@ fn erase_display_mode(params : ArrayView[UInt16]) -> UInt16? {
 ///|
 fn device_attributes_request(
   intermediates : ArrayView[Byte],
-) -> DeviceAttributeRequest? {
+) -> @device.DeviceAttributeRequest? {
   match intermediates {
     [] => Some(Primary)
     [b'>'] => Some(Secondary)
@@ -1000,10 +1000,10 @@ fn device_attributes_request(
 fn device_status_request(
   intermediates : ArrayView[Byte],
   params : ArrayView[UInt16],
-) -> DeviceStatusRequest? {
+) -> @device.DeviceStatusRequest? {
   match (intermediates, params) {
-    ([], [value]) => device_status_request_from_int(value, false)
-    ([b'?'], [value]) => device_status_request_from_int(value, true)
+    ([], [value]) => @device.device_status_request_from_int(value, false)
+    ([b'?'], [value]) => @device.device_status_request_from_int(value, true)
     _ => None
   }
 }
@@ -1012,16 +1012,18 @@ fn device_status_request(
 fn request_mode_tag(
   intermediates : ArrayView[Byte],
   params : ArrayView[UInt16],
-) -> ModeTag? {
+) -> @mode.ModeTag? {
   match (intermediates, params) {
-    ([b'$'], [value]) => Some(mode_tag(value, true))
-    ([b'?', b'$'], [value]) => Some(mode_tag(value, false))
+    ([b'$'], [value]) => Some(@mode.mode_tag(value, true))
+    ([b'?', b'$'], [value]) => Some(@mode.mode_tag(value, false))
     _ => None
   }
 }
 
 ///|
-fn modify_key_format_action(params : ArrayView[UInt16]) -> ModifyKeyFormat? {
+fn modify_key_format_action(
+  params : ArrayView[UInt16],
+) -> @ansi.ModifyKeyFormat? {
   match params {
     [] | [0] => Some(Legacy)
     [1] => Some(CursorKeys)
@@ -1114,9 +1116,9 @@ fn insert_blanks_count(params : ArrayView[UInt16]) -> UInt16? {
 }
 
 ///|
-fn active_status_display(params : ArrayView[UInt16]) -> StatusDisplay? {
+fn active_status_display(params : ArrayView[UInt16]) -> @ansi.StatusDisplay? {
   match params {
-    [value] => status_display_from_int(value.to_int())
+    [value] => @ansi.status_display_from_int(value.to_int())
     _ => None
   }
 }

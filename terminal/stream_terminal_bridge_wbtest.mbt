@@ -1764,10 +1764,10 @@ test "stream terminal bridge/empty and query color operations are handled withou
 ///|
 test "stream terminal bridge/applies query responses and callbacks" {
   let recorder = BridgeEffectsRecorder::new()
-  let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
-    SecondaryDeviceAttributes::new(Vt420, 100, 7),
-    TertiaryDeviceAttributes::new(9U),
+  let attributes = @device.DeviceAttributes::new(
+    @device.PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
+    @device.SecondaryDeviceAttributes::new(Vt420, 100, 7),
+    @device.TertiaryDeviceAttributes::new(9U),
   )
   let effects = StreamTerminalBridgeEffects::new(
     write_pty=fn(data) { recorder.write_pty(data) },
@@ -1804,7 +1804,7 @@ test "stream terminal bridge/applies query responses and callbacks" {
     state.apply(StreamRequestMode(Wraparound)) &&
     state.apply(StreamResetMode(Wraparound)) &&
     state.apply(StreamRequestMode(Wraparound)) &&
-    state.apply(StreamRequestModeUnknown(mode_tag(9999, false))) &&
+    state.apply(StreamRequestModeUnknown(@mode.mode_tag(9999, false))) &&
     state.apply(StreamDeviceAttributes(Primary)) &&
     state.apply(StreamDeviceAttributes(Secondary)) &&
     state.apply(StreamDeviceAttributes(Tertiary)) &&

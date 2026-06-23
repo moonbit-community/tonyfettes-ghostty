@@ -30,8 +30,8 @@ struct StreamTerminal {
 pub fn StreamTerminal::new(
   write_pty? : (Bytes) -> Unit = fn(_data) { () },
   bell? : () -> Unit = fn() { () },
-  color_scheme? : () -> ColorScheme? = fn() { None },
-  device_attributes? : () -> DeviceAttributes? = fn() { None },
+  color_scheme? : () -> @device.ColorScheme? = fn() { None },
+  device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
   enquiry? : () -> Bytes = fn() { b"" },
   size? : () -> Size? = fn() { None },
   title_changed? : () -> Unit = fn() { () },
@@ -173,14 +173,17 @@ pub fn StreamTerminal::take_scrollback_cleared(self : StreamTerminal) -> Bool {
 }
 
 ///|
-pub fn StreamTerminal::mode_get(self : StreamTerminal, mode : Mode) -> Bool {
+pub fn StreamTerminal::mode_get(
+  self : StreamTerminal,
+  mode : @mode.Mode,
+) -> Bool {
   self.bridge().mode_get(mode)
 }
 
 ///|
 pub fn StreamTerminal::mode_set(
   self : StreamTerminal,
-  mode : Mode,
+  mode : @mode.Mode,
   enabled : Bool,
 ) -> Unit {
   self.bridge().mode_set(mode, enabled)
@@ -428,7 +431,7 @@ pub fn StreamTerminal::clear_bell(self : StreamTerminal) -> Unit {
 ///|
 pub fn StreamTerminal::set_color_scheme(
   self : StreamTerminal,
-  callback : () -> ColorScheme?,
+  callback : () -> @device.ColorScheme?,
 ) -> Unit {
   self.bridge().set_color_scheme(callback)
 }
@@ -441,7 +444,7 @@ pub fn StreamTerminal::clear_color_scheme(self : StreamTerminal) -> Unit {
 ///|
 pub fn StreamTerminal::set_device_attributes(
   self : StreamTerminal,
-  callback : () -> DeviceAttributes?,
+  callback : () -> @device.DeviceAttributes?,
 ) -> Unit {
   self.bridge().set_device_attributes(callback)
 }

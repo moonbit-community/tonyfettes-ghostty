@@ -1,6 +1,6 @@
 ///|
 struct ScreenProtectedState {
-  mut mode : ProtectedMode
+  mut mode : @ansi.ProtectedMode
   mut cursor_protected : Bool
 } derive(Eq, Debug)
 
@@ -10,7 +10,9 @@ pub fn ScreenProtectedState::new() -> ScreenProtectedState {
 }
 
 ///|
-pub fn ScreenProtectedState::mode(self : ScreenProtectedState) -> ProtectedMode {
+pub fn ScreenProtectedState::mode(
+  self : ScreenProtectedState,
+) -> @ansi.ProtectedMode {
   self.mode
 }
 
@@ -24,7 +26,7 @@ pub fn ScreenProtectedState::cursor_protected(
 ///|
 pub fn ScreenProtectedState::set(
   self : ScreenProtectedState,
-  mode : ProtectedMode,
+  mode : @ansi.ProtectedMode,
 ) -> Unit {
   match mode {
     Off => self.cursor_protected = false

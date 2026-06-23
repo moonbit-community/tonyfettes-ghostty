@@ -881,7 +881,7 @@ test "stream/csi device and protected subset" {
       StreamDeviceStatus(ColorScheme),
       StreamModifyKeyFormat(OtherKeysNumericExcept),
       StreamRequestMode(Insert),
-      StreamRequestModeUnknown(mode_tag(9999, false)),
+      StreamRequestModeUnknown(@mode.mode_tag(9999, false)),
       StreamProtectedModeOff,
       StreamProtectedModeDec,
       StreamProtectedModeOff,

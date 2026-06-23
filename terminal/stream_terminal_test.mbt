@@ -100,10 +100,10 @@ test "stream terminal/applies bytes across split escape writes" {
 ///|
 test "stream terminal/routes query replies and callbacks" {
   let recorder = StreamTerminalEffectsRecorder::new()
-  let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
-    SecondaryDeviceAttributes::new(Vt420, 100, 7),
-    TertiaryDeviceAttributes::new(9U),
+  let attributes = @device.DeviceAttributes::new(
+    @device.PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
+    @device.SecondaryDeviceAttributes::new(Vt420, 100, 7),
+    @device.TertiaryDeviceAttributes::new(9U),
   )
   let terminal = StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },

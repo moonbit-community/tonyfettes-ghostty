@@ -246,10 +246,10 @@ test "stream terminal parity/replaces and clears callbacks on the same terminal"
 ///|
 test "stream terminal parity/replaces callbacks with default fallback paths" {
   let recorder = StreamTerminalParityRecorder::new()
-  let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(Vt220, [AnsiColor]),
-    SecondaryDeviceAttributes::new(Vt220, 10, 0),
-    TertiaryDeviceAttributes::new(0U),
+  let attributes = @device.DeviceAttributes::new(
+    @device.PrimaryDeviceAttributes::new(Vt220, [AnsiColor]),
+    @device.SecondaryDeviceAttributes::new(Vt220, 10, 0),
+    @device.TertiaryDeviceAttributes::new(0U),
   )
   let terminal = StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
@@ -346,10 +346,10 @@ test "stream terminal parity/metadata mode and reset controls" {
 ///|
 test "stream terminal parity/set device_attributes callback primary" {
   let recorder = StreamTerminalParityRecorder::new()
-  let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
-    SecondaryDeviceAttributes::new(Vt220, 10, 0),
-    TertiaryDeviceAttributes::new(0U),
+  let attributes = @device.DeviceAttributes::new(
+    @device.PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
+    @device.SecondaryDeviceAttributes::new(Vt220, 10, 0),
+    @device.TertiaryDeviceAttributes::new(0U),
   )
   let terminal = StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
@@ -369,10 +369,10 @@ test "stream terminal parity/set device_attributes callback primary" {
 ///|
 test "stream terminal parity/set device_attributes callback secondary" {
   let recorder = StreamTerminalParityRecorder::new()
-  let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(Vt220, [AnsiColor]),
-    SecondaryDeviceAttributes::new(Vt220, 10, 0),
-    TertiaryDeviceAttributes::new(0U),
+  let attributes = @device.DeviceAttributes::new(
+    @device.PrimaryDeviceAttributes::new(Vt220, [AnsiColor]),
+    @device.SecondaryDeviceAttributes::new(Vt220, 10, 0),
+    @device.TertiaryDeviceAttributes::new(0U),
   )
   let terminal = StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
@@ -392,10 +392,10 @@ test "stream terminal parity/set device_attributes callback secondary" {
 ///|
 test "stream terminal parity/set device_attributes callback tertiary" {
   let recorder = StreamTerminalParityRecorder::new()
-  let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(Vt220, []),
-    SecondaryDeviceAttributes::new(Vt220, 0, 0),
-    TertiaryDeviceAttributes::new(0xAABBCCDDU),
+  let attributes = @device.DeviceAttributes::new(
+    @device.PrimaryDeviceAttributes::new(Vt220, []),
+    @device.SecondaryDeviceAttributes::new(Vt220, 0, 0),
+    @device.TertiaryDeviceAttributes::new(0xAABBCCDDU),
   )
   let terminal = StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },

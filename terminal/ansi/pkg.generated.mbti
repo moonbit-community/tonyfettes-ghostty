@@ -1,0 +1,92 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/ansi"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn c0_from_byte(Byte) -> C0?
+
+pub fn cursor_style_from_int(Int) -> CursorStyle?
+
+pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
+
+pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
+
+pub fn status_display_from_int(Int) -> StatusDisplay?
+
+pub fn status_line_type_from_int(UInt16) -> StatusLineType?
+
+// Errors
+
+// Types and methods
+pub(all) enum C0 {
+  Nul
+  Soh
+  Stx
+  Enq
+  Bel
+  Bs
+  Ht
+  Lf
+  Vt
+  Ff
+  Cr
+  So
+  Si
+} derive(Eq, @debug.Debug)
+pub fn C0::code(Self) -> Byte
+
+pub(all) enum CursorStyle {
+  Default
+  BlinkingBlock
+  SteadyBlock
+  BlinkingUnderline
+  SteadyUnderline
+  BlinkingBar
+  SteadyBar
+} derive(Eq, @debug.Debug)
+pub fn CursorStyle::ordinal(Self) -> Int
+
+pub(all) enum ModifyKeyFormat {
+  Legacy
+  CursorKeys
+  FunctionKeys
+  OtherKeysNone
+  OtherKeysNumericExcept
+  OtherKeysNumeric
+} derive(Eq, @debug.Debug)
+pub fn ModifyKeyFormat::ordinal(Self) -> Int
+
+pub(all) enum ProtectedMode {
+  Off
+  Iso
+  Dec
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RenditionAspect {
+  Default
+  Bold
+  DefaultFg
+  DefaultBg
+} derive(Eq, @debug.Debug)
+pub fn RenditionAspect::code(Self) -> UInt16
+
+pub(all) enum StatusDisplay {
+  Main
+  StatusLine
+} derive(Eq, @debug.Debug)
+pub fn StatusDisplay::ordinal(Self) -> Int
+
+pub(all) enum StatusLineType {
+  None
+  Indicator
+  HostWritable
+} derive(Eq, @debug.Debug)
+pub fn StatusLineType::code(Self) -> UInt16
+
+// Type aliases
+
+// Traits
+
