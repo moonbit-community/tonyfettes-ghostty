@@ -5,8 +5,10 @@ import {
   "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
   "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/result_code",
   "tonyfettes/ghostty/terminal/sgr",
   "tonyfettes/ghostty/terminal/style",
@@ -92,13 +94,6 @@ pub(all) enum C0 {
   Si
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
-
-type CellHyperlink derive(Eq, Hash, @debug.Debug)
-pub fn CellHyperlink::explicit(String, String) -> Self
-pub fn CellHyperlink::explicit_id(Self) -> String?
-pub fn CellHyperlink::implicit(String, Int) -> Self
-pub fn CellHyperlink::implicit_id(Self) -> Int?
-pub fn CellHyperlink::uri(Self) -> String
 
 pub(all) enum ColorScheme {
   Light
@@ -232,10 +227,6 @@ pub fn FormatterTerminalExtra::all() -> Self
 pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
-
-type GraphemeId derive(Eq, Hash, @debug.Debug)
-
-type HyperlinkId derive(Eq, Hash, @debug.Debug)
 
 pub(all) struct InvokeCharsetAction {
   bank : @charsets.ActiveSlot
@@ -480,50 +471,6 @@ pub(all) enum OptionAsAlt {
   True
 } derive(Eq, @debug.Debug)
 
-type PageCellFlags derive(Eq, @debug.Debug)
-
-type PageCellState derive(Eq, @debug.Debug)
-pub fn PageCellState::codepoint(Self) -> UInt
-pub fn PageCellState::grapheme_id(Self) -> GraphemeId
-pub fn PageCellState::grid_width(Self) -> Int
-pub fn PageCellState::has_grapheme(Self) -> Bool
-pub fn PageCellState::has_hyperlink(Self) -> Bool
-pub fn PageCellState::has_styling(Self) -> Bool
-pub fn PageCellState::has_text(Self) -> Bool
-pub fn PageCellState::init(UInt) -> Self
-pub fn PageCellState::is_empty(Self) -> Bool
-pub fn PageCellState::is_protected(Self) -> Bool
-pub fn PageCellState::is_zero(Self) -> Bool
-pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink_present? : Bool, semantic_content? : SemanticContent) -> Self
-pub fn PageCellState::semantic_content(Self) -> SemanticContent
-pub fn PageCellState::style_id(Self) -> @style.StyleId
-pub fn PageCellState::wide(Self) -> PageCellWide
-pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
-pub fn PageCellState::with_grapheme_id(Self, GraphemeId) -> Self
-pub fn PageCellState::with_hyperlink_present(Self, Bool) -> Self
-pub fn PageCellState::with_protected(Self, Bool) -> Self
-pub fn PageCellState::with_style_id(Self, @style.StyleId) -> Self
-pub fn PageCellState::with_wide(Self, PageCellWide) -> Self
-
-pub(all) enum PageCellWide {
-  Narrow
-  Wide
-  SpacerTail
-  SpacerHead
-} derive(Eq, @debug.Debug)
-
-type PageRowState derive(Eq, @debug.Debug)
-pub fn PageRowState::dirty(Self) -> Bool
-pub fn PageRowState::grapheme(Self) -> Bool
-pub fn PageRowState::hyperlink(Self) -> Bool
-pub fn PageRowState::kitty_virtual_placeholder(Self) -> Bool
-pub fn PageRowState::managed_memory(Self) -> Bool
-pub fn PageRowState::new() -> Self
-pub fn PageRowState::semantic_prompt(Self) -> RowSemanticPrompt
-pub fn PageRowState::styled(Self) -> Bool
-pub fn PageRowState::wrap(Self) -> Bool
-pub fn PageRowState::wrap_continuation(Self) -> Bool
-
 type PasteOptions derive(Eq, @debug.Debug)
 pub fn PasteOptions::encode(Self, Bytes) -> Bytes
 pub fn PasteOptions::new(Bool) -> Self
@@ -579,9 +526,9 @@ pub(all) enum RenderDirty {
 
 type RenderRowCells
 pub fn RenderRowCells::background_color(Self) -> @color.RGB?
-pub fn RenderRowCells::cell(Self) -> PageCellState?
+pub fn RenderRowCells::cell(Self) -> @page.PageCellState?
 pub fn RenderRowCells::cell_grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
-pub fn RenderRowCells::cell_hyperlink(Self) -> CellHyperlink?
+pub fn RenderRowCells::cell_hyperlink(Self) -> @hyperlink.CellHyperlink?
 pub fn RenderRowCells::cell_style(Self) -> @style.CellStyle?
 pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
 pub fn RenderRowCells::next(Self) -> Bool
@@ -592,7 +539,7 @@ type RenderRowIterator
 pub fn RenderRowIterator::cells(Self) -> RenderRowCells?
 pub fn RenderRowIterator::dirty(Self) -> Bool?
 pub fn RenderRowIterator::next(Self) -> Bool
-pub fn RenderRowIterator::row(Self) -> PageRowState?
+pub fn RenderRowIterator::row(Self) -> @page.PageRowState?
 pub fn RenderRowIterator::set_dirty(Self, Bool) -> Bool
 pub fn RenderRowIterator::y(Self) -> UInt16?
 
@@ -637,12 +584,6 @@ pub(all) enum ReportState {
   PermanentlyReset
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
-
-pub(all) enum RowSemanticPrompt {
-  None
-  Prompt
-  PromptContinuation
-} derive(Eq, @debug.Debug)
 
 type ScreenCharsetState derive(Eq, @debug.Debug)
 pub fn ScreenCharsetState::charset(Self, @charsets.Slots) -> @charsets.Charset
@@ -694,11 +635,11 @@ pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPromp
 pub fn ScreenSemanticState::apply_prompt_start(Self, @osc.SemanticPrompt) -> Unit
 pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
 pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
-pub fn ScreenSemanticState::cursor_content(Self) -> SemanticContent
+pub fn ScreenSemanticState::cursor_content(Self) -> @page.SemanticContent
 pub fn ScreenSemanticState::cursor_content_clear_eol(Self) -> Bool
 pub fn ScreenSemanticState::full_reset(Self) -> Unit
 pub fn ScreenSemanticState::new() -> Self
-pub fn ScreenSemanticState::row_prompt(Self) -> RowSemanticPrompt
+pub fn ScreenSemanticState::row_prompt(Self) -> @page.RowSemanticPrompt
 pub fn ScreenSemanticState::seen(Self) -> Bool
 pub fn ScreenSemanticState::set_output(Self) -> Unit
 pub fn ScreenSemanticState::start_input(Self, Bool) -> Unit
@@ -721,12 +662,6 @@ pub(all) enum SemanticClickMode {
   None
   ClickEvents
   Cl(@osc.SemanticPromptClick)
-} derive(Eq, @debug.Debug)
-
-pub(all) enum SemanticContent {
-  Output
-  Input
-  Prompt
 } derive(Eq, @debug.Debug)
 
 type Size derive(Eq, @debug.Debug)
@@ -905,10 +840,10 @@ pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
 pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(Self, UInt16, UInt16) -> ReadOnlyArray[UInt]
-pub fn StreamTerminal::screen_cell_hyperlink_snapshot(Self, UInt16, UInt16) -> CellHyperlink?
-pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> PageCellState?
+pub fn StreamTerminal::screen_cell_hyperlink_snapshot(Self, UInt16, UInt16) -> @hyperlink.CellHyperlink?
+pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> @page.PageCellState?
 pub fn StreamTerminal::screen_cell_style_snapshot(Self, UInt16, UInt16) -> @style.CellStyle?
-pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> PageRowState?
+pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> @page.PageRowState?
 pub fn StreamTerminal::scroll_viewport_bottom(Self) -> Unit
 pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
 pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit

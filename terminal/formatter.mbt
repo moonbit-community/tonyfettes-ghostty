@@ -582,7 +582,10 @@ fn formatter_row_is_blank(
 }
 
 ///|
-fn formatter_cell_is_blank(formatter : Formatter, cell : PageCellState) -> Bool {
+fn formatter_cell_is_blank(
+  formatter : Formatter,
+  cell : @page.PageCellState,
+) -> Bool {
   if formatter.opts.emit != Plain && (!cell.is_empty() || cell.has_styling()) {
     return false
   }
@@ -596,7 +599,7 @@ fn formatter_cell_is_blank(formatter : Formatter, cell : PageCellState) -> Bool 
 }
 
 ///|
-fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
+fn formatter_history_cell_is_blank(cell : @page.PageCellState) -> Bool {
   if !cell.is_empty() || cell.has_styling() {
     return false
   }
@@ -610,7 +613,7 @@ fn formatter_history_cell_is_blank(cell : PageCellState) -> Bool {
 ///|
 fn formatter_write_cell_text(
   emit : Format,
-  cell : PageCellState,
+  cell : @page.PageCellState,
   grapheme_codepoints : ReadOnlyArray[UInt],
   buffer : @buffer.Buffer,
 ) -> Unit {

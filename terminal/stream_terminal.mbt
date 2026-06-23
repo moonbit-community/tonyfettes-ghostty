@@ -339,7 +339,7 @@ pub fn StreamTerminal::set_default_palette(
 pub fn StreamTerminal::screen_row_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
-) -> PageRowState? {
+) -> @page.PageRowState? {
   self.bridge().screen_row_snapshot(row)
 }
 
@@ -508,12 +508,12 @@ pub fn StreamTerminal::screen_cell_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   self.bridge().screen_cell_snapshot(row, col)
 }
 
 ///|
-// The raw `HyperlinkId` of the snapshot cell at (row, col) — package-private, for
+// The raw `@hyperlink.HyperlinkId` of the snapshot cell at (row, col) — package-private, for
 // `RenderState`'s damage diff (a hyperlink-only change leaves the packed cell
 // equal, so the id is compared alongside it). The full link still resolves via
 // `screen_cell_hyperlink_snapshot`.
@@ -521,7 +521,7 @@ fn StreamTerminal::screen_cell_hyperlink_id_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   self.bridge().screen_cell_hyperlink_id_snapshot(row, col)
 }
 
@@ -548,13 +548,13 @@ pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   self.bridge().screen_cell_hyperlink_snapshot(row, col)
 }
 
 ///|
 // Resolve the combining codepoints of the snapshot cell at (row, col), empty if
-// the cell is absent or not a grapheme cluster. Cells store only a `GraphemeId`.
+// the cell is absent or not a grapheme cluster. Cells store only a `@page.GraphemeId`.
 pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(
   self : StreamTerminal,
   row : CellCountInt,
@@ -585,7 +585,7 @@ fn StreamTerminal::active_style_table(
 // The active screen's grapheme intern table (see `active_style_table`).
 fn StreamTerminal::active_grapheme_table(
   self : StreamTerminal,
-) -> GraphemeTable {
+) -> @page.GraphemeTable {
   self.bridge().grid.grapheme_table
 }
 
@@ -595,6 +595,6 @@ fn StreamTerminal::active_grapheme_table(
 // uri from the snapshot alone, the same way it resolves styles and graphemes.
 fn StreamTerminal::active_hyperlink_table(
   self : StreamTerminal,
-) -> HyperlinkTable {
+) -> @hyperlink.HyperlinkTable {
   self.bridge().grid.hyperlink_table
 }

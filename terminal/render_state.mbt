@@ -23,25 +23,25 @@ struct RenderState {
   mut cursor_password_input : Bool
   mut cursor_viewport : Coordinate?
   mut cursor_viewport_wide_tail : Bool
-  mut row_states : Array[PageRowState]
-  mut row_cells : Array[FixedArray[PageCellState]]
+  mut row_states : Array[@page.PageRowState]
+  mut row_cells : Array[FixedArray[@page.PageCellState]]
   // Per-row hyperlink ids, parallel to `row_cells`, captured each snapshot so the
   // damage diff notices a hyperlink-only change: the packed cell carries only a
   // presence bit, so two cells under different URIs are equal and `row_cells`
   // alone would miss it. `None` for a row with no links (the common case → no
   // allocation). The full link still resolves via the terminal-level snapshot.
-  mut row_link_ids : Array[FixedArray[HyperlinkId]?]
+  mut row_link_ids : Array[FixedArray[@hyperlink.HyperlinkId]?]
   // The active screen's style table, captured each `update`. The snapshotted
   // `row_cells` carry `StyleId`s minted from it, so it resolves their styles for
   // the renderer/formatter. Grow-only and shared, so ids captured here stay valid.
   mut style_table : @style.StyleTable
   // The active screen's grapheme table, captured the same way: the VT-framebuffer
   // formatter resolves each cell's combining marks through it.
-  mut grapheme_table : GraphemeTable
+  mut grapheme_table : @page.GraphemeTable
   // The active screen's hyperlink table, captured the same way so a snapshot-driven
   // renderer can resolve each cell's uri from `row_link_ids` without reaching back
   // into the live terminal (symmetric with style/grapheme resolution).
-  mut hyperlink_table : HyperlinkTable
+  mut hyperlink_table : @hyperlink.HyperlinkTable
 }
 
 ///|
@@ -67,8 +67,8 @@ pub fn RenderState::new() -> RenderState {
     row_cells: [],
     row_link_ids: [],
     style_table: @style.StyleTable::new(),
-    grapheme_table: GraphemeTable::new(),
-    hyperlink_table: HyperlinkTable::new(),
+    grapheme_table: @page.GraphemeTable::new(),
+    hyperlink_table: @hyperlink.HyperlinkTable::new(),
   }
 }
 
@@ -239,9 +239,9 @@ fn RenderState::snapshot_all_rows(
   rows : CellCountInt,
   columns : CellCountInt,
 ) -> Unit {
-  let row_states : Array[PageRowState] = []
-  let row_cells : Array[FixedArray[PageCellState]] = []
-  let row_link_ids : Array[FixedArray[HyperlinkId]?] = []
+  let row_states : Array[@page.PageRowState] = []
+  let row_cells : Array[FixedArray[@page.PageCellState]] = []
+  let row_link_ids : Array[FixedArray[@hyperlink.HyperlinkId]?] = []
   let mut row_idx = 0
   while row_idx < rows.to_int() {
     let snapshot = snapshot_render_row(terminal, row_idx.to_uint16()).with_dirty(
@@ -374,10 +374,10 @@ fn render_row_storage_matches(
 fn snapshot_render_row(
   terminal : StreamTerminal,
   row : CellCountInt,
-) -> PageRowState {
+) -> @page.PageRowState {
   match terminal.screen_row_snapshot(row) {
     Some(snapshot) => snapshot
-    None => PageRowState::new()
+    None => @page.PageRowState::new()
   }
 }
 
@@ -386,17 +386,17 @@ fn snapshot_render_cells(
   terminal : StreamTerminal,
   row : CellCountInt,
   columns : CellCountInt,
-) -> FixedArray[PageCellState] {
+) -> FixedArray[@page.PageCellState] {
   let width = columns.to_int()
-  let result : FixedArray[PageCellState] = FixedArray::make(
+  let result : FixedArray[@page.PageCellState] = FixedArray::make(
     width,
-    PageCellState::new(),
+    @page.PageCellState::new(),
   )
   for col_idx in 0..<width {
     let col = col_idx.to_uint16()
     result[col_idx] = match terminal.screen_cell_snapshot(row, col) {
       Some(snapshot) => snapshot
-      None => PageCellState::new()
+      None => @page.PageCellState::new()
     }
   }
   result
@@ -406,19 +406,19 @@ fn snapshot_render_cells(
 fn snapshot_render_link_ids(
   terminal : StreamTerminal,
   row : CellCountInt,
-  cells : FixedArray[PageCellState],
-) -> FixedArray[HyperlinkId]? {
+  cells : FixedArray[@page.PageCellState],
+) -> FixedArray[@hyperlink.HyperlinkId]? {
   // Only a row that actually holds a hyperlinked cell allocates an id array; the
   // common linkless row stays `None`. The id is fetched solely for cells whose
   // presence bit is set (read off the already-snapshotted `cells`), so a
   // link-free frame does no extra lookups.
-  let mut links : FixedArray[HyperlinkId]? = None
+  let mut links : FixedArray[@hyperlink.HyperlinkId]? = None
   for col_idx in 0..<cells.length() {
     if cells[col_idx].has_hyperlink() {
       let arr = match links {
         Some(arr) => arr
         None => {
-          let arr = FixedArray::make(cells.length(), no_hyperlink_id)
+          let arr = FixedArray::make(cells.length(), @hyperlink.no_hyperlink_id)
           links = Some(arr)
           arr
         }
@@ -434,8 +434,8 @@ fn snapshot_render_link_ids(
 
 ///|
 fn render_link_ids_equal(
-  left : FixedArray[HyperlinkId]?,
-  right : FixedArray[HyperlinkId]?,
+  left : FixedArray[@hyperlink.HyperlinkId]?,
+  right : FixedArray[@hyperlink.HyperlinkId]?,
 ) -> Bool {
   match (left, right) {
     (None, None) => true
@@ -460,18 +460,18 @@ fn render_link_ids_equal(
 
 ///|
 fn render_row_snapshot_equals(
-  left : PageRowState,
-  right : PageRowState,
+  left : @page.PageRowState,
+  right : @page.PageRowState,
 ) -> Bool {
   // Compare every flag *except* `dirty`, which tracks render bookkeeping rather
-  // than content: force the dirty bit on in both so it never affects equality.
-  (left.0 | RowDirtyBit) == (right.0 | RowDirtyBit)
+  // than content.
+  left.equals_ignoring_dirty(right)
 }
 
 ///|
 fn render_row_cells_equal(
-  left : FixedArray[PageCellState],
-  right : FixedArray[PageCellState],
+  left : FixedArray[@page.PageCellState],
+  right : FixedArray[@page.PageCellState],
 ) -> Bool {
   if left.length() != right.length() {
     return false
@@ -488,7 +488,7 @@ fn render_row_cells_equal(
 }
 
 ///|
-fn render_row_at(state : RenderState, row_idx : Int) -> PageRowState? {
+fn render_row_at(state : RenderState, row_idx : Int) -> @page.PageRowState? {
   if row_idx < 0 || row_idx >= state.row_states.length() {
     None
   } else {
@@ -524,7 +524,7 @@ fn render_cell_at(
   state : RenderState,
   row_idx : Int,
   col_idx : Int,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   if row_idx < 0 || row_idx >= state.row_cells.length() {
     return None
   }
@@ -543,13 +543,13 @@ fn render_cell_hyperlink_at(
   state : RenderState,
   row_idx : Int,
   col_idx : Int,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   match render_cell_at(state, row_idx, col_idx) {
     Some(cell) =>
       if cell.has_hyperlink() {
         let id = match state.row_link_ids[row_idx] {
           Some(links) => links[col_idx]
-          None => no_hyperlink_id
+          None => @hyperlink.no_hyperlink_id
         }
         state.hyperlink_table.get(id)
       } else {

@@ -118,12 +118,12 @@ test "ghostty terminal adapter direct cell style branches" {
     fail("expected rgb background")
   }
 
-  let spacer = @terminal.PageCellState::new(
+  let spacer = @page.PageCellState::new(
     codepoint=b'Z'.to_uint(),
     wide=SpacerHead,
   )
   assert_eq(terminal.cell_text(0, 0, spacer), " ")
-  let grapheme = @terminal.PageCellState::new(
+  let grapheme = @page.PageCellState::new(
     codepoint=b'e'.to_uint(),
     grapheme=true,
   )

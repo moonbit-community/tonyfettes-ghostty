@@ -37,7 +37,7 @@ pub fn RenderRowIterator::y(self : RenderRowIterator) -> CellCountInt? {
 }
 
 ///|
-pub fn RenderRowIterator::row(self : RenderRowIterator) -> PageRowState? {
+pub fn RenderRowIterator::row(self : RenderRowIterator) -> @page.PageRowState? {
   render_row_at(self.state, self.y)
 }
 
@@ -103,7 +103,7 @@ pub fn RenderRowCells::x(self : RenderRowCells) -> CellCountInt? {
 }
 
 ///|
-pub fn RenderRowCells::cell(self : RenderRowCells) -> PageCellState? {
+pub fn RenderRowCells::cell(self : RenderRowCells) -> @page.PageCellState? {
   render_cell_at(self.state, self.row, self.x)
 }
 
@@ -134,7 +134,9 @@ pub fn RenderRowCells::cell_grapheme_codepoints(
 // table. `None` when the cell carries no link. The cell stores only a presence
 // bit; the id is held in the render state's per-row `link_ids` snapshot, so this
 // resolves from the snapshot alone (no live-terminal access), like `cell_style`.
-pub fn RenderRowCells::cell_hyperlink(self : RenderRowCells) -> CellHyperlink? {
+pub fn RenderRowCells::cell_hyperlink(
+  self : RenderRowCells,
+) -> @hyperlink.CellHyperlink? {
   render_cell_hyperlink_at(self.state, self.row, self.x)
 }
 

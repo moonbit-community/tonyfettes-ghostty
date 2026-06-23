@@ -7,38 +7,6 @@ pub(all) enum PageCellWide {
 } derive(Eq, Debug)
 
 ///|
-struct CellHyperlink {
-  uri : String
-  explicit_id : String?
-  implicit_id : Int?
-} derive(Eq, Debug, Hash)
-
-///|
-pub fn CellHyperlink::explicit(uri : String, id : String) -> CellHyperlink {
-  { uri, explicit_id: Some(id), implicit_id: None }
-}
-
-///|
-pub fn CellHyperlink::implicit(uri : String, id : Int) -> CellHyperlink {
-  { uri, explicit_id: None, implicit_id: Some(id) }
-}
-
-///|
-pub fn CellHyperlink::uri(self : CellHyperlink) -> String {
-  self.uri
-}
-
-///|
-pub fn CellHyperlink::explicit_id(self : CellHyperlink) -> String? {
-  self.explicit_id
-}
-
-///|
-pub fn CellHyperlink::implicit_id(self : CellHyperlink) -> Int? {
-  self.implicit_id
-}
-
-///|
 /// Per-row flags packed into a single `Int` bitfield. The previous record had
 /// seven `Bool` fields plus a `RowSemanticPrompt` enum, which the backend lays
 /// out as eight separate int32 words inside a heap object — one allocation and
@@ -105,7 +73,10 @@ pub fn PageRowState::wrap(self : PageRowState) -> Bool {
 }
 
 ///|
-fn PageRowState::with_wrap(self : PageRowState, value : Bool) -> PageRowState {
+pub fn PageRowState::with_wrap(
+  self : PageRowState,
+  value : Bool,
+) -> PageRowState {
   self.with_bit(RowWrapBit, value)
 }
 
@@ -115,7 +86,7 @@ pub fn PageRowState::wrap_continuation(self : PageRowState) -> Bool {
 }
 
 ///|
-fn PageRowState::with_wrap_continuation(
+pub fn PageRowState::with_wrap_continuation(
   self : PageRowState,
   value : Bool,
 ) -> PageRowState {
@@ -128,7 +99,7 @@ pub fn PageRowState::grapheme(self : PageRowState) -> Bool {
 }
 
 ///|
-fn PageRowState::with_grapheme(
+pub fn PageRowState::with_grapheme(
   self : PageRowState,
   value : Bool,
 ) -> PageRowState {
@@ -141,7 +112,10 @@ pub fn PageRowState::styled(self : PageRowState) -> Bool {
 }
 
 ///|
-fn PageRowState::with_styled(self : PageRowState, value : Bool) -> PageRowState {
+pub fn PageRowState::with_styled(
+  self : PageRowState,
+  value : Bool,
+) -> PageRowState {
   self.with_bit(RowStyledBit, value)
 }
 
@@ -151,7 +125,7 @@ pub fn PageRowState::hyperlink(self : PageRowState) -> Bool {
 }
 
 ///|
-fn PageRowState::with_hyperlink(
+pub fn PageRowState::with_hyperlink(
   self : PageRowState,
   value : Bool,
 ) -> PageRowState {
@@ -168,7 +142,7 @@ pub fn PageRowState::semantic_prompt(self : PageRowState) -> RowSemanticPrompt {
 }
 
 ///|
-fn PageRowState::with_semantic_prompt(
+pub fn PageRowState::with_semantic_prompt(
   self : PageRowState,
   value : RowSemanticPrompt,
 ) -> PageRowState {
@@ -186,7 +160,7 @@ pub fn PageRowState::kitty_virtual_placeholder(self : PageRowState) -> Bool {
 }
 
 ///|
-fn PageRowState::with_kitty_virtual_placeholder(
+pub fn PageRowState::with_kitty_virtual_placeholder(
   self : PageRowState,
   value : Bool,
 ) -> PageRowState {
@@ -199,13 +173,27 @@ pub fn PageRowState::dirty(self : PageRowState) -> Bool {
 }
 
 ///|
-fn PageRowState::with_dirty(self : PageRowState, value : Bool) -> PageRowState {
+pub fn PageRowState::with_dirty(
+  self : PageRowState,
+  value : Bool,
+) -> PageRowState {
   self.with_bit(RowDirtyBit, value)
 }
 
 ///|
 pub fn PageRowState::managed_memory(self : PageRowState) -> Bool {
   (self.0 & (RowStyledBit | RowHyperlinkBit | RowGraphemeBit)) != 0
+}
+
+///|
+/// Whether two row descriptors are equal ignoring the `dirty` bit. `dirty` tracks
+/// render bookkeeping rather than row content, so the render-damage diff compares
+/// descriptors with it masked out (it forces the bit on in both sides).
+pub fn PageRowState::equals_ignoring_dirty(
+  self : PageRowState,
+  other : PageRowState,
+) -> Bool {
+  (self.0 | RowDirtyBit) == (other.0 | RowDirtyBit)
 }
 
 ///|
@@ -489,7 +477,7 @@ pub fn PageCellState::style_id(self : PageCellState) -> @style.StyleId {
 // A single shared blank cell value (the zero `u64`). A cell is a flat value, so
 // every empty slot just holds this word — a cleared/scrolled-in row is a scalar
 // fill, with no per-cell allocation.
-let default_page_cell_state : PageCellState = PageCellState::new()
+pub let default_page_cell_state : PageCellState = PageCellState::new()
 
 ///|
 pub fn PageCellState::with_style_id(

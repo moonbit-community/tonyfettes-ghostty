@@ -14,7 +14,7 @@ test "render state/internal fallback helpers stay safe" {
 
   let missing_row = snapshot_render_row(terminal, terminal.rows() + 1)
   let missing_cells = snapshot_render_cells(terminal, terminal.rows() + 1, 2)
-  guard missing_row == PageRowState::new() &&
+  guard missing_row == @page.PageRowState::new() &&
     missing_cells.length() == 2 &&
     missing_cells[0].is_zero() &&
     missing_cells[1].is_zero() else {
@@ -27,7 +27,7 @@ test "render state/internal fallback helpers stay safe" {
 ///|
 test "render state/internal mismatch helpers report false or none" {
   let state = RenderState::new()
-  state.row_states = [PageRowState::new()]
+  state.row_states = [@page.PageRowState::new()]
   guard !render_row_storage_matches(state, 1, 1) else {
     fail("expected missing row-cell storage to fail dimension check")
   }
@@ -37,7 +37,7 @@ test "render state/internal mismatch helpers report false or none" {
     fail("expected wrong row width to fail dimension check")
   }
 
-  guard !render_row_cells_equal([PageCellState::new()], []) else {
+  guard !render_row_cells_equal([@page.PageCellState::new()], []) else {
     fail("expected row-cell equality to reject mismatched lengths")
   }
 

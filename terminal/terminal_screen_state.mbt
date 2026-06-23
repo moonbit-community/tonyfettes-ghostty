@@ -11,11 +11,11 @@ priv struct PageListPage {
   // Parallel per-row arrays, mirroring `ScreenGridState`: `descs[i]`/`cells[i]`
   // are row `i`'s descriptor and cell buffer. The active page shares these
   // arrays with the grid by reference (see `active_grid`).
-  descs : FixedArray[PageRowState]
-  cells : FixedArray[FixedArray[PageCellState]]
+  descs : FixedArray[@page.PageRowState]
+  cells : FixedArray[FixedArray[@page.PageCellState]]
   // Per-row hyperlink ids, parallel to `cells` (see `ScreenGridState.link_ids`).
   // Shared with the active grid by reference, exactly like `cells`.
-  link_ids : FixedArray[FixedArray[HyperlinkId]?]
+  link_ids : FixedArray[FixedArray[@hyperlink.HyperlinkId]?]
 }
 
 ///|
@@ -25,12 +25,12 @@ priv struct PageListNode {
 
 ///|
 priv struct PageListRow {
-  mut row : PageRowState
-  cells : FixedArray[PageCellState]
+  mut row : @page.PageRowState
+  cells : FixedArray[@page.PageCellState]
   // The row's hyperlink ids keyed by column, or `None` when the row has no links
   // (the common case). Mirrors `ScreenGridState.link_ids`'s per-row entry; travels
   // with `cells` when the row moves between the active grid and history.
-  link_ids : FixedArray[HyperlinkId]?
+  link_ids : FixedArray[@hyperlink.HyperlinkId]?
   node : PageListNode
   y : CellCountInt
 }
@@ -90,9 +90,9 @@ priv struct PageList {
   // wholly cleared (see there); steady-state printing never reassigns them.
   mut style_table : @style.StyleTable
   // The hyperlink intern table, owned and shared exactly like `style_table`.
-  mut hyperlink_table : HyperlinkTable
+  mut hyperlink_table : @hyperlink.HyperlinkTable
   // The grapheme intern table, owned and shared exactly like `style_table`.
-  mut grapheme_table : GraphemeTable
+  mut grapheme_table : @page.GraphemeTable
 }
 
 ///|
@@ -138,11 +138,11 @@ priv struct PageListPreservedCursor {
 fn PageListPage::new(rows : CellCountInt, cols : CellCountInt) -> PageListPage {
   let actual_rows = screen_dimension(rows)
   let actual_cols = screen_dimension(cols)
-  let descs : FixedArray[PageRowState] = FixedArray::makei(
+  let descs : FixedArray[@page.PageRowState] = FixedArray::makei(
     actual_rows.to_int(),
-    _ => PageRowState::new(),
+    _ => @page.PageRowState::new(),
   )
-  let cells : FixedArray[FixedArray[PageCellState]] = FixedArray::makei(
+  let cells : FixedArray[FixedArray[@page.PageCellState]] = FixedArray::makei(
     actual_rows.to_int(),
     _ => make_row_cells(actual_cols.to_int()),
   )
@@ -178,8 +178,8 @@ fn PageList::new(
     viewport_pin: None,
     viewport_pin_row_offset: None,
     style_table: @style.StyleTable::new(),
-    hyperlink_table: HyperlinkTable::new(),
-    grapheme_table: GraphemeTable::new(),
+    hyperlink_table: @hyperlink.HyperlinkTable::new(),
+    grapheme_table: @page.GraphemeTable::new(),
   }
   state.viewport_pin = Some(state.track_pin(active_node, 0, 0))
   state
@@ -234,7 +234,7 @@ fn PageList::row(
   self : PageList,
   grid : ScreenGridState,
   row : CellCountInt,
-) -> PageRowState? {
+) -> @page.PageRowState? {
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(History(index)) => Some(self.history[index].row)
     Some(Screen(index)) => Some(grid.descs[index])
@@ -248,7 +248,7 @@ fn PageList::cell(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
@@ -266,7 +266,7 @@ fn PageList::screen_row(
   self : PageList,
   grid : ScreenGridState,
   row : CellCountInt,
-) -> PageRowState? {
+) -> @page.PageRowState? {
   match self.screen_row_source(grid, row.to_int()) {
     Some(History(index)) => Some(self.history[index].row)
     Some(Screen(index)) => Some(grid.descs[index])
@@ -280,7 +280,7 @@ fn PageList::screen_cell(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
@@ -308,23 +308,23 @@ fn PageList::link_id_at_source(
   grid : ScreenGridState,
   source : PageListRowSource,
   col_idx : Int,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   match source {
     History(index) => {
       let row = self.history[index]
       if !row.cells[col_idx].has_hyperlink() {
-        return no_hyperlink_id
+        return @hyperlink.no_hyperlink_id
       }
       match row.link_ids {
         Some(links) => links[col_idx]
-        None => no_hyperlink_id
+        None => @hyperlink.no_hyperlink_id
       }
     }
     Screen(index) =>
       if grid.cells[index][col_idx].has_hyperlink() {
         grid.link_id_at(index, col_idx)
       } else {
-        no_hyperlink_id
+        @hyperlink.no_hyperlink_id
       }
   }
 }
@@ -335,7 +335,7 @@ fn PageList::cell_hyperlink(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
@@ -348,24 +348,24 @@ fn PageList::cell_hyperlink(
 }
 
 ///|
-/// The raw (gated) `HyperlinkId` at a visible `(row, col)` — the cheap u16 key the
+/// The raw (gated) `@hyperlink.HyperlinkId` at a visible `(row, col)` — the cheap u16 key the
 /// render-snapshot diff compares to notice a hyperlink-only change (the packed
 /// cell carries only a presence bit, so two cells under different URIs are equal).
 /// Uses the same visible source as `cell` so it lines up with the render cell
-/// snapshot. Returns `no_hyperlink_id` for an unlinked cell.
+/// snapshot. Returns `@hyperlink.no_hyperlink_id` for an unlinked cell.
 fn PageList::cell_hyperlink_id(
   self : PageList,
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
-    return no_hyperlink_id
+    return @hyperlink.no_hyperlink_id
   }
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(source) => self.link_id_at_source(grid, source, col_idx)
-    None => no_hyperlink_id
+    None => @hyperlink.no_hyperlink_id
   }
 }
 
@@ -375,7 +375,7 @@ fn PageList::screen_cell_hyperlink(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   let col_idx = col.to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
@@ -491,8 +491,8 @@ fn PageList::full_reset(self : PageList, _rows : CellCountInt) -> Unit {
   // table refs it copied at construction, so `clear_active_screen` rebuilds it
   // from the page to pick these up.
   self.style_table = @style.StyleTable::new()
-  self.hyperlink_table = HyperlinkTable::new()
-  self.grapheme_table = GraphemeTable::new()
+  self.hyperlink_table = @hyperlink.HyperlinkTable::new()
+  self.grapheme_table = @page.GraphemeTable::new()
 }
 
 ///|
@@ -1168,7 +1168,7 @@ fn PageList::resize_without_reflow(
     }
     for _ in 0..<(grow_count - pull_count) {
       let row = make_pinned_row(
-        PageRowState::new(),
+        @page.PageRowState::new(),
         [],
         None,
         cols,
@@ -1253,7 +1253,15 @@ fn PageList::resize_cols(
   let reflowed = cursor.finish(self)
   while cursor.total_rows < self.rows.to_int() {
     reflowed.push(
-      make_pinned_row(PageRowState::new(), [], None, cols, false, false, false),
+      make_pinned_row(
+        @page.PageRowState::new(),
+        [],
+        None,
+        cols,
+        false,
+        false,
+        false,
+      ),
     )
     cursor.total_rows += 1
   }
@@ -1290,7 +1298,7 @@ fn PageList::resize_cols(
               while rows_to_append > 0 {
                 reflowed.push(
                   make_pinned_row(
-                    PageRowState::new(),
+                    @page.PageRowState::new(),
                     [],
                     None,
                     cols,
@@ -1511,8 +1519,8 @@ fn PageListReflowCursor::reflow_row(
 ///|
 fn PageListReflowCursor::write_cell(
   self : PageListReflowCursor,
-  cell : PageCellState,
-  link_id : HyperlinkId,
+  cell : @page.PageCellState,
+  link_id : @hyperlink.HyperlinkId,
 ) -> PageListReflowWriteResult {
   match cell.wide() {
     Narrow => {
@@ -1536,7 +1544,7 @@ fn PageListReflowCursor::write_cell(
           Success
         }
       } else {
-        self.node.page.cells[0][self.x] = PageCellState::new()
+        self.node.page.cells[0][self.x] = @page.PageCellState::new()
         self.cursor_forward()
         SkipNext
       }
@@ -1559,7 +1567,7 @@ fn PageListReflowCursor::write_cell(
 /// for the common link-free cell — the spacer/blank placeholders never call it.
 fn PageListReflowCursor::write_link(
   self : PageListReflowCursor,
-  link_id : HyperlinkId,
+  link_id : @hyperlink.HyperlinkId,
 ) -> Unit {
   if link_id.is_none() {
     return
@@ -1567,7 +1575,10 @@ fn PageListReflowCursor::write_link(
   let links = match self.node.page.link_ids[0] {
     Some(links) => links
     None => {
-      let links = FixedArray::make(self.cols.to_int(), no_hyperlink_id)
+      let links = FixedArray::make(
+        self.cols.to_int(),
+        @hyperlink.no_hyperlink_id,
+      )
       self.node.page.link_ids[0] = Some(links)
       links
     }
@@ -1600,7 +1611,7 @@ fn PageListReflowCursor::cursor_scroll_or_new_page(
 ///|
 fn PageListReflowCursor::copy_row_metadata(
   self : PageListReflowCursor,
-  row : PageRowState,
+  row : @page.PageRowState,
 ) -> Unit {
   // Known upstream bug: PageList.ReflowCursor.copyRowMetadata overwrites
   // semantic_prompt unconditionally. This keeps strict alignment, including
@@ -1757,7 +1768,7 @@ fn PageList::cell_at_point(
   self : PageList,
   grid : ScreenGridState,
   point : Point,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   let col_idx = point.coord().x().to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
     return None
@@ -1977,9 +1988,9 @@ fn snapshot_scrollback_row(
   // deep copy into the history row (previously this pre-copied them too, so
   // every captured row was deep-copied twice).
   let width = grid.cols.to_int()
-  let cells : FixedArray[PageCellState] = FixedArray::make(
+  let cells : FixedArray[@page.PageCellState] = FixedArray::make(
     width,
-    PageCellState::new(),
+    @page.PageCellState::new(),
   )
   for col_idx in 0..<width {
     cells[col_idx] = grid.cells[row_idx][col_idx]
@@ -2096,18 +2107,18 @@ fn copy_pinned_row(source : PageListRow, cols : CellCountInt) -> PageListRow {
 
 ///|
 fn make_pinned_row(
-  row_template : PageRowState,
-  source_cells : FixedArray[PageCellState],
-  source_link_ids : FixedArray[HyperlinkId]?,
+  row_template : @page.PageRowState,
+  source_cells : FixedArray[@page.PageCellState],
+  source_link_ids : FixedArray[@hyperlink.HyperlinkId]?,
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
   update_prompt_continuation : Bool,
 ) -> PageListRow {
   let width = cols.to_int()
-  let cells : FixedArray[PageCellState] = FixedArray::make(
+  let cells : FixedArray[@page.PageCellState] = FixedArray::make(
     width,
-    PageCellState::new(),
+    @page.PageCellState::new(),
   )
   let copy_len = min_int(width, source_cells.length())
   for col in 0..<copy_len {
@@ -2141,14 +2152,14 @@ fn make_pinned_row(
 /// column, truncated/zero-padded to `width`), or `None` when the source has no
 /// link array — the common link-free row, which then needs no allocation.
 fn make_pinned_link_ids(
-  source_link_ids : FixedArray[HyperlinkId]?,
+  source_link_ids : FixedArray[@hyperlink.HyperlinkId]?,
   width : Int,
   copy_len : Int,
-) -> FixedArray[HyperlinkId]? {
+) -> FixedArray[@hyperlink.HyperlinkId]? {
   match source_link_ids {
     None => None
     Some(source) => {
-      let links = FixedArray::make(width, no_hyperlink_id)
+      let links = FixedArray::make(width, @hyperlink.no_hyperlink_id)
       let len = min_int(copy_len, source.length())
       for col in 0..<len {
         links[col] = source[col]
@@ -2165,9 +2176,9 @@ fn make_pinned_link_ids(
 /// overwritten by the grid shift — see `harvest_scrollback_row`. Eliminates the
 /// per-cell copy (and its style/array allocation) that dominated scroll cost.
 fn make_pinned_row_owned(
-  row_template : PageRowState,
-  cells : FixedArray[PageCellState],
-  link_ids : FixedArray[HyperlinkId]?,
+  row_template : @page.PageRowState,
+  cells : FixedArray[@page.PageCellState],
+  link_ids : FixedArray[@hyperlink.HyperlinkId]?,
   cols : CellCountInt,
   wrap : Bool,
   wrap_continuation : Bool,
@@ -2196,30 +2207,33 @@ fn make_pinned_row_owned(
 }
 
 ///|
-fn reflow_spacer_head_cell() -> PageCellState {
-  PageCellState::new(wide=SpacerHead)
+fn reflow_spacer_head_cell() -> @page.PageCellState {
+  @page.PageCellState::new(wide=SpacerHead)
 }
 
 ///|
 /// Read the hyperlink id at `col` from an optional per-row link array, returning
-/// `no_hyperlink_id` when the row has none or the column is out of range.
-fn link_at(link_ids : FixedArray[HyperlinkId]?, col : Int) -> HyperlinkId {
+/// `@hyperlink.no_hyperlink_id` when the row has none or the column is out of range.
+fn link_at(
+  link_ids : FixedArray[@hyperlink.HyperlinkId]?,
+  col : Int,
+) -> @hyperlink.HyperlinkId {
   match link_ids {
     Some(links) =>
       if col >= 0 && col < links.length() {
         links[col]
       } else {
-        no_hyperlink_id
+        @hyperlink.no_hyperlink_id
       }
-    None => no_hyperlink_id
+    None => @hyperlink.no_hyperlink_id
   }
 }
 
 ///|
 fn apply_cell_flags_to_row(
-  row : PageRowState,
-  cells : FixedArray[PageCellState],
-) -> PageRowState {
+  row : @page.PageRowState,
+  cells : FixedArray[@page.PageCellState],
+) -> @page.PageRowState {
   let mut grapheme = false
   let mut styled = false
   let mut hyperlink = false
@@ -2240,7 +2254,7 @@ fn apply_cell_flags_to_row(
 
 ///|
 /// Recompute the cell-derived flags of a pinned row and write the new descriptor
-/// back to both `row` and the row's backing page line. `PageRowState` is a value
+/// back to both `row` and the row's backing page line. `@page.PageRowState` is a value
 /// type, so the two no longer share storage — keeping them in sync preserves the
 /// aliased behaviour the previous mutable descriptor had.
 fn PageListRow::recompute_cell_flags(self : PageListRow) -> Unit {
@@ -2250,7 +2264,7 @@ fn PageListRow::recompute_cell_flags(self : PageListRow) -> Unit {
 }
 
 ///|
-fn reflow_cell_has_content(cell : PageCellState) -> Bool {
+fn reflow_cell_has_content(cell : @page.PageCellState) -> Bool {
   !cell.is_empty() ||
   cell.has_styling() ||
   cell.is_protected() ||
@@ -2264,8 +2278,8 @@ fn screen_grid_from_rows(
   cols : CellCountInt,
   pinned_rows : Array[PageListRow],
   style_table : @style.StyleTable,
-  hyperlink_table : HyperlinkTable,
-  grapheme_table : GraphemeTable,
+  hyperlink_table : @hyperlink.HyperlinkTable,
+  grapheme_table : @page.GraphemeTable,
 ) -> ScreenGridState {
   // Share the screen's tables: the pinned rows carry ids minted from them, so the
   // rebuilt grid must resolve against the same tables.

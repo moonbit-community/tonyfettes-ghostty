@@ -459,7 +459,7 @@ fn StreamTerminalBridgeState::set_default_palette(
 fn StreamTerminalBridgeState::screen_row_snapshot(
   self : StreamTerminalBridgeState,
   row : CellCountInt,
-) -> PageRowState? {
+) -> @page.PageRowState? {
   self.scrollback.row(self.grid, row)
 }
 
@@ -468,7 +468,7 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
   self : StreamTerminalBridgeState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   self.scrollback.cell(self.grid, row, col)
 }
 
@@ -477,7 +477,7 @@ fn StreamTerminalBridgeState::screen_cell_hyperlink_snapshot(
   self : StreamTerminalBridgeState,
   row : CellCountInt,
   col : CellCountInt,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   self.scrollback.cell_hyperlink(self.grid, row, col)
 }
 
@@ -486,7 +486,7 @@ fn StreamTerminalBridgeState::screen_cell_hyperlink_id_snapshot(
   self : StreamTerminalBridgeState,
   row : CellCountInt,
   col : CellCountInt,
-) -> HyperlinkId {
+) -> @hyperlink.HyperlinkId {
   self.scrollback.cell_hyperlink_id(self.grid, row, col)
 }
 
@@ -605,7 +605,7 @@ fn StreamTerminalBridgeState::point_from_pin(
 fn StreamTerminalBridgeState::cell_at_point(
   self : StreamTerminalBridgeState,
   point : Point,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   self.scrollback.cell_at_point(self.grid, point)
 }
 
@@ -1723,7 +1723,7 @@ fn StreamTerminalBridgeState::cursor_outside_scroll_region(
 ///|
 fn StreamTerminalBridgeState::active_hyperlink(
   self : StreamTerminalBridgeState,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   self.hyperlink.cell_hyperlink()
 }
 

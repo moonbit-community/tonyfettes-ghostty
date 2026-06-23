@@ -1,18 +1,4 @@
 ///|
-pub(all) enum SemanticContent {
-  Output
-  Input
-  Prompt
-} derive(Eq, Debug)
-
-///|
-pub(all) enum RowSemanticPrompt {
-  None
-  Prompt
-  PromptContinuation
-} derive(Eq, Debug)
-
-///|
 pub(all) enum SemanticClickMode {
   None
   ClickEvents
@@ -23,9 +9,9 @@ pub(all) enum SemanticClickMode {
 struct ScreenSemanticState {
   mut seen : Bool
   mut click : SemanticClickMode
-  mut cursor_content : SemanticContent
+  mut cursor_content : @page.SemanticContent
   mut cursor_content_clear_eol : Bool
-  mut row_prompt : RowSemanticPrompt
+  mut row_prompt : @page.RowSemanticPrompt
 } derive(Eq, Debug)
 
 ///|
@@ -54,7 +40,7 @@ pub fn ScreenSemanticState::click(
 ///|
 pub fn ScreenSemanticState::cursor_content(
   self : ScreenSemanticState,
-) -> SemanticContent {
+) -> @page.SemanticContent {
   self.cursor_content
 }
 
@@ -68,7 +54,7 @@ pub fn ScreenSemanticState::cursor_content_clear_eol(
 ///|
 pub fn ScreenSemanticState::row_prompt(
   self : ScreenSemanticState,
-) -> RowSemanticPrompt {
+) -> @page.RowSemanticPrompt {
   self.row_prompt
 }
 

@@ -1,5 +1,5 @@
 ///|
-fn expect_row(grid : ScreenGridState, row : CellCountInt) -> PageRowState {
+fn expect_row(grid : ScreenGridState, row : CellCountInt) -> @page.PageRowState {
   grid.row(row).unwrap()
 }
 
@@ -14,8 +14,8 @@ fn ScreenGridState::new(
     rows,
     cols,
     @style.StyleTable::new(),
-    HyperlinkTable::new(),
-    GraphemeTable::new(),
+    @hyperlink.HyperlinkTable::new(),
+    @page.GraphemeTable::new(),
   )
 }
 
@@ -40,7 +40,7 @@ fn ScreenGridState::cell_hyperlink(
   self : ScreenGridState,
   row : Int,
   col : Int,
-) -> CellHyperlink? {
+) -> @hyperlink.CellHyperlink? {
   if self.cells[row][col].has_hyperlink() {
     self.hyperlink_table.get(self.link_id_at(row, col))
   } else {
@@ -53,7 +53,7 @@ fn ScreenGridState::cell(
   self : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState? {
+) -> @page.PageCellState? {
   let row_idx = row.to_int()
   let col_idx = col.to_int()
   if row_idx < 0 ||
@@ -71,7 +71,7 @@ fn expect_cell(
   grid : ScreenGridState,
   row : CellCountInt,
   col : CellCountInt,
-) -> PageCellState {
+) -> @page.PageCellState {
   grid.cell(row, col).unwrap()
 }
 
@@ -82,7 +82,7 @@ fn set_test_cell(
   grid : ScreenGridState,
   row : Int,
   col : Int,
-  cell : PageCellState,
+  cell : @page.PageCellState,
 ) -> Unit {
   grid.cells[row][col] = cell
 }
@@ -133,7 +133,9 @@ test "screen grid/print stores metadata and repeat clamps zero count" {
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   style = style.apply_attribute(Color256Bg(7))
-  let hyperlink = CellHyperlink::explicit("https://example.com", "link")
+  let hyperlink = @hyperlink.CellHyperlink::explicit(
+    "https://example.com", "link",
+  )
 
   grid.print(
     cursor,
@@ -1049,7 +1051,7 @@ test "screen grid/recompute row flags sees grapheme styling and hyperlinks" {
 ///|
 test "screen grid/cell_hyperlink gates on the presence bit after an unlinked overwrite" {
   let grid = ScreenGridState::new(1, 3)
-  let link = CellHyperlink::implicit("https://example.com", 1)
+  let link = @hyperlink.CellHyperlink::implicit("https://example.com", 1)
   // Write a hyperlinked cell, then overwrite it with link-free text at the same
   // column. The side array keeps the stale id (the unlinked write never scrubs
   // it), so resolution must gate on the cell's now-cleared presence bit.

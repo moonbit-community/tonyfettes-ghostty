@@ -124,7 +124,7 @@ test "render state/hyperlink-only uri change dirties the row" {
   }
 
   // Rewrite the SAME glyph + style at the same cell under a DIFFERENT uri. Only
-  // the out-of-cell hyperlink id changes — the packed `PageCellState` is byte-for-
+  // the out-of-cell hyperlink id changes — the packed `@page.PageCellState` is byte-for-
   // byte identical and the row flags are unchanged — so the damage diff must flag
   // the row via the snapshotted link ids, not the cells.
   terminal.next_slice(b"\r\x1B]8;;https://b.example\x07A\x1B]8;;\x07")
