@@ -46,6 +46,7 @@ pub fn StyleColor::rgb(@color.RGB) -> Self
 pub fn StyleColor::rgb_value(Self) -> @color.RGB?
 
 type StyleId derive(Eq, Hash, @debug.Debug)
+pub fn StyleId::from_uint16(UInt16) -> Self
 pub fn StyleId::is_default(Self) -> Bool
 pub fn StyleId::to_uint16(Self) -> UInt16
 

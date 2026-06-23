@@ -1384,23 +1384,21 @@ fn ScreenGridState::write_cell(
   // its presence as a flag bit.
   let link_id = self.hyperlink_table.intern(hyperlink)
   let has_link = !link_id.is_none()
-  // A printed character fully defines the cell, so build one fresh immutable
-  // value and store it into the slot — there is nothing to read from the old
-  // cell. One record literal is a single allocation, versus chaining six
-  // `with_*` builders. (Whole-cell `#valtype` will turn this store into an
-  // inline memcpy with no allocation at all.)
-  self.cells[row_idx][col_idx] = {
+  // A printed character fully defines the cell, so pack one fresh `u64` and store
+  // it into the slot — there is nothing to read from the old cell. The store is a
+  // single inline word write, no allocation.
+  self.cells[row_idx][col_idx] = PageCellState::pack(
     codepoint,
     // A printed base char has no combining marks yet; they are appended later via
     // the grapheme table. (`write_cell` is never the grapheme-append path.)
-    grapheme_id: no_grapheme_id,
+    no_grapheme_id,
     // Intern the incoming style into the screen's shared table; the cell keeps
     // only the id. Default/unstyled prints hit the table's pre-seeded id 0.
-    style_id: self.style_table.intern(style),
-    flags: PageCellFlags::pack(wide, protected_flag, semantic_content).with_hyperlink_present(
+    self.style_table.intern(style),
+    PageCellFlags::pack(wide, protected_flag, semantic_content).with_hyperlink_present(
       has_link,
     ),
-  }
+  )
   // Record the link id by column only when there is one; a link-free write leaves
   // the row's (possibly absent) link array untouched, since the cleared presence
   // bit makes any stale slot dead.

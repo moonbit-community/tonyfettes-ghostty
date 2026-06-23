@@ -216,12 +216,12 @@ pub fn PageRowState::managed_memory(self : PageRowState) -> Bool {
 const EmptyCodepoint : UInt = 0
 
 ///|
-// `wide` (2 bits), `protected` (1 bit), and `semantic_content` (2 bits) packed
-// into one machine word, mirroring how upstream Ghostty bit-packs these flags
-// inside its `u64` cell. Folding three fields into one keeps `PageCellState`
-// within the six-field limit a native `#valtype` struct allows. Bit 3 is
-// reserved for a future `hyperlink` flag, so the layout already matches
-// upstream's field order (wide, protected, hyperlink, semantic_content).
+// `wide` (2 bits), `protected` (1 bit), `hyperlink_present` (1 bit), and
+// `semantic_content` (2 bits) packed into one 6-bit field, mirroring how upstream
+// Ghostty bit-packs these flags inside its `u64` cell. `PageCellState` stores this
+// value in bits [53, 59) of its word; `PageCellFlags` owns the decode/encode of
+// the individual flags. The field order (wide, protected, hyperlink, semantic)
+// matches upstream's cell.
 //
 //   bit 0-1 : wide              (Narrow=0 Wide=1 SpacerTail=2 SpacerHead=3)
 //   bit 2   : protected
@@ -334,54 +334,89 @@ fn PageCellFlags::with_protected(
 }
 
 ///|
-// A cell is an immutable value: writes produce a new `PageCellState` via the
-// `with_*` builders and the grid stores it back into its slot, rather than
-// mutating fields in place. This keeps cells aliasing-safe (a value can be
-// copied freely).
+// A cell is an immutable, flat `u64` value — upstream Ghostty's `packed
+// struct(u64)` cell. All writes go through the `with_*` builders / `pack`, which
+// return a new `u64` the grid stores back into its slot; nothing mutates in
+// place, so a cell copies as a single 8-byte word with no refcount and a row of
+// them is a contiguous scalar buffer (`FixedArray[PageCellState]` is a flat
+// `u64` array). A newtype-over-`UInt64` is already a transparent scalar, so this
+// needs no `#valtype`.
 //
-// NOT `#valtype`, deliberately. The struct still holds three refcounted pointer
-// fields (`style`, `grapheme_extras`, `hyperlink`), so as a value type every
-// copy moves five words AND retains/releases up to three pointers — whereas a
-// boxed cell is one pointer + one refcount per copy. The print/scroll path is
-// copy-heavy (immutable `with_*`, snapshots, row shifts), so `#valtype` measured
-// as a net regression: +30% on plain_lines, +140% on scroll_storm
-// (`moon bench -p bench/workloads --release --target native`, 2026-06-22). A flat
-// value cell only pays off once those pointer fields are gone (style packed/
-// indexed, hyperlink→bool+side table, grapheme→side table — i.e. Zig's pointer-
-// free `u64` cell). Until then, keep it boxed.
-struct PageCellState {
-  // The cell's base codepoint (`EmptyCodepoint` = blank). A cell's background
-  // color lives in `style.bg_color` like any other style attribute — there is no
-  // separate "background cell" kind, so the codepoint is a plain scalar.
-  codepoint : UInt
-  // Combining codepoints (skin-tone modifiers, accents, …) layered on top of
-  // the base codepoint. `None` for the overwhelmingly common single-
-  // codepoint cell, so a normal cell write allocates nothing here; only a real
-  // grapheme cluster pays for the array. `ReadOnlyArray` so it can never be
-  // mutated in place — together with the immutable cell that means copying a
-  // cell into another slot is a plain value share, with no deep copy needed.
-  // The cell's combining codepoints as a `GraphemeId` into the screen's shared
-  // `GraphemeTable` (0 = not a grapheme cell). Presence (`has_grapheme`) is a
-  // plain id compare; the actual marks are resolved through the grid/screen only
-  // when emitting text. This is the cell's last non-scalar field removed — the
-  // struct is now all-scalar.
-  grapheme_id : GraphemeId
-  // The cell's style as a `StyleId` index into the screen's shared `StyleTable`,
-  // not an inline style. `0` (the default style) needs no lookup. This removes a
-  // refcounted pointer from the cell — a prerequisite for the eventual flat
-  // `u64` cell — and matches upstream Ghostty's `style_id`. Resolve it to a
-  // `CellStyle` through the grid/screen that owns the table (the cell alone
-  // cannot, by design).
-  style_id : @style.StyleId
-  // `wide`, `protected`, `hyperlink_present`, and `semantic_content` packed into
-  // one word — see `PageCellFlags`. The hyperlink is now just a presence *bit*
-  // here: the actual `HyperlinkId` lives in a per-row side array keyed by column
-  // (`ScreenGridState.link_ids` / `PageListRow.link_ids`), not in the cell. That
-  // is the last id evicted so the whole cell fits a `u64` — a `HyperlinkId` can
-  // accumulate unboundedly over a session (e.g. `ls --hyperlink`), so unlike the
-  // bounded style/grapheme ids it cannot share the 64-bit budget.
-  flags : PageCellFlags
-} derive(Eq, Debug)
+// Bit layout (LSB first), 59 of 64 bits used:
+//   [0, 21)  codepoint   (21 bits — full Unicode scalar range)
+//   [21, 37) style_id    (16 bits — index into the screen's StyleTable)
+//   [37, 53) grapheme_id (16 bits — index into the screen's GraphemeTable)
+//   [53, 59) flags       ( 6 bits — wide 2, protected 1, hyperlink 1, semantic 2)
+// The hyperlink is a presence *bit* only; its `HyperlinkId` lives in a per-row
+// side array (`ScreenGridState.link_ids`), since it can accumulate unboundedly
+// (e.g. `ls --hyperlink`) and so cannot fit a fixed 16-bit field in the word.
+struct PageCellState(UInt64) derive(Eq, Debug)
+
+///|
+const CellCodepointMask : UInt64 = 0x1F_FFFF
+
+///|
+const CellStyleShift : Int = 21
+
+///|
+const CellGraphemeShift : Int = 37
+
+///|
+// Shared 16-bit mask for the style and grapheme id fields.
+const CellIdMask : UInt64 = 0xFFFF
+
+///|
+const CellFlagsShift : Int = 53
+
+///|
+const CellFlagsMask : UInt64 = 0x3F
+
+///|
+// Pack the four fields into the `u64` cell. The single point where a cell is
+// minted from components — `new` and `write_cell` route through here.
+fn PageCellState::pack(
+  codepoint : UInt,
+  grapheme_id : GraphemeId,
+  style_id : @style.StyleId,
+  flags : PageCellFlags,
+) -> PageCellState {
+  PageCellState(
+    (codepoint.to_uint64() & CellCodepointMask) |
+    ((style_id.to_uint16().to_uint64() & CellIdMask) << CellStyleShift) |
+    ((grapheme_id.0.to_uint64() & CellIdMask) << CellGraphemeShift) |
+    ((flags.0.to_uint64() & CellFlagsMask) << CellFlagsShift),
+  )
+}
+
+///|
+// Replace the bits of one field (given its mask and shift) with `value`, leaving
+// the rest of the word untouched — the primitive the single-field `with_*`
+// builders share.
+fn PageCellState::with_field(
+  self : PageCellState,
+  mask : UInt64,
+  shift : Int,
+  value : UInt64,
+) -> PageCellState {
+  let clear = (mask << shift) ^ 0xFFFF_FFFF_FFFF_FFFF
+  PageCellState((self.0 & clear) | ((value & mask) << shift))
+}
+
+///|
+// The cell's packed flag bits as a `PageCellFlags`. The decode/encode of
+// wide/protected/hyperlink/semantic still lives in `PageCellFlags`; the cell just
+// stores its 6-bit value in place.
+fn PageCellState::flags(self : PageCellState) -> PageCellFlags {
+  PageCellFlags(((self.0 >> CellFlagsShift) & CellFlagsMask).to_int())
+}
+
+///|
+fn PageCellState::with_flags(
+  self : PageCellState,
+  flags : PageCellFlags,
+) -> PageCellState {
+  self.with_field(CellFlagsMask, CellFlagsShift, flags.0.to_uint64())
+}
 
 ///|
 // Construct a cell. Every field is an optional with the blank-cell default, so
@@ -399,20 +434,20 @@ pub fn PageCellState::new(
   hyperlink_present? : Bool = false,
   semantic_content? : SemanticContent = Output,
 ) -> PageCellState {
-  {
+  PageCellState::pack(
     codepoint,
     // `grapheme` only ever flags an *empty* cluster here (marks are appended
     // later through the grid), so the reserved empty id sets it with no table.
-    grapheme_id: if grapheme {
+    if grapheme {
       empty_grapheme_id
     } else {
       no_grapheme_id
     },
     style_id,
-    flags: PageCellFlags::pack(wide, protected_flag, semantic_content).with_hyperlink_present(
+    PageCellFlags::pack(wide, protected_flag, semantic_content).with_hyperlink_present(
       hyperlink_present,
     ),
-  }
+  )
 }
 
 ///|
@@ -430,20 +465,14 @@ pub fn PageCellState::with_codepoint(
   // through the grid (`GraphemeTable::append`). The reserved empty id records
   // "this is a grapheme cell" before any marks land. Either way this overwrite
   // drops any prior extras.
-  {
-    ..self,
-    codepoint,
-    grapheme_id: if grapheme {
-      empty_grapheme_id
-    } else {
-      no_grapheme_id
-    },
-  }
+  self
+  .with_field(CellCodepointMask, 0, codepoint.to_uint64())
+  .with_grapheme_id(if grapheme { empty_grapheme_id } else { no_grapheme_id })
 }
 
 ///|
 pub fn PageCellState::codepoint(self : PageCellState) -> UInt {
-  self.codepoint
+  (self.0 & CellCodepointMask).to_uint()
 }
 
 ///|
@@ -451,15 +480,15 @@ pub fn PageCellState::codepoint(self : PageCellState) -> UInt {
 // `CellStyle` (and thus `palette_index`/`background_rgb`/the full style) is done
 // by the grid/screen that owns the table — see `ScreenGridState::cell_style`.
 pub fn PageCellState::style_id(self : PageCellState) -> @style.StyleId {
-  self.style_id
+  @style.StyleId::from_uint16(
+    ((self.0 >> CellStyleShift) & CellIdMask).to_uint16(),
+  )
 }
 
 ///|
-// A single shared blank cell. Because a cell is immutable, every empty slot can
-// point at this one value instead of allocating its own — a cleared/scrolled-in
-// row is then a fill of the same reference, with no per-cell allocation. A write
-// replaces the slot wholesale (the shared value is never mutated), so the sharing
-// is invisible to callers.
+// A single shared blank cell value (the zero `u64`). A cell is a flat value, so
+// every empty slot just holds this word — a cleared/scrolled-in row is a scalar
+// fill, with no per-cell allocation.
 let default_page_cell_state : PageCellState = PageCellState::new()
 
 ///|
@@ -468,12 +497,12 @@ pub fn PageCellState::with_style_id(
   style_id : @style.StyleId,
 ) -> PageCellState {
   // Swap in a new style id (a 16-bit value); the style itself lives in the table.
-  { ..self, style_id, }
+  self.with_field(CellIdMask, CellStyleShift, style_id.to_uint16().to_uint64())
 }
 
 ///|
 pub fn PageCellState::wide(self : PageCellState) -> PageCellWide {
-  self.flags.wide()
+  self.flags().wide()
 }
 
 ///|
@@ -481,12 +510,12 @@ pub fn PageCellState::with_wide(
   self : PageCellState,
   value : PageCellWide,
 ) -> PageCellState {
-  { ..self, flags: self.flags.with_wide(value) }
+  self.with_flags(self.flags().with_wide(value))
 }
 
 ///|
 pub fn PageCellState::is_protected(self : PageCellState) -> Bool {
-  self.flags.is_protected()
+  self.flags().is_protected()
 }
 
 ///|
@@ -494,7 +523,7 @@ pub fn PageCellState::with_protected(
   self : PageCellState,
   value : Bool,
 ) -> PageCellState {
-  { ..self, flags: self.flags.with_protected(value) }
+  self.with_flags(self.flags().with_protected(value))
 }
 
 ///|
@@ -502,7 +531,7 @@ pub fn PageCellState::with_protected(
 // lookup. The actual `HyperlinkId` lives in the owning grid/row's `link_ids` side
 // array, resolved by position via `ScreenGridState::cell_hyperlink`.
 pub fn PageCellState::has_hyperlink(self : PageCellState) -> Bool {
-  self.flags.has_hyperlink()
+  self.flags().has_hyperlink()
 }
 
 ///|
@@ -512,12 +541,12 @@ pub fn PageCellState::with_hyperlink_present(
   self : PageCellState,
   value : Bool,
 ) -> PageCellState {
-  { ..self, flags: self.flags.with_hyperlink_present(value) }
+  self.with_flags(self.flags().with_hyperlink_present(value))
 }
 
 ///|
 pub fn PageCellState::semantic_content(self : PageCellState) -> SemanticContent {
-  self.flags.semantic_content()
+  self.flags().semantic_content()
 }
 
 ///|
@@ -527,12 +556,12 @@ pub fn PageCellState::is_zero(self : PageCellState) -> Bool {
 
 ///|
 pub fn PageCellState::has_text(self : PageCellState) -> Bool {
-  self.codepoint != EmptyCodepoint
+  self.codepoint() != EmptyCodepoint
 }
 
 ///|
 pub fn PageCellState::grid_width(self : PageCellState) -> Int {
-  match self.flags.wide() {
+  match self.flags().wide() {
     Narrow | SpacerHead | SpacerTail => 1
     Wide => 2
   }
@@ -541,8 +570,9 @@ pub fn PageCellState::grid_width(self : PageCellState) -> Int {
 ///|
 pub fn PageCellState::has_styling(self : PageCellState) -> Bool {
   // The style id is the default (0) exactly when the cell is unstyled, so this is
-  // a single integer compare — like Ghostty's `style_id != default_id`.
-  !self.style_id.is_default()
+  // a single field test against the 16-bit style window — like Ghostty's
+  // `style_id != default_id`.
+  ((self.0 >> CellStyleShift) & CellIdMask) != 0UL
 }
 
 ///|
@@ -550,19 +580,19 @@ pub fn PageCellState::is_empty(self : PageCellState) -> Bool {
   // Note: a cell carrying only a background color is now "empty" here (no glyph)
   // but `has_styling()` is true, so trim/emit sites use `!is_empty() ||
   // has_styling()` to keep it.
-  self.codepoint == EmptyCodepoint && self.flags.wide() == Narrow
+  self.codepoint() == EmptyCodepoint && self.flags().wide() == Narrow
 }
 
 ///|
 pub fn PageCellState::has_grapheme(self : PageCellState) -> Bool {
-  !self.grapheme_id.is_none()
+  ((self.0 >> CellGraphemeShift) & CellIdMask) != 0UL
 }
 
 ///|
 // The cell's grapheme id. The combining codepoints themselves are resolved by the
 // grid/screen that owns the table — see `ScreenGridState::cell_grapheme_codepoints`.
 pub fn PageCellState::grapheme_id(self : PageCellState) -> GraphemeId {
-  self.grapheme_id
+  GraphemeId(((self.0 >> CellGraphemeShift) & CellIdMask).to_uint16())
 }
 
 ///|
@@ -570,5 +600,5 @@ pub fn PageCellState::with_grapheme_id(
   self : PageCellState,
   value : GraphemeId,
 ) -> PageCellState {
-  { ..self, grapheme_id: value }
+  self.with_field(CellIdMask, CellGraphemeShift, value.0.to_uint64())
 }

@@ -18,6 +18,15 @@ pub fn StyleId::to_uint16(self : StyleId) -> UInt16 {
 }
 
 ///|
+/// Reconstruct a `StyleId` from its raw 16-bit value. The inverse of
+/// `to_uint16`, for callers that pack the id into a wider word (the `u64` cell)
+/// and need to unpack it. The value must be one this table minted (or 0); ids are
+/// never reclaimed, so any minted value stays valid.
+pub fn StyleId::from_uint16(value : UInt16) -> StyleId {
+  StyleId(value)
+}
+
+///|
 pub fn StyleId::is_default(self : StyleId) -> Bool {
   self.0 == 0
 }
