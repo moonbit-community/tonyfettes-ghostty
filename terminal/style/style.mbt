@@ -151,12 +151,16 @@ fn underline_decode(bits : UInt) -> @sgr.SgrUnderline {
 }
 
 // `CellStyle` is an immutable `#valtype`: four inline scalar words (three packed
-// `StyleColor`s plus the flags), stored inline in a cell with no heap object and
-// no reference. Every "mutation" returns a new value via the `with_*` helpers
-// and `apply_attribute`; since it is a value, those updates and the temporaries
-// in a `new().with_*()` chain are stack copies, not allocations.
+// `StyleColor`s plus the flags) with no heap object and no reference. Every
+// "mutation" returns a new value via the `with_*` helpers and `apply_attribute`;
+// since it is a value, those updates and the temporaries in a `new().with_*()`
+// chain are stack copies, not allocations — and even the per-cell-write
+// `CellStyle::new()` for an unstyled cell allocates nothing. As a `#valtype` it
+// also makes `StyleTable`'s `Array[CellStyle]` a flat contiguous buffer rather
+// than an array of pointers to boxed records.
 
 ///|
+#valtype
 pub struct CellStyle {
   priv fg_color : StyleColor
   priv bg_color : StyleColor
