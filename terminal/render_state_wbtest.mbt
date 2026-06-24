@@ -46,11 +46,4 @@ test "render state/internal mismatch helpers report false or none" {
     !render_palette_equals(first_palette, [@color.RGB::new(4, 5, 6)]) else {
     fail("expected palette equality to reject mismatched lengths and values")
   }
-
-  guard render_cell_at(state, -1, 0) == None &&
-    render_cell_at(state, 0, 0) == None &&
-    render_cell_background_color_at(state, 0, 0) == None &&
-    render_cell_foreground_color_at(state, 0, 0) == None else {
-    fail("expected invalid cell access to stay empty")
-  }
 }

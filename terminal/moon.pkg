@@ -24,6 +24,7 @@ import {
   "tonyfettes/ghostty/terminal/pagelist",
   "tonyfettes/ghostty/terminal/point",
   "tonyfettes/ghostty/terminal/protected",
+  "tonyfettes/ghostty/terminal/render_row_iterator",
   "tonyfettes/ghostty/terminal/result_code",
   "tonyfettes/ghostty/terminal/selection",
   "tonyfettes/ghostty/terminal/semantic",

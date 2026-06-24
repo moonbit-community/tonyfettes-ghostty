@@ -492,125 +492,21 @@ fn render_row_cells_equal(
 }
 
 ///|
-fn render_row_at(state : RenderState, row_idx : Int) -> @page.PageRowState? {
-  if row_idx < 0 || row_idx >= state.row_states.length() {
-    None
-  } else {
-    Some(state.row_states[row_idx])
-  }
-}
-
-///|
-fn render_row_dirty_at(state : RenderState, row_idx : Int) -> Bool? {
-  if row_idx < 0 || row_idx >= state.row_states.length() {
-    None
-  } else {
-    Some(state.row_states[row_idx].dirty())
-  }
-}
-
-///|
-fn render_set_row_dirty_at(
-  state : RenderState,
-  row_idx : Int,
-  value : Bool,
-) -> Bool {
-  if row_idx < 0 || row_idx >= state.row_states.length() {
-    false
-  } else {
-    state.row_states[row_idx] = state.row_states[row_idx].with_dirty(value)
-    true
-  }
-}
-
-///|
-fn render_cell_at(
-  state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
-) -> @page.PageCellState? {
-  if row_idx < 0 || row_idx >= state.row_cells.length() {
-    return None
-  }
-  if col_idx < 0 || col_idx >= state.row_cells[row_idx].length() {
-    return None
-  }
-  Some(state.row_cells[row_idx][col_idx])
-}
-
-///|
-// The resolved hyperlink of the snapshot cell at (row, col), or `None` when it
-// carries no link. Gated on the cell's presence bit (the snapshot's source of
-// truth); the id comes from the parallel `row_link_ids` and resolves through the
-// captured `hyperlink_table`, so no live-terminal access is needed.
-fn render_cell_hyperlink_at(
-  state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
-) -> @hyperlink.CellHyperlink? {
-  match render_cell_at(state, row_idx, col_idx) {
-    Some(cell) =>
-      if cell.has_hyperlink() {
-        let id = match state.row_link_ids[row_idx] {
-          Some(links) => links[col_idx]
-          None => @hyperlink.no_hyperlink_id
-        }
-        state.hyperlink_table.get(id)
-      } else {
-        None
-      }
-    None => None
-  }
-}
-
-///|
-fn render_cell_background_color_at(
-  state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
-) -> @color.RGB? {
-  match render_cell_at(state, row_idx, col_idx) {
-    Some(cell) =>
-      render_cell_background_color(
-        state.style_table.get(cell.style_id()),
-        state.palette,
-      )
-    None => None
-  }
-}
-
-///|
-fn render_cell_foreground_color_at(
-  state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
-) -> @color.RGB? {
-  match render_cell_at(state, row_idx, col_idx) {
-    Some(cell) =>
-      render_cell_foreground_color(
-        state.style_table.get(cell.style_id()),
-        state.palette,
-      )
-    None => None
-  }
-}
-
-///|
-fn render_cell_background_color(
-  style : @style.CellStyle,
-  palette : Array[@color.RGB],
-) -> @color.RGB? {
-  // Every cell keeps its background in the style now (no separate background
-  // content kind), so this is just the style's resolved bg.
-  style.bg_color_rgb(palette)
-}
-
-///|
-fn render_cell_foreground_color(
-  style : @style.CellStyle,
-  palette : Array[@color.RGB],
-) -> @color.RGB? {
-  style.fg_rgb(palette)
+/// Build a snapshot iterator over the captured render state. The component
+/// arrays are handed to the `render_row_iterator` leaf by reference, so a later
+/// `set_dirty` writes back into this state's `row_states`. The iterator resolves
+/// styles/graphemes/links/colors from the captured tables and palette, never
+/// from the live terminal.
+pub fn RenderState::row_iterator(self : RenderState) -> RenderRowIterator {
+  RenderRowIterator::new(
+    row_states=self.row_states,
+    row_cells=self.row_cells,
+    row_link_ids=self.row_link_ids,
+    style_table=self.style_table,
+    grapheme_table=self.grapheme_table,
+    hyperlink_table=self.hyperlink_table,
+    palette=self.palette,
+  )
 }
 
 ///|

@@ -216,14 +216,17 @@ fn formatter_write_render_state_frame_row(
             blank_cells = 0
           }
 
-          output.sync_vt_style(
-            cells.state.style_table.get(cell.style_id()),
-            buffer,
-          )
+          // `cell` came from `cells.cell()`; the current cell is positioned, so
+          // `cell_style` resolves it (the else is unreachable, a safe skip).
+          guard cells.cell_style() is Some(style) else {
+            x += 1
+            continue
+          }
+          output.sync_vt_style(style, buffer)
           formatter_write_cell_text(
             Vt,
             cell,
-            cells.state.grapheme_table.get(cell.grapheme_id()),
+            cells.cell_grapheme_codepoints(),
             buffer,
           )
         }

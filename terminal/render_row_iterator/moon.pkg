@@ -1,0 +1,7 @@
+import {
+  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/hyperlink",
+  "tonyfettes/ghostty/terminal/page",
+  "tonyfettes/ghostty/terminal/size",
+  "tonyfettes/ghostty/terminal/style",
+}
