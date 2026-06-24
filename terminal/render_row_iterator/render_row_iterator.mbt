@@ -257,9 +257,22 @@ fn render_cell_hyperlink_at(
   match render_cell_at(snap, row_idx, col_idx) {
     Some(cell) =>
       if cell.has_hyperlink() {
-        let id = match snap.row_link_ids[row_idx] {
-          Some(links) => links[col_idx]
-          None => @hyperlink.no_hyperlink_id
+        // `render_cell_at` validated (row_idx, col_idx) against `row_cells`. The
+        // parallel `row_link_ids` normally has the same shape, but `new` does not
+        // enforce that, so guard the indexing here: a malformed snapshot degrades
+        // to "no link" rather than aborting, keeping the iterator a safe host API.
+        let id = if row_idx < snap.row_link_ids.length() {
+          match snap.row_link_ids[row_idx] {
+            Some(links) =>
+              if col_idx < links.length() {
+                links[col_idx]
+              } else {
+                @hyperlink.no_hyperlink_id
+              }
+            None => @hyperlink.no_hyperlink_id
+          }
+        } else {
+          @hyperlink.no_hyperlink_id
         }
         snap.hyperlink_table.get(id)
       } else {
