@@ -1,0 +1,44 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/mouse_encoder"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/input",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type MouseEncoder derive(Eq, @debug.Debug)
+pub fn MouseEncoder::any_button_pressed(Self) -> Bool
+pub fn MouseEncoder::encode(Self, @input.MouseInputEvent) -> Bytes
+pub fn MouseEncoder::event(Self) -> @input.MouseEvent
+pub fn MouseEncoder::format(Self) -> @input.MouseFormat
+pub fn MouseEncoder::new() -> Self
+pub fn MouseEncoder::reset(Self) -> Unit
+pub fn MouseEncoder::set_any_button_pressed(Self, Bool) -> Unit
+pub fn MouseEncoder::set_event(Self, @input.MouseEvent) -> Unit
+pub fn MouseEncoder::set_format(Self, @input.MouseFormat) -> Unit
+pub fn MouseEncoder::set_size(Self, MouseEncoderSize) -> Unit
+pub fn MouseEncoder::set_track_last_cell(Self, Bool) -> Unit
+pub fn MouseEncoder::size(Self) -> MouseEncoderSize
+pub fn MouseEncoder::sync(Self, @input.MouseEvent, @input.MouseFormat) -> Unit
+pub fn MouseEncoder::track_last_cell(Self) -> Bool
+
+type MouseEncoderSize derive(Eq, @debug.Debug)
+pub fn MouseEncoderSize::cell_height(Self) -> UInt
+pub fn MouseEncoderSize::cell_width(Self) -> UInt
+pub fn MouseEncoderSize::new(UInt, UInt, UInt, UInt, padding_top? : UInt, padding_bottom? : UInt, padding_right? : UInt, padding_left? : UInt) -> Self?
+pub fn MouseEncoderSize::padding_bottom(Self) -> UInt
+pub fn MouseEncoderSize::padding_left(Self) -> UInt
+pub fn MouseEncoderSize::padding_right(Self) -> UInt
+pub fn MouseEncoderSize::padding_top(Self) -> UInt
+pub fn MouseEncoderSize::screen_height(Self) -> UInt
+pub fn MouseEncoderSize::screen_width(Self) -> UInt
+
+// Type aliases
+
+// Traits
+

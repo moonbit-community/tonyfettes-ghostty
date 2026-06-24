@@ -175,12 +175,17 @@ pub fn MouseEncoder::set_track_last_cell(
 }
 
 ///|
-pub fn MouseEncoder::sync_from_terminal(
+/// Adopt the mouse reporting mode and format the host terminal currently has
+/// active. The terminal-aware wrapper that reads those values off a
+/// `StreamTerminal` lives in the hub package; this leaf encoder stays decoupled
+/// from the terminal and takes the resolved values directly.
+pub fn MouseEncoder::sync(
   self : MouseEncoder,
-  terminal : StreamTerminal,
+  event : @input.MouseEvent,
+  format : @input.MouseFormat,
 ) -> Unit {
-  self.event = terminal.bridge().mouse_event()
-  self.format = terminal.bridge().mouse_format()
+  self.event = event
+  self.format = format
   self.last_cell = None
 }
 

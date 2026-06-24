@@ -9,7 +9,9 @@ import {
   "tonyfettes/ghostty/terminal/device",
   "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/key_encoder",
   "tonyfettes/ghostty/terminal/mode",
+  "tonyfettes/ghostty/terminal/mouse_encoder",
   "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/pagelist",
   "tonyfettes/ghostty/terminal/point",
@@ -88,29 +90,6 @@ pub fn FormatterTerminalExtra::all() -> Self
 pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
-
-type KeyEncoder derive(Eq, @debug.Debug)
-pub fn KeyEncoder::alt_esc_prefix(Self) -> Bool
-pub fn KeyEncoder::backarrow_key_mode(Self) -> Bool
-pub fn KeyEncoder::cursor_key_application(Self) -> Bool
-pub fn KeyEncoder::encode(Self, @input.KeyEvent) -> Bytes
-pub fn KeyEncoder::host_is_macos(Self) -> Bool
-pub fn KeyEncoder::ignore_keypad_with_numlock(Self) -> Bool
-pub fn KeyEncoder::keypad_key_application(Self) -> Bool
-pub fn KeyEncoder::kitty_flags(Self) -> @stream.KittyKeyboardFlags
-pub fn KeyEncoder::macos_option_as_alt(Self) -> OptionAsAlt
-pub fn KeyEncoder::modify_other_keys_state_2(Self) -> Bool
-pub fn KeyEncoder::new() -> Self
-pub fn KeyEncoder::set_alt_esc_prefix(Self, Bool) -> Unit
-pub fn KeyEncoder::set_backarrow_key_mode(Self, Bool) -> Unit
-pub fn KeyEncoder::set_cursor_key_application(Self, Bool) -> Unit
-pub fn KeyEncoder::set_host_is_macos(Self, Bool) -> Unit
-pub fn KeyEncoder::set_ignore_keypad_with_numlock(Self, Bool) -> Unit
-pub fn KeyEncoder::set_keypad_key_application(Self, Bool) -> Unit
-pub fn KeyEncoder::set_kitty_flags(Self, @stream.KittyKeyboardFlags) -> Unit
-pub fn KeyEncoder::set_macos_option_as_alt(Self, OptionAsAlt) -> Unit
-pub fn KeyEncoder::set_modify_other_keys_state_2(Self, Bool) -> Unit
-pub fn KeyEncoder::sync_from_terminal(Self, StreamTerminal) -> Unit
 
 type KittyGraphics
 pub fn KittyGraphics::image(Self, UInt) -> KittyImage?
@@ -205,45 +184,11 @@ type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
 pub fn KittyPlacementViewportPosition::col(Self) -> Int
 pub fn KittyPlacementViewportPosition::row(Self) -> Int
 
-type MouseEncoder derive(Eq, @debug.Debug)
-pub fn MouseEncoder::any_button_pressed(Self) -> Bool
-pub fn MouseEncoder::encode(Self, @input.MouseInputEvent) -> Bytes
-pub fn MouseEncoder::event(Self) -> @input.MouseEvent
-pub fn MouseEncoder::format(Self) -> @input.MouseFormat
-pub fn MouseEncoder::new() -> Self
-pub fn MouseEncoder::reset(Self) -> Unit
-pub fn MouseEncoder::set_any_button_pressed(Self, Bool) -> Unit
-pub fn MouseEncoder::set_event(Self, @input.MouseEvent) -> Unit
-pub fn MouseEncoder::set_format(Self, @input.MouseFormat) -> Unit
-pub fn MouseEncoder::set_size(Self, MouseEncoderSize) -> Unit
-pub fn MouseEncoder::set_track_last_cell(Self, Bool) -> Unit
-pub fn MouseEncoder::size(Self) -> MouseEncoderSize
-pub fn MouseEncoder::sync_from_terminal(Self, StreamTerminal) -> Unit
-pub fn MouseEncoder::track_last_cell(Self) -> Bool
-
-type MouseEncoderSize derive(Eq, @debug.Debug)
-pub fn MouseEncoderSize::cell_height(Self) -> UInt
-pub fn MouseEncoderSize::cell_width(Self) -> UInt
-pub fn MouseEncoderSize::new(UInt, UInt, UInt, UInt, padding_top? : UInt, padding_bottom? : UInt, padding_right? : UInt, padding_left? : UInt) -> Self?
-pub fn MouseEncoderSize::padding_bottom(Self) -> UInt
-pub fn MouseEncoderSize::padding_left(Self) -> UInt
-pub fn MouseEncoderSize::padding_right(Self) -> UInt
-pub fn MouseEncoderSize::padding_top(Self) -> UInt
-pub fn MouseEncoderSize::screen_height(Self) -> UInt
-pub fn MouseEncoderSize::screen_width(Self) -> UInt
-
 pub(all) enum OptimizeMode {
   Debug
   ReleaseSafe
   ReleaseSmall
   ReleaseFast
-} derive(Eq, @debug.Debug)
-
-pub(all) enum OptionAsAlt {
-  False
-  Left
-  Right
-  True
 } derive(Eq, @debug.Debug)
 
 type PasteOptions derive(Eq, @debug.Debug)
@@ -380,6 +325,8 @@ pub fn StreamTerminal::set_title(Self, String) -> Unit
 pub fn StreamTerminal::set_title_changed(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_write_pty(Self, (Bytes) -> Unit) -> Unit
 pub fn StreamTerminal::set_xtversion(Self, () -> String) -> Unit
+pub fn StreamTerminal::sync_key_encoder(Self, @key_encoder.KeyEncoder) -> Unit
+pub fn StreamTerminal::sync_mouse_encoder(Self, @mouse_encoder.MouseEncoder) -> Unit
 pub fn StreamTerminal::take_scrollback_cleared(Self) -> Bool
 pub fn StreamTerminal::title(Self) -> String?
 pub fn StreamTerminal::total_rows(Self) -> UInt

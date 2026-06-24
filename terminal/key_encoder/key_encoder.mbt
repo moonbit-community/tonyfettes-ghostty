@@ -158,19 +158,29 @@ pub fn KeyEncoder::set_backarrow_key_mode(
 }
 
 ///|
-pub fn KeyEncoder::sync_from_terminal(
+/// Adopt the key-encoding-relevant modes and flags the host terminal currently
+/// has active, and reset the macOS option-as-alt override to its default. The
+/// terminal-aware wrapper that reads these values off a `StreamTerminal` lives
+/// in the hub package; this leaf encoder stays decoupled from the terminal and
+/// takes the resolved values directly.
+pub fn KeyEncoder::sync(
   self : KeyEncoder,
-  terminal : StreamTerminal,
+  cursor_key_application~ : Bool,
+  keypad_key_application~ : Bool,
+  ignore_keypad_with_numlock~ : Bool,
+  alt_esc_prefix~ : Bool,
+  modify_other_keys_state_2~ : Bool,
+  kitty_flags~ : @stream.KittyKeyboardFlags,
+  backarrow_key_mode~ : Bool,
 ) -> Unit {
-  let bridge = terminal.bridge()
-  self.cursor_key_application = bridge.mode_get(CursorKeys)
-  self.keypad_key_application = bridge.mode_get(KeypadKeys)
-  self.ignore_keypad_with_numlock = bridge.mode_get(IgnoreKeypadWithNumlock)
-  self.alt_esc_prefix = bridge.mode_get(AltEscPrefix)
-  self.modify_other_keys_state_2 = bridge.modify_other_keys_2()
-  self.kitty_flags = bridge.kitty_keyboard_flags()
+  self.cursor_key_application = cursor_key_application
+  self.keypad_key_application = keypad_key_application
+  self.ignore_keypad_with_numlock = ignore_keypad_with_numlock
+  self.alt_esc_prefix = alt_esc_prefix
+  self.modify_other_keys_state_2 = modify_other_keys_state_2
+  self.kitty_flags = kitty_flags
   self.macos_option_as_alt = False
-  self.backarrow_key_mode = bridge.mode_get(BackarrowKeyMode)
+  self.backarrow_key_mode = backarrow_key_mode
 }
 
 ///|

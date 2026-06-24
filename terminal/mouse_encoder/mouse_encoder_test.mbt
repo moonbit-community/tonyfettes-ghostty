@@ -86,25 +86,22 @@ test "mouse encoder/new and setters expose typed owner surface" {
 }
 
 ///|
-test "mouse encoder/sync from terminal keeps size caller owned" {
-  let terminal = StreamTerminal::new()
+test "mouse encoder/sync updates mode and format only" {
   let encoder = MouseEncoder::new()
   let size = MouseEncoderSize::new(800U, 600U, 10U, 20U).unwrap()
   encoder.set_size(size)
   encoder.set_event(Any)
   encoder.set_format(Sgr)
 
-  terminal.mode_set(MouseEventButton, true)
-  terminal.mode_set(MouseFormatUrxvt, true)
-  encoder.sync_from_terminal(terminal)
+  // Adopting Button/Urxvt updates event + format while leaving the
+  // caller-owned size untouched.
+  encoder.sync(Button, Urxvt)
 
   guard encoder.event() == Button &&
     encoder.format() == Urxvt &&
     encoder.size() == size else {
-    fail("expected terminal sync to update mode and format only")
+    fail("expected sync to update mode and format only")
   }
-
-  terminal.deinit()
 }
 
 ///|

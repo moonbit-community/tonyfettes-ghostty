@@ -76,6 +76,38 @@ pub fn StreamTerminal::reset(self : StreamTerminal) -> Unit {
 }
 
 ///|
+/// Sync a mouse encoder to this terminal's active reporting mode and format.
+/// The encoder leaf is terminal-agnostic; this hub wrapper resolves the values
+/// off the bridge and hands them over.
+pub fn StreamTerminal::sync_mouse_encoder(
+  self : StreamTerminal,
+  encoder : @mouse_encoder.MouseEncoder,
+) -> Unit {
+  let bridge = self.bridge()
+  encoder.sync(bridge.mouse_event(), bridge.mouse_format())
+}
+
+///|
+/// Sync a key encoder to this terminal's active key-encoding modes and flags.
+/// The encoder leaf is terminal-agnostic; this hub wrapper resolves the values
+/// off the bridge and hands them over.
+pub fn StreamTerminal::sync_key_encoder(
+  self : StreamTerminal,
+  encoder : @key_encoder.KeyEncoder,
+) -> Unit {
+  let bridge = self.bridge()
+  encoder.sync(
+    cursor_key_application=bridge.mode_get(CursorKeys),
+    keypad_key_application=bridge.mode_get(KeypadKeys),
+    ignore_keypad_with_numlock=bridge.mode_get(IgnoreKeypadWithNumlock),
+    alt_esc_prefix=bridge.mode_get(AltEscPrefix),
+    modify_other_keys_state_2=bridge.modify_other_keys_2(),
+    kitty_flags=bridge.kitty_keyboard_flags(),
+    backarrow_key_mode=bridge.mode_get(BackarrowKeyMode),
+  )
+}
+
+///|
 pub fn StreamTerminal::title(self : StreamTerminal) -> String? {
   self.bridge().title()
 }

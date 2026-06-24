@@ -58,19 +58,21 @@ test "key encoder/new and setters expose typed owner surface" {
 }
 
 ///|
-test "key encoder/sync from terminal follows upstream terminal-derived defaults" {
-  let terminal = StreamTerminal::new()
+test "key encoder/sync copies the option set and resets option-as-alt" {
   let encoder = KeyEncoder::new()
   encoder.set_macos_option_as_alt(True)
 
-  terminal.mode_set(CursorKeys, true)
-  terminal.mode_set(KeypadKeys, true)
-  terminal.mode_set(IgnoreKeypadWithNumlock, true)
-  terminal.mode_set(AltEscPrefix, true)
-  terminal.mode_set(BackarrowKeyMode, true)
-  terminal.next_slice(b"\x1B[>4;2m\x1B[=5;2u")
-
-  encoder.sync_from_terminal(terminal)
+  // sync adopts the supplied modes/flags and always resets the macOS
+  // option-as-alt override to its default (False).
+  encoder.sync(
+    cursor_key_application=true,
+    keypad_key_application=true,
+    ignore_keypad_with_numlock=true,
+    alt_esc_prefix=true,
+    modify_other_keys_state_2=true,
+    kitty_flags=KittyKeyboardFlags(5),
+    backarrow_key_mode=true,
+  )
 
   guard encoder.cursor_key_application() &&
     encoder.keypad_key_application() &&
@@ -80,12 +82,8 @@ test "key encoder/sync from terminal follows upstream terminal-derived defaults"
     encoder.kitty_flags() == KittyKeyboardFlags(5) &&
     encoder.macos_option_as_alt() == False &&
     encoder.backarrow_key_mode() else {
-    fail(
-      "expected sync_from_terminal to reset and copy the upstream option set",
-    )
+    fail("expected sync to copy the option set and reset option-as-alt")
   }
-
-  terminal.deinit()
 }
 
 ///|

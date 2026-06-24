@@ -1,0 +1,10 @@
+import {
+  "moonbitlang/core/buffer",
+  "tonyfettes/ghostty/terminal/ascii",
+  "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/point",
+}
+
+import {
+  "moonbitlang/core/encoding/utf8",
+} for "test"
