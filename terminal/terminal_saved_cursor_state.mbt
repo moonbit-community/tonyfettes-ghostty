@@ -162,7 +162,7 @@ pub fn ScreenSavedCursorState::has_saved(self : ScreenSavedCursorState) -> Bool 
 ///|
 pub fn ScreenSavedCursorState::save(
   self : ScreenSavedCursorState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   cursor_protected : Bool,
   origin : Bool,

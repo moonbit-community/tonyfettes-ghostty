@@ -6,7 +6,11 @@ pub(all) enum CursorVisualStyle {
 } derive(Eq, Debug)
 
 ///|
-struct TerminalCursorState {
+/// `pub(all)` because the cursor is shared mutable terminal state: both the
+/// grid (advancing x / setting pending_wrap as it writes cells) and the stream
+/// bridge (absolute moves, margins) mutate these fields directly across the
+/// package boundary, mirroring upstream's public `screen.cursor` fields.
+pub(all) struct TerminalCursorState {
   mut rows : @size.CellCountInt
   mut columns : @size.CellCountInt
   mut x : @size.CellCountInt
@@ -216,7 +220,7 @@ pub fn TerminalCursorState::full_reset(self : TerminalCursorState) -> Unit {
 }
 
 ///|
-fn TerminalCursorState::resize(
+pub fn TerminalCursorState::resize(
   self : TerminalCursorState,
   rows : @size.CellCountInt,
   columns : @size.CellCountInt,

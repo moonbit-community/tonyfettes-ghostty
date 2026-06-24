@@ -132,7 +132,7 @@ test "screen grid/new clamps zero dimensions and accessors" {
 ///|
 test "screen grid/print stores metadata and repeat clamps zero count" {
   let grid = ScreenGridState::new(2, 5)
-  let cursor = TerminalCursorState::new(2, 5)
+  let cursor = @cursor.TerminalCursorState::new(2, 5)
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   style = style.apply_attribute(Color256Bg(7))
@@ -194,7 +194,7 @@ test "screen grid/print stores metadata and repeat clamps zero count" {
 ///|
 test "screen grid/print wide wrap and one-column fallback" {
   let grid = ScreenGridState::new(2, 4)
-  let cursor = TerminalCursorState::new(2, 4)
+  let cursor = @cursor.TerminalCursorState::new(2, 4)
   cursor.x = 3
 
   grid.print(
@@ -222,7 +222,7 @@ test "screen grid/print wide wrap and one-column fallback" {
   }
 
   let skinny = ScreenGridState::new(1, 1)
-  let skinny_cursor = TerminalCursorState::new(1, 1)
+  let skinny_cursor = @cursor.TerminalCursorState::new(1, 1)
   skinny.print(
     skinny_cursor,
     0x4E2DU,
@@ -246,7 +246,7 @@ test "screen grid/print wide wrap and one-column fallback" {
 ///|
 test "screen grid/print edge branches and insert mode" {
   let no_width_grid = ScreenGridState::new(1, 3)
-  let no_width_cursor = TerminalCursorState::new(1, 3)
+  let no_width_cursor = @cursor.TerminalCursorState::new(1, 3)
   no_width_grid.print(
     no_width_cursor,
     b'X'.to_uint(),
@@ -264,7 +264,7 @@ test "screen grid/print edge branches and insert mode" {
   }
 
   let right_limit_grid = ScreenGridState::new(1, 4)
-  let right_limit_cursor = TerminalCursorState::new(1, 4)
+  let right_limit_cursor = @cursor.TerminalCursorState::new(1, 4)
   right_limit_cursor.right_margin = 1
   right_limit_cursor.x = 3
   right_limit_grid.print(
@@ -285,7 +285,7 @@ test "screen grid/print edge branches and insert mode" {
   }
 
   let wrap_grid = ScreenGridState::new(2, 3)
-  let wrap_cursor = TerminalCursorState::new(2, 3)
+  let wrap_cursor = @cursor.TerminalCursorState::new(2, 3)
   wrap_cursor.x = 2
   wrap_cursor.pending_wrap = true
   wrap_grid.print(
@@ -307,7 +307,7 @@ test "screen grid/print edge branches and insert mode" {
   }
 
   let insert_grid = ScreenGridState::new(1, 4)
-  let insert_cursor = TerminalCursorState::new(1, 4)
+  let insert_cursor = @cursor.TerminalCursorState::new(1, 4)
   fill_ascii(insert_grid, 0, [b'A', b'B', b'C', b'D'])
   insert_cursor.x = 1
   insert_grid.print(
@@ -329,7 +329,7 @@ test "screen grid/print edge branches and insert mode" {
   }
 
   let no_wrap_grid = ScreenGridState::new(1, 4)
-  let no_wrap_cursor = TerminalCursorState::new(1, 4)
+  let no_wrap_cursor = @cursor.TerminalCursorState::new(1, 4)
   no_wrap_cursor.x = 3
   no_wrap_grid.print(
     no_wrap_cursor,
@@ -348,7 +348,7 @@ test "screen grid/print edge branches and insert mode" {
   }
 
   let partial_grid = ScreenGridState::new(2, 4)
-  let partial_cursor = TerminalCursorState::new(2, 4)
+  let partial_cursor = @cursor.TerminalCursorState::new(2, 4)
   partial_cursor.right_margin = 1
   partial_cursor.x = 1
   partial_grid.print(
@@ -372,7 +372,7 @@ test "screen grid/print edge branches and insert mode" {
   }
 
   let default_width_grid = ScreenGridState::new(1, 2)
-  let default_width_cursor = TerminalCursorState::new(1, 2)
+  let default_width_cursor = @cursor.TerminalCursorState::new(1, 2)
   default_width_grid.print(
     default_width_cursor,
     b'Q'.to_uint(),
@@ -393,7 +393,7 @@ test "screen grid/print edge branches and insert mode" {
 ///|
 test "screen grid/insert delete and erase chars preserve backgrounds and protection" {
   let grid = ScreenGridState::new(2, 5)
-  let cursor = TerminalCursorState::new(2, 5)
+  let cursor = @cursor.TerminalCursorState::new(2, 5)
   let mut bg_style = @style.CellStyle::new()
   bg_style = bg_style.apply_attribute(Color256Bg(3))
 
@@ -435,7 +435,7 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
 ///|
 test "screen grid/char editing edge branches and helper math" {
   let grid = ScreenGridState::new(1, 5)
-  let cursor = TerminalCursorState::new(1, 5)
+  let cursor = @cursor.TerminalCursorState::new(1, 5)
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Color256Bg(5))
 
@@ -507,7 +507,7 @@ test "screen grid/char editing edge branches and helper math" {
   }
 
   let end_grid = ScreenGridState::new(1, 5)
-  let end_cursor = TerminalCursorState::new(1, 5)
+  let end_cursor = @cursor.TerminalCursorState::new(1, 5)
   fill_ascii(end_grid, 0, [b'A', b'B', b'C', b'D', b'E'])
   end_grid.write_cell(
     0,
@@ -548,7 +548,7 @@ test "screen grid/char editing edge branches and helper math" {
   }
 
   let erase_grid = ScreenGridState::new(1, 4)
-  let erase_cursor = TerminalCursorState::new(1, 4)
+  let erase_cursor = @cursor.TerminalCursorState::new(1, 4)
   fill_ascii(erase_grid, 0, [b'A', b'B', b'C', b'D'])
   erase_grid.write_cell(
     0,
@@ -568,7 +568,7 @@ test "screen grid/char editing edge branches and helper math" {
   }
 
   let wrap_grid = ScreenGridState::new(1, 4)
-  let wrap_cursor = TerminalCursorState::new(1, 4)
+  let wrap_cursor = @cursor.TerminalCursorState::new(1, 4)
   wrap_grid.descs[0] = wrap_grid.descs[0].with_wrap(true)
   wrap_grid.write_cell(
     0,
@@ -606,7 +606,7 @@ test "screen grid/char editing edge branches and helper math" {
 ///|
 test "screen grid/erase line and display modes" {
   let right_grid = ScreenGridState::new(2, 4)
-  let right_cursor = TerminalCursorState::new(2, 4)
+  let right_cursor = @cursor.TerminalCursorState::new(2, 4)
   let mut bg_style = @style.CellStyle::new()
   bg_style = bg_style.apply_attribute(Color256Bg(4))
   right_grid.write_cell(
@@ -649,7 +649,7 @@ test "screen grid/erase line and display modes" {
   }
 
   let left_grid = ScreenGridState::new(1, 4)
-  let left_cursor = TerminalCursorState::new(1, 4)
+  let left_cursor = @cursor.TerminalCursorState::new(1, 4)
   fill_ascii(left_grid, 0, [b'A', b'B', b'C', b'D'])
   left_grid.write_cell(
     0,
@@ -681,7 +681,7 @@ test "screen grid/erase line and display modes" {
   }
 
   let complete_grid = ScreenGridState::new(2, 3)
-  let complete_cursor = TerminalCursorState::new(2, 3)
+  let complete_cursor = @cursor.TerminalCursorState::new(2, 3)
   fill_ascii(complete_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(complete_grid, 1, [b'D', b'E', b'F'])
   complete_grid.descs[1] = complete_grid.descs[1].with_semantic_prompt(Prompt)
@@ -699,7 +699,7 @@ test "screen grid/erase line and display modes" {
   }
 
   let above_grid = ScreenGridState::new(3, 3)
-  let above_cursor = TerminalCursorState::new(3, 3)
+  let above_cursor = @cursor.TerminalCursorState::new(3, 3)
   fill_ascii(above_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(above_grid, 1, [b'D', b'E', b'F'])
   fill_ascii(above_grid, 2, [b'G', b'H', b'I'])
@@ -719,7 +719,7 @@ test "screen grid/erase line and display modes" {
   }
 
   let scroll_grid = ScreenGridState::new(1, 3)
-  let scroll_cursor = TerminalCursorState::new(1, 3)
+  let scroll_cursor = @cursor.TerminalCursorState::new(1, 3)
   fill_ascii(scroll_grid, 0, [b'X', b'Y', b'Z'])
   scroll_grid.erase_display(
     scroll_cursor,
@@ -733,7 +733,7 @@ test "screen grid/erase line and display modes" {
   }
 
   let line_complete_grid = ScreenGridState::new(1, 3)
-  let line_complete_cursor = TerminalCursorState::new(1, 3)
+  let line_complete_cursor = @cursor.TerminalCursorState::new(1, 3)
   fill_ascii(line_complete_grid, 0, [b'Q', b'R', b'S'])
   line_complete_grid.erase_line(
     line_complete_cursor,
@@ -748,7 +748,7 @@ test "screen grid/erase line and display modes" {
   }
 
   let below_grid = ScreenGridState::new(2, 3)
-  let below_cursor = TerminalCursorState::new(2, 3)
+  let below_cursor = @cursor.TerminalCursorState::new(2, 3)
   fill_ascii(below_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(below_grid, 1, [b'D', b'E', b'F'])
   below_cursor.x = 1
@@ -762,7 +762,7 @@ test "screen grid/erase line and display modes" {
 ///|
 test "screen grid/line shifts scroll and helper boundaries" {
   let grid = ScreenGridState::new(4, 4)
-  let cursor = TerminalCursorState::new(4, 4)
+  let cursor = @cursor.TerminalCursorState::new(4, 4)
   fill_ascii(grid, 0, [b'A', b'0', b'0', b'0'])
   fill_ascii(grid, 1, [b'B', b'1', b'1', b'1'])
   fill_ascii(grid, 2, [b'C', b'2', b'2', b'2'])
@@ -944,7 +944,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
 ///|
 test "screen grid/shift helpers partial regions and split early return" {
   let grid = ScreenGridState::new(3, 4)
-  let cursor = TerminalCursorState::new(3, 4)
+  let cursor = @cursor.TerminalCursorState::new(3, 4)
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D'])
   fill_ascii(grid, 1, [b'E', b'F', b'G', b'H'])
   fill_ascii(grid, 2, [b'I', b'J', b'K', b'L'])
@@ -987,7 +987,7 @@ test "screen grid/shift helpers partial regions and split early return" {
   }
 
   let bottom_grid = ScreenGridState::new(2, 3)
-  let bottom_cursor = TerminalCursorState::new(2, 3)
+  let bottom_cursor = @cursor.TerminalCursorState::new(2, 3)
   fill_ascii(bottom_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(bottom_grid, 1, [b'D', b'E', b'F'])
   bottom_cursor.y = 1
@@ -1090,7 +1090,7 @@ test "screen grid/cell_hyperlink gates on the presence bit after an unlinked ove
 ///|
 test "screen grid/print cell clears prior wide and spacer forms" {
   let grid = ScreenGridState::new(2, 4)
-  let cursor = TerminalCursorState::new(2, 4)
+  let cursor = @cursor.TerminalCursorState::new(2, 4)
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Color256Bg(8))
 

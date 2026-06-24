@@ -98,7 +98,7 @@ priv struct PageList {
 ///|
 priv struct TerminalScreenStorage {
   mut grid : ScreenGridState
-  mut cursor : TerminalCursorState
+  mut cursor : @cursor.TerminalCursorState
   saved_cursor : ScreenSavedCursorState
   mut scrollback : PageList
   mut kitty_graphics : KittyGraphicsState
@@ -1001,7 +1001,7 @@ fn PageList::resize(
   grid : ScreenGridState,
   cols : @size.CellCountInt,
   rows : @size.CellCountInt,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   saved_cursor : ScreenSavedCursor?,
 ) -> PageListResizeResult {
   let target_cols = screen_dimension(cols)
@@ -1070,7 +1070,7 @@ fn PageList::resize_without_reflow(
   grid : ScreenGridState,
   cols : @size.CellCountInt,
   rows : @size.CellCountInt,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   cursor_pin : PageListPin?,
   saved_pin : PageListPin?,
 ) -> PageListResizeResult {
@@ -1709,7 +1709,7 @@ fn TerminalScreenStorage::new(
   let scrollback = PageList::new(rows, cols, max_scrollback)
   {
     grid: scrollback.active_grid(),
-    cursor: TerminalCursorState::new(rows, cols),
+    cursor: @cursor.TerminalCursorState::new(rows, cols),
     saved_cursor: ScreenSavedCursorState::new(),
     scrollback,
     kitty_graphics: KittyGraphicsState::new(),

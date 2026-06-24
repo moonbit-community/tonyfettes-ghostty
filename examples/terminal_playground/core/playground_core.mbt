@@ -423,7 +423,7 @@ fn json_style_color(value : @style.StyleColor) -> Json {
 }
 
 ///|
-fn cursor_visual_style_json(value : @terminal.CursorVisualStyle) -> Json {
+fn cursor_visual_style_json(value : @cursor.CursorVisualStyle) -> Json {
   Json::string(
     match value {
       Block => "block"

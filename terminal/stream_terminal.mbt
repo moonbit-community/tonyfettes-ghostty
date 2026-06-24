@@ -108,7 +108,7 @@ pub fn StreamTerminal::cursor_y(self : StreamTerminal) -> @size.CellCountInt {
 ///|
 pub fn StreamTerminal::cursor_visual_style(
   self : StreamTerminal,
-) -> CursorVisualStyle {
+) -> @cursor.CursorVisualStyle {
   self.bridge().cursor_visual_style()
 }
 

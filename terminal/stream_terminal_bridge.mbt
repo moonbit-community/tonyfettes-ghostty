@@ -182,7 +182,7 @@ priv struct StreamTerminalBridgeState {
   display_state : TerminalDisplayState
   colors : @color.TerminalColors
   mut modes : @mode.ModeState
-  mut cursor : TerminalCursorState
+  mut cursor : @cursor.TerminalCursorState
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
   mut tabstops : TerminalTabstopsState
@@ -300,7 +300,7 @@ fn StreamTerminalBridgeState::cursor_y(
 ///|
 fn StreamTerminalBridgeState::cursor_visual_style(
   self : StreamTerminalBridgeState,
-) -> CursorVisualStyle {
+) -> @cursor.CursorVisualStyle {
   self.cursor.visual_style()
 }
 

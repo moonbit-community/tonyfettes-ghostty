@@ -227,7 +227,7 @@ fn ScreenGridState::set_row_semantic_prompt(
 ///|
 fn ScreenGridState::print(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   codepoint : UInt,
   width : Int,
   style : @style.CellStyle,
@@ -352,7 +352,7 @@ fn ScreenGridState::print(
 ///|
 fn ScreenGridState::print_repeat(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   codepoint : UInt,
   width : Int,
   style : @style.CellStyle,
@@ -380,7 +380,7 @@ fn ScreenGridState::print_repeat(
 // Silently discards the codepoint when there is no preceding cell on this row.
 fn ScreenGridState::append_grapheme(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   codepoint : UInt,
 ) -> Unit {
   let row_idx = cursor.y.to_int()
@@ -430,7 +430,7 @@ fn ScreenGridState::append_grapheme(
 ///|
 fn ScreenGridState::insert_blanks(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
@@ -485,7 +485,7 @@ fn ScreenGridState::insert_blanks(
 ///|
 fn ScreenGridState::delete_chars(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   count_req : UInt16,
 ) -> Unit {
@@ -525,7 +525,7 @@ fn ScreenGridState::delete_chars(
 ///|
 fn ScreenGridState::erase_chars(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   protected_mode : @ansi.ProtectedMode,
   count_req : UInt16,
@@ -560,7 +560,7 @@ fn ScreenGridState::erase_chars(
 ///|
 fn ScreenGridState::erase_line(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   mode : ScreenEraseLineMode,
   protected_mode : @ansi.ProtectedMode,
@@ -598,7 +598,7 @@ fn ScreenGridState::erase_line(
 ///|
 fn ScreenGridState::erase_display(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   mode : ScreenEraseDisplayMode,
   protected_mode : @ansi.ProtectedMode,
@@ -635,7 +635,7 @@ fn ScreenGridState::erase_display(
 ///|
 fn ScreenGridState::insert_lines(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
@@ -662,7 +662,7 @@ fn ScreenGridState::insert_lines(
 ///|
 fn ScreenGridState::delete_lines(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
@@ -689,7 +689,7 @@ fn ScreenGridState::delete_lines(
 ///|
 fn ScreenGridState::scroll_down(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
@@ -707,7 +707,7 @@ fn ScreenGridState::scroll_down(
 ///|
 fn ScreenGridState::scroll_up(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   count : UInt16,
 ) -> Unit {
@@ -769,7 +769,7 @@ fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
 ///|
 fn ScreenGridState::print_cell(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   codepoint : UInt,
   wide : @page.PageCellWide,
   style : @style.CellStyle,
@@ -860,7 +860,7 @@ fn ScreenGridState::update_row_flags_after_write(
 ///|
 fn ScreenGridState::print_wrap(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
   semantic_content : @page.SemanticContent,
 ) -> Unit {
@@ -885,7 +885,7 @@ fn ScreenGridState::print_wrap(
 ///|
 fn ScreenGridState::index(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
 ) -> Unit {
   if cursor.y == cursor.bottom_margin {
@@ -1210,7 +1210,7 @@ fn ScreenGridState::split_cell_boundary(
 ///|
 fn ScreenGridState::cursor_reset_wrap(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
 ) -> Unit {
   let row_idx = cursor.y.to_int()
@@ -1236,7 +1236,7 @@ fn ScreenGridState::cursor_reset_wrap(
 ///|
 fn ScreenGridState::cursor_mark_dirty(
   self : ScreenGridState,
-  cursor : TerminalCursorState,
+  cursor : @cursor.TerminalCursorState,
 ) -> Unit {
   let cy = cursor.y.to_int()
   self.descs[cy] = self.descs[cy].with_dirty(true)

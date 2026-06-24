@@ -87,7 +87,7 @@ test "terminal saved cursor state/restore defaults when empty" {
 
 ///|
 test "terminal saved cursor state/save captures snapshot values" {
-  let cursor = TerminalCursorState::new(24, 80)
+  let cursor = @cursor.TerminalCursorState::new(24, 80)
   cursor.set_cursor_pos(5, 7, false)
   cursor.set_pending_wrap(true)
 
@@ -136,14 +136,14 @@ test "terminal saved cursor state/save captures snapshot values" {
 test "terminal saved cursor state/latest save wins and reset clears state" {
   let state = ScreenSavedCursorState::new()
 
-  let first_cursor = TerminalCursorState::new(24, 80)
+  let first_cursor = @cursor.TerminalCursorState::new(24, 80)
   let mut first_style = @style.CellStyle::new()
   first_style = first_style.apply_attribute(Bold)
   let first_charset = ScreenCharsetState::new()
   first_charset.configure(G1, DecSpecial)
   state.save(first_cursor, first_style, false, false, first_charset)
 
-  let second_cursor = TerminalCursorState::new(24, 80)
+  let second_cursor = @cursor.TerminalCursorState::new(24, 80)
   second_cursor.set_cursor_pos(2, 3, false)
   let mut second_style = @style.CellStyle::new()
   second_style = second_style.apply_attribute(Italic)

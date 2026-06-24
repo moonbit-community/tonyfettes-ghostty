@@ -6,6 +6,7 @@ import {
   "tonyfettes/ghostty/terminal/ansi",
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/cursor",
   "tonyfettes/ghostty/terminal/device",
   "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
@@ -57,12 +58,6 @@ pub fn BuildVersion::minor(Self) -> UInt
 pub fn BuildVersion::patch(Self) -> UInt
 pub fn BuildVersion::pre(Self) -> String?
 pub fn BuildVersion::string(Self) -> String
-
-pub(all) enum CursorVisualStyle {
-  Block
-  Bar
-  Underline
-} derive(Eq, @debug.Debug)
 
 pub(all) enum FocusEvent {
   Gained
@@ -292,7 +287,7 @@ pub fn RenderState::cursor_password_input(Self) -> Bool
 pub fn RenderState::cursor_viewport(Self) -> @point.Coordinate?
 pub fn RenderState::cursor_viewport_wide_tail(Self) -> Bool
 pub fn RenderState::cursor_visible(Self) -> Bool
-pub fn RenderState::cursor_visual_style(Self) -> CursorVisualStyle
+pub fn RenderState::cursor_visual_style(Self) -> @cursor.CursorVisualStyle
 pub fn RenderState::dirty(Self) -> RenderDirty
 pub fn RenderState::foreground_color(Self) -> @color.RGB
 pub fn RenderState::format_vt_framebuffer(Self) -> Bytes
@@ -346,7 +341,7 @@ pub fn ScreenSavedCursorState::has_saved(Self) -> Bool
 pub fn ScreenSavedCursorState::new() -> Self
 pub fn ScreenSavedCursorState::reset(Self) -> Unit
 pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
-pub fn ScreenSavedCursorState::save(Self, TerminalCursorState, @style.CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
+pub fn ScreenSavedCursorState::save(Self, @cursor.TerminalCursorState, @style.CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
 
 type ScreenSemanticState derive(Eq, @debug.Debug)
 pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPrompt) -> Unit
@@ -401,7 +396,7 @@ pub fn StreamTerminal::cursor_pending_wrap(Self) -> Bool
 pub fn StreamTerminal::cursor_right_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_top_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_visible(Self) -> Bool
-pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
+pub fn StreamTerminal::cursor_visual_style(Self) -> @cursor.CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
 pub fn StreamTerminal::default_background_color(Self) -> @color.RGB?
@@ -479,23 +474,6 @@ pub(all) enum SystemLogLevel {
   Info
   Debug
 } derive(Eq, @debug.Debug)
-
-type TerminalCursorState derive(Eq, @debug.Debug)
-pub fn TerminalCursorState::apply_cursor_style(Self, @ansi.CursorStyle) -> Bool
-pub fn TerminalCursorState::bottom_margin(Self) -> UInt16
-pub fn TerminalCursorState::full_reset(Self) -> Unit
-pub fn TerminalCursorState::left_margin(Self) -> UInt16
-pub fn TerminalCursorState::new(UInt16, UInt16) -> Self
-pub fn TerminalCursorState::pending_wrap(Self) -> Bool
-pub fn TerminalCursorState::right_margin(Self) -> UInt16
-pub fn TerminalCursorState::set_cursor_pos(Self, UInt16, UInt16, Bool) -> Unit
-pub fn TerminalCursorState::set_left_and_right_margin(Self, Bool, UInt16, UInt16, Bool) -> Unit
-pub fn TerminalCursorState::set_pending_wrap(Self, Bool) -> Unit
-pub fn TerminalCursorState::set_top_and_bottom_margin(Self, UInt16, UInt16, Bool) -> Unit
-pub fn TerminalCursorState::top_margin(Self) -> UInt16
-pub fn TerminalCursorState::visual_style(Self) -> CursorVisualStyle
-pub fn TerminalCursorState::x(Self) -> UInt16
-pub fn TerminalCursorState::y(Self) -> UInt16
 
 type TerminalDisplayState derive(Eq, @debug.Debug)
 pub fn TerminalDisplayState::full_reset(Self) -> Unit

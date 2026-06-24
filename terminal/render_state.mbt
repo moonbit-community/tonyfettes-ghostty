@@ -17,7 +17,7 @@ struct RenderState {
   mut foreground : @color.RGB
   mut cursor_color : @color.RGB?
   mut palette : Array[@color.RGB]
-  mut cursor_visual_style : CursorVisualStyle
+  mut cursor_visual_style : @cursor.CursorVisualStyle
   mut cursor_visible : Bool
   mut cursor_blinking : Bool
   mut cursor_password_input : Bool
@@ -115,7 +115,7 @@ pub fn RenderState::palette(self : RenderState) -> Array[@color.RGB] {
 ///|
 pub fn RenderState::cursor_visual_style(
   self : RenderState,
-) -> CursorVisualStyle {
+) -> @cursor.CursorVisualStyle {
   self.cursor_visual_style
 }
 
