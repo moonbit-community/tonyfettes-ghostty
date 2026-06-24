@@ -7,22 +7,6 @@ fn expect_row(
 }
 
 ///|
-// Standalone test grid: mints its own style table. Production paths that must
-// share a table with a `PageList` use `new_with_table` instead.
-fn ScreenGridState::new(
-  rows : @size.CellCountInt,
-  cols : @size.CellCountInt,
-) -> ScreenGridState {
-  ScreenGridState::new_with_table(
-    rows,
-    cols,
-    @style.StyleTable::new(),
-    @hyperlink.HyperlinkTable::new(),
-    @page.GraphemeTable::new(),
-  )
-}
-
-///|
 // Resolve the style of the cell at (row, col) through the shared table — the
 // grid-method counterpart to the old `cell.style()`, since the cell now holds
 // only a `StyleId`.

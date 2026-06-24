@@ -189,7 +189,7 @@ priv struct StreamTerminalBridgeState {
   hyperlink : ScreenHyperlinkState
   mut semantic : ScreenSemanticState
   metadata : TerminalMetadataState
-  mut grid : ScreenGridState
+  mut grid : @grid.ScreenGridState
   mut scrollback : PageList
   mut kitty_graphics : KittyGraphicsState
   mut primary_storage : TerminalScreenStorage
@@ -3514,3 +3514,25 @@ fn truncate_utf8(value : String, max_bytes : Int) -> String {
 }
 
 ///|
+
+///|
+/// Smaller of two ints. Hub-local copy of the trivial helper that used to live
+/// in the grid file (the grid keeps its own private copy in @grid).
+fn min_int(a : Int, b : Int) -> Int {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+/// Larger of two ints. Hub-local copy of the trivial helper that used to live
+/// in the grid file.
+fn max_int(a : Int, b : Int) -> Int {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}

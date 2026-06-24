@@ -1,0 +1,71 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/grid"
+
+import {
+  "tonyfettes/ghostty/terminal/ansi",
+  "tonyfettes/ghostty/terminal/cursor",
+  "tonyfettes/ghostty/terminal/hyperlink",
+  "tonyfettes/ghostty/terminal/page",
+  "tonyfettes/ghostty/terminal/style",
+}
+
+// Values
+pub fn make_row_cells(Int) -> FixedArray[@page.PageCellState]
+
+pub fn screen_dimension(UInt16) -> UInt16
+
+// Errors
+
+// Types and methods
+pub(all) enum ScreenEraseDisplayMode {
+  Below
+  Above
+  Complete
+  ScrollComplete
+}
+
+pub(all) enum ScreenEraseLineMode {
+  Right
+  Left
+  Complete
+}
+
+pub(all) struct ScreenGridState {
+  rows : UInt16
+  cols : UInt16
+  descs : FixedArray[@page.PageRowState]
+  cells : FixedArray[FixedArray[@page.PageCellState]]
+  link_ids : FixedArray[FixedArray[@hyperlink.HyperlinkId]?]
+  cell_pool : Array[FixedArray[@page.PageCellState]]
+  style_table : @style.StyleTable
+  hyperlink_table : @hyperlink.HyperlinkTable
+  grapheme_table : @page.GraphemeTable
+}
+pub fn ScreenGridState::append_grapheme(Self, @cursor.TerminalCursorState, UInt) -> Unit
+pub fn ScreenGridState::decaln(Self, @style.CellStyle) -> Unit
+pub fn ScreenGridState::delete_chars(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
+pub fn ScreenGridState::delete_lines(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
+pub fn ScreenGridState::erase_chars(Self, @cursor.TerminalCursorState, @style.CellStyle, @ansi.ProtectedMode, UInt16) -> Unit
+pub fn ScreenGridState::erase_display(Self, @cursor.TerminalCursorState, @style.CellStyle, ScreenEraseDisplayMode, @ansi.ProtectedMode, Bool) -> Unit
+pub fn ScreenGridState::erase_line(Self, @cursor.TerminalCursorState, @style.CellStyle, ScreenEraseLineMode, @ansi.ProtectedMode, Bool) -> Unit
+pub fn ScreenGridState::full_reset(Self) -> Unit
+pub fn ScreenGridState::index(Self, @cursor.TerminalCursorState, @style.CellStyle) -> Unit
+pub fn ScreenGridState::insert_blanks(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
+pub fn ScreenGridState::insert_lines(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
+pub fn ScreenGridState::link_id_at(Self, Int, Int) -> @hyperlink.HyperlinkId
+pub fn ScreenGridState::new(UInt16, UInt16) -> Self
+pub fn ScreenGridState::new_with_table(UInt16, UInt16, @style.StyleTable, @hyperlink.HyperlinkTable, @page.GraphemeTable) -> Self
+pub fn ScreenGridState::print(Self, @cursor.TerminalCursorState, UInt, Int, @style.CellStyle, Bool, @page.SemanticContent, @page.RowSemanticPrompt, @hyperlink.CellHyperlink?, Bool, Bool) -> Unit
+pub fn ScreenGridState::print_repeat(Self, @cursor.TerminalCursorState, UInt, Int, @style.CellStyle, Bool, @page.SemanticContent, @page.RowSemanticPrompt, @hyperlink.CellHyperlink?, Bool, Bool, UInt16) -> Unit
+pub fn ScreenGridState::recompute_row_flags(Self, Int) -> Unit
+pub fn ScreenGridState::recycle_row_cells(Self, FixedArray[@page.PageCellState]) -> Unit
+pub fn ScreenGridState::row(Self, UInt16) -> @page.PageRowState?
+pub fn ScreenGridState::scroll_down(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
+pub fn ScreenGridState::scroll_up(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
+pub fn ScreenGridState::set_row_semantic_prompt(Self, UInt16, @page.RowSemanticPrompt) -> Unit
+pub fn ScreenGridState::write_cell(Self, Int, Int, UInt, @page.PageCellWide, @style.CellStyle, Bool, @page.SemanticContent, @hyperlink.CellHyperlink?) -> Unit
+
+// Type aliases
+
+// Traits
+

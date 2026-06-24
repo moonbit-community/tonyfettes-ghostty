@@ -1,6 +1,6 @@
 ///|
 fn fill_terminal_screen_row(
-  grid : ScreenGridState,
+  grid : @grid.ScreenGridState,
   row : Int,
   chars : Array[Byte],
   style : @style.CellStyle,
@@ -79,7 +79,7 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
 
 ///|
 test "terminal screen state/viewport top survives future scrollback" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,
@@ -106,7 +106,7 @@ test "terminal screen state/viewport top survives future scrollback" {
 
 ///|
 test "terminal screen state/empty scrollback delta stays active" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,
@@ -133,7 +133,7 @@ test "terminal screen state/empty scrollback delta stays active" {
 
 ///|
 test "terminal screen state/zero max scrollback trim and resets" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,
@@ -175,7 +175,7 @@ test "terminal screen state/zero max scrollback trim and resets" {
 
 ///|
 test "terminal screen state/point helpers cover source mappings" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,

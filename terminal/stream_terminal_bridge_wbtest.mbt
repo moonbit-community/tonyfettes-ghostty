@@ -2343,3 +2343,23 @@ test "stream terminal bridge/a full clear reclaims the intern id space" {
     fail("expected the clear to swap in fresh intern tables")
   }
 }
+
+///|
+fn fill_ascii(
+  grid : @grid.ScreenGridState,
+  row : Int,
+  chars : Array[Byte],
+) -> Unit {
+  for i in 0..<chars.length() {
+    grid.write_cell(
+      row,
+      i,
+      chars[i].to_uint(),
+      Narrow,
+      @style.CellStyle::new(),
+      false,
+      Output,
+      None,
+    )
+  }
+}

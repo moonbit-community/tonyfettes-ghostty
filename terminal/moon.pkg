@@ -9,6 +9,7 @@ import {
   "tonyfettes/ghostty/terminal/csi",
   "tonyfettes/ghostty/terminal/cursor",
   "tonyfettes/ghostty/terminal/device",
+  "tonyfettes/ghostty/terminal/grid",
   "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
   "tonyfettes/ghostty/terminal/mode",

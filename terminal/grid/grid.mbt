@@ -1,12 +1,12 @@
 ///|
-priv enum ScreenEraseLineMode {
+pub(all) enum ScreenEraseLineMode {
   Right
   Left
   Complete
 }
 
 ///|
-priv enum ScreenEraseDisplayMode {
+pub(all) enum ScreenEraseDisplayMode {
   Below
   Above
   Complete
@@ -34,7 +34,7 @@ priv enum ScreenEraseDisplayMode {
 // value grid is the follow-on `#valtype @page.PageCellState` change.)
 
 ///|
-fn make_row_cells(cols : Int) -> FixedArray[@page.PageCellState] {
+pub fn make_row_cells(cols : Int) -> FixedArray[@page.PageCellState] {
   // Allocate the row's cells in one shot. `FixedArray::make` fills every slot
   // with a copy of the (immutable value) blank cell — a single allocation,
   // versus a `push` loop that reallocs and ref-blits the growing buffer
@@ -43,7 +43,12 @@ fn make_row_cells(cols : Int) -> FixedArray[@page.PageCellState] {
 }
 
 ///|
-priv struct ScreenGridState {
+/// `pub(all)` so consumers across the package boundary (the bridge, formatter,
+/// pagelist) can read its dimensions, intern tables, and cell arrays. All
+/// fields are immutable bindings — the grid mutates through the FixedArray /
+/// intern-table contents, never by reassigning a field — so this exposes
+/// read-only structure, not mutable state.
+pub(all) struct ScreenGridState {
   rows : @size.CellCountInt
   cols : @size.CellCountInt
   // Parallel per-row arrays: `descs[i]` and `cells[i]` are row `i`'s descriptor
@@ -82,7 +87,23 @@ priv struct ScreenGridState {
 }
 
 ///|
-fn ScreenGridState::new_with_table(
+/// Standalone grid that mints its own intern tables. Production paths that must
+/// share tables with a `PageList` use `new_with_table` instead.
+pub fn ScreenGridState::new(
+  rows : @size.CellCountInt,
+  cols : @size.CellCountInt,
+) -> ScreenGridState {
+  ScreenGridState::new_with_table(
+    rows,
+    cols,
+    @style.StyleTable::new(),
+    @hyperlink.HyperlinkTable::new(),
+    @page.GraphemeTable::new(),
+  )
+}
+
+///|
+pub fn ScreenGridState::new_with_table(
   rows : @size.CellCountInt,
   cols : @size.CellCountInt,
   style_table : @style.StyleTable,
@@ -118,7 +139,7 @@ fn ScreenGridState::new_with_table(
 /// should gate on the cell's `has_hyperlink()` presence bit; a non-none result
 /// here always coincides with that bit being set, but the converse read of a
 /// dead slot is harmless.
-fn ScreenGridState::link_id_at(
+pub fn ScreenGridState::link_id_at(
   self : ScreenGridState,
   row_idx : Int,
   col_idx : Int,
@@ -154,7 +175,7 @@ fn ScreenGridState::set_link_id(
 /// Offer a `cols`-wide cell array (from a row evicted out of scrollback) to the
 /// blank-row free list. Wrong-width arrays (e.g. across a resize) and overflow
 /// past the screen height are dropped to GC rather than pooled.
-fn ScreenGridState::recycle_row_cells(
+pub fn ScreenGridState::recycle_row_cells(
   self : ScreenGridState,
   cells : FixedArray[@page.PageCellState],
 ) -> Unit {
@@ -197,7 +218,7 @@ fn ScreenGridState::set_blank_row(
 }
 
 ///|
-fn ScreenGridState::row(
+pub fn ScreenGridState::row(
   self : ScreenGridState,
   row : @size.CellCountInt,
 ) -> @page.PageRowState? {
@@ -213,7 +234,7 @@ fn ScreenGridState::row(
 /// Set the semantic-prompt tag on a row by index, bounds-checked. `@page.PageRowState`
 /// is a value type, so callers cannot mutate the descriptor returned by `row`
 /// in place — they go through here to write the `descs[idx]` slot.
-fn ScreenGridState::set_row_semantic_prompt(
+pub fn ScreenGridState::set_row_semantic_prompt(
   self : ScreenGridState,
   row : @size.CellCountInt,
   prompt : @page.RowSemanticPrompt,
@@ -225,7 +246,7 @@ fn ScreenGridState::set_row_semantic_prompt(
 }
 
 ///|
-fn ScreenGridState::print(
+pub fn ScreenGridState::print(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   codepoint : UInt,
@@ -350,7 +371,7 @@ fn ScreenGridState::print(
 }
 
 ///|
-fn ScreenGridState::print_repeat(
+pub fn ScreenGridState::print_repeat(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   codepoint : UInt,
@@ -378,7 +399,7 @@ fn ScreenGridState::print_repeat(
 // When cursor.pending_wrap is set the last-printed cell is at cursor.x;
 // otherwise it is at cursor.x - 1. Skips SpacerTail to find the Wide base.
 // Silently discards the codepoint when there is no preceding cell on this row.
-fn ScreenGridState::append_grapheme(
+pub fn ScreenGridState::append_grapheme(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   codepoint : UInt,
@@ -428,7 +449,7 @@ fn ScreenGridState::append_grapheme(
 }
 
 ///|
-fn ScreenGridState::insert_blanks(
+pub fn ScreenGridState::insert_blanks(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -483,7 +504,7 @@ fn ScreenGridState::insert_blanks(
 }
 
 ///|
-fn ScreenGridState::delete_chars(
+pub fn ScreenGridState::delete_chars(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -523,7 +544,7 @@ fn ScreenGridState::delete_chars(
 }
 
 ///|
-fn ScreenGridState::erase_chars(
+pub fn ScreenGridState::erase_chars(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -558,7 +579,7 @@ fn ScreenGridState::erase_chars(
 }
 
 ///|
-fn ScreenGridState::erase_line(
+pub fn ScreenGridState::erase_line(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -596,7 +617,7 @@ fn ScreenGridState::erase_line(
 }
 
 ///|
-fn ScreenGridState::erase_display(
+pub fn ScreenGridState::erase_display(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -633,7 +654,7 @@ fn ScreenGridState::erase_display(
 }
 
 ///|
-fn ScreenGridState::insert_lines(
+pub fn ScreenGridState::insert_lines(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -660,7 +681,7 @@ fn ScreenGridState::insert_lines(
 }
 
 ///|
-fn ScreenGridState::delete_lines(
+pub fn ScreenGridState::delete_lines(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -687,7 +708,7 @@ fn ScreenGridState::delete_lines(
 }
 
 ///|
-fn ScreenGridState::scroll_down(
+pub fn ScreenGridState::scroll_down(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -705,7 +726,7 @@ fn ScreenGridState::scroll_down(
 }
 
 ///|
-fn ScreenGridState::scroll_up(
+pub fn ScreenGridState::scroll_up(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -723,7 +744,7 @@ fn ScreenGridState::scroll_up(
 }
 
 ///|
-fn ScreenGridState::decaln(
+pub fn ScreenGridState::decaln(
   self : ScreenGridState,
   style : @style.CellStyle,
 ) -> Unit {
@@ -757,7 +778,7 @@ fn ScreenGridState::decaln(
 }
 
 ///|
-fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
+pub fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
   let mut row_idx = 0
   while row_idx < self.rows.to_int() {
     self.clear_full_row(row_idx, @style.CellStyle::new(), false)
@@ -883,7 +904,7 @@ fn ScreenGridState::print_wrap(
 }
 
 ///|
-fn ScreenGridState::index(
+pub fn ScreenGridState::index(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
   style : @style.CellStyle,
@@ -1371,7 +1392,7 @@ fn ScreenGridState::clear_prev_row_spacer_head(
 }
 
 ///|
-fn ScreenGridState::write_cell(
+pub fn ScreenGridState::write_cell(
   self : ScreenGridState,
   row_idx : Int,
   col_idx : Int,
@@ -1428,7 +1449,7 @@ fn ScreenGridState::move_cell_in_row(
 }
 
 ///|
-fn ScreenGridState::recompute_row_flags(
+pub fn ScreenGridState::recompute_row_flags(
   self : ScreenGridState,
   row_idx : Int,
 ) -> Unit {
@@ -1458,7 +1479,7 @@ fn ScreenGridState::recompute_row_flags(
 }
 
 ///|
-fn screen_dimension(value : @size.CellCountInt) -> @size.CellCountInt {
+pub fn screen_dimension(value : @size.CellCountInt) -> @size.CellCountInt {
   if value == 0 {
     1
   } else {

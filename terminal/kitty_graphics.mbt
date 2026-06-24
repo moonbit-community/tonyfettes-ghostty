@@ -583,7 +583,7 @@ fn kitty_graphics_owner_state(owner : KittyGraphics) -> KittyGraphicsState {
 }
 
 ///|
-fn kitty_placement_grid(placement : KittyPlacement) -> ScreenGridState {
+fn kitty_placement_grid(placement : KittyPlacement) -> @grid.ScreenGridState {
   if placement.screen == placement.bridge.active_screen {
     placement.bridge.grid
   } else {

@@ -65,7 +65,7 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     fail("expected zero-column row bounds to reject formatting")
   }
 
-  state.grid = ScreenGridState::new(24, 80)
+  state.grid = @grid.ScreenGridState::new(24, 80)
 
   guard min_cell_count(1, 2) == 1 &&
     min_cell_count(2, 1) == 1 &&
@@ -117,7 +117,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
       }
     None => fail("expected oversized selection to clamp to visible width")
   }
-  state.grid = ScreenGridState::new(2, 2)
+  state.grid = @grid.ScreenGridState::new(2, 2)
   state.scrollback = PageList::new(2, 2, 0)
   state.grid.cells[1][1] = state.grid.cells[1][1].with_wide(SpacerHead)
   let spacer_head_bounds : FormatterSelectionBounds = {
@@ -146,7 +146,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   guard formatter_row_is_blank(sparse_state, 9, { start_x: 0, end_x: 0 }) else {
     fail("expected blank-row helper to treat missing rows as blank")
   }
-  sparse_state.grid = ScreenGridState::new(1, 2)
+  sparse_state.grid = @grid.ScreenGridState::new(1, 2)
   sparse_state.scrollback = PageList::new(1, 2, 0)
   let missing_row_cell_probe : FormatterSelectionBounds = {
     start: @point.Coordinate::new(1, 9U),
