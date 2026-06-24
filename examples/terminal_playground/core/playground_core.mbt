@@ -607,7 +607,7 @@ fn json_int_or_null(value : Int?) -> Json {
 }
 
 ///|
-fn json_coordinate(value : @terminal.Coordinate?) -> Json {
+fn json_coordinate(value : @point.Coordinate?) -> Json {
   match value {
     Some(coord) => { "x": coord.x().to_int(), "y": uint_to_int(coord.y()) }
     None => Json::null()

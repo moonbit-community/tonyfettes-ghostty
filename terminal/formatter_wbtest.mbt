@@ -42,8 +42,8 @@ test "formatter helpers/cover guard branches and ordering helpers" {
   let formatter = plain_formatter(terminal)
   let state = terminal.bridge()
   let single_cell_bounds : FormatterSelectionBounds = {
-    start: Coordinate::new(0, 0U),
-    end_: Coordinate::new(0, 0U),
+    start: @point.Coordinate::new(0, 0U),
+    end_: @point.Coordinate::new(0, 0U),
     rectangle: false,
   }
 
@@ -90,8 +90,8 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   let state = terminal.bridge()
 
   let descending_bounds : FormatterSelectionBounds = {
-    start: Coordinate::new(2, 0U),
-    end_: Coordinate::new(1, 0U),
+    start: @point.Coordinate::new(2, 0U),
+    end_: @point.Coordinate::new(1, 0U),
     rectangle: false,
   }
   guard formatter_row_bounds(state, descending_bounds, 0) is None else {
@@ -106,8 +106,8 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   }
 
   let clamped_bounds : FormatterSelectionBounds = {
-    start: Coordinate::new(0, 0U),
-    end_: Coordinate::new(99, 0U),
+    start: @point.Coordinate::new(0, 0U),
+    end_: @point.Coordinate::new(99, 0U),
     rectangle: false,
   }
   match formatter_row_bounds(state, clamped_bounds, 0) {
@@ -121,8 +121,8 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   state.scrollback = PageList::new(2, 2, 0)
   state.grid.cells[1][1] = state.grid.cells[1][1].with_wide(SpacerHead)
   let spacer_head_bounds : FormatterSelectionBounds = {
-    start: Coordinate::new(1, 1U),
-    end_: Coordinate::new(1, 1U),
+    start: @point.Coordinate::new(1, 1U),
+    end_: @point.Coordinate::new(1, 1U),
     rectangle: false,
   }
   guard formatter_row_bounds(state, spacer_head_bounds, 1) is None else {
@@ -135,8 +135,8 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   }
   let sparse_state = sparse.bridge()
   let missing_row_bounds : FormatterSelectionBounds = {
-    start: Coordinate::new(0, 9U),
-    end_: Coordinate::new(0, 9U),
+    start: @point.Coordinate::new(0, 9U),
+    end_: @point.Coordinate::new(0, 9U),
     rectangle: false,
   }
   let missing_buffer = Buffer()
@@ -149,8 +149,8 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   sparse_state.grid = ScreenGridState::new(1, 2)
   sparse_state.scrollback = PageList::new(1, 2, 0)
   let missing_row_cell_probe : FormatterSelectionBounds = {
-    start: Coordinate::new(1, 9U),
-    end_: Coordinate::new(1, 9U),
+    start: @point.Coordinate::new(1, 9U),
+    end_: @point.Coordinate::new(1, 9U),
     rectangle: false,
   }
   match formatter_row_bounds(sparse_state, missing_row_cell_probe, 9) {

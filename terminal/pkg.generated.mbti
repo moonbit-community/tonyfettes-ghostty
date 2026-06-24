@@ -12,6 +12,7 @@ import {
   "tonyfettes/ghostty/terminal/mode",
   "tonyfettes/ghostty/terminal/osc",
   "tonyfettes/ghostty/terminal/page",
+  "tonyfettes/ghostty/terminal/point",
   "tonyfettes/ghostty/terminal/result_code",
   "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
@@ -56,11 +57,6 @@ pub fn BuildVersion::minor(Self) -> UInt
 pub fn BuildVersion::patch(Self) -> UInt
 pub fn BuildVersion::pre(Self) -> String?
 pub fn BuildVersion::string(Self) -> String
-
-type Coordinate derive(Eq, @debug.Debug)
-pub fn Coordinate::new(UInt16, UInt) -> Self
-pub fn Coordinate::x(Self) -> UInt16
-pub fn Coordinate::y(Self) -> UInt
 
 pub(all) enum CursorVisualStyle {
   Block
@@ -262,14 +258,6 @@ pub fn PasteOptions::new(Bool) -> Self
 
 type Pin
 
-pub(all) enum Point {
-  Active(Coordinate)
-  Viewport(Coordinate)
-  Screen(Coordinate)
-  History(Coordinate)
-} derive(Eq, @debug.Debug)
-pub fn Point::coord(Self) -> Coordinate
-
 pub(all) enum RenderDirty {
   False
   Partial
@@ -301,7 +289,7 @@ pub fn RenderState::columns(Self) -> UInt16
 pub fn RenderState::cursor_blinking(Self) -> Bool
 pub fn RenderState::cursor_color(Self) -> @color.RGB?
 pub fn RenderState::cursor_password_input(Self) -> Bool
-pub fn RenderState::cursor_viewport(Self) -> Coordinate?
+pub fn RenderState::cursor_viewport(Self) -> @point.Coordinate?
 pub fn RenderState::cursor_viewport_wide_tail(Self) -> Bool
 pub fn RenderState::cursor_visible(Self) -> Bool
 pub fn RenderState::cursor_visual_style(Self) -> CursorVisualStyle
@@ -433,8 +421,8 @@ pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette(Self) -> Array[@color.RGB]
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
-pub fn StreamTerminal::pin(Self, Point) -> Pin?
-pub fn StreamTerminal::point_from_pin(Self, Pin, Tag) -> Coordinate?
+pub fn StreamTerminal::pin(Self, @point.Point) -> Pin?
+pub fn StreamTerminal::point_from_pin(Self, Pin, @point.Tag) -> @point.Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
@@ -449,7 +437,7 @@ pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
 pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
 pub fn StreamTerminal::scrollback_rows(Self) -> UInt
 pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
-pub fn StreamTerminal::selection(Self, Point, Point, Bool) -> Selection?
+pub fn StreamTerminal::selection(Self, @point.Point, @point.Point, Bool) -> Selection?
 pub fn StreamTerminal::semantic_prompt_row_range(Self, UInt16) -> (UInt16, UInt16)?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> @device.ColorScheme?) -> Unit
@@ -490,13 +478,6 @@ pub(all) enum SystemLogLevel {
   Warning
   Info
   Debug
-} derive(Eq, @debug.Debug)
-
-pub(all) enum Tag {
-  Active
-  Viewport
-  Screen
-  History
 } derive(Eq, @debug.Debug)
 
 type TerminalCursorState derive(Eq, @debug.Debug)

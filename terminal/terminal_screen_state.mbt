@@ -527,7 +527,7 @@ fn PageList::track_pin(
 fn PageList::pin(
   self : PageList,
   grid : ScreenGridState,
-  point : Point,
+  point : @point.Point,
 ) -> PageListPin? {
   self.track_pin_at_point(grid, point)
 }
@@ -536,7 +536,7 @@ fn PageList::pin(
 fn PageList::track_pin_at_point(
   self : PageList,
   grid : ScreenGridState,
-  point : Point,
+  point : @point.Point,
 ) -> PageListPin? {
   let x = point.coord().x().to_int()
   if x < 0 || x >= grid.cols.to_int() {
@@ -577,8 +577,8 @@ fn PageList::point_from_pin(
   self : PageList,
   grid : ScreenGridState,
   pin : PageListPin,
-  tag : Tag,
-) -> Coordinate? {
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   match self.tracked_pin_index(pin) {
     Some(index) => {
       let pin = self.tracked_pins[index]
@@ -614,8 +614,8 @@ fn PageList::point_from_pin_ref(
   self : PageList,
   grid : ScreenGridState,
   pin : Pin,
-  tag : Tag,
-) -> Coordinate? {
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   self.point_from_pin(grid, pin.pin, tag)
 }
 
@@ -642,8 +642,8 @@ fn PageList::point_from_pin_node(
   self : PageList,
   grid : ScreenGridState,
   pin : PageListPin,
-  tag : Tag,
-) -> Coordinate? {
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   let x = pin.x.to_uint16()
   match self.row_source_for_pin(pin) {
     Some(source) => self.point_from_source(grid, source, x, tag)
@@ -657,8 +657,8 @@ fn PageList::point_from_source(
   grid : ScreenGridState,
   source : PageListRowSource,
   x : @size.CellCountInt,
-  tag : Tag,
-) -> Coordinate? {
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   match source {
     History(index) =>
       match tag {
@@ -666,20 +666,20 @@ fn PageList::point_from_source(
         Viewport =>
           self
           .viewport_index_for_source(grid, source)
-          .map(fn(row) { Coordinate::new(x, row.reinterpret_as_uint()) })
-        Screen => Some(Coordinate::new(x, index.reinterpret_as_uint()))
-        History => Some(Coordinate::new(x, index.reinterpret_as_uint()))
+          .map(fn(row) { @point.Coordinate::new(x, row.reinterpret_as_uint()) })
+        Screen => Some(@point.Coordinate::new(x, index.reinterpret_as_uint()))
+        History => Some(@point.Coordinate::new(x, index.reinterpret_as_uint()))
       }
     Screen(index) =>
       match tag {
-        Active => Some(Coordinate::new(x, index.reinterpret_as_uint()))
+        Active => Some(@point.Coordinate::new(x, index.reinterpret_as_uint()))
         Viewport =>
           self
           .viewport_index_for_source(grid, source)
-          .map(fn(row) { Coordinate::new(x, row.reinterpret_as_uint()) })
+          .map(fn(row) { @point.Coordinate::new(x, row.reinterpret_as_uint()) })
         Screen =>
           Some(
-            Coordinate::new(
+            @point.Coordinate::new(
               x,
               (self.history.length() + index).reinterpret_as_uint(),
             ),
@@ -1009,13 +1009,13 @@ fn PageList::resize(
   self.viewport_pin_row_offset = None
   let cursor_pin = self.track_pin_at_point(
     grid,
-    Active(Coordinate::new(cursor.x(), cursor.y().to_uint())),
+    Active(@point.Coordinate::new(cursor.x(), cursor.y().to_uint())),
   )
   let saved_pin = match saved_cursor {
     Some(saved) =>
       self.track_pin_at_point(
         grid,
-        Active(Coordinate::new(saved.x(), saved.y().to_uint())),
+        Active(@point.Coordinate::new(saved.x(), saved.y().to_uint())),
       )
     None => None
   }
@@ -1757,9 +1757,9 @@ fn PageList::page_point_from_pin_rows(
 fn PageList::point_from_point(
   self : PageList,
   grid : ScreenGridState,
-  point : Point,
-  tag : Tag,
-) -> Coordinate? {
+  point : @point.Point,
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   let x = point.coord().x()
   let x_idx = x.to_int()
   if x_idx < 0 || x_idx >= grid.cols.to_int() {
@@ -1776,7 +1776,7 @@ fn PageList::point_from_point(
 fn PageList::cell_at_point(
   self : PageList,
   grid : ScreenGridState,
-  point : Point,
+  point : @point.Point,
 ) -> @page.PageCellState? {
   let col_idx = point.coord().x().to_int()
   if col_idx < 0 || col_idx >= grid.cols.to_int() {
@@ -1814,7 +1814,7 @@ fn PageList::visible_row_source(
 fn PageList::row_source_for_point(
   self : PageList,
   grid : ScreenGridState,
-  point : Point,
+  point : @point.Point,
 ) -> PageListRowSource? {
   let y = point.coord().y().reinterpret_as_int()
   match point {

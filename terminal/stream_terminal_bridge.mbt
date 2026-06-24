@@ -551,16 +551,16 @@ fn StreamTerminalBridgeState::semantic_prompt_row_range(
 ///|
 fn StreamTerminalBridgeState::point_from_point(
   self : StreamTerminalBridgeState,
-  point : Point,
-  tag : Tag,
-) -> Coordinate? {
+  point : @point.Point,
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   self.scrollback.point_from_point(self.grid, point, tag)
 }
 
 ///|
 fn StreamTerminalBridgeState::pin(
   self : StreamTerminalBridgeState,
-  point : Point,
+  point : @point.Point,
 ) -> Pin? {
   match self.scrollback.pin(self.grid, point) {
     Some(pin) => Some({ screen: self.active_screen, pin })
@@ -593,8 +593,8 @@ fn StreamTerminalBridgeState::untrack_pin(
 fn StreamTerminalBridgeState::point_from_pin(
   self : StreamTerminalBridgeState,
   pin : Pin,
-  tag : Tag,
-) -> Coordinate? {
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   if pin.screen != self.active_screen {
     return None
   }
@@ -604,7 +604,7 @@ fn StreamTerminalBridgeState::point_from_pin(
 ///|
 fn StreamTerminalBridgeState::cell_at_point(
   self : StreamTerminalBridgeState,
-  point : Point,
+  point : @point.Point,
 ) -> @page.PageCellState? {
   self.scrollback.cell_at_point(self.grid, point)
 }
@@ -2303,7 +2303,7 @@ fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
 ) -> PageListPin? {
   self.scrollback.track_pin_at_point(
     self.grid,
-    Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
+    Active(@point.Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
   )
 }
 

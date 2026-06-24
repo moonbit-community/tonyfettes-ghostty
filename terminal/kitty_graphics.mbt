@@ -292,7 +292,9 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
   let bottom_right = match
     scrollback.pin(
       grid,
-      Screen(Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint())),
+      Screen(
+        @point.Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint()),
+      ),
     ) {
     Some(value) => value
     None => return None

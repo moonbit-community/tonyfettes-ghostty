@@ -360,7 +360,7 @@ pub fn StreamTerminal::semantic_prompt_row_range(
 }
 
 ///|
-pub fn StreamTerminal::pin(self : StreamTerminal, point : Point) -> Pin? {
+pub fn StreamTerminal::pin(self : StreamTerminal, point : @point.Point) -> Pin? {
   self.bridge().pin(point)
 }
 
@@ -373,16 +373,16 @@ pub fn StreamTerminal::untrack_pin(self : StreamTerminal, pin : Pin) -> Unit {
 pub fn StreamTerminal::point_from_pin(
   self : StreamTerminal,
   pin : Pin,
-  tag : Tag,
-) -> Coordinate? {
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   self.bridge().point_from_pin(pin, tag)
 }
 
 ///|
 pub fn StreamTerminal::selection(
   self : StreamTerminal,
-  start : Point,
-  end_ : Point,
+  start : @point.Point,
+  end_ : @point.Point,
   rectangle : Bool,
 ) -> Selection? {
   match self.pin(start) {

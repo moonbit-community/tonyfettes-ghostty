@@ -96,8 +96,8 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
 
   let selection = terminal
     .selection(
-      Active(Coordinate::new(1, 0U)),
-      Active(Coordinate::new(1, 1U)),
+      Active(@point.Coordinate::new(1, 0U)),
+      Active(@point.Coordinate::new(1, 1U)),
       true,
     )
     .unwrap()

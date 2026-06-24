@@ -84,7 +84,7 @@ struct MouseEncoder {
   mut size : MouseEncoderSize
   mut any_button_pressed : Bool
   mut track_last_cell : Bool
-  mut last_cell : Coordinate?
+  mut last_cell : @point.Coordinate?
 } derive(Eq, Debug)
 
 ///|
@@ -315,7 +315,7 @@ fn mouse_button_code(
 }
 
 ///|
-fn encode_mouse_x10(button_code : Int, cell : Coordinate) -> Bytes {
+fn encode_mouse_x10(button_code : Int, cell : @point.Coordinate) -> Bytes {
   if cell.x().to_int() > 222 || cell.y().reinterpret_as_int() > 222 {
     return b""
   }
@@ -331,7 +331,7 @@ fn encode_mouse_x10(button_code : Int, cell : Coordinate) -> Bytes {
 }
 
 ///|
-fn encode_mouse_utf8(button_code : Int, cell : Coordinate) -> Bytes {
+fn encode_mouse_utf8(button_code : Int, cell : @point.Coordinate) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[M")
   buffer.write_byte((32 + button_code).to_byte())
@@ -343,7 +343,7 @@ fn encode_mouse_utf8(button_code : Int, cell : Coordinate) -> Bytes {
 ///|
 fn encode_mouse_sgr(
   button_code : Int,
-  cell : Coordinate,
+  cell : @point.Coordinate,
   action : @input.MouseAction,
 ) -> Bytes {
   let buffer = Buffer()
@@ -361,7 +361,7 @@ fn encode_mouse_sgr(
 }
 
 ///|
-fn encode_mouse_urxvt(button_code : Int, cell : Coordinate) -> Bytes {
+fn encode_mouse_urxvt(button_code : Int, cell : @point.Coordinate) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
   @ascii.write_uint_ascii(buffer, (32 + button_code).to_uint64())
@@ -442,7 +442,7 @@ fn mouse_position_out_of_viewport(
 fn mouse_position_to_cell(
   pos : @input.MousePosition,
   size : MouseEncoderSize,
-) -> Coordinate {
+) -> @point.Coordinate {
   let content_columns = mouse_encoder_columns(size)
   let content_rows = mouse_encoder_rows(size)
   let x = clamp_mouse_cell_index(
@@ -455,7 +455,7 @@ fn mouse_position_to_cell(
     size.cell_height,
     content_rows,
   )
-  Coordinate::new(x.to_uint16(), y.reinterpret_as_uint())
+  @point.Coordinate::new(x.to_uint16(), y.reinterpret_as_uint())
 }
 
 ///|

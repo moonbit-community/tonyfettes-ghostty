@@ -12,7 +12,7 @@ struct RenderState {
   mut columns : @size.CellCountInt
   mut dirty : RenderDirty
   mut screen : TerminalScreen
-  mut viewport_origin : Coordinate?
+  mut viewport_origin : @point.Coordinate?
   mut background : @color.RGB
   mut foreground : @color.RGB
   mut cursor_color : @color.RGB?
@@ -21,7 +21,7 @@ struct RenderState {
   mut cursor_visible : Bool
   mut cursor_blinking : Bool
   mut cursor_password_input : Bool
-  mut cursor_viewport : Coordinate?
+  mut cursor_viewport : @point.Coordinate?
   mut cursor_viewport_wide_tail : Bool
   mut row_states : Array[@page.PageRowState]
   mut row_cells : Array[FixedArray[@page.PageCellState]]
@@ -135,7 +135,7 @@ pub fn RenderState::cursor_password_input(self : RenderState) -> Bool {
 }
 
 ///|
-pub fn RenderState::cursor_viewport(self : RenderState) -> Coordinate? {
+pub fn RenderState::cursor_viewport(self : RenderState) -> @point.Coordinate? {
   self.cursor_viewport
 }
 
@@ -295,11 +295,13 @@ fn resolve_viewport_origin(
   terminal : StreamTerminal,
   rows : @size.CellCountInt,
   columns : @size.CellCountInt,
-) -> Coordinate? {
+) -> @point.Coordinate? {
   if rows == 0 || columns == 0 {
     None
   } else {
-    terminal.bridge().point_from_point(Viewport(Coordinate::new(0, 0U)), Screen)
+    terminal
+    .bridge()
+    .point_from_point(Viewport(@point.Coordinate::new(0, 0U)), Screen)
   }
 }
 
@@ -332,9 +334,11 @@ fn resolved_render_foreground(
 }
 
 ///|
-fn resolve_cursor_viewport(terminal : StreamTerminal) -> (Coordinate?, Bool) {
-  let cursor_point = Point::Active(
-    Coordinate::new(terminal.cursor_x(), terminal.cursor_y().to_uint()),
+fn resolve_cursor_viewport(
+  terminal : StreamTerminal,
+) -> (@point.Coordinate?, Bool) {
+  let cursor_point = @point.Point::Active(
+    @point.Coordinate::new(terminal.cursor_x(), terminal.cursor_y().to_uint()),
   )
   let state = terminal.bridge()
   match state.point_from_point(cursor_point, Viewport) {

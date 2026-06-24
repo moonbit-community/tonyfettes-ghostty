@@ -6,16 +6,16 @@ test "selection/preserves endpoints and rectangle flag" {
   }
   terminal.next_slice(b"abcd\r\nefgh")
 
-  let start = terminal.pin(Active(Coordinate::new(1, 0U))).unwrap()
-  let end_ = terminal.pin(Active(Coordinate::new(2, 1U))).unwrap()
+  let start = terminal.pin(Active(@point.Coordinate::new(1, 0U))).unwrap()
+  let end_ = terminal.pin(Active(@point.Coordinate::new(2, 1U))).unwrap()
   let selection = Selection::new(start, end_, true)
 
   guard terminal.point_from_pin(selection.start(), Active) ==
-    Some(Coordinate::new(1, 0U)) else {
+    Some(@point.Coordinate::new(1, 0U)) else {
     fail("expected selection start to be preserved")
   }
   guard terminal.point_from_pin(selection.end(), Active) ==
-    Some(Coordinate::new(2, 1U)) else {
+    Some(@point.Coordinate::new(2, 1U)) else {
     fail("expected selection end to be preserved")
   }
   guard selection.rectangle() else {
@@ -30,7 +30,7 @@ test "selection/untrack invalidates public pin handle" {
   let terminal = StreamTerminal::new()
   terminal.next_slice(b"abc")
 
-  let pin = terminal.pin(Active(Coordinate::new(1, 0U))).unwrap()
+  let pin = terminal.pin(Active(@point.Coordinate::new(1, 0U))).unwrap()
   terminal.untrack_pin(pin)
   guard terminal.point_from_pin(pin, Active) == None else {
     fail("expected untracked pin handle to stop resolving")
@@ -48,8 +48,8 @@ test "selection/pin handles keep their screen owner across alt screen" {
   terminal.next_slice(b"abc")
   let primary = terminal
     .selection(
-      Active(Coordinate::new(0, 0U)),
-      Active(Coordinate::new(2, 0U)),
+      Active(@point.Coordinate::new(0, 0U)),
+      Active(@point.Coordinate::new(2, 0U)),
       false,
     )
     .unwrap()
@@ -58,8 +58,8 @@ test "selection/pin handles keep their screen owner across alt screen" {
   terminal.next_slice(b"xyz")
   let alternate = terminal
     .selection(
-      Active(Coordinate::new(0, 0U)),
-      Active(Coordinate::new(2, 0U)),
+      Active(@point.Coordinate::new(0, 0U)),
+      Active(@point.Coordinate::new(2, 0U)),
       false,
     )
     .unwrap()
@@ -68,13 +68,13 @@ test "selection/pin handles keep their screen owner across alt screen" {
     fail("expected primary pin to stop resolving while alternate is active")
   }
   guard terminal.point_from_pin(alternate.start(), Active) ==
-    Some(Coordinate::new(0, 0U)) else {
+    Some(@point.Coordinate::new(0, 0U)) else {
     fail("expected alternate pin to resolve on alternate screen")
   }
 
   terminal.untrack_selection(primary)
   guard terminal.point_from_pin(alternate.start(), Active) ==
-    Some(Coordinate::new(0, 0U)) else {
+    Some(@point.Coordinate::new(0, 0U)) else {
     fail("expected untracking primary selection to leave alternate pins intact")
   }
 
@@ -87,8 +87,8 @@ test "selection/supports non-rectangular selections" {
   let terminal = StreamTerminal::new()
   let selection = terminal
     .selection(
-      Active(Coordinate::new(0, 0U)),
-      Viewport(Coordinate::new(0, 0U)),
+      Active(@point.Coordinate::new(0, 0U)),
+      Viewport(@point.Coordinate::new(0, 0U)),
       false,
     )
     .unwrap()
@@ -103,8 +103,8 @@ test "selection/supports non-rectangular selections" {
 test "selection/rejects points outside the page list" {
   let terminal = StreamTerminal::new()
   let missing = terminal.selection(
-    Active(Coordinate::new(0, 1000U)),
-    Active(Coordinate::new(0, 0U)),
+    Active(@point.Coordinate::new(0, 1000U)),
+    Active(@point.Coordinate::new(0, 0U)),
     false,
   )
   guard (match missing {
