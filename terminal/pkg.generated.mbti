@@ -342,6 +342,7 @@ pub(all) enum TerminalSurfaceTypeMapping {
 } derive(Eq, @debug.Debug)
 
 // Type aliases
+pub using @selection {type Selection}
 
 // Traits
 
