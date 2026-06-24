@@ -28,6 +28,7 @@ import {
   "tonyfettes/ghostty/terminal/tabstops",
   "tonyfettes/ghostty/terminal/sgr",
   "tonyfettes/ghostty/terminal/size",
+  "tonyfettes/ghostty/terminal/size_report",
   "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
 }

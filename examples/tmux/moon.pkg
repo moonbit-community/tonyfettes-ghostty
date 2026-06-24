@@ -17,6 +17,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "tonyfettes/ghostty/terminal",
+  "tonyfettes/ghostty/terminal/size_report",
 }
 
 supported_targets = "native"

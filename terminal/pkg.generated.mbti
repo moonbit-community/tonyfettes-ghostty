@@ -15,14 +15,13 @@ import {
   "tonyfettes/ghostty/terminal/pagelist",
   "tonyfettes/ghostty/terminal/point",
   "tonyfettes/ghostty/terminal/result_code",
+  "tonyfettes/ghostty/terminal/size_report",
   "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
 }
 
 // Values
 pub fn build_info() -> BuildInfo
-
-pub fn encode(Style, Size) -> Bytes
 
 pub fn terminal_surface_type(String) -> TerminalSurfaceTypeInfo?
 
@@ -233,13 +232,6 @@ pub fn Selection::new(@pagelist.Pin, @pagelist.Pin, Bool) -> Self
 pub fn Selection::rectangle(Self) -> Bool
 pub fn Selection::start(Self) -> @pagelist.Pin
 
-type Size derive(Eq, @debug.Debug)
-pub fn Size::cell_height(Self) -> UInt
-pub fn Size::cell_width(Self) -> UInt
-pub fn Size::columns(Self) -> UInt16
-pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
-pub fn Size::rows(Self) -> UInt16
-
 type StreamTerminal
 pub fn StreamTerminal::active_screen(Self) -> @pagelist.TerminalScreen
 pub fn StreamTerminal::background_color(Self) -> @color.RGB?
@@ -275,7 +267,7 @@ pub fn StreamTerminal::kitty_keyboard_flags(Self) -> @stream.KittyKeyboardFlags
 pub fn StreamTerminal::mode_get(Self, @mode.Mode) -> Bool
 pub fn StreamTerminal::mode_set(Self, @mode.Mode, Bool) -> Unit
 pub fn StreamTerminal::mouse_tracking(Self) -> Bool
-pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> @device.ColorScheme?, device_attributes? : () -> @device.DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
+pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> @device.ColorScheme?, device_attributes? : () -> @device.DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> @size_report.Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette(Self) -> Array[@color.RGB]
@@ -307,7 +299,7 @@ pub fn StreamTerminal::set_default_palette(Self, Array[@color.RGB]?) -> @result_
 pub fn StreamTerminal::set_device_attributes(Self, () -> @device.DeviceAttributes?) -> Unit
 pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
 pub fn StreamTerminal::set_pwd(Self, String) -> Unit
-pub fn StreamTerminal::set_size(Self, () -> Size?) -> Unit
+pub fn StreamTerminal::set_size(Self, () -> @size_report.Size?) -> Unit
 pub fn StreamTerminal::set_title(Self, String) -> Unit
 pub fn StreamTerminal::set_title_changed(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_write_pty(Self, (Bytes) -> Unit) -> Unit
@@ -320,13 +312,6 @@ pub fn StreamTerminal::total_rows(Self) -> UInt
 pub fn StreamTerminal::untrack_pin(Self, @pagelist.Pin) -> Unit
 pub fn StreamTerminal::untrack_selection(Self, Selection) -> Unit
 pub fn StreamTerminal::width_px(Self) -> UInt
-
-pub(all) enum Style {
-  Mode2048
-  Csi14t
-  Csi16t
-  Csi18t
-} derive(Eq, @debug.Debug)
 
 type SystemImage derive(Eq, @debug.Debug)
 pub fn SystemImage::data(Self) -> Bytes

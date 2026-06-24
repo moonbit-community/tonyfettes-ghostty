@@ -36,7 +36,7 @@ pub fn StreamTerminal::new(
   color_scheme? : () -> @device.ColorScheme? = fn() { None },
   device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
   enquiry? : () -> Bytes = fn() { b"" },
-  size? : () -> Size? = fn() { None },
+  size? : () -> @size_report.Size? = fn() { None },
   title_changed? : () -> Unit = fn() { () },
   xtversion? : () -> String = fn() { "" },
 ) -> StreamTerminal {
@@ -517,7 +517,7 @@ pub fn StreamTerminal::clear_enquiry(self : StreamTerminal) -> Unit {
 ///|
 pub fn StreamTerminal::set_size(
   self : StreamTerminal,
-  callback : () -> Size?,
+  callback : () -> @size_report.Size?,
 ) -> Unit {
   self.bridge().set_size(callback)
 }

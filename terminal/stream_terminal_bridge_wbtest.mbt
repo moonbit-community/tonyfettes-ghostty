@@ -1781,7 +1781,7 @@ test "stream terminal bridge/applies query responses and callbacks" {
     color_scheme=fn() { Some(Light) },
     device_attributes=fn() { Some(attributes) },
     enquiry=fn() { b"ghostty" },
-    size=fn() { Some(Size::new(24, 80, 9, 18)) },
+    size=fn() { Some(@size_report.Size::new(24, 80, 9, 18)) },
     title_changed=fn() { recorder.title_changed() },
     xtversion=fn() { "ghostty 1.2.3" },
   )

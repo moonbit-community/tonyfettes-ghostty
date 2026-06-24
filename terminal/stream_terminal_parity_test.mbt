@@ -257,7 +257,7 @@ test "stream terminal parity/replaces callbacks with default fallback paths" {
 
   terminal.set_enquiry(fn() { b"OK" })
   terminal.set_xtversion(fn() { "myterm 1.0" })
-  terminal.set_size(fn() { Some(Size::new(24, 80, 8, 16)) })
+  terminal.set_size(fn() { Some(@size_report.Size::new(24, 80, 8, 16)) })
   terminal.set_color_scheme(fn() { Some(Light) })
   terminal.set_device_attributes(fn() { Some(attributes) })
   terminal.next_slice(b"\x05\x1B[>q\x1B[18t\x1B[?996n\x1B[c")
@@ -292,7 +292,7 @@ test "stream terminal parity/set size callback" {
   let recorder = StreamTerminalParityRecorder::new()
   let terminal = StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
-    size=fn() { Some(Size::new(24, 80, 8, 16)) },
+    size=fn() { Some(@size_report.Size::new(24, 80, 8, 16)) },
   )
 
   terminal.next_slice(b"\x1B[18t")

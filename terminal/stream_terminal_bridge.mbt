@@ -26,7 +26,7 @@ priv struct StreamTerminalBridgeEffects {
   mut color_scheme : () -> @device.ColorScheme?
   mut device_attributes : () -> @device.DeviceAttributes?
   mut enquiry : () -> Bytes
-  mut size : () -> Size?
+  mut size : () -> @size_report.Size?
   mut title_changed : () -> Unit
   mut xtversion : () -> String
 }
@@ -38,7 +38,7 @@ fn StreamTerminalBridgeEffects::new(
   color_scheme? : () -> @device.ColorScheme? = fn() { None },
   device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
   enquiry? : () -> Bytes = fn() { b"" },
-  size? : () -> Size? = fn() { None },
+  size? : () -> @size_report.Size? = fn() { None },
   title_changed? : () -> Unit = fn() { () },
   xtversion? : () -> String = fn() { "" },
 ) -> StreamTerminalBridgeEffects {
@@ -132,7 +132,7 @@ fn StreamTerminalBridgeEffects::clear_enquiry(
 ///|
 fn StreamTerminalBridgeEffects::set_size(
   self : StreamTerminalBridgeEffects,
-  callback : () -> Size?,
+  callback : () -> @size_report.Size?,
 ) -> Unit {
   self.size = callback
 }
@@ -821,7 +821,7 @@ fn StreamTerminalBridgeState::clear_enquiry(
 ///|
 fn StreamTerminalBridgeState::set_size(
   self : StreamTerminalBridgeState,
-  callback : () -> Size?,
+  callback : () -> @size_report.Size?,
 ) -> Unit {
   self.effects.set_size(callback)
 }
@@ -886,7 +886,10 @@ fn StreamTerminalBridgeState::resize(
   self.modes = self.modes.set(SynchronizedOutput, false)
   if self.modes.get(InBandSizeReports) {
     self.write_pty(
-      encode(Mode2048, Size::new(rows, columns, cell_width_px, cell_height_px)),
+      @size_report.encode(
+        Mode2048,
+        @size_report.Size::new(rows, columns, cell_width_px, cell_height_px),
+      ),
     )
   }
   Success
@@ -1868,17 +1871,17 @@ fn StreamTerminalBridgeState::report_size(
   match style {
     Csi14t =>
       match (self.effects.size)() {
-        Some(size) => self.write_pty(encode(Csi14t, size))
+        Some(size) => self.write_pty(@size_report.encode(Csi14t, size))
         None => ()
       }
     Csi16t =>
       match (self.effects.size)() {
-        Some(size) => self.write_pty(encode(Csi16t, size))
+        Some(size) => self.write_pty(@size_report.encode(Csi16t, size))
         None => ()
       }
     Csi18t =>
       match (self.effects.size)() {
-        Some(size) => self.write_pty(encode(Csi18t, size))
+        Some(size) => self.write_pty(@size_report.encode(Csi18t, size))
         None => ()
       }
     Csi21t => {
