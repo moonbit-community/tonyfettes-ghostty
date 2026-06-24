@@ -3,47 +3,26 @@ package "tonyfettes/ghostty/terminal"
 
 import {
   "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/ansi",
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/device",
   "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/mode",
   "tonyfettes/ghostty/terminal/osc",
   "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/result_code",
-  "tonyfettes/ghostty/terminal/sgr",
+  "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
 }
 
 // Values
 pub fn build_info() -> BuildInfo
 
-pub fn c0_from_byte(Byte) -> C0?
-
-pub fn cursor_style_from_int(Int) -> CursorStyle?
-
-pub fn device_status_request_from_int(UInt16, Bool) -> DeviceStatusRequest?
-
-pub fn device_status_tag(UInt16, Bool) -> DeviceStatusTag
-
-pub fn device_status_tag_from_raw(UInt16) -> DeviceStatusTag
-
 pub fn encode(Style, Size) -> Bytes
 
-pub fn mode_from_int(UInt16, Bool) -> Mode?
-
-pub fn mode_tag(UInt16, Bool) -> ModeTag
-
-pub fn mode_tag_from_raw(UInt16) -> ModeTag
-
-pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
-
 pub fn paste_is_safe(Bytes) -> Bool
-
-pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
-
-pub fn status_display_from_int(Int) -> StatusDisplay?
-
-pub fn status_line_type_from_int(UInt16) -> StatusLineType?
 
 pub fn terminal_surface_type(String) -> TerminalSurfaceTypeInfo?
 
@@ -78,124 +57,16 @@ pub fn BuildVersion::patch(Self) -> UInt
 pub fn BuildVersion::pre(Self) -> String?
 pub fn BuildVersion::string(Self) -> String
 
-pub(all) enum C0 {
-  Nul
-  Soh
-  Stx
-  Enq
-  Bel
-  Bs
-  Ht
-  Lf
-  Vt
-  Ff
-  Cr
-  So
-  Si
-} derive(Eq, @debug.Debug)
-pub fn C0::code(Self) -> Byte
-
-pub(all) enum ColorScheme {
-  Light
-  Dark
-} derive(Eq, @debug.Debug)
-
-pub(all) struct ConfigureCharsetAction {
-  slot : @charsets.Slots
-  charset : @charsets.Charset
-} derive(Eq, @debug.Debug)
-
-pub(all) enum ConformanceLevel {
-  Vt100
-  Vt132
-  Vt102
-  Vt131
-  Vt125
-  Vt220
-  Vt240
-  Vt320
-  Vt340
-  Vt420
-  Vt510
-  Vt520
-  Vt525
-} derive(Eq, @debug.Debug)
-pub fn ConformanceLevel::code(Self) -> UInt16
-
 type Coordinate derive(Eq, @debug.Debug)
 pub fn Coordinate::new(UInt16, UInt) -> Self
 pub fn Coordinate::x(Self) -> UInt16
 pub fn Coordinate::y(Self) -> UInt
-
-pub(all) struct CursorMovement(UInt16) derive(Eq, @debug.Debug)
-
-pub(all) struct CursorPosition {
-  row : UInt16
-  col : UInt16
-} derive(Eq, @debug.Debug)
-
-pub(all) enum CursorStyle {
-  Default
-  BlinkingBlock
-  SteadyBlock
-  BlinkingUnderline
-  SteadyUnderline
-  BlinkingBar
-  SteadyBar
-} derive(Eq, @debug.Debug)
-pub fn CursorStyle::ordinal(Self) -> Int
 
 pub(all) enum CursorVisualStyle {
   Block
   Bar
   Underline
 } derive(Eq, @debug.Debug)
-
-type DcsHookPayload derive(Eq, @debug.Debug)
-pub fn DcsHookPayload::final_byte(Self) -> Byte
-pub fn DcsHookPayload::intermediates(Self) -> Bytes
-pub fn DcsHookPayload::params(Self) -> ReadOnlyArray[UInt16]
-
-pub(all) enum DeviceAttributeRequest {
-  Primary
-  Secondary
-  Tertiary
-} derive(Eq, @debug.Debug)
-
-type DeviceAttributes derive(Eq, @debug.Debug)
-pub fn DeviceAttributes::default() -> Self
-pub fn DeviceAttributes::encode(Self, DeviceAttributeRequest) -> Bytes
-pub fn DeviceAttributes::new(PrimaryDeviceAttributes, SecondaryDeviceAttributes, TertiaryDeviceAttributes) -> Self
-pub fn DeviceAttributes::primary(Self) -> PrimaryDeviceAttributes
-pub fn DeviceAttributes::secondary(Self) -> SecondaryDeviceAttributes
-pub fn DeviceAttributes::tertiary(Self) -> TertiaryDeviceAttributes
-
-pub(all) enum DeviceStatusRequest {
-  OperatingStatus
-  CursorPosition
-  ColorScheme
-} derive(Eq, @debug.Debug)
-pub fn DeviceStatusRequest::tag(Self) -> DeviceStatusTag
-
-type DeviceStatusTag derive(Eq, @debug.Debug)
-pub fn DeviceStatusTag::question(Self) -> Bool
-pub fn DeviceStatusTag::raw(Self) -> UInt16
-pub fn DeviceStatusTag::value(Self) -> UInt16
-
-pub(all) enum DeviceType {
-  Vt100
-  Vt220
-  Vt240
-  Vt330
-  Vt340
-  Vt320
-  Vt382
-  Vt420
-  Vt510
-  Vt520
-  Vt525
-} derive(Eq, @debug.Debug)
-pub fn DeviceType::code(Self) -> UInt16
 
 pub(all) enum FocusEvent {
   Gained
@@ -228,12 +99,6 @@ pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_reg
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
 
-pub(all) struct InvokeCharsetAction {
-  bank : @charsets.ActiveSlot
-  charset : @charsets.Slots
-  locking : Bool
-} derive(Eq, @debug.Debug)
-
 type KeyEncoder derive(Eq, @debug.Debug)
 pub fn KeyEncoder::alt_esc_prefix(Self) -> Bool
 pub fn KeyEncoder::backarrow_key_mode(Self) -> Bool
@@ -242,7 +107,7 @@ pub fn KeyEncoder::encode(Self, @input.KeyEvent) -> Bytes
 pub fn KeyEncoder::host_is_macos(Self) -> Bool
 pub fn KeyEncoder::ignore_keypad_with_numlock(Self) -> Bool
 pub fn KeyEncoder::keypad_key_application(Self) -> Bool
-pub fn KeyEncoder::kitty_flags(Self) -> KittyKeyboardFlags
+pub fn KeyEncoder::kitty_flags(Self) -> @stream.KittyKeyboardFlags
 pub fn KeyEncoder::macos_option_as_alt(Self) -> OptionAsAlt
 pub fn KeyEncoder::modify_other_keys_state_2(Self) -> Bool
 pub fn KeyEncoder::new() -> Self
@@ -252,7 +117,7 @@ pub fn KeyEncoder::set_cursor_key_application(Self, Bool) -> Unit
 pub fn KeyEncoder::set_host_is_macos(Self, Bool) -> Unit
 pub fn KeyEncoder::set_ignore_keypad_with_numlock(Self, Bool) -> Unit
 pub fn KeyEncoder::set_keypad_key_application(Self, Bool) -> Unit
-pub fn KeyEncoder::set_kitty_flags(Self, KittyKeyboardFlags) -> Unit
+pub fn KeyEncoder::set_kitty_flags(Self, @stream.KittyKeyboardFlags) -> Unit
 pub fn KeyEncoder::set_macos_option_as_alt(Self, OptionAsAlt) -> Unit
 pub fn KeyEncoder::set_modify_other_keys_state_2(Self, Bool) -> Unit
 pub fn KeyEncoder::sync_from_terminal(Self, StreamTerminal) -> Unit
@@ -285,17 +150,15 @@ pub fn KittyImage::id(Self) -> UInt
 pub fn KittyImage::number(Self) -> UInt
 pub fn KittyImage::width(Self) -> UInt
 
-pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
-
 type KittyKeyboardState derive(Eq, @debug.Debug)
-pub fn KittyKeyboardState::current(Self) -> KittyKeyboardFlags
+pub fn KittyKeyboardState::current(Self) -> @stream.KittyKeyboardFlags
 pub fn KittyKeyboardState::new() -> Self
 pub fn KittyKeyboardState::pop(Self, UInt16) -> Unit
-pub fn KittyKeyboardState::push(Self, KittyKeyboardFlags) -> Unit
+pub fn KittyKeyboardState::push(Self, @stream.KittyKeyboardFlags) -> Unit
 pub fn KittyKeyboardState::reset(Self) -> Unit
-pub fn KittyKeyboardState::set(Self, KittyKeyboardFlags) -> Unit
-pub fn KittyKeyboardState::set_not(Self, KittyKeyboardFlags) -> Unit
-pub fn KittyKeyboardState::set_or(Self, KittyKeyboardFlags) -> Unit
+pub fn KittyKeyboardState::set(Self, @stream.KittyKeyboardFlags) -> Unit
+pub fn KittyKeyboardState::set_not(Self, @stream.KittyKeyboardFlags) -> Unit
+pub fn KittyKeyboardState::set_or(Self, @stream.KittyKeyboardFlags) -> Unit
 
 type KittyPlacement
 pub fn KittyPlacement::columns(Self) -> UInt
@@ -352,84 +215,6 @@ type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
 pub fn KittyPlacementViewportPosition::col(Self) -> Int
 pub fn KittyPlacementViewportPosition::row(Self) -> Int
 
-pub(all) struct Margin {
-  top_left : UInt16
-  bottom_right : UInt16
-} derive(Eq, @debug.Debug)
-
-pub(all) enum Mode {
-  DisableKeyboard
-  Insert
-  SendReceiveMode
-  Linefeed
-  CursorKeys
-  Mode132Column
-  SlowScroll
-  ReverseColors
-  Origin
-  Wraparound
-  Autorepeat
-  MouseEventX10
-  CursorBlinking
-  CursorVisible
-  EnableMode3
-  ReverseWrap
-  AltScreenLegacy
-  KeypadKeys
-  BackarrowKeyMode
-  EnableLeftAndRightMargin
-  MouseEventNormal
-  MouseEventButton
-  MouseEventAny
-  FocusEvent
-  MouseFormatUtf8
-  MouseFormatSgr
-  MouseAlternateScroll
-  MouseFormatUrxvt
-  MouseFormatSgrPixels
-  IgnoreKeypadWithNumlock
-  AltEscPrefix
-  AltSendsEscape
-  ReverseWrapExtended
-  AltScreen
-  SaveCursor
-  AltScreenSaveCursorClearEnter
-  BracketedPaste
-  SynchronizedOutput
-  GraphemeCluster
-  ReportColorScheme
-  InBandSizeReports
-} derive(Eq, @debug.Debug)
-pub fn Mode::tag(Self) -> ModeTag
-
-type ModePacked derive(Eq, @debug.Debug)
-pub fn ModePacked::default() -> Self
-pub fn ModePacked::empty() -> Self
-pub fn ModePacked::get(Self, Mode) -> Bool
-pub fn ModePacked::set(Self, Mode, Bool) -> Self
-
-type ModeState derive(Eq, @debug.Debug)
-pub fn ModeState::get(Self, Mode) -> Bool
-pub fn ModeState::get_report(Self, ModeTag) -> Report
-pub fn ModeState::new() -> Self
-pub fn ModeState::save(Self, Mode) -> Self
-pub fn ModeState::set(Self, Mode, Bool) -> Self
-
-type ModeTag derive(Eq, @debug.Debug)
-pub fn ModeTag::ansi(Self) -> Bool
-pub fn ModeTag::raw(Self) -> UInt16
-pub fn ModeTag::value(Self) -> UInt16
-
-pub(all) enum ModifyKeyFormat {
-  Legacy
-  CursorKeys
-  FunctionKeys
-  OtherKeysNone
-  OtherKeysNumericExcept
-  OtherKeysNumeric
-} derive(Eq, @debug.Debug)
-pub fn ModifyKeyFormat::ordinal(Self) -> Int
-
 type MouseEncoder derive(Eq, @debug.Debug)
 pub fn MouseEncoder::any_button_pressed(Self) -> Bool
 pub fn MouseEncoder::encode(Self, @input.MouseInputEvent) -> Bytes
@@ -485,39 +270,6 @@ pub(all) enum Point {
 } derive(Eq, @debug.Debug)
 pub fn Point::coord(Self) -> Coordinate
 
-pub(all) enum PrimaryDeviceAttributeFeature {
-  Columns132
-  Printer
-  Regis
-  Sixel
-  SelectiveErase
-  UserDefinedKeys
-  NationalReplacement
-  TechnicalCharacters
-  Locator
-  TerminalState
-  Windowing
-  HorizontalScrolling
-  AnsiColor
-  RectangularEditing
-  AnsiTextLocator
-  Clipboard
-} derive(Eq, @debug.Debug)
-pub fn PrimaryDeviceAttributeFeature::code(Self) -> UInt16
-
-type PrimaryDeviceAttributes derive(Eq, @debug.Debug)
-pub fn PrimaryDeviceAttributes::conformance_level(Self) -> ConformanceLevel
-pub fn PrimaryDeviceAttributes::default() -> Self
-pub fn PrimaryDeviceAttributes::encode(Self) -> Bytes
-pub fn PrimaryDeviceAttributes::features(Self) -> ReadOnlyArray[PrimaryDeviceAttributeFeature]
-pub fn PrimaryDeviceAttributes::new(ConformanceLevel, ReadOnlyArray[PrimaryDeviceAttributeFeature]) -> Self
-
-pub(all) enum ProtectedMode {
-  Off
-  Iso
-  Dec
-} derive(Eq, @debug.Debug)
-
 pub(all) enum RenderDirty {
   False
   Partial
@@ -563,28 +315,6 @@ pub fn RenderState::rows(Self) -> UInt16
 pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
 pub fn RenderState::update(Self, StreamTerminal) -> Unit
 
-pub(all) enum RenditionAspect {
-  Default
-  Bold
-  DefaultFg
-  DefaultBg
-} derive(Eq, @debug.Debug)
-pub fn RenditionAspect::code(Self) -> UInt16
-
-type Report derive(Eq, @debug.Debug)
-pub fn Report::encode(Self) -> Bytes
-pub fn Report::state(Self) -> ReportState
-pub fn Report::tag(Self) -> ModeTag
-
-pub(all) enum ReportState {
-  NotRecognized
-  Set
-  Reset
-  PermanentlySet
-  PermanentlyReset
-} derive(Eq, @debug.Debug)
-pub fn ReportState::code(Self) -> Int
-
 type ScreenCharsetState derive(Eq, @debug.Debug)
 pub fn ScreenCharsetState::charset(Self, @charsets.Slots) -> @charsets.Charset
 pub fn ScreenCharsetState::configure(Self, @charsets.Slots, @charsets.Charset) -> Unit
@@ -609,10 +339,10 @@ pub fn ScreenHyperlinkState::uri(Self) -> String?
 
 type ScreenProtectedState derive(Eq, @debug.Debug)
 pub fn ScreenProtectedState::cursor_protected(Self) -> Bool
-pub fn ScreenProtectedState::mode(Self) -> ProtectedMode
+pub fn ScreenProtectedState::mode(Self) -> @ansi.ProtectedMode
 pub fn ScreenProtectedState::new() -> Self
 pub fn ScreenProtectedState::reset(Self) -> Unit
-pub fn ScreenProtectedState::set(Self, ProtectedMode) -> Unit
+pub fn ScreenProtectedState::set(Self, @ansi.ProtectedMode) -> Unit
 
 type ScreenSavedCursor derive(Eq, @debug.Debug)
 pub fn ScreenSavedCursor::charset(Self) -> ScreenCharsetState
@@ -644,14 +374,6 @@ pub fn ScreenSemanticState::seen(Self) -> Bool
 pub fn ScreenSemanticState::set_output(Self) -> Unit
 pub fn ScreenSemanticState::start_input(Self, Bool) -> Unit
 
-type SecondaryDeviceAttributes derive(Eq, @debug.Debug)
-pub fn SecondaryDeviceAttributes::default() -> Self
-pub fn SecondaryDeviceAttributes::device_type(Self) -> DeviceType
-pub fn SecondaryDeviceAttributes::encode(Self) -> Bytes
-pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
-pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
-pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
-
 type Selection
 pub fn Selection::end(Self) -> Pin
 pub fn Selection::new(Pin, Pin, Bool) -> Self
@@ -670,128 +392,6 @@ pub fn Size::cell_width(Self) -> UInt
 pub fn Size::columns(Self) -> UInt16
 pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
 pub fn Size::rows(Self) -> UInt16
-
-pub(all) enum SizeReportStyle {
-  Csi14t
-  Csi16t
-  Csi18t
-  Csi21t
-} derive(Eq, @debug.Debug)
-
-pub(all) enum StatusDisplay {
-  Main
-  StatusLine
-} derive(Eq, @debug.Debug)
-pub fn StatusDisplay::ordinal(Self) -> Int
-
-pub(all) enum StatusLineType {
-  None
-  Indicator
-  HostWritable
-} derive(Eq, @debug.Debug)
-pub fn StatusLineType::code(Self) -> UInt16
-
-type Stream[H]
-pub fn[H : StreamHandler] Stream::deinit(Self[H]) -> Unit
-pub fn[H] Stream::new(H) -> Self[H]
-pub fn[H : StreamHandler] Stream::next(Self[H], Byte) -> Unit
-pub fn[H : StreamHandler] Stream::next_slice(Self[H], Bytes) -> Unit
-
-pub(all) enum StreamAction {
-  StreamPrint(UInt)
-  StreamPrintRepeat(UInt16)
-  StreamBell
-  StreamBackspace
-  StreamHorizontalTab(UInt16)
-  StreamHorizontalTabBack(UInt16)
-  StreamLinefeed
-  StreamCarriageReturn
-  StreamIndex
-  StreamNextLine
-  StreamReverseIndex
-  StreamEnquiry
-  StreamInvokeCharset(InvokeCharsetAction)
-  StreamConfigureCharset(ConfigureCharsetAction)
-  StreamSaveCursor
-  StreamRestoreCursor
-  StreamDecaln
-  StreamFullReset
-  StreamSetMode(Mode)
-  StreamResetMode(Mode)
-  StreamRequestMode(Mode)
-  StreamRequestModeUnknown(ModeTag)
-  StreamCursorUp(CursorMovement)
-  StreamCursorDown(CursorMovement)
-  StreamCursorLeft(CursorMovement)
-  StreamCursorRight(CursorMovement)
-  StreamCursorCol(CursorMovement)
-  StreamCursorRow(CursorMovement)
-  StreamCursorColRelative(CursorMovement)
-  StreamCursorRowRelative(CursorMovement)
-  StreamCursorPos(CursorPosition)
-  StreamEraseDisplayBelow(Bool)
-  StreamEraseDisplayAbove(Bool)
-  StreamEraseDisplayComplete(Bool)
-  StreamEraseDisplayScrollback(Bool)
-  StreamEraseDisplayScrollComplete(Bool)
-  StreamEraseLineRight(Bool)
-  StreamEraseLineLeft(Bool)
-  StreamEraseLineComplete(Bool)
-  StreamEraseLineRightUnlessPendingWrap(Bool)
-  StreamDeleteChars(UInt16)
-  StreamEraseChars(UInt16)
-  StreamInsertLines(UInt16)
-  StreamSetAttribute(@sgr.SgrAttribute)
-  StreamCursorStyle(CursorStyle)
-  StreamTabSet
-  StreamTabClearCurrent
-  StreamTabClearAll
-  StreamTabReset
-  StreamInsertBlanks(UInt16)
-  StreamDeleteLines(UInt16)
-  StreamScrollUp(UInt16)
-  StreamScrollDown(UInt16)
-  StreamSaveMode(Mode)
-  StreamRestoreMode(Mode)
-  StreamTopAndBottomMargin(Margin)
-  StreamLeftAndRightMargin(Margin)
-  StreamLeftAndRightMarginAmbiguous
-  StreamModifyKeyFormat(ModifyKeyFormat)
-  StreamMouseShiftCapture(Bool)
-  StreamProtectedModeOff
-  StreamProtectedModeIso
-  StreamProtectedModeDec
-  StreamSizeReport(SizeReportStyle)
-  StreamTitlePush(UInt16)
-  StreamTitlePop(UInt16)
-  StreamXtversion
-  StreamWindowTitle(String)
-  StreamClipboardContents(@osc.ClipboardContents)
-  StreamReportPwd(String)
-  StreamShowDesktopNotification(@osc.DesktopNotification)
-  StreamProgressReport(@osc.ConEmuProgressReport)
-  StreamStartHyperlink(@osc.HyperlinkStart)
-  StreamEndHyperlink
-  StreamMouseShape(@input.MouseShape)
-  StreamKittyColorReport(@osc.KittyColorOsc)
-  StreamColorOperation(@osc.ColorCommand)
-  StreamSemanticPrompt(@osc.SemanticPrompt)
-  StreamDeviceAttributes(DeviceAttributeRequest)
-  StreamDeviceStatus(DeviceStatusRequest)
-  StreamActiveStatusDisplay(StatusDisplay)
-  StreamKittyKeyboardQuery
-  StreamKittyKeyboardPush(KittyKeyboardFlags)
-  StreamKittyKeyboardPop(UInt16)
-  StreamKittyKeyboardSet(KittyKeyboardFlags)
-  StreamKittyKeyboardSetOr(KittyKeyboardFlags)
-  StreamKittyKeyboardSetNot(KittyKeyboardFlags)
-  StreamDcsHook(DcsHookPayload)
-  StreamDcsPut(Byte)
-  StreamDcsUnhook
-  StreamApcStart
-  StreamApcPut(Byte)
-  StreamApcEnd
-} derive(Eq, @debug.Debug)
 
 type StreamTerminal
 pub fn StreamTerminal::active_screen(Self) -> TerminalScreen
@@ -824,11 +424,11 @@ pub fn StreamTerminal::deinit(Self) -> Unit
 pub fn StreamTerminal::foreground_color(Self) -> @color.RGB?
 pub fn StreamTerminal::height_px(Self) -> UInt
 pub fn StreamTerminal::kitty_graphics(Self) -> KittyGraphics
-pub fn StreamTerminal::kitty_keyboard_flags(Self) -> KittyKeyboardFlags
-pub fn StreamTerminal::mode_get(Self, Mode) -> Bool
-pub fn StreamTerminal::mode_set(Self, Mode, Bool) -> Unit
+pub fn StreamTerminal::kitty_keyboard_flags(Self) -> @stream.KittyKeyboardFlags
+pub fn StreamTerminal::mode_get(Self, @mode.Mode) -> Bool
+pub fn StreamTerminal::mode_set(Self, @mode.Mode, Bool) -> Unit
 pub fn StreamTerminal::mouse_tracking(Self) -> Bool
-pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> ColorScheme?, device_attributes? : () -> DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
+pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> @device.ColorScheme?, device_attributes? : () -> @device.DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette(Self) -> Array[@color.RGB]
@@ -852,12 +452,12 @@ pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
 pub fn StreamTerminal::selection(Self, Point, Point, Bool) -> Selection?
 pub fn StreamTerminal::semantic_prompt_row_range(Self, UInt16) -> (UInt16, UInt16)?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
-pub fn StreamTerminal::set_color_scheme(Self, () -> ColorScheme?) -> Unit
+pub fn StreamTerminal::set_color_scheme(Self, () -> @device.ColorScheme?) -> Unit
 pub fn StreamTerminal::set_default_background_color(Self, @color.RGB?) -> Unit
 pub fn StreamTerminal::set_default_cursor_color(Self, @color.RGB?) -> Unit
 pub fn StreamTerminal::set_default_foreground_color(Self, @color.RGB?) -> Unit
 pub fn StreamTerminal::set_default_palette(Self, Array[@color.RGB]?) -> @result_code.TerminalResultCode
-pub fn StreamTerminal::set_device_attributes(Self, () -> DeviceAttributes?) -> Unit
+pub fn StreamTerminal::set_device_attributes(Self, () -> @device.DeviceAttributes?) -> Unit
 pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
 pub fn StreamTerminal::set_pwd(Self, String) -> Unit
 pub fn StreamTerminal::set_size(Self, () -> Size?) -> Unit
@@ -900,7 +500,7 @@ pub(all) enum Tag {
 } derive(Eq, @debug.Debug)
 
 type TerminalCursorState derive(Eq, @debug.Debug)
-pub fn TerminalCursorState::apply_cursor_style(Self, CursorStyle) -> Bool
+pub fn TerminalCursorState::apply_cursor_style(Self, @ansi.CursorStyle) -> Bool
 pub fn TerminalCursorState::bottom_margin(Self) -> UInt16
 pub fn TerminalCursorState::full_reset(Self) -> Unit
 pub fn TerminalCursorState::left_margin(Self) -> UInt16
@@ -921,11 +521,11 @@ pub fn TerminalDisplayState::full_reset(Self) -> Unit
 pub fn TerminalDisplayState::mouse_shape(Self) -> @input.MouseShape
 pub fn TerminalDisplayState::new() -> Self
 pub fn TerminalDisplayState::set_mouse_shape(Self, @input.MouseShape) -> Unit
-pub fn TerminalDisplayState::set_status_display(Self, StatusDisplay) -> Unit
-pub fn TerminalDisplayState::status_display(Self) -> StatusDisplay
+pub fn TerminalDisplayState::set_status_display(Self, @ansi.StatusDisplay) -> Unit
+pub fn TerminalDisplayState::status_display(Self) -> @ansi.StatusDisplay
 
 type TerminalInputFlags derive(Eq, @debug.Debug)
-pub fn TerminalInputFlags::apply_modify_key_format(Self, ModifyKeyFormat) -> Unit
+pub fn TerminalInputFlags::apply_modify_key_format(Self, @ansi.ModifyKeyFormat) -> Unit
 pub fn TerminalInputFlags::full_reset(Self) -> Unit
 pub fn TerminalInputFlags::modify_other_keys_2(Self) -> Bool
 pub fn TerminalInputFlags::mouse_shift_capture(Self) -> Bool?
@@ -970,19 +570,8 @@ pub fn TerminalTabstopsState::reset(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::set(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
 
-type TertiaryDeviceAttributes derive(Eq, @debug.Debug)
-pub fn TertiaryDeviceAttributes::default() -> Self
-pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
-pub fn TertiaryDeviceAttributes::new(UInt) -> Self
-pub fn TertiaryDeviceAttributes::unit_id(Self) -> UInt
-
 // Type aliases
 pub type CellCountInt = UInt16
 
 // Traits
-pub(open) trait StreamHandler {
-  fn vt(Self, StreamAction) -> Unit
-  fn print(Self, UInt) -> Unit
-  fn deinit(Self) -> Unit
-}
 

@@ -1,6 +1,6 @@
 ///|
-/// `saved_value` is package-private, so the save/restore round-trip is
-/// exercised here as a white-box test rather than through the public API.
+/// Exercises the save/restore round-trip directly via `saved_value`, the
+/// internal save-slot accessor.
 test "modes/save captures the current value for later restore" {
   let mut state = ModeState::new()
   state = state.set(CursorKeys, true)

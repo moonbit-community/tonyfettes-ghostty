@@ -302,10 +302,10 @@ pub fn ModeState::save(self : ModeState, mode : Mode) -> ModeState {
 }
 
 ///|
-/// Reads the value captured for `mode` by the most recent `save`. Kept
-/// package-private: it exposes the saved-mode bit, which is an internal
-/// detail of the save/restore representation, not part of the public API.
-fn ModeState::saved_value(self : ModeState, mode : Mode) -> Bool {
+/// Reads the value captured for `mode` by the most recent `save`. Public so the
+/// terminal hub can restore a saved mode value (`set_mode(mode, saved_value)`)
+/// across the package boundary.
+pub fn ModeState::saved_value(self : ModeState, mode : Mode) -> Bool {
   self.saved.get(mode)
 }
 

@@ -40,7 +40,7 @@ pub fn TerminalInputFlags::set_mouse_shift_capture(
 ///|
 pub fn TerminalInputFlags::apply_modify_key_format(
   self : TerminalInputFlags,
-  format : ModifyKeyFormat,
+  format : @ansi.ModifyKeyFormat,
 ) -> Unit {
   self.modify_other_keys_2 = false
   match format {
@@ -61,7 +61,7 @@ pub fn TerminalInputFlags::full_reset(self : TerminalInputFlags) -> Unit {
 
 ///|
 struct KittyKeyboardState {
-  mut flags : Array[KittyKeyboardFlags]
+  mut flags : Array[@stream.KittyKeyboardFlags]
   mut idx : Int
 } derive(Eq, Debug)
 
@@ -73,14 +73,14 @@ pub fn KittyKeyboardState::new() -> KittyKeyboardState {
 ///|
 pub fn KittyKeyboardState::current(
   self : KittyKeyboardState,
-) -> KittyKeyboardFlags {
+) -> @stream.KittyKeyboardFlags {
   self.flags[self.idx]
 }
 
 ///|
 pub fn KittyKeyboardState::set(
   self : KittyKeyboardState,
-  flags : KittyKeyboardFlags,
+  flags : @stream.KittyKeyboardFlags,
 ) -> Unit {
   self.flags[self.idx] = flags
 }
@@ -88,7 +88,7 @@ pub fn KittyKeyboardState::set(
 ///|
 pub fn KittyKeyboardState::set_or(
   self : KittyKeyboardState,
-  flags : KittyKeyboardFlags,
+  flags : @stream.KittyKeyboardFlags,
 ) -> Unit {
   self.flags[self.idx] = KittyKeyboardFlags(
     (self.current().0 | flags.0) & KittyKeyboardFlagsMask,
@@ -98,7 +98,7 @@ pub fn KittyKeyboardState::set_or(
 ///|
 pub fn KittyKeyboardState::set_not(
   self : KittyKeyboardState,
-  flags : KittyKeyboardFlags,
+  flags : @stream.KittyKeyboardFlags,
 ) -> Unit {
   self.flags[self.idx] = KittyKeyboardFlags(
     clear_kitty_keyboard_flags(self.current().0, flags.0),
@@ -108,7 +108,7 @@ pub fn KittyKeyboardState::set_not(
 ///|
 pub fn KittyKeyboardState::push(
   self : KittyKeyboardState,
-  flags : KittyKeyboardFlags,
+  flags : @stream.KittyKeyboardFlags,
 ) -> Unit {
   self.idx = wrapped_kitty_keyboard_index(self.idx + 1)
   self.flags[self.idx] = flags
@@ -139,8 +139,8 @@ pub fn KittyKeyboardState::reset(self : KittyKeyboardState) -> Unit {
 }
 
 ///|
-fn empty_kitty_keyboard_stack() -> Array[KittyKeyboardFlags] {
-  let result : Array[KittyKeyboardFlags] = [
+fn empty_kitty_keyboard_stack() -> Array[@stream.KittyKeyboardFlags] {
+  let result : Array[@stream.KittyKeyboardFlags] = [
     KittyKeyboardFlags(0),
     KittyKeyboardFlags(0),
     KittyKeyboardFlags(0),

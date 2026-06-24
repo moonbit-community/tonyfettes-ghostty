@@ -4,8 +4,8 @@ package "tonyfettes/ghostty/terminal/sgr"
 import {
   "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/color",
-  "tonyfettes/ghostty/terminal/parser",
   "tonyfettes/ghostty/terminal/result_code",
+  "tonyfettes/ghostty/terminal/seplist",
 }
 
 // Values
@@ -48,7 +48,7 @@ pub(all) enum SgrAttribute {
 } derive(Eq, @debug.Debug)
 
 type SgrParser derive(@debug.Debug)
-pub fn SgrParser::from_params(ArrayView[UInt16], @parser.SepList) -> Self
+pub fn SgrParser::from_params(ArrayView[UInt16], @seplist.SepList) -> Self
 pub fn SgrParser::new() -> Self
 pub fn SgrParser::next(Self) -> SgrAttribute?
 pub fn SgrParser::reset(Self) -> Unit

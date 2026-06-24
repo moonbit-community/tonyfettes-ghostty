@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/csi"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum SizeReportStyle {
+  Csi14t
+  Csi16t
+  Csi18t
+  Csi21t
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

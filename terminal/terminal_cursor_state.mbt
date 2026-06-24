@@ -101,7 +101,7 @@ pub fn TerminalCursorState::set_pending_wrap(
 ///|
 pub fn TerminalCursorState::apply_cursor_style(
   self : TerminalCursorState,
-  style : CursorStyle,
+  style : @ansi.CursorStyle,
 ) -> Bool {
   match style {
     Default => {

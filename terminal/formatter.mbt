@@ -739,7 +739,7 @@ fn formatter_write_terminal_extras(
   buffer : @buffer.Buffer,
 ) -> Unit {
   if formatter.opts.extra.modes {
-    let defaults = ModePacked::default()
+    let defaults = @mode.ModePacked::default()
     for mode in formatter_all_modes() {
       let current = state.modes.get(mode)
       let default_ = defaults.get(mode)
@@ -1252,7 +1252,7 @@ fn formatter_max_uint(lhs : UInt, rhs : UInt) -> UInt {
 }
 
 ///|
-fn formatter_all_modes() -> Array[Mode] {
+fn formatter_all_modes() -> Array[@mode.Mode] {
   [
     DisableKeyboard,
     Insert,

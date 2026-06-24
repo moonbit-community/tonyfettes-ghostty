@@ -25,7 +25,7 @@ struct KeyEncoder {
   mut ignore_keypad_with_numlock : Bool
   mut alt_esc_prefix : Bool
   mut modify_other_keys_state_2 : Bool
-  mut kitty_flags : KittyKeyboardFlags
+  mut kitty_flags : @stream.KittyKeyboardFlags
   mut host_is_macos : Bool
   mut macos_option_as_alt : OptionAsAlt
   mut backarrow_key_mode : Bool
@@ -109,14 +109,14 @@ pub fn KeyEncoder::set_modify_other_keys_state_2(
 }
 
 ///|
-pub fn KeyEncoder::kitty_flags(self : KeyEncoder) -> KittyKeyboardFlags {
+pub fn KeyEncoder::kitty_flags(self : KeyEncoder) -> @stream.KittyKeyboardFlags {
   self.kitty_flags
 }
 
 ///|
 pub fn KeyEncoder::set_kitty_flags(
   self : KeyEncoder,
-  value : KittyKeyboardFlags,
+  value : @stream.KittyKeyboardFlags,
 ) -> Unit {
   self.kitty_flags = KittyKeyboardFlags(value.0 & 0x1F)
 }
@@ -705,7 +705,7 @@ fn KeyEncoder::alt_prevents_text(
 }
 
 ///|
-fn kitty_flag_enabled(flags : KittyKeyboardFlags, mask : Byte) -> Bool {
+fn kitty_flag_enabled(flags : @stream.KittyKeyboardFlags, mask : Byte) -> Bool {
   (flags.0 & mask) != 0
 }
 

@@ -1,0 +1,162 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/stream"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/ansi",
+  "tonyfettes/ghostty/terminal/charsets",
+  "tonyfettes/ghostty/terminal/csi",
+  "tonyfettes/ghostty/terminal/device",
+  "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/mode",
+  "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/sgr",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct ConfigureCharsetAction {
+  slot : @charsets.Slots
+  charset : @charsets.Charset
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CursorMovement(UInt16) derive(Eq, @debug.Debug)
+
+pub(all) struct CursorPosition {
+  row : UInt16
+  col : UInt16
+} derive(Eq, @debug.Debug)
+
+type DcsHookPayload derive(Eq, @debug.Debug)
+pub fn DcsHookPayload::final_byte(Self) -> Byte
+pub fn DcsHookPayload::intermediates(Self) -> Bytes
+pub fn DcsHookPayload::params(Self) -> ReadOnlyArray[UInt16]
+
+pub(all) struct InvokeCharsetAction {
+  bank : @charsets.ActiveSlot
+  charset : @charsets.Slots
+  locking : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
+
+pub(all) struct Margin {
+  top_left : UInt16
+  bottom_right : UInt16
+} derive(Eq, @debug.Debug)
+
+type Stream[H]
+pub fn[H : StreamHandler] Stream::deinit(Self[H]) -> Unit
+pub fn[H] Stream::handler(Self[H]) -> H
+pub fn[H] Stream::new(H) -> Self[H]
+pub fn[H : StreamHandler] Stream::next(Self[H], Byte) -> Unit
+pub fn[H : StreamHandler] Stream::next_slice(Self[H], Bytes) -> Unit
+
+pub(all) enum StreamAction {
+  StreamPrint(UInt)
+  StreamPrintRepeat(UInt16)
+  StreamBell
+  StreamBackspace
+  StreamHorizontalTab(UInt16)
+  StreamHorizontalTabBack(UInt16)
+  StreamLinefeed
+  StreamCarriageReturn
+  StreamIndex
+  StreamNextLine
+  StreamReverseIndex
+  StreamEnquiry
+  StreamInvokeCharset(InvokeCharsetAction)
+  StreamConfigureCharset(ConfigureCharsetAction)
+  StreamSaveCursor
+  StreamRestoreCursor
+  StreamDecaln
+  StreamFullReset
+  StreamSetMode(@mode.Mode)
+  StreamResetMode(@mode.Mode)
+  StreamRequestMode(@mode.Mode)
+  StreamRequestModeUnknown(@mode.ModeTag)
+  StreamCursorUp(CursorMovement)
+  StreamCursorDown(CursorMovement)
+  StreamCursorLeft(CursorMovement)
+  StreamCursorRight(CursorMovement)
+  StreamCursorCol(CursorMovement)
+  StreamCursorRow(CursorMovement)
+  StreamCursorColRelative(CursorMovement)
+  StreamCursorRowRelative(CursorMovement)
+  StreamCursorPos(CursorPosition)
+  StreamEraseDisplayBelow(Bool)
+  StreamEraseDisplayAbove(Bool)
+  StreamEraseDisplayComplete(Bool)
+  StreamEraseDisplayScrollback(Bool)
+  StreamEraseDisplayScrollComplete(Bool)
+  StreamEraseLineRight(Bool)
+  StreamEraseLineLeft(Bool)
+  StreamEraseLineComplete(Bool)
+  StreamEraseLineRightUnlessPendingWrap(Bool)
+  StreamDeleteChars(UInt16)
+  StreamEraseChars(UInt16)
+  StreamInsertLines(UInt16)
+  StreamSetAttribute(@sgr.SgrAttribute)
+  StreamCursorStyle(@ansi.CursorStyle)
+  StreamTabSet
+  StreamTabClearCurrent
+  StreamTabClearAll
+  StreamTabReset
+  StreamInsertBlanks(UInt16)
+  StreamDeleteLines(UInt16)
+  StreamScrollUp(UInt16)
+  StreamScrollDown(UInt16)
+  StreamSaveMode(@mode.Mode)
+  StreamRestoreMode(@mode.Mode)
+  StreamTopAndBottomMargin(Margin)
+  StreamLeftAndRightMargin(Margin)
+  StreamLeftAndRightMarginAmbiguous
+  StreamModifyKeyFormat(@ansi.ModifyKeyFormat)
+  StreamMouseShiftCapture(Bool)
+  StreamProtectedModeOff
+  StreamProtectedModeIso
+  StreamProtectedModeDec
+  StreamSizeReport(@csi.SizeReportStyle)
+  StreamTitlePush(UInt16)
+  StreamTitlePop(UInt16)
+  StreamXtversion
+  StreamWindowTitle(String)
+  StreamClipboardContents(@osc.ClipboardContents)
+  StreamReportPwd(String)
+  StreamShowDesktopNotification(@osc.DesktopNotification)
+  StreamProgressReport(@osc.ConEmuProgressReport)
+  StreamStartHyperlink(@osc.HyperlinkStart)
+  StreamEndHyperlink
+  StreamMouseShape(@input.MouseShape)
+  StreamKittyColorReport(@osc.KittyColorOsc)
+  StreamColorOperation(@osc.ColorCommand)
+  StreamSemanticPrompt(@osc.SemanticPrompt)
+  StreamDeviceAttributes(@device.DeviceAttributeRequest)
+  StreamDeviceStatus(@device.DeviceStatusRequest)
+  StreamActiveStatusDisplay(@ansi.StatusDisplay)
+  StreamKittyKeyboardQuery
+  StreamKittyKeyboardPush(KittyKeyboardFlags)
+  StreamKittyKeyboardPop(UInt16)
+  StreamKittyKeyboardSet(KittyKeyboardFlags)
+  StreamKittyKeyboardSetOr(KittyKeyboardFlags)
+  StreamKittyKeyboardSetNot(KittyKeyboardFlags)
+  StreamDcsHook(DcsHookPayload)
+  StreamDcsPut(Byte)
+  StreamDcsUnhook
+  StreamApcStart
+  StreamApcPut(Byte)
+  StreamApcEnd
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+pub(open) trait StreamHandler {
+  fn vt(Self, StreamAction) -> Unit
+  fn print(Self, UInt) -> Unit
+  fn deinit(Self) -> Unit
+}
+

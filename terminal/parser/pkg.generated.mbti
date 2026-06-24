@@ -2,8 +2,8 @@
 package "tonyfettes/ghostty/terminal/parser"
 
 import {
-  "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/seplist",
 }
 
 // Values
@@ -31,7 +31,7 @@ pub fn ActionList::op_get(Self, Int) -> Action?
 pub(all) struct Csi {
   intermediates : ArrayView[Byte]
   params : ArrayView[UInt16]
-  params_sep : SepList
+  params_sep : @seplist.SepList
   final_byte : Byte
 }
 
@@ -53,12 +53,6 @@ pub fn Parser::is_ground(Self) -> Bool
 pub fn Parser::new() -> Self
 pub fn Parser::next(Self, Byte) -> ActionList
 pub fn Parser::reset_ground(Self) -> Unit
-
-type SepList derive(@debug.Debug)
-pub fn SepList::count(Self) -> Int
-pub fn SepList::init_empty() -> Self
-pub fn SepList::is_set(Self, Int) -> Bool
-pub fn SepList::set(Self, Int) -> Self
 
 // Type aliases
 

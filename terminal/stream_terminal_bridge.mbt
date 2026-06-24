@@ -23,8 +23,8 @@ const MaxXtversionBytes : Int = 256
 priv struct StreamTerminalBridgeEffects {
   mut write_pty : (Bytes) -> Unit
   mut bell : () -> Unit
-  mut color_scheme : () -> ColorScheme?
-  mut device_attributes : () -> DeviceAttributes?
+  mut color_scheme : () -> @device.ColorScheme?
+  mut device_attributes : () -> @device.DeviceAttributes?
   mut enquiry : () -> Bytes
   mut size : () -> Size?
   mut title_changed : () -> Unit
@@ -35,8 +35,8 @@ priv struct StreamTerminalBridgeEffects {
 fn StreamTerminalBridgeEffects::new(
   write_pty? : (Bytes) -> Unit = fn(_data) { () },
   bell? : () -> Unit = fn() { () },
-  color_scheme? : () -> ColorScheme? = fn() { None },
-  device_attributes? : () -> DeviceAttributes? = fn() { None },
+  color_scheme? : () -> @device.ColorScheme? = fn() { None },
+  device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
   enquiry? : () -> Bytes = fn() { b"" },
   size? : () -> Size? = fn() { None },
   title_changed? : () -> Unit = fn() { () },
@@ -87,7 +87,7 @@ fn StreamTerminalBridgeEffects::clear_bell(
 ///|
 fn StreamTerminalBridgeEffects::set_color_scheme(
   self : StreamTerminalBridgeEffects,
-  callback : () -> ColorScheme?,
+  callback : () -> @device.ColorScheme?,
 ) -> Unit {
   self.color_scheme = callback
 }
@@ -102,7 +102,7 @@ fn StreamTerminalBridgeEffects::clear_color_scheme(
 ///|
 fn StreamTerminalBridgeEffects::set_device_attributes(
   self : StreamTerminalBridgeEffects,
-  callback : () -> DeviceAttributes?,
+  callback : () -> @device.DeviceAttributes?,
 ) -> Unit {
   self.device_attributes = callback
 }
@@ -181,7 +181,7 @@ priv struct StreamTerminalBridgeState {
   protected_state : ScreenProtectedState
   display_state : TerminalDisplayState
   colors : @color.TerminalColors
-  mut modes : ModeState
+  mut modes : @mode.ModeState
   mut cursor : TerminalCursorState
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
@@ -226,7 +226,7 @@ fn StreamTerminalBridgeState::with_effects(
     protected_state: ScreenProtectedState::new(),
     display_state: TerminalDisplayState::new(),
     colors: @color.TerminalColors::new(),
-    modes: ModeState::new(),
+    modes: @mode.ModeState::new(),
     cursor: primary_storage.cursor,
     input_flags: TerminalInputFlags::new(),
     kitty_keyboard: KittyKeyboardState::new(),
@@ -278,7 +278,7 @@ fn StreamTerminalBridgeState::take_scrollback_cleared(
 ///|
 fn StreamTerminalBridgeState::mode_enabled(
   self : StreamTerminalBridgeState,
-  mode : Mode,
+  mode : @mode.Mode,
 ) -> Bool {
   self.modes.get(mode)
 }
@@ -356,7 +356,7 @@ fn StreamTerminalBridgeState::modify_other_keys_2(
 ///|
 fn StreamTerminalBridgeState::kitty_keyboard_flags(
   self : StreamTerminalBridgeState,
-) -> KittyKeyboardFlags {
+) -> @stream.KittyKeyboardFlags {
   self.kitty_keyboard.current()
 }
 
@@ -729,7 +729,7 @@ fn StreamTerminalBridgeState::reset(self : StreamTerminalBridgeState) -> Unit {
 ///|
 fn StreamTerminalBridgeState::mode_get(
   self : StreamTerminalBridgeState,
-  mode : Mode,
+  mode : @mode.Mode,
 ) -> Bool {
   self.mode_enabled(mode)
 }
@@ -737,7 +737,7 @@ fn StreamTerminalBridgeState::mode_get(
 ///|
 fn StreamTerminalBridgeState::mode_set(
   self : StreamTerminalBridgeState,
-  mode : Mode,
+  mode : @mode.Mode,
   enabled : Bool,
 ) -> Unit {
   self.set_mode(mode, enabled)
@@ -776,7 +776,7 @@ fn StreamTerminalBridgeState::clear_bell(
 ///|
 fn StreamTerminalBridgeState::set_color_scheme(
   self : StreamTerminalBridgeState,
-  callback : () -> ColorScheme?,
+  callback : () -> @device.ColorScheme?,
 ) -> Unit {
   self.effects.set_color_scheme(callback)
 }
@@ -791,7 +791,7 @@ fn StreamTerminalBridgeState::clear_color_scheme(
 ///|
 fn StreamTerminalBridgeState::set_device_attributes(
   self : StreamTerminalBridgeState,
-  callback : () -> DeviceAttributes?,
+  callback : () -> @device.DeviceAttributes?,
 ) -> Unit {
   self.effects.set_device_attributes(callback)
 }
@@ -917,7 +917,7 @@ fn StreamTerminalBridgeState::scroll_viewport_delta(
 ///|
 fn StreamTerminalBridgeState::apply(
   self : StreamTerminalBridgeState,
-  action : StreamAction,
+  action : @stream.StreamAction,
 ) -> Bool {
   match action {
     StreamPrint(codepoint) => {
@@ -1610,7 +1610,7 @@ fn StreamTerminalBridgeState::full_reset(
   self.load_active_screen(Primary)
   self.protected_state.reset()
   self.display_state.full_reset()
-  self.modes = ModeState::new()
+  self.modes = @mode.ModeState::new()
   self.input_flags.full_reset()
   self.kitty_keyboard.reset()
   self.tabstops = TerminalTabstopsState::new(cols)
@@ -1745,24 +1745,24 @@ fn StreamTerminalBridgeState::bell(self : StreamTerminalBridgeState) -> Unit {
 /// config is constant, so its three encodings never change — caching them keeps
 /// back-to-back DA queries (the `\x1b[c` hot path) from rebuilding the same
 /// bytes (and the `DeviceAttributes::default()` struct graph) on every request.
-let default_primary_da_response : Bytes = DeviceAttributes::default().encode(
+let default_primary_da_response : Bytes = @device.DeviceAttributes::default().encode(
   Primary,
 )
 
 ///|
-let default_secondary_da_response : Bytes = DeviceAttributes::default().encode(
+let default_secondary_da_response : Bytes = @device.DeviceAttributes::default().encode(
   Secondary,
 )
 
 ///|
-let default_tertiary_da_response : Bytes = DeviceAttributes::default().encode(
+let default_tertiary_da_response : Bytes = @device.DeviceAttributes::default().encode(
   Tertiary,
 )
 
 ///|
 fn StreamTerminalBridgeState::report_device_attributes(
   self : StreamTerminalBridgeState,
-  request : DeviceAttributeRequest,
+  request : @device.DeviceAttributeRequest,
 ) -> Unit {
   match (self.effects.device_attributes)() {
     Some(attributes) => self.write_pty(attributes.encode(request))
@@ -1780,7 +1780,7 @@ fn StreamTerminalBridgeState::report_device_attributes(
 ///|
 fn StreamTerminalBridgeState::device_status(
   self : StreamTerminalBridgeState,
-  request : DeviceStatusRequest,
+  request : @device.DeviceStatusRequest,
 ) -> Unit {
   match request {
     OperatingStatus => self.write_pty(b"\x1B[0n")
@@ -1863,7 +1863,7 @@ fn StreamTerminalBridgeState::report_xtversion(
 ///|
 fn StreamTerminalBridgeState::report_size(
   self : StreamTerminalBridgeState,
-  style : SizeReportStyle,
+  style : @csi.SizeReportStyle,
 ) -> Unit {
   match style {
     Csi14t =>
@@ -1906,7 +1906,7 @@ fn StreamTerminalBridgeState::window_title(
 ///|
 fn StreamTerminalBridgeState::request_mode(
   self : StreamTerminalBridgeState,
-  mode : Mode,
+  mode : @mode.Mode,
 ) -> Unit {
   self.send_mode_report(self.modes.get_report(mode.tag()))
 }
@@ -1914,7 +1914,7 @@ fn StreamTerminalBridgeState::request_mode(
 ///|
 fn StreamTerminalBridgeState::request_mode_unknown(
   self : StreamTerminalBridgeState,
-  tag : ModeTag,
+  tag : @mode.ModeTag,
 ) -> Unit {
   self.send_mode_report(self.modes.get_report(tag))
 }
@@ -1922,7 +1922,7 @@ fn StreamTerminalBridgeState::request_mode_unknown(
 ///|
 fn StreamTerminalBridgeState::send_mode_report(
   self : StreamTerminalBridgeState,
-  report : Report,
+  report : @mode.Report,
 ) -> Unit {
   self.write_pty(report.encode())
 }
@@ -2503,7 +2503,7 @@ fn StreamTerminalBridgeState::switch_screen_mode(
 ///|
 fn StreamTerminalBridgeState::set_mode(
   self : StreamTerminalBridgeState,
-  mode : Mode,
+  mode : @mode.Mode,
   enabled : Bool,
 ) -> Unit {
   self.modes = self.modes.set(mode, enabled)
@@ -2621,7 +2621,7 @@ fn StreamTerminalBridgeState::horizontal_tab_back_once(
 ///|
 fn StreamTerminalBridgeState::cursor_up(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   self.cursor.set_pending_wrap(false)
   let y = self.cursor.y().to_int()
@@ -2638,7 +2638,7 @@ fn StreamTerminalBridgeState::cursor_up(
 ///|
 fn StreamTerminalBridgeState::cursor_down(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   self.cursor.set_pending_wrap(false)
   let y = self.cursor.y().to_int()
@@ -2655,7 +2655,7 @@ fn StreamTerminalBridgeState::cursor_down(
 ///|
 fn StreamTerminalBridgeState::cursor_right(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   self.cursor.set_pending_wrap(false)
   let x = self.cursor.x().to_int()
@@ -2672,7 +2672,7 @@ fn StreamTerminalBridgeState::cursor_right(
 ///|
 fn StreamTerminalBridgeState::cursor_left(
   self : StreamTerminalBridgeState,
-  movement : CursorMovement,
+  movement : @stream.CursorMovement,
 ) -> Unit {
   let wrap_mode = if !self.modes.get(Wraparound) {
     0
@@ -2980,7 +2980,7 @@ fn StreamTerminalBridgeState::apply_color_reset(
 }
 
 ///|
-fn movement_count(movement : CursorMovement) -> CellCountInt {
+fn movement_count(movement : @stream.CursorMovement) -> CellCountInt {
   if movement.0 == 0 {
     1
   } else {
@@ -2989,7 +2989,7 @@ fn movement_count(movement : CursorMovement) -> CellCountInt {
 }
 
 ///|
-fn movement_count_int(movement : CursorMovement) -> Int {
+fn movement_count_int(movement : @stream.CursorMovement) -> Int {
   movement_count(movement).to_int()
 }
 

@@ -527,7 +527,7 @@ fn ScreenGridState::erase_chars(
   self : ScreenGridState,
   cursor : TerminalCursorState,
   style : @style.CellStyle,
-  protected_mode : ProtectedMode,
+  protected_mode : @ansi.ProtectedMode,
   count_req : UInt16,
 ) -> Unit {
   let x = cursor.x.to_int()
@@ -563,7 +563,7 @@ fn ScreenGridState::erase_line(
   cursor : TerminalCursorState,
   style : @style.CellStyle,
   mode : ScreenEraseLineMode,
-  protected_mode : ProtectedMode,
+  protected_mode : @ansi.ProtectedMode,
   protected_req : Bool,
 ) -> Unit {
   let row_idx = cursor.y.to_int()
@@ -601,7 +601,7 @@ fn ScreenGridState::erase_display(
   cursor : TerminalCursorState,
   style : @style.CellStyle,
   mode : ScreenEraseDisplayMode,
-  protected_mode : ProtectedMode,
+  protected_mode : @ansi.ProtectedMode,
   protected_req : Bool,
 ) -> Unit {
   let respect_protected = protected_mode == Iso || protected_req

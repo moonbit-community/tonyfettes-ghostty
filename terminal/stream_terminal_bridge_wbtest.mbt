@@ -205,21 +205,24 @@ test "stream terminal bridge/default state and handled bell" {
 
 ///|
 struct BridgeStreamRecorder {
-  actions : Array[StreamAction]
+  actions : Array[@stream.StreamAction]
 }
 
 ///|
-impl StreamHandler for BridgeStreamRecorder with fn vt(self, action) {
+impl @stream.StreamHandler for BridgeStreamRecorder with fn vt(self, action) {
   self.actions.push(action)
 }
 
 ///|
-impl StreamHandler for BridgeStreamRecorder with fn print(self, codepoint) {
+impl @stream.StreamHandler for BridgeStreamRecorder with fn print(
+  self,
+  codepoint,
+) {
   self.actions.push(StreamPrint(codepoint))
 }
 
 ///|
-impl StreamHandler for BridgeStreamRecorder with fn deinit(_self) {
+impl @stream.StreamHandler for BridgeStreamRecorder with fn deinit(_self) {
   ()
 }
 
@@ -275,9 +278,9 @@ fn ascii_string(byte : Byte, count : Int) -> String {
 
 ///|
 fn apply_stream_bytes(state : StreamTerminalBridgeState, bytes : Bytes) -> Bool {
-  let actions : Array[StreamAction] = []
+  let actions : Array[@stream.StreamAction] = []
   let recorder : BridgeStreamRecorder = { actions, }
-  let stream = Stream::new(recorder)
+  let stream = @stream.Stream::new(recorder)
   stream.next_slice(bytes)
   stream.deinit()
   for action in actions {
@@ -1764,10 +1767,10 @@ test "stream terminal bridge/empty and query color operations are handled withou
 ///|
 test "stream terminal bridge/applies query responses and callbacks" {
   let recorder = BridgeEffectsRecorder::new()
-  let attributes = DeviceAttributes::new(
-    PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
-    SecondaryDeviceAttributes::new(Vt420, 100, 7),
-    TertiaryDeviceAttributes::new(9U),
+  let attributes = @device.DeviceAttributes::new(
+    @device.PrimaryDeviceAttributes::new(Vt420, [AnsiColor, Clipboard]),
+    @device.SecondaryDeviceAttributes::new(Vt420, 100, 7),
+    @device.TertiaryDeviceAttributes::new(9U),
   )
   let effects = StreamTerminalBridgeEffects::new(
     write_pty=fn(data) { recorder.write_pty(data) },
@@ -1804,7 +1807,7 @@ test "stream terminal bridge/applies query responses and callbacks" {
     state.apply(StreamRequestMode(Wraparound)) &&
     state.apply(StreamResetMode(Wraparound)) &&
     state.apply(StreamRequestMode(Wraparound)) &&
-    state.apply(StreamRequestModeUnknown(mode_tag(9999, false))) &&
+    state.apply(StreamRequestModeUnknown(@mode.mode_tag(9999, false))) &&
     state.apply(StreamDeviceAttributes(Primary)) &&
     state.apply(StreamDeviceAttributes(Secondary)) &&
     state.apply(StreamDeviceAttributes(Tertiary)) &&
