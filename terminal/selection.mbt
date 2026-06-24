@@ -1,28 +1,26 @@
 ///|
-struct Pin {
-  screen : TerminalScreen
-  pin : PageListPin
-}
-
-///|
 struct Selection {
-  start : Pin
-  end : Pin
+  start : @pagelist.Pin
+  end : @pagelist.Pin
   rectangle : Bool
 }
 
 ///|
-pub fn Selection::new(start : Pin, end_ : Pin, rectangle : Bool) -> Selection {
+pub fn Selection::new(
+  start : @pagelist.Pin,
+  end_ : @pagelist.Pin,
+  rectangle : Bool,
+) -> Selection {
   { start, end: end_, rectangle }
 }
 
 ///|
-pub fn Selection::start(self : Selection) -> Pin {
+pub fn Selection::start(self : Selection) -> @pagelist.Pin {
   self.start
 }
 
 ///|
-pub fn Selection::end(self : Selection) -> Pin {
+pub fn Selection::end(self : Selection) -> @pagelist.Pin {
   self.end
 }
 

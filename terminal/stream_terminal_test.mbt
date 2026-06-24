@@ -46,8 +46,8 @@ fn expect_stream_write(
 ///|
 fn expect_terminal_cell(
   terminal : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState {
   terminal.screen_cell_snapshot(row, col).unwrap()
 }
@@ -55,7 +55,7 @@ fn expect_terminal_cell(
 ///|
 fn expect_row_text(
   terminal : StreamTerminal,
-  row : CellCountInt,
+  row : @size.CellCountInt,
   expected : Bytes,
 ) -> Unit raise {
   for index in 0..<expected.length() {

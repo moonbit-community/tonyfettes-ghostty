@@ -423,7 +423,7 @@ fn json_style_color(value : @style.StyleColor) -> Json {
 }
 
 ///|
-fn cursor_visual_style_json(value : @terminal.CursorVisualStyle) -> Json {
+fn cursor_visual_style_json(value : @cursor.CursorVisualStyle) -> Json {
   Json::string(
     match value {
       Block => "block"
@@ -434,7 +434,7 @@ fn cursor_visual_style_json(value : @terminal.CursorVisualStyle) -> Json {
 }
 
 ///|
-fn terminal_screen_json(value : @terminal.TerminalScreen) -> Json {
+fn terminal_screen_json(value : @pagelist.TerminalScreen) -> Json {
   Json::string(
     match value {
       Primary => "primary"
@@ -607,7 +607,7 @@ fn json_int_or_null(value : Int?) -> Json {
 }
 
 ///|
-fn json_coordinate(value : @terminal.Coordinate?) -> Json {
+fn json_coordinate(value : @point.Coordinate?) -> Json {
   match value {
     Some(coord) => { "x": coord.x().to_int(), "y": uint_to_int(coord.y()) }
     None => Json::null()

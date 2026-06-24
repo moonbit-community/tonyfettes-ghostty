@@ -1,0 +1,12 @@
+import {
+  "tonyfettes/ghostty/terminal/ansi",
+  "tonyfettes/ghostty/terminal/cursor",
+  "tonyfettes/ghostty/terminal/hyperlink",
+  "tonyfettes/ghostty/terminal/page",
+  "tonyfettes/ghostty/terminal/size",
+  "tonyfettes/ghostty/terminal/style",
+}
+
+import {
+  "tonyfettes/ghostty/terminal/color",
+} for "wbtest"

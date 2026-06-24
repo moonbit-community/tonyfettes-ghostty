@@ -1,8 +1,8 @@
 ///|
-const DefaultRows : CellCountInt = 24
+const DefaultRows : @size.CellCountInt = 24
 
 ///|
-const DefaultColumns : CellCountInt = 80
+const DefaultColumns : @size.CellCountInt = 80
 
 ///|
 const DefaultMaxScrollback : Int = 10_000
@@ -182,25 +182,25 @@ priv struct StreamTerminalBridgeState {
   display_state : TerminalDisplayState
   colors : @color.TerminalColors
   mut modes : @mode.ModeState
-  mut cursor : TerminalCursorState
+  mut cursor : @cursor.TerminalCursorState
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
   mut tabstops : TerminalTabstopsState
   hyperlink : ScreenHyperlinkState
   mut semantic : ScreenSemanticState
   metadata : TerminalMetadataState
-  mut grid : ScreenGridState
-  mut scrollback : PageList
+  mut grid : @grid.ScreenGridState
+  mut scrollback : @pagelist.PageList
   mut kitty_graphics : KittyGraphicsState
   mut primary_storage : TerminalScreenStorage
   mut alternate_storage : TerminalScreenStorage
-  mut charset : ScreenCharsetState
+  mut charset : @pagelist.ScreenCharsetState
   mut current_style : @style.CellStyle
   mut previous_char : UInt?
   mut mouse_event : @input.MouseEvent
   mut mouse_format : @input.MouseFormat
   mut palette_dirty : Bool
-  mut active_screen : TerminalScreen
+  mut active_screen : @pagelist.TerminalScreen
   mut width_px : UInt
   mut height_px : UInt
   mut scrollback_cleared : Bool
@@ -239,7 +239,7 @@ fn StreamTerminalBridgeState::with_effects(
     kitty_graphics: primary_storage.kitty_graphics,
     primary_storage,
     alternate_storage,
-    charset: ScreenCharsetState::new(),
+    charset: @pagelist.ScreenCharsetState::new(),
     current_style: @style.CellStyle::new(),
     previous_char: None,
     mouse_event: None,
@@ -286,21 +286,21 @@ fn StreamTerminalBridgeState::mode_enabled(
 ///|
 fn StreamTerminalBridgeState::cursor_x(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.x()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_y(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.y()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_visual_style(
   self : StreamTerminalBridgeState,
-) -> CursorVisualStyle {
+) -> @cursor.CursorVisualStyle {
   self.cursor.visual_style()
 }
 
@@ -321,28 +321,28 @@ fn StreamTerminalBridgeState::cursor_pending_wrap(
 ///|
 fn StreamTerminalBridgeState::cursor_top_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.top_margin()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_bottom_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.bottom_margin()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_left_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.left_margin()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_right_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.right_margin()
 }
 
@@ -458,7 +458,7 @@ fn StreamTerminalBridgeState::set_default_palette(
 ///|
 fn StreamTerminalBridgeState::screen_row_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
+  row : @size.CellCountInt,
 ) -> @page.PageRowState? {
   self.scrollback.row(self.grid, row)
 }
@@ -466,8 +466,8 @@ fn StreamTerminalBridgeState::screen_row_snapshot(
 ///|
 fn StreamTerminalBridgeState::screen_cell_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState? {
   self.scrollback.cell(self.grid, row, col)
 }
@@ -475,8 +475,8 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
 ///|
 fn StreamTerminalBridgeState::screen_cell_hyperlink_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @hyperlink.CellHyperlink? {
   self.scrollback.cell_hyperlink(self.grid, row, col)
 }
@@ -484,8 +484,8 @@ fn StreamTerminalBridgeState::screen_cell_hyperlink_snapshot(
 ///|
 fn StreamTerminalBridgeState::screen_cell_hyperlink_id_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @hyperlink.HyperlinkId {
   self.scrollback.cell_hyperlink_id(self.grid, row, col)
 }
@@ -499,8 +499,8 @@ fn StreamTerminalBridgeState::screen_cell_hyperlink_id_snapshot(
 // Returns None when no OSC 133 sequences have been seen yet.
 fn StreamTerminalBridgeState::semantic_prompt_row_range(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-) -> (CellCountInt, CellCountInt)? {
+  row : @size.CellCountInt,
+) -> (@size.CellCountInt, @size.CellCountInt)? {
   guard self.semantic.seen() else { return None }
   let prompt = match self.scrollback.row(self.grid, row) {
     None => return None
@@ -551,17 +551,17 @@ fn StreamTerminalBridgeState::semantic_prompt_row_range(
 ///|
 fn StreamTerminalBridgeState::point_from_point(
   self : StreamTerminalBridgeState,
-  point : Point,
-  tag : Tag,
-) -> Coordinate? {
+  point : @point.Point,
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   self.scrollback.point_from_point(self.grid, point, tag)
 }
 
 ///|
 fn StreamTerminalBridgeState::pin(
   self : StreamTerminalBridgeState,
-  point : Point,
-) -> Pin? {
+  point : @point.Point,
+) -> @pagelist.Pin? {
   match self.scrollback.pin(self.grid, point) {
     Some(pin) => Some({ screen: self.active_screen, pin })
     None => None
@@ -571,7 +571,7 @@ fn StreamTerminalBridgeState::pin(
 ///|
 fn StreamTerminalBridgeState::untrack_pin(
   self : StreamTerminalBridgeState,
-  pin : Pin,
+  pin : @pagelist.Pin,
 ) -> Unit {
   match pin.screen {
     Primary =>
@@ -592,9 +592,9 @@ fn StreamTerminalBridgeState::untrack_pin(
 ///|
 fn StreamTerminalBridgeState::point_from_pin(
   self : StreamTerminalBridgeState,
-  pin : Pin,
-  tag : Tag,
-) -> Coordinate? {
+  pin : @pagelist.Pin,
+  tag : @point.Tag,
+) -> @point.Coordinate? {
   if pin.screen != self.active_screen {
     return None
   }
@@ -604,7 +604,7 @@ fn StreamTerminalBridgeState::point_from_pin(
 ///|
 fn StreamTerminalBridgeState::cell_at_point(
   self : StreamTerminalBridgeState,
-  point : Point,
+  point : @point.Point,
 ) -> @page.PageCellState? {
   self.scrollback.cell_at_point(self.grid, point)
 }
@@ -612,21 +612,21 @@ fn StreamTerminalBridgeState::cell_at_point(
 ///|
 fn StreamTerminalBridgeState::rows(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.grid.rows
 }
 
 ///|
 fn StreamTerminalBridgeState::columns(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.grid.cols
 }
 
 ///|
 fn StreamTerminalBridgeState::active_screen(
   self : StreamTerminalBridgeState,
-) -> TerminalScreen {
+) -> @pagelist.TerminalScreen {
   self.active_screen
 }
 
@@ -647,7 +647,7 @@ fn StreamTerminalBridgeState::scrollback_rows(
 ///|
 fn StreamTerminalBridgeState::scrollbar(
   self : StreamTerminalBridgeState,
-) -> TerminalScrollbar {
+) -> @pagelist.TerminalScrollbar {
   self.scrollback.scrollbar(self.grid.rows)
 }
 
@@ -866,8 +866,8 @@ fn StreamTerminalBridgeState::clear_xtversion(
 ///|
 fn StreamTerminalBridgeState::resize(
   self : StreamTerminalBridgeState,
-  columns : CellCountInt,
-  rows : CellCountInt,
+  columns : @size.CellCountInt,
+  rows : @size.CellCountInt,
   cell_width_px : UInt,
   cell_height_px : UInt,
 ) -> @result_code.TerminalResultCode {
@@ -2300,10 +2300,10 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
 ///|
 fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
   self : StreamTerminalBridgeState,
-) -> PageListPin? {
+) -> @pagelist.PageListPin? {
   self.scrollback.track_pin_at_point(
     self.grid,
-    Active(Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
+    Active(@point.Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
   )
 }
 
@@ -2376,7 +2376,7 @@ fn StreamTerminalBridgeState::store_active_screen(
 ///|
 fn StreamTerminalBridgeState::load_active_screen(
   self : StreamTerminalBridgeState,
-  screen : TerminalScreen,
+  screen : @pagelist.TerminalScreen,
 ) -> Unit {
   match screen {
     Primary => {
@@ -2400,7 +2400,7 @@ fn StreamTerminalBridgeState::load_active_screen(
 ///|
 fn StreamTerminalBridgeState::switch_active_screen(
   self : StreamTerminalBridgeState,
-  screen : TerminalScreen,
+  screen : @pagelist.TerminalScreen,
 ) -> Bool {
   if self.active_screen == screen {
     return false
@@ -2414,8 +2414,8 @@ fn StreamTerminalBridgeState::switch_active_screen(
 ///|
 fn StreamTerminalBridgeState::copy_cursor_between_screens(
   self : StreamTerminalBridgeState,
-  from : TerminalScreen,
-  to : TerminalScreen,
+  from : @pagelist.TerminalScreen,
+  to : @pagelist.TerminalScreen,
 ) -> Unit {
   let source = match from {
     Primary => self.primary_storage.cursor
@@ -2478,7 +2478,7 @@ fn StreamTerminalBridgeState::switch_screen_mode(
   }
 
   let from = self.active_screen
-  let to = if enabled { TerminalScreen::Alternate } else { Primary }
+  let to = if enabled { @pagelist.TerminalScreen::Alternate } else { Primary }
   let changed = self.switch_active_screen(to)
   match mode {
     Mode47 | Mode1047 =>
@@ -2980,7 +2980,7 @@ fn StreamTerminalBridgeState::apply_color_reset(
 }
 
 ///|
-fn movement_count(movement : @stream.CursorMovement) -> CellCountInt {
+fn movement_count(movement : @stream.CursorMovement) -> @size.CellCountInt {
   if movement.0 == 0 {
     1
   } else {
@@ -3003,7 +3003,7 @@ fn bounded_count(request : Int, max : Int) -> Int {
 }
 
 ///|
-fn saturated_request(value : Int) -> CellCountInt {
+fn saturated_request(value : Int) -> @size.CellCountInt {
   if value > 0xFFFF {
     0xFFFF
   } else {
@@ -3484,7 +3484,7 @@ fn codepoint_in_ranges(
 }
 
 ///|
-fn saturated_dimension(count : CellCountInt, unit : UInt) -> UInt {
+fn saturated_dimension(count : @size.CellCountInt, unit : UInt) -> UInt {
   let product = count.to_uint64() * unit.to_uint64()
   if product > 0xFFFFFFFFUL {
     0xFFFFFFFF
@@ -3514,3 +3514,14 @@ fn truncate_utf8(value : String, max_bytes : Int) -> String {
 }
 
 ///|
+
+///|
+/// Smaller of two ints. Hub-local copy of the trivial helper that used to live
+/// in the grid file (the grid keeps its own private copy in @grid).
+fn min_int(a : Int, b : Int) -> Int {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}

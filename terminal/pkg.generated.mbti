@@ -4,14 +4,16 @@ package "tonyfettes/ghostty/terminal"
 import {
   "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/ansi",
-  "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty/terminal/cursor",
   "tonyfettes/ghostty/terminal/device",
   "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/input",
   "tonyfettes/ghostty/terminal/mode",
   "tonyfettes/ghostty/terminal/osc",
   "tonyfettes/ghostty/terminal/page",
+  "tonyfettes/ghostty/terminal/pagelist",
+  "tonyfettes/ghostty/terminal/point",
   "tonyfettes/ghostty/terminal/result_code",
   "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
@@ -56,17 +58,6 @@ pub fn BuildVersion::minor(Self) -> UInt
 pub fn BuildVersion::patch(Self) -> UInt
 pub fn BuildVersion::pre(Self) -> String?
 pub fn BuildVersion::string(Self) -> String
-
-type Coordinate derive(Eq, @debug.Debug)
-pub fn Coordinate::new(UInt16, UInt) -> Self
-pub fn Coordinate::x(Self) -> UInt16
-pub fn Coordinate::y(Self) -> UInt
-
-pub(all) enum CursorVisualStyle {
-  Block
-  Bar
-  Underline
-} derive(Eq, @debug.Debug)
 
 pub(all) enum FocusEvent {
   Gained
@@ -260,16 +251,6 @@ type PasteOptions derive(Eq, @debug.Debug)
 pub fn PasteOptions::encode(Self, Bytes) -> Bytes
 pub fn PasteOptions::new(Bool) -> Self
 
-type Pin
-
-pub(all) enum Point {
-  Active(Coordinate)
-  Viewport(Coordinate)
-  Screen(Coordinate)
-  History(Coordinate)
-} derive(Eq, @debug.Debug)
-pub fn Point::coord(Self) -> Coordinate
-
 pub(all) enum RenderDirty {
   False
   Partial
@@ -301,10 +282,10 @@ pub fn RenderState::columns(Self) -> UInt16
 pub fn RenderState::cursor_blinking(Self) -> Bool
 pub fn RenderState::cursor_color(Self) -> @color.RGB?
 pub fn RenderState::cursor_password_input(Self) -> Bool
-pub fn RenderState::cursor_viewport(Self) -> Coordinate?
+pub fn RenderState::cursor_viewport(Self) -> @point.Coordinate?
 pub fn RenderState::cursor_viewport_wide_tail(Self) -> Bool
 pub fn RenderState::cursor_visible(Self) -> Bool
-pub fn RenderState::cursor_visual_style(Self) -> CursorVisualStyle
+pub fn RenderState::cursor_visual_style(Self) -> @cursor.CursorVisualStyle
 pub fn RenderState::dirty(Self) -> RenderDirty
 pub fn RenderState::foreground_color(Self) -> @color.RGB
 pub fn RenderState::format_vt_framebuffer(Self) -> Bytes
@@ -314,17 +295,6 @@ pub fn RenderState::row_iterator(Self) -> RenderRowIterator
 pub fn RenderState::rows(Self) -> UInt16
 pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
 pub fn RenderState::update(Self, StreamTerminal) -> Unit
-
-type ScreenCharsetState derive(Eq, @debug.Debug)
-pub fn ScreenCharsetState::charset(Self, @charsets.Slots) -> @charsets.Charset
-pub fn ScreenCharsetState::configure(Self, @charsets.Slots, @charsets.Charset) -> Unit
-pub fn ScreenCharsetState::consume_single_shift(Self) -> @charsets.Slots?
-pub fn ScreenCharsetState::gl(Self) -> @charsets.Slots
-pub fn ScreenCharsetState::gr(Self) -> @charsets.Slots
-pub fn ScreenCharsetState::invoke(Self, @charsets.ActiveSlot, @charsets.Slots, Bool) -> Unit
-pub fn ScreenCharsetState::new() -> Self
-pub fn ScreenCharsetState::reset(Self) -> Unit
-pub fn ScreenCharsetState::single_shift(Self) -> @charsets.Slots?
 
 type ScreenHyperlinkState derive(Eq, @debug.Debug)
 pub fn ScreenHyperlinkState::active(Self) -> Bool
@@ -344,22 +314,6 @@ pub fn ScreenProtectedState::new() -> Self
 pub fn ScreenProtectedState::reset(Self) -> Unit
 pub fn ScreenProtectedState::set(Self, @ansi.ProtectedMode) -> Unit
 
-type ScreenSavedCursor derive(Eq, @debug.Debug)
-pub fn ScreenSavedCursor::charset(Self) -> ScreenCharsetState
-pub fn ScreenSavedCursor::cursor_protected(Self) -> Bool
-pub fn ScreenSavedCursor::origin(Self) -> Bool
-pub fn ScreenSavedCursor::pending_wrap(Self) -> Bool
-pub fn ScreenSavedCursor::style(Self) -> @style.CellStyle
-pub fn ScreenSavedCursor::x(Self) -> UInt16
-pub fn ScreenSavedCursor::y(Self) -> UInt16
-
-type ScreenSavedCursorState derive(Eq, @debug.Debug)
-pub fn ScreenSavedCursorState::has_saved(Self) -> Bool
-pub fn ScreenSavedCursorState::new() -> Self
-pub fn ScreenSavedCursorState::reset(Self) -> Unit
-pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
-pub fn ScreenSavedCursorState::save(Self, TerminalCursorState, @style.CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
-
 type ScreenSemanticState derive(Eq, @debug.Debug)
 pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPrompt) -> Unit
 pub fn ScreenSemanticState::apply_prompt_start(Self, @osc.SemanticPrompt) -> Unit
@@ -375,10 +329,10 @@ pub fn ScreenSemanticState::set_output(Self) -> Unit
 pub fn ScreenSemanticState::start_input(Self, Bool) -> Unit
 
 type Selection
-pub fn Selection::end(Self) -> Pin
-pub fn Selection::new(Pin, Pin, Bool) -> Self
+pub fn Selection::end(Self) -> @pagelist.Pin
+pub fn Selection::new(@pagelist.Pin, @pagelist.Pin, Bool) -> Self
 pub fn Selection::rectangle(Self) -> Bool
-pub fn Selection::start(Self) -> Pin
+pub fn Selection::start(Self) -> @pagelist.Pin
 
 pub(all) enum SemanticClickMode {
   None
@@ -394,7 +348,7 @@ pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
 pub fn Size::rows(Self) -> UInt16
 
 type StreamTerminal
-pub fn StreamTerminal::active_screen(Self) -> TerminalScreen
+pub fn StreamTerminal::active_screen(Self) -> @pagelist.TerminalScreen
 pub fn StreamTerminal::background_color(Self) -> @color.RGB?
 pub fn StreamTerminal::clear_bell(Self) -> Unit
 pub fn StreamTerminal::clear_color_scheme(Self) -> Unit
@@ -413,7 +367,7 @@ pub fn StreamTerminal::cursor_pending_wrap(Self) -> Bool
 pub fn StreamTerminal::cursor_right_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_top_margin(Self) -> UInt16
 pub fn StreamTerminal::cursor_visible(Self) -> Bool
-pub fn StreamTerminal::cursor_visual_style(Self) -> CursorVisualStyle
+pub fn StreamTerminal::cursor_visual_style(Self) -> @cursor.CursorVisualStyle
 pub fn StreamTerminal::cursor_x(Self) -> UInt16
 pub fn StreamTerminal::cursor_y(Self) -> UInt16
 pub fn StreamTerminal::default_background_color(Self) -> @color.RGB?
@@ -433,8 +387,8 @@ pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette(Self) -> Array[@color.RGB]
 pub fn StreamTerminal::palette_dirty(Self) -> Bool
-pub fn StreamTerminal::pin(Self, Point) -> Pin?
-pub fn StreamTerminal::point_from_pin(Self, Pin, Tag) -> Coordinate?
+pub fn StreamTerminal::pin(Self, @point.Point) -> @pagelist.Pin?
+pub fn StreamTerminal::point_from_pin(Self, @pagelist.Pin, @point.Tag) -> @point.Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
 pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
@@ -448,8 +402,8 @@ pub fn StreamTerminal::scroll_viewport_bottom(Self) -> Unit
 pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
 pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
 pub fn StreamTerminal::scrollback_rows(Self) -> UInt
-pub fn StreamTerminal::scrollbar(Self) -> TerminalScrollbar
-pub fn StreamTerminal::selection(Self, Point, Point, Bool) -> Selection?
+pub fn StreamTerminal::scrollbar(Self) -> @pagelist.TerminalScrollbar
+pub fn StreamTerminal::selection(Self, @point.Point, @point.Point, Bool) -> Selection?
 pub fn StreamTerminal::semantic_prompt_row_range(Self, UInt16) -> (UInt16, UInt16)?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> @device.ColorScheme?) -> Unit
@@ -468,7 +422,7 @@ pub fn StreamTerminal::set_xtversion(Self, () -> String) -> Unit
 pub fn StreamTerminal::take_scrollback_cleared(Self) -> Bool
 pub fn StreamTerminal::title(Self) -> String?
 pub fn StreamTerminal::total_rows(Self) -> UInt
-pub fn StreamTerminal::untrack_pin(Self, Pin) -> Unit
+pub fn StreamTerminal::untrack_pin(Self, @pagelist.Pin) -> Unit
 pub fn StreamTerminal::untrack_selection(Self, Selection) -> Unit
 pub fn StreamTerminal::width_px(Self) -> UInt
 
@@ -491,30 +445,6 @@ pub(all) enum SystemLogLevel {
   Info
   Debug
 } derive(Eq, @debug.Debug)
-
-pub(all) enum Tag {
-  Active
-  Viewport
-  Screen
-  History
-} derive(Eq, @debug.Debug)
-
-type TerminalCursorState derive(Eq, @debug.Debug)
-pub fn TerminalCursorState::apply_cursor_style(Self, @ansi.CursorStyle) -> Bool
-pub fn TerminalCursorState::bottom_margin(Self) -> UInt16
-pub fn TerminalCursorState::full_reset(Self) -> Unit
-pub fn TerminalCursorState::left_margin(Self) -> UInt16
-pub fn TerminalCursorState::new(UInt16, UInt16) -> Self
-pub fn TerminalCursorState::pending_wrap(Self) -> Bool
-pub fn TerminalCursorState::right_margin(Self) -> UInt16
-pub fn TerminalCursorState::set_cursor_pos(Self, UInt16, UInt16, Bool) -> Unit
-pub fn TerminalCursorState::set_left_and_right_margin(Self, Bool, UInt16, UInt16, Bool) -> Unit
-pub fn TerminalCursorState::set_pending_wrap(Self, Bool) -> Unit
-pub fn TerminalCursorState::set_top_and_bottom_margin(Self, UInt16, UInt16, Bool) -> Unit
-pub fn TerminalCursorState::top_margin(Self) -> UInt16
-pub fn TerminalCursorState::visual_style(Self) -> CursorVisualStyle
-pub fn TerminalCursorState::x(Self) -> UInt16
-pub fn TerminalCursorState::y(Self) -> UInt16
 
 type TerminalDisplayState derive(Eq, @debug.Debug)
 pub fn TerminalDisplayState::full_reset(Self) -> Unit
@@ -540,17 +470,6 @@ pub fn TerminalMetadataState::set_title(Self, String) -> Unit
 pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> @osc.SemanticPromptRedraw
 pub fn TerminalMetadataState::title(Self) -> String?
 
-pub(all) enum TerminalScreen {
-  Primary
-  Alternate
-} derive(Eq, @debug.Debug)
-
-type TerminalScrollbar derive(Eq, @debug.Debug)
-pub fn TerminalScrollbar::len(Self) -> UInt
-pub fn TerminalScrollbar::new(UInt, UInt, UInt) -> Self
-pub fn TerminalScrollbar::offset(Self) -> UInt
-pub fn TerminalScrollbar::total(Self) -> UInt
-
 type TerminalSurfaceTypeInfo derive(Eq, @debug.Debug)
 pub fn TerminalSurfaceTypeInfo::mapping(Self) -> TerminalSurfaceTypeMapping
 pub fn TerminalSurfaceTypeInfo::moonbit_surface(Self) -> String
@@ -571,7 +490,6 @@ pub fn TerminalTabstopsState::set(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
 
 // Type aliases
-pub type CellCountInt = UInt16
 
 // Traits
 

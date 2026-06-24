@@ -104,8 +104,8 @@ test "formatter/plain selection restricts output" {
 
   let selection = terminal
     .selection(
-      Active(Coordinate::new(6, 0U)),
-      Active(Coordinate::new(10, 0U)),
+      Active(@point.Coordinate::new(6, 0U)),
+      Active(@point.Coordinate::new(10, 0U)),
       false,
     )
     .unwrap()
@@ -134,8 +134,8 @@ test "formatter/plain tracked selection follows active row into scrollback" {
   terminal.next_slice(b"abc\r\ndef")
   let selection = terminal
     .selection(
-      Active(Coordinate::new(0, 0U)),
-      Active(Coordinate::new(2, 0U)),
+      Active(@point.Coordinate::new(0, 0U)),
+      Active(@point.Coordinate::new(2, 0U)),
       false,
     )
     .unwrap()
@@ -180,8 +180,8 @@ test "formatter/plain styles constructor stays text-only and blank selection is 
       selection=Some(
         terminal
         .selection(
-          Active(Coordinate::new(0, 0U)),
-          Active(Coordinate::new(0, 0U)),
+          Active(@point.Coordinate::new(0, 0U)),
+          Active(@point.Coordinate::new(0, 0U)),
           false,
         )
         .unwrap(),
@@ -202,8 +202,8 @@ test "formatter/plain stale pin selection formats empty" {
   terminal.next_slice(b"abc")
   let selection = terminal
     .selection(
-      Active(Coordinate::new(0, 0U)),
-      Active(Coordinate::new(2, 0U)),
+      Active(@point.Coordinate::new(0, 0U)),
+      Active(@point.Coordinate::new(2, 0U)),
       false,
     )
     .unwrap()
@@ -239,8 +239,8 @@ test "formatter/plain orders reversed and rectangle selections" {
       selection=Some(
         terminal
         .selection(
-          Active(Coordinate::new(1, 0U)),
-          Active(Coordinate::new(0, 0U)),
+          Active(@point.Coordinate::new(1, 0U)),
+          Active(@point.Coordinate::new(0, 0U)),
           false,
         )
         .unwrap(),
@@ -259,8 +259,8 @@ test "formatter/plain orders reversed and rectangle selections" {
       selection=Some(
         terminal
         .selection(
-          Active(Coordinate::new(2, 1U)),
-          Active(Coordinate::new(1, 0U)),
+          Active(@point.Coordinate::new(2, 1U)),
+          Active(@point.Coordinate::new(1, 0U)),
           true,
         )
         .unwrap(),
@@ -296,8 +296,8 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
       selection=Some(
         wide_tail
         .selection(
-          Active(Coordinate::new(1, 0U)),
-          Active(Coordinate::new(1, 0U)),
+          Active(@point.Coordinate::new(1, 0U)),
+          Active(@point.Coordinate::new(1, 0U)),
           false,
         )
         .unwrap(),
@@ -322,8 +322,8 @@ test "formatter/plain preserves interior spaces and wide-cell boundaries" {
       selection=Some(
         wide_head
         .selection(
-          Active(Coordinate::new(0, 1U)),
-          Active(Coordinate::new(0, 1U)),
+          Active(@point.Coordinate::new(0, 1U)),
+          Active(@point.Coordinate::new(0, 1U)),
           false,
         )
         .unwrap(),

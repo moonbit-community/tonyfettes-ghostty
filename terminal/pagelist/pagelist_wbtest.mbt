@@ -1,6 +1,6 @@
 ///|
 fn fill_terminal_screen_row(
-  grid : ScreenGridState,
+  grid : @grid.ScreenGridState,
   row : Int,
   chars : Array[Byte],
   style : @style.CellStyle,
@@ -79,7 +79,7 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
 
 ///|
 test "terminal screen state/viewport top survives future scrollback" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,
@@ -106,7 +106,7 @@ test "terminal screen state/viewport top survives future scrollback" {
 
 ///|
 test "terminal screen state/empty scrollback delta stays active" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,
@@ -133,7 +133,7 @@ test "terminal screen state/empty scrollback delta stays active" {
 
 ///|
 test "terminal screen state/zero max scrollback trim and resets" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,
@@ -175,7 +175,7 @@ test "terminal screen state/zero max scrollback trim and resets" {
 
 ///|
 test "terminal screen state/point helpers cover source mappings" {
-  let grid = ScreenGridState::new(2, 3)
+  let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
     grid,
     0,
@@ -195,15 +195,15 @@ test "terminal screen state/point helpers cover source mappings" {
   scrollback.capture_top_scroll_region_up(grid, grid.rows.to_int() - 1, 1)
 
   let history_cell = scrollback
-    .cell_at_point(grid, History(Coordinate::new(0, 0U)))
+    .cell_at_point(grid, History(@point.Coordinate::new(0, 0U)))
     .unwrap()
   let out_of_col = scrollback.cell_at_point(
     grid,
-    History(Coordinate::new(9, 0U)),
+    History(@point.Coordinate::new(9, 0U)),
   )
   let out_of_row = scrollback.cell_at_point(
     grid,
-    Screen(Coordinate::new(0, 9U)),
+    Screen(@point.Coordinate::new(0, 9U)),
   )
   guard history_cell.codepoint() == b'a'.to_uint() &&
     out_of_col == None &&
@@ -213,21 +213,21 @@ test "terminal screen state/point helpers cover source mappings" {
 
   let history_as_screen = scrollback.point_from_point(
     grid,
-    History(Coordinate::new(0, 0U)),
+    History(@point.Coordinate::new(0, 0U)),
     Screen,
   )
   let screen_as_active = scrollback.point_from_point(
     grid,
-    Screen(Coordinate::new(0, 2U)),
+    Screen(@point.Coordinate::new(0, 2U)),
     Active,
   )
   let out_of_active = scrollback.point_from_point(
     grid,
-    Active(Coordinate::new(0, 9U)),
+    Active(@point.Coordinate::new(0, 9U)),
     Screen,
   )
-  guard history_as_screen == Some(Coordinate::new(0, 0U)) &&
-    screen_as_active == Some(Coordinate::new(0, 1U)) &&
+  guard history_as_screen == Some(@point.Coordinate::new(0, 0U)) &&
+    screen_as_active == Some(@point.Coordinate::new(0, 1U)) &&
     out_of_active == None else {
     fail("expected point reconstruction guards and screen coordinates")
   }
@@ -240,7 +240,7 @@ test "terminal screen state/point helpers cover source mappings" {
 
   let history_as_viewport_bottom = scrollback.point_from_point(
     grid,
-    History(Coordinate::new(0, 0U)),
+    History(@point.Coordinate::new(0, 0U)),
     Viewport,
   )
   guard history_as_viewport_bottom == None else {
@@ -249,10 +249,10 @@ test "terminal screen state/point helpers cover source mappings" {
   scrollback.scroll_top()
   let history_as_viewport_top = scrollback.point_from_point(
     grid,
-    History(Coordinate::new(0, 0U)),
+    History(@point.Coordinate::new(0, 0U)),
     Viewport,
   )
-  guard history_as_viewport_top == Some(Coordinate::new(0, 0U)) else {
+  guard history_as_viewport_top == Some(@point.Coordinate::new(0, 0U)) else {
     fail("expected viewport lookup hit after scrolling to top")
   }
 }

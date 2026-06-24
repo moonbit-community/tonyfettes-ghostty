@@ -1,0 +1,52 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/cursor"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/ansi",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum CursorVisualStyle {
+  Block
+  Bar
+  Underline
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TerminalCursorState {
+  mut rows : UInt16
+  mut columns : UInt16
+  mut x : UInt16
+  mut y : UInt16
+  mut visual_style : CursorVisualStyle
+  mut pending_wrap : Bool
+  mut top_margin : UInt16
+  mut bottom_margin : UInt16
+  mut left_margin : UInt16
+  mut right_margin : UInt16
+} derive(Eq, @debug.Debug)
+pub fn TerminalCursorState::apply_cursor_style(Self, @ansi.CursorStyle) -> Bool
+pub fn TerminalCursorState::bottom_margin(Self) -> UInt16
+pub fn TerminalCursorState::full_reset(Self) -> Unit
+pub fn TerminalCursorState::left_margin(Self) -> UInt16
+pub fn TerminalCursorState::new(UInt16, UInt16) -> Self
+pub fn TerminalCursorState::pending_wrap(Self) -> Bool
+pub fn TerminalCursorState::resize(Self, UInt16, UInt16) -> Unit
+pub fn TerminalCursorState::right_margin(Self) -> UInt16
+pub fn TerminalCursorState::set_cursor_pos(Self, UInt16, UInt16, Bool) -> Unit
+pub fn TerminalCursorState::set_left_and_right_margin(Self, Bool, UInt16, UInt16, Bool) -> Unit
+pub fn TerminalCursorState::set_pending_wrap(Self, Bool) -> Unit
+pub fn TerminalCursorState::set_top_and_bottom_margin(Self, UInt16, UInt16, Bool) -> Unit
+pub fn TerminalCursorState::top_margin(Self) -> UInt16
+pub fn TerminalCursorState::visual_style(Self) -> CursorVisualStyle
+pub fn TerminalCursorState::x(Self) -> UInt16
+pub fn TerminalCursorState::y(Self) -> UInt16
+
+// Type aliases
+
+// Traits
+

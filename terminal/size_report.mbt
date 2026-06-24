@@ -8,16 +8,16 @@ pub(all) enum Style {
 
 ///|
 struct Size {
-  rows : CellCountInt
-  columns : CellCountInt
+  rows : @size.CellCountInt
+  columns : @size.CellCountInt
   cell_width : UInt
   cell_height : UInt
 } derive(Eq, Debug)
 
 ///|
 pub fn Size::new(
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
   cell_width : UInt,
   cell_height : UInt,
 ) -> Size {
@@ -25,12 +25,12 @@ pub fn Size::new(
 }
 
 ///|
-pub fn Size::rows(self : Size) -> CellCountInt {
+pub fn Size::rows(self : Size) -> @size.CellCountInt {
   self.rows
 }
 
 ///|
-pub fn Size::columns(self : Size) -> CellCountInt {
+pub fn Size::columns(self : Size) -> @size.CellCountInt {
   self.columns
 }
 

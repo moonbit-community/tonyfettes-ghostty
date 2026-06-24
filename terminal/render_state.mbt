@@ -8,20 +8,20 @@ pub(all) enum RenderDirty {
 ///|
 struct RenderState {
   mut initialized : Bool
-  mut rows : CellCountInt
-  mut columns : CellCountInt
+  mut rows : @size.CellCountInt
+  mut columns : @size.CellCountInt
   mut dirty : RenderDirty
-  mut screen : TerminalScreen
-  mut viewport_origin : Coordinate?
+  mut screen : @pagelist.TerminalScreen
+  mut viewport_origin : @point.Coordinate?
   mut background : @color.RGB
   mut foreground : @color.RGB
   mut cursor_color : @color.RGB?
   mut palette : Array[@color.RGB]
-  mut cursor_visual_style : CursorVisualStyle
+  mut cursor_visual_style : @cursor.CursorVisualStyle
   mut cursor_visible : Bool
   mut cursor_blinking : Bool
   mut cursor_password_input : Bool
-  mut cursor_viewport : Coordinate?
+  mut cursor_viewport : @point.Coordinate?
   mut cursor_viewport_wide_tail : Bool
   mut row_states : Array[@page.PageRowState]
   mut row_cells : Array[FixedArray[@page.PageCellState]]
@@ -73,12 +73,12 @@ pub fn RenderState::new() -> RenderState {
 }
 
 ///|
-pub fn RenderState::rows(self : RenderState) -> CellCountInt {
+pub fn RenderState::rows(self : RenderState) -> @size.CellCountInt {
   self.rows
 }
 
 ///|
-pub fn RenderState::columns(self : RenderState) -> CellCountInt {
+pub fn RenderState::columns(self : RenderState) -> @size.CellCountInt {
   self.columns
 }
 
@@ -115,7 +115,7 @@ pub fn RenderState::palette(self : RenderState) -> Array[@color.RGB] {
 ///|
 pub fn RenderState::cursor_visual_style(
   self : RenderState,
-) -> CursorVisualStyle {
+) -> @cursor.CursorVisualStyle {
   self.cursor_visual_style
 }
 
@@ -135,7 +135,7 @@ pub fn RenderState::cursor_password_input(self : RenderState) -> Bool {
 }
 
 ///|
-pub fn RenderState::cursor_viewport(self : RenderState) -> Coordinate? {
+pub fn RenderState::cursor_viewport(self : RenderState) -> @point.Coordinate? {
   self.cursor_viewport
 }
 
@@ -236,8 +236,8 @@ pub fn RenderState::update(
 fn RenderState::snapshot_all_rows(
   self : RenderState,
   terminal : StreamTerminal,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Unit {
   let row_states : Array[@page.PageRowState] = []
   let row_cells : Array[FixedArray[@page.PageCellState]] = []
@@ -264,8 +264,8 @@ fn RenderState::snapshot_all_rows(
 fn RenderState::update_changed_rows(
   self : RenderState,
   terminal : StreamTerminal,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Bool {
   let mut any_row_dirty = false
   let mut row_idx = 0
@@ -293,13 +293,15 @@ fn RenderState::update_changed_rows(
 ///|
 fn resolve_viewport_origin(
   terminal : StreamTerminal,
-  rows : CellCountInt,
-  columns : CellCountInt,
-) -> Coordinate? {
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
+) -> @point.Coordinate? {
   if rows == 0 || columns == 0 {
     None
   } else {
-    terminal.bridge().point_from_point(Viewport(Coordinate::new(0, 0U)), Screen)
+    terminal
+    .bridge()
+    .point_from_point(Viewport(@point.Coordinate::new(0, 0U)), Screen)
   }
 }
 
@@ -332,9 +334,11 @@ fn resolved_render_foreground(
 }
 
 ///|
-fn resolve_cursor_viewport(terminal : StreamTerminal) -> (Coordinate?, Bool) {
-  let cursor_point = Point::Active(
-    Coordinate::new(terminal.cursor_x(), terminal.cursor_y().to_uint()),
+fn resolve_cursor_viewport(
+  terminal : StreamTerminal,
+) -> (@point.Coordinate?, Bool) {
+  let cursor_point = @point.Point::Active(
+    @point.Coordinate::new(terminal.cursor_x(), terminal.cursor_y().to_uint()),
   )
   let state = terminal.bridge()
   match state.point_from_point(cursor_point, Viewport) {
@@ -352,8 +356,8 @@ fn resolve_cursor_viewport(terminal : StreamTerminal) -> (Coordinate?, Bool) {
 ///|
 fn render_row_storage_matches(
   state : RenderState,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Bool {
   if state.row_states.length() != rows.to_int() ||
     state.row_cells.length() != rows.to_int() {
@@ -373,7 +377,7 @@ fn render_row_storage_matches(
 ///|
 fn snapshot_render_row(
   terminal : StreamTerminal,
-  row : CellCountInt,
+  row : @size.CellCountInt,
 ) -> @page.PageRowState {
   match terminal.screen_row_snapshot(row) {
     Some(snapshot) => snapshot
@@ -384,8 +388,8 @@ fn snapshot_render_row(
 ///|
 fn snapshot_render_cells(
   terminal : StreamTerminal,
-  row : CellCountInt,
-  columns : CellCountInt,
+  row : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> FixedArray[@page.PageCellState] {
   let width = columns.to_int()
   let result : FixedArray[@page.PageCellState] = FixedArray::make(
@@ -405,7 +409,7 @@ fn snapshot_render_cells(
 ///|
 fn snapshot_render_link_ids(
   terminal : StreamTerminal,
-  row : CellCountInt,
+  row : @size.CellCountInt,
   cells : FixedArray[@page.PageCellState],
 ) -> FixedArray[@hyperlink.HyperlinkId]? {
   // Only a row that actually holds a hyperlinked cell allocates an id array; the

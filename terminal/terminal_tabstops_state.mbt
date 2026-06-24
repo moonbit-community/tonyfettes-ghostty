@@ -2,7 +2,7 @@
 const UnitBits : Int = 8
 
 ///|
-const DefaultTabstopInterval : CellCountInt = 8
+const DefaultTabstopInterval : @size.CellCountInt = 8
 
 ///|
 struct TerminalTabstopsState {
@@ -14,7 +14,9 @@ struct TerminalTabstopsState {
 } derive(Eq, Debug)
 
 ///|
-pub fn TerminalTabstopsState::new(cols : CellCountInt) -> TerminalTabstopsState {
+pub fn TerminalTabstopsState::new(
+  cols : @size.CellCountInt,
+) -> TerminalTabstopsState {
   let cols_int = cols.to_int()
   let state = {
     cols: cols_int,
@@ -27,7 +29,7 @@ pub fn TerminalTabstopsState::new(cols : CellCountInt) -> TerminalTabstopsState 
 ///|
 pub fn TerminalTabstopsState::get(
   self : TerminalTabstopsState,
-  col : CellCountInt,
+  col : @size.CellCountInt,
 ) -> Bool {
   let col_int = col.to_int()
   guard self.in_bounds(col_int) else { return false }
@@ -42,7 +44,7 @@ pub fn TerminalTabstopsState::get(
 ///|
 pub fn TerminalTabstopsState::set(
   self : TerminalTabstopsState,
-  col : CellCountInt,
+  col : @size.CellCountInt,
 ) -> Unit {
   let col_int = col.to_int()
   guard self.in_bounds(col_int) else { return }
@@ -55,7 +57,7 @@ pub fn TerminalTabstopsState::set(
 ///|
 pub fn TerminalTabstopsState::unset(
   self : TerminalTabstopsState,
-  col : CellCountInt,
+  col : @size.CellCountInt,
 ) -> Unit {
   let col_int = col.to_int()
   guard self.in_bounds(col_int) else { return }
@@ -69,7 +71,7 @@ pub fn TerminalTabstopsState::unset(
 ///|
 pub fn TerminalTabstopsState::reset(
   self : TerminalTabstopsState,
-  interval : CellCountInt,
+  interval : @size.CellCountInt,
 ) -> Unit {
   self.stops.fill(0)
   if interval == 0 || self.cols <= 1 {

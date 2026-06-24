@@ -256,8 +256,8 @@ fn formatter_render_state_last_cell(
 
 ///|
 priv struct FormatterSelectionBounds {
-  start : Coordinate
-  end_ : Coordinate
+  start : @point.Coordinate
+  end_ : @point.Coordinate
   rectangle : Bool
 }
 
@@ -335,8 +335,8 @@ fn formatter_selection_bounds(
   match formatter.opts.selection {
     None =>
       Some({
-        start: Coordinate::new(0, 0U),
-        end_: Coordinate::new(cols - 1, total_rows - 1U),
+        start: @point.Coordinate::new(0, 0U),
+        end_: @point.Coordinate::new(cols - 1, total_rows - 1U),
         rectangle: false,
       })
     Some(selection) => {
@@ -350,11 +350,11 @@ fn formatter_selection_bounds(
       }
       if selection.rectangle() {
         Some({
-          start: Coordinate::new(
+          start: @point.Coordinate::new(
             min_cell_count(start.x(), end_.x()),
             min_uint(start.y(), end_.y()),
           ),
-          end_: Coordinate::new(
+          end_: @point.Coordinate::new(
             max_cell_count(start.x(), end_.x()),
             formatter_max_uint(start.y(), end_.y()),
           ),
@@ -1211,12 +1211,18 @@ fn formatter_charset_final(charset : @charsets.Charset) -> Byte {
 }
 
 ///|
-fn formatter_coord_before(lhs : Coordinate, rhs : Coordinate) -> Bool {
+fn formatter_coord_before(
+  lhs : @point.Coordinate,
+  rhs : @point.Coordinate,
+) -> Bool {
   lhs.y() < rhs.y() || (lhs.y() == rhs.y() && lhs.x() < rhs.x())
 }
 
 ///|
-fn min_cell_count(lhs : CellCountInt, rhs : CellCountInt) -> CellCountInt {
+fn min_cell_count(
+  lhs : @size.CellCountInt,
+  rhs : @size.CellCountInt,
+) -> @size.CellCountInt {
   if lhs < rhs {
     lhs
   } else {
@@ -1225,7 +1231,10 @@ fn min_cell_count(lhs : CellCountInt, rhs : CellCountInt) -> CellCountInt {
 }
 
 ///|
-fn max_cell_count(lhs : CellCountInt, rhs : CellCountInt) -> CellCountInt {
+fn max_cell_count(
+  lhs : @size.CellCountInt,
+  rhs : @size.CellCountInt,
+) -> @size.CellCountInt {
   if lhs > rhs {
     lhs
   } else {

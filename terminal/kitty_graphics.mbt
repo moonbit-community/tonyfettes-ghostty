@@ -73,13 +73,13 @@ struct KittyPlacementRenderInfo {
 ///|
 struct KittyGraphics {
   bridge : StreamTerminalBridgeState
-  screen : TerminalScreen
+  screen : @pagelist.TerminalScreen
 }
 
 ///|
 struct KittyPlacement {
   bridge : StreamTerminalBridgeState
-  screen : TerminalScreen
+  screen : @pagelist.TerminalScreen
   image_snapshot : KittyImage
   placement : KittyGraphicsPlacement
 }
@@ -292,7 +292,9 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
   let bottom_right = match
     scrollback.pin(
       grid,
-      Screen(Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint())),
+      Screen(
+        @point.Coordinate::new(end_x.to_uint16(), end_y.reinterpret_as_uint()),
+      ),
     ) {
     Some(value) => value
     None => return None
@@ -581,7 +583,7 @@ fn kitty_graphics_owner_state(owner : KittyGraphics) -> KittyGraphicsState {
 }
 
 ///|
-fn kitty_placement_grid(placement : KittyPlacement) -> ScreenGridState {
+fn kitty_placement_grid(placement : KittyPlacement) -> @grid.ScreenGridState {
   if placement.screen == placement.bridge.active_screen {
     placement.bridge.grid
   } else {
@@ -593,7 +595,7 @@ fn kitty_placement_grid(placement : KittyPlacement) -> ScreenGridState {
 }
 
 ///|
-fn kitty_placement_scrollback(placement : KittyPlacement) -> PageList {
+fn kitty_placement_scrollback(placement : KittyPlacement) -> @pagelist.PageList {
   if placement.screen == placement.bridge.active_screen {
     placement.bridge.scrollback
   } else {

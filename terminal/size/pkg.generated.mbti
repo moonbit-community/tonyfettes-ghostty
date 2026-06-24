@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/size"
+
+// Values
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub type CellCountInt = UInt16
+
+// Traits
+

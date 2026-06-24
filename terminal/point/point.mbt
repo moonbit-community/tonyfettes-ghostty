@@ -8,17 +8,17 @@ pub(all) enum Tag {
 
 ///|
 struct Coordinate {
-  x : CellCountInt
+  x : @size.CellCountInt
   y : UInt
 } derive(Eq, Debug)
 
 ///|
-pub fn Coordinate::new(x : CellCountInt, y : UInt) -> Coordinate {
+pub fn Coordinate::new(x : @size.CellCountInt, y : UInt) -> Coordinate {
   { x, y }
 }
 
 ///|
-pub fn Coordinate::x(self : Coordinate) -> CellCountInt {
+pub fn Coordinate::x(self : Coordinate) -> @size.CellCountInt {
   self.x
 }
 

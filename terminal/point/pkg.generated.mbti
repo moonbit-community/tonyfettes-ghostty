@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/point"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Coordinate derive(Eq, @debug.Debug)
+pub fn Coordinate::new(UInt16, UInt) -> Self
+pub fn Coordinate::x(Self) -> UInt16
+pub fn Coordinate::y(Self) -> UInt
+
+pub(all) enum Point {
+  Active(Coordinate)
+  Viewport(Coordinate)
+  Screen(Coordinate)
+  History(Coordinate)
+} derive(Eq, @debug.Debug)
+pub fn Point::coord(Self) -> Coordinate
+
+pub(all) enum Tag {
+  Active
+  Viewport
+  Screen
+  History
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

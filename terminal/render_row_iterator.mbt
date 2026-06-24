@@ -28,7 +28,7 @@ pub fn RenderRowIterator::next(self : RenderRowIterator) -> Bool {
 }
 
 ///|
-pub fn RenderRowIterator::y(self : RenderRowIterator) -> CellCountInt? {
+pub fn RenderRowIterator::y(self : RenderRowIterator) -> @size.CellCountInt? {
   if self.y < 0 || self.y >= self.state.row_states.length() {
     None
   } else {
@@ -77,7 +77,10 @@ pub fn RenderRowCells::next(self : RenderRowCells) -> Bool {
 }
 
 ///|
-pub fn RenderRowCells::select(self : RenderRowCells, x : CellCountInt) -> Bool {
+pub fn RenderRowCells::select(
+  self : RenderRowCells,
+  x : @size.CellCountInt,
+) -> Bool {
   let x_idx = x.to_int()
   if self.row < 0 ||
     self.row >= self.state.row_cells.length() ||
@@ -91,7 +94,7 @@ pub fn RenderRowCells::select(self : RenderRowCells, x : CellCountInt) -> Bool {
 }
 
 ///|
-pub fn RenderRowCells::x(self : RenderRowCells) -> CellCountInt? {
+pub fn RenderRowCells::x(self : RenderRowCells) -> @size.CellCountInt? {
   if self.row < 0 ||
     self.row >= self.state.row_cells.length() ||
     self.x < 0 ||
