@@ -1,11 +1,5 @@
 ///|
-pub(all) enum TerminalScreen {
-  Primary
-  Alternate
-} derive(Eq, Debug)
-
-///|
-priv struct PageListPage {
+pub(all) struct PageListPage {
   rows : @size.CellCountInt
   cols : @size.CellCountInt
   // Parallel per-row arrays, mirroring `ScreenGridState`: `descs[i]`/`cells[i]`
@@ -19,7 +13,7 @@ priv struct PageListPage {
 }
 
 ///|
-priv struct PageListNode {
+pub(all) struct PageListNode {
   page : PageListPage
 }
 
@@ -42,20 +36,20 @@ priv enum PageListRowSource {
 }
 
 ///|
-priv struct PageListPoint {
+pub(all) struct PageListPoint {
   x : @size.CellCountInt
   y : @size.CellCountInt
 }
 
 ///|
-priv struct PageListResizeResult {
+pub(all) struct PageListResizeResult {
   grid : @grid.ScreenGridState
   cursor : PageListPoint?
   saved_cursor : PageListPoint?
 }
 
 ///|
-priv struct PageListPin {
+pub(all) struct PageListPin {
   mut node : PageListNode
   mut y : @size.CellCountInt
   mut x : Int
@@ -70,7 +64,7 @@ priv enum PageListViewport {
 }
 
 ///|
-priv struct PageList {
+struct PageList {
   max_rows : Int
   mut rows : @size.CellCountInt
   mut cols : @size.CellCountInt
@@ -93,20 +87,6 @@ priv struct PageList {
   mut hyperlink_table : @hyperlink.HyperlinkTable
   // The grapheme intern table, owned and shared exactly like `style_table`.
   mut grapheme_table : @page.GraphemeTable
-}
-
-///|
-priv struct TerminalScreenStorage {
-  mut grid : @grid.ScreenGridState
-  mut cursor : @cursor.TerminalCursorState
-  saved_cursor : ScreenSavedCursorState
-  mut scrollback : PageList
-  mut kitty_graphics : KittyGraphicsState
-  // Semantic-prompt state is per-screen: the alternate screen used by
-  // fullscreen apps must not inherit the primary screen's OSC 133 zones,
-  // and its rows must not be stamped with the primary's leftover prompt
-  // state. Swapped alongside grid/cursor/scrollback in load/store.
-  mut semantic : ScreenSemanticState
 }
 
 ///|
@@ -164,7 +144,7 @@ fn PageListNode::new(page : PageListPage) -> PageListNode {
 }
 
 ///|
-fn PageList::new(
+pub fn PageList::new(
   rows : @size.CellCountInt,
   cols : @size.CellCountInt,
   max_rows : Int,
@@ -189,7 +169,7 @@ fn PageList::new(
 }
 
 ///|
-fn PageList::active_grid(self : PageList) -> @grid.ScreenGridState {
+pub fn PageList::active_grid(self : PageList) -> @grid.ScreenGridState {
   // Shares the active page's `descs`/`cells` arrays by reference, so grid
   // mutations (writes, scroll moves) are seen by the page and vice versa.
   {
@@ -206,12 +186,12 @@ fn PageList::active_grid(self : PageList) -> @grid.ScreenGridState {
 }
 
 ///|
-fn PageList::scrollback_rows(self : PageList) -> UInt {
+pub fn PageList::scrollback_rows(self : PageList) -> UInt {
   self.history.length().reinterpret_as_uint()
 }
 
 ///|
-fn PageList::total_rows(
+pub fn PageList::total_rows(
   self : PageList,
   visible_rows : @size.CellCountInt,
 ) -> UInt {
@@ -219,7 +199,7 @@ fn PageList::total_rows(
 }
 
 ///|
-fn PageList::scrollbar(
+pub fn PageList::scrollbar(
   self : PageList,
   visible_rows : @size.CellCountInt,
 ) -> TerminalScrollbar {
@@ -236,7 +216,7 @@ fn PageList::scrollbar(
 }
 
 ///|
-fn PageList::row(
+pub fn PageList::row(
   self : PageList,
   grid : @grid.ScreenGridState,
   row : @size.CellCountInt,
@@ -249,7 +229,7 @@ fn PageList::row(
 }
 
 ///|
-fn PageList::cell(
+pub fn PageList::cell(
   self : PageList,
   grid : @grid.ScreenGridState,
   row : @size.CellCountInt,
@@ -268,7 +248,7 @@ fn PageList::cell(
 }
 
 ///|
-fn PageList::screen_row(
+pub fn PageList::screen_row(
   self : PageList,
   grid : @grid.ScreenGridState,
   row : @size.CellCountInt,
@@ -281,7 +261,7 @@ fn PageList::screen_row(
 }
 
 ///|
-fn PageList::screen_cell(
+pub fn PageList::screen_cell(
   self : PageList,
   grid : @grid.ScreenGridState,
   row : @size.CellCountInt,
@@ -336,7 +316,7 @@ fn PageList::link_id_at_source(
 }
 
 ///|
-fn PageList::cell_hyperlink(
+pub fn PageList::cell_hyperlink(
   self : PageList,
   grid : @grid.ScreenGridState,
   row : @size.CellCountInt,
@@ -359,7 +339,7 @@ fn PageList::cell_hyperlink(
 /// cell carries only a presence bit, so two cells under different URIs are equal).
 /// Uses the same visible source as `cell` so it lines up with the render cell
 /// snapshot. Returns `@hyperlink.no_hyperlink_id` for an unlinked cell.
-fn PageList::cell_hyperlink_id(
+pub fn PageList::cell_hyperlink_id(
   self : PageList,
   grid : @grid.ScreenGridState,
   row : @size.CellCountInt,
@@ -376,7 +356,7 @@ fn PageList::cell_hyperlink_id(
 }
 
 ///|
-fn PageList::screen_cell_hyperlink(
+pub fn PageList::screen_cell_hyperlink(
   self : PageList,
   grid : @grid.ScreenGridState,
   row : @size.CellCountInt,
@@ -394,7 +374,7 @@ fn PageList::screen_cell_hyperlink(
 }
 
 ///|
-fn PageList::scroll_top(self : PageList) -> Unit {
+pub fn PageList::scroll_top(self : PageList) -> Unit {
   if self.max_rows <= 0 {
     self.viewport = Active
   } else {
@@ -404,13 +384,13 @@ fn PageList::scroll_top(self : PageList) -> Unit {
 }
 
 ///|
-fn PageList::scroll_bottom(self : PageList) -> Unit {
+pub fn PageList::scroll_bottom(self : PageList) -> Unit {
   self.viewport = Active
   self.viewport_pin_row_offset = None
 }
 
 ///|
-fn PageList::scroll_delta(self : PageList, delta : Int) -> Unit {
+pub fn PageList::scroll_delta(self : PageList, delta : Int) -> Unit {
   if self.max_rows <= 0 {
     self.viewport = Active
     self.viewport_pin_row_offset = None
@@ -420,7 +400,7 @@ fn PageList::scroll_delta(self : PageList, delta : Int) -> Unit {
 }
 
 ///|
-fn PageList::capture_top_scroll_region_up(
+pub fn PageList::capture_top_scroll_region_up(
   self : PageList,
   grid : @grid.ScreenGridState,
   bottom_req : Int,
@@ -462,7 +442,7 @@ fn PageList::capture_top_scroll_region_up(
 }
 
 ///|
-fn PageList::capture_full_screen_scroll_down(
+pub fn PageList::capture_full_screen_scroll_down(
   self : PageList,
   grid : @grid.ScreenGridState,
   count_req : Int,
@@ -476,7 +456,10 @@ fn PageList::capture_full_screen_scroll_down(
 }
 
 ///|
-fn PageList::full_reset(self : PageList, _rows : @size.CellCountInt) -> Unit {
+pub fn PageList::full_reset(
+  self : PageList,
+  _rows : @size.CellCountInt,
+) -> Unit {
   self.history.clear()
   self.viewport = Active
   self.viewport_pin_row_offset = None
@@ -502,7 +485,7 @@ fn PageList::full_reset(self : PageList, _rows : @size.CellCountInt) -> Unit {
 }
 
 ///|
-fn PageList::clear_history(self : PageList) -> Unit {
+pub fn PageList::clear_history(self : PageList) -> Unit {
   for row in self.history {
     self.mark_pins_for_row_garbage(row)
   }
@@ -512,7 +495,7 @@ fn PageList::clear_history(self : PageList) -> Unit {
 }
 
 ///|
-fn PageList::track_pin(
+pub fn PageList::track_pin(
   self : PageList,
   node : PageListNode,
   y : @size.CellCountInt,
@@ -524,7 +507,7 @@ fn PageList::track_pin(
 }
 
 ///|
-fn PageList::pin(
+pub fn PageList::pin(
   self : PageList,
   grid : @grid.ScreenGridState,
   point : @point.Point,
@@ -533,7 +516,7 @@ fn PageList::pin(
 }
 
 ///|
-fn PageList::track_pin_at_point(
+pub fn PageList::track_pin_at_point(
   self : PageList,
   grid : @grid.ScreenGridState,
   point : @point.Point,
@@ -552,7 +535,7 @@ fn PageList::track_pin_at_point(
 }
 
 ///|
-fn PageList::untrack_pin(self : PageList, pin : PageListPin) -> Unit {
+pub fn PageList::untrack_pin(self : PageList, pin : PageListPin) -> Unit {
   let next : Array[PageListPin] = []
   for tracked in self.tracked_pins {
     if !physical_equal(tracked, pin) {
@@ -573,7 +556,7 @@ fn PageList::tracked_pin_index(self : PageList, pin : PageListPin) -> Int? {
 }
 
 ///|
-fn PageList::point_from_pin(
+pub fn PageList::point_from_pin(
   self : PageList,
   grid : @grid.ScreenGridState,
   pin : PageListPin,
@@ -592,7 +575,7 @@ fn PageList::point_from_pin(
 }
 
 ///|
-fn PageList::pin_from_tracked_pin(
+pub fn PageList::pin_from_tracked_pin(
   self : PageList,
   pin : PageListPin,
 ) -> PageListPin? {
@@ -610,7 +593,7 @@ fn PageList::pin_from_tracked_pin(
 }
 
 ///|
-fn PageList::point_from_pin_ref(
+pub fn PageList::point_from_pin_ref(
   self : PageList,
   grid : @grid.ScreenGridState,
   pin : Pin,
@@ -620,12 +603,15 @@ fn PageList::point_from_pin_ref(
 }
 
 ///|
-fn PageList::untrack_pin_ref(self : PageList, pin : Pin) -> Unit {
+pub fn PageList::untrack_pin_ref(self : PageList, pin : Pin) -> Unit {
   self.untrack_pin(pin.pin)
 }
 
 ///|
-fn PageList::pin_x(self : PageList, pin : PageListPin) -> @size.CellCountInt? {
+pub fn PageList::pin_x(
+  self : PageList,
+  pin : PageListPin,
+) -> @size.CellCountInt? {
   match self.tracked_pin_index(pin) {
     Some(index) =>
       if self.tracked_pins[index].garbage {
@@ -996,7 +982,7 @@ fn PageList::set_viewport_pin(self : PageList, row : PageListRow) -> Unit {
 }
 
 ///|
-fn PageList::resize(
+pub fn PageList::resize(
   self : PageList,
   grid : @grid.ScreenGridState,
   cols : @size.CellCountInt,
@@ -1632,46 +1618,7 @@ fn PageListReflowCursor::copy_row_metadata(
 }
 
 ///|
-fn TerminalScreenStorage::resize(
-  self : TerminalScreenStorage,
-  rows : @size.CellCountInt,
-  cols : @size.CellCountInt,
-) -> PageListResizeResult {
-  let pending_wrap = self.cursor.pending_wrap()
-  let saved_cursor = if self.saved_cursor.has_saved() {
-    Some(self.saved_cursor.restore())
-  } else {
-    None
-  }
-  let result = self.scrollback.resize(
-    self.grid,
-    cols,
-    rows,
-    self.cursor,
-    saved_cursor,
-  )
-  self.grid = result.grid
-  self.cursor.resize(rows, cols)
-  match result.cursor {
-    Some(point) => {
-      self.cursor.x = point.x
-      self.cursor.y = point.y
-      self.cursor.set_pending_wrap(
-        pending_wrap && point.x == self.grid.cols - 1,
-      )
-    }
-    None => {
-      self.cursor.x = 0
-      self.cursor.y = 0
-      self.cursor.set_pending_wrap(false)
-    }
-  }
-  self.saved_cursor.resize(result.saved_cursor, cols)
-  result
-}
-
-///|
-fn ScreenSavedCursorState::resize(
+pub fn ScreenSavedCursorState::resize(
   self : ScreenSavedCursorState,
   point : PageListPoint?,
   cols : @size.CellCountInt,
@@ -1697,23 +1644,6 @@ fn ScreenSavedCursorState::resize(
         charset: saved.charset(),
       })
     None => ()
-  }
-}
-
-///|
-fn TerminalScreenStorage::new(
-  rows : @size.CellCountInt,
-  cols : @size.CellCountInt,
-  max_scrollback : Int,
-) -> TerminalScreenStorage {
-  let scrollback = PageList::new(rows, cols, max_scrollback)
-  {
-    grid: scrollback.active_grid(),
-    cursor: @cursor.TerminalCursorState::new(rows, cols),
-    saved_cursor: ScreenSavedCursorState::new(),
-    scrollback,
-    kitty_graphics: KittyGraphicsState::new(),
-    semantic: ScreenSemanticState::new(),
   }
 }
 
@@ -1754,7 +1684,7 @@ fn PageList::page_point_from_pin_rows(
 }
 
 ///|
-fn PageList::point_from_point(
+pub fn PageList::point_from_point(
   self : PageList,
   grid : @grid.ScreenGridState,
   point : @point.Point,
@@ -1773,7 +1703,7 @@ fn PageList::point_from_point(
 }
 
 ///|
-fn PageList::cell_at_point(
+pub fn PageList::cell_at_point(
   self : PageList,
   grid : @grid.ScreenGridState,
   point : @point.Point,
@@ -1868,7 +1798,7 @@ fn PageList::history_row_source(self : PageList, y : Int) -> PageListRowSource? 
 }
 
 ///|
-fn PageList::viewport_row_offset(self : PageList) -> Int {
+pub fn PageList::viewport_row_offset(self : PageList) -> Int {
   match self.viewport {
     Top => 0
     Active => self.history.length()
@@ -2323,4 +2253,41 @@ fn scrollback_clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
   } else {
     value
   }
+}
+
+///|
+fn min_int(a : Int, b : Int) -> Int {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn max_int(a : Int, b : Int) -> Int {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+pub(all) enum TerminalScreen {
+  Primary
+  Alternate
+} derive(Eq, Debug)
+
+///|
+pub(all) struct Pin {
+  screen : TerminalScreen
+  pin : PageListPin
+}
+
+///|
+/// The currently-active page node. Exposed so the hub can seed a tracked pin at
+/// the active screen origin without reaching into `PageList`'s private fields.
+pub fn PageList::active_node(self : PageList) -> PageListNode {
+  self.active_node
 }

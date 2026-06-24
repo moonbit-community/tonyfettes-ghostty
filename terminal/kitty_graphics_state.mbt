@@ -28,7 +28,7 @@ fn kitty_graphics_error_message(error : KittyGraphicsValidationError) -> Bytes {
 
 ///|
 priv enum KittyGraphicsPlacementLocation {
-  Pin(PageListPin)
+  Pin(@pagelist.PageListPin)
   Virtual
 }
 
@@ -136,7 +136,7 @@ fn KittyGraphicsPlacement::is_virtual(self : KittyGraphicsPlacement) -> Bool {
 ///|
 fn KittyGraphicsPlacement::deinit(
   self : KittyGraphicsPlacement,
-  scrollback : PageList,
+  scrollback : @pagelist.PageList,
 ) -> Unit {
   match self.location {
     Pin(pin) => scrollback.untrack_pin(pin)
@@ -283,7 +283,7 @@ fn KittyGraphicsState::new() -> KittyGraphicsState {
 ///|
 fn KittyGraphicsState::full_reset(
   self : KittyGraphicsState,
-  scrollback : PageList,
+  scrollback : @pagelist.PageList,
 ) -> Unit {
   self._dirty = false
   self.next_image_id = KittyGraphicsNextImageIdStart
@@ -371,7 +371,7 @@ fn KittyGraphicsState::add_image(
 ///|
 fn KittyGraphicsState::add_placement(
   self : KittyGraphicsState,
-  scrollback : PageList,
+  scrollback : @pagelist.PageList,
   image_id : UInt,
   requested_id : UInt,
   location : KittyGraphicsPlacementLocation,
@@ -422,7 +422,7 @@ fn KittyGraphicsState::add_placement(
 ///|
 fn KittyGraphicsState::delete_all(
   self : KittyGraphicsState,
-  scrollback : PageList,
+  scrollback : @pagelist.PageList,
   delete_images : Bool,
 ) -> Unit {
   if self.placements.length() == 0 &&
@@ -439,7 +439,7 @@ fn KittyGraphicsState::delete_all(
 ///|
 fn KittyGraphicsState::delete_by_id(
   self : KittyGraphicsState,
-  scrollback : PageList,
+  scrollback : @pagelist.PageList,
   image_id : UInt,
   placement_id : UInt,
   delete_unused : Bool,
@@ -473,7 +473,7 @@ fn KittyGraphicsState::delete_by_id(
 ///|
 fn KittyGraphicsState::delete_newest(
   self : KittyGraphicsState,
-  scrollback : PageList,
+  scrollback : @pagelist.PageList,
   image_number : UInt,
   placement_id : UInt,
   delete_unused : Bool,
@@ -488,7 +488,7 @@ fn KittyGraphicsState::delete_newest(
 ///|
 fn KittyGraphicsState::clear_placements(
   self : KittyGraphicsState,
-  scrollback : PageList,
+  scrollback : @pagelist.PageList,
 ) -> Unit {
   for placement in self.placements {
     placement.deinit(scrollback)

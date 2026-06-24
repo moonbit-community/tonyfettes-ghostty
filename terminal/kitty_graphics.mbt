@@ -73,13 +73,13 @@ struct KittyPlacementRenderInfo {
 ///|
 struct KittyGraphics {
   bridge : StreamTerminalBridgeState
-  screen : TerminalScreen
+  screen : @pagelist.TerminalScreen
 }
 
 ///|
 struct KittyPlacement {
   bridge : StreamTerminalBridgeState
-  screen : TerminalScreen
+  screen : @pagelist.TerminalScreen
   image_snapshot : KittyImage
   placement : KittyGraphicsPlacement
 }
@@ -595,7 +595,7 @@ fn kitty_placement_grid(placement : KittyPlacement) -> @grid.ScreenGridState {
 }
 
 ///|
-fn kitty_placement_scrollback(placement : KittyPlacement) -> PageList {
+fn kitty_placement_scrollback(placement : KittyPlacement) -> @pagelist.PageList {
   if placement.screen == placement.bridge.active_screen {
     placement.bridge.scrollback
   } else {

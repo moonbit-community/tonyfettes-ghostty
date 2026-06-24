@@ -20,8 +20,8 @@ fn sample_kitty_image(
 }
 
 ///|
-fn sample_kitty_pin(scrollback : PageList) -> PageListPin {
-  scrollback.track_pin(scrollback.active_node, 0, 0)
+fn sample_kitty_pin(scrollback : @pagelist.PageList) -> @pagelist.PageListPin {
+  scrollback.track_pin(scrollback.active_node(), 0, 0)
 }
 
 ///|
@@ -83,7 +83,7 @@ test "kitty graphics state/image replacement and newest lookup" {
 ///|
 test "kitty graphics state/internal and external placements" {
   let state = KittyGraphicsState::new()
-  let scrollback = PageList::new(3, 10, 10)
+  let scrollback = @pagelist.PageList::new(3, 10, 10)
   state.add_image(sample_kitty_image())
 
   let first = state.add_placement(
@@ -134,7 +134,7 @@ test "kitty graphics state/internal and external placements" {
 ///|
 test "kitty graphics state/delete helpers" {
   let state = KittyGraphicsState::new()
-  let scrollback = PageList::new(3, 10, 10)
+  let scrollback = @pagelist.PageList::new(3, 10, 10)
   state.add_image(sample_kitty_image(id=1U, number=1U, transmit_seq=1UL))
   state.add_image(sample_kitty_image(id=2U, number=2U, transmit_seq=2UL))
 
@@ -263,7 +263,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
     fail("expected compressed direct medium to stay unsupported")
   }
 
-  let scrollback = PageList::new(3, 10, 10)
+  let scrollback = @pagelist.PageList::new(3, 10, 10)
   let placement = KittyGraphicsPlacement::{
     image_id: 1U,
     placement_id: 0U,
@@ -377,7 +377,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
   }
 
   let explicit = sample_display(columns=3U, rows=2U)
-  let explicit_scrollback = PageList::new(3, 10, 10)
+  let explicit_scrollback = @pagelist.PageList::new(3, 10, 10)
   let placed = KittyGraphicsState::new().add_placement(
     explicit_scrollback,
     1U,
@@ -399,7 +399,7 @@ test "kitty graphics state/loading validation and geometry helpers" {
 ///|
 test "kitty graphics state/reset and edge helper branches" {
   let state = KittyGraphicsState::new()
-  let scrollback = PageList::new(3, 10, 10)
+  let scrollback = @pagelist.PageList::new(3, 10, 10)
   let first_id = state.allocate_image_id()
   let second_id = state.allocate_image_id()
   let first_seq = state.reserve_transmit_seq()

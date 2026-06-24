@@ -190,17 +190,17 @@ priv struct StreamTerminalBridgeState {
   mut semantic : ScreenSemanticState
   metadata : TerminalMetadataState
   mut grid : @grid.ScreenGridState
-  mut scrollback : PageList
+  mut scrollback : @pagelist.PageList
   mut kitty_graphics : KittyGraphicsState
   mut primary_storage : TerminalScreenStorage
   mut alternate_storage : TerminalScreenStorage
-  mut charset : ScreenCharsetState
+  mut charset : @pagelist.ScreenCharsetState
   mut current_style : @style.CellStyle
   mut previous_char : UInt?
   mut mouse_event : @input.MouseEvent
   mut mouse_format : @input.MouseFormat
   mut palette_dirty : Bool
-  mut active_screen : TerminalScreen
+  mut active_screen : @pagelist.TerminalScreen
   mut width_px : UInt
   mut height_px : UInt
   mut scrollback_cleared : Bool
@@ -239,7 +239,7 @@ fn StreamTerminalBridgeState::with_effects(
     kitty_graphics: primary_storage.kitty_graphics,
     primary_storage,
     alternate_storage,
-    charset: ScreenCharsetState::new(),
+    charset: @pagelist.ScreenCharsetState::new(),
     current_style: @style.CellStyle::new(),
     previous_char: None,
     mouse_event: None,
@@ -561,7 +561,7 @@ fn StreamTerminalBridgeState::point_from_point(
 fn StreamTerminalBridgeState::pin(
   self : StreamTerminalBridgeState,
   point : @point.Point,
-) -> Pin? {
+) -> @pagelist.Pin? {
   match self.scrollback.pin(self.grid, point) {
     Some(pin) => Some({ screen: self.active_screen, pin })
     None => None
@@ -571,7 +571,7 @@ fn StreamTerminalBridgeState::pin(
 ///|
 fn StreamTerminalBridgeState::untrack_pin(
   self : StreamTerminalBridgeState,
-  pin : Pin,
+  pin : @pagelist.Pin,
 ) -> Unit {
   match pin.screen {
     Primary =>
@@ -592,7 +592,7 @@ fn StreamTerminalBridgeState::untrack_pin(
 ///|
 fn StreamTerminalBridgeState::point_from_pin(
   self : StreamTerminalBridgeState,
-  pin : Pin,
+  pin : @pagelist.Pin,
   tag : @point.Tag,
 ) -> @point.Coordinate? {
   if pin.screen != self.active_screen {
@@ -626,7 +626,7 @@ fn StreamTerminalBridgeState::columns(
 ///|
 fn StreamTerminalBridgeState::active_screen(
   self : StreamTerminalBridgeState,
-) -> TerminalScreen {
+) -> @pagelist.TerminalScreen {
   self.active_screen
 }
 
@@ -647,7 +647,7 @@ fn StreamTerminalBridgeState::scrollback_rows(
 ///|
 fn StreamTerminalBridgeState::scrollbar(
   self : StreamTerminalBridgeState,
-) -> TerminalScrollbar {
+) -> @pagelist.TerminalScrollbar {
   self.scrollback.scrollbar(self.grid.rows)
 }
 
@@ -2300,7 +2300,7 @@ fn StreamTerminalBridgeState::execute_kitty_graphics_delete(
 ///|
 fn StreamTerminalBridgeState::kitty_graphics_cursor_pin(
   self : StreamTerminalBridgeState,
-) -> PageListPin? {
+) -> @pagelist.PageListPin? {
   self.scrollback.track_pin_at_point(
     self.grid,
     Active(@point.Coordinate::new(self.cursor.x(), self.cursor.y().to_uint())),
@@ -2376,7 +2376,7 @@ fn StreamTerminalBridgeState::store_active_screen(
 ///|
 fn StreamTerminalBridgeState::load_active_screen(
   self : StreamTerminalBridgeState,
-  screen : TerminalScreen,
+  screen : @pagelist.TerminalScreen,
 ) -> Unit {
   match screen {
     Primary => {
@@ -2400,7 +2400,7 @@ fn StreamTerminalBridgeState::load_active_screen(
 ///|
 fn StreamTerminalBridgeState::switch_active_screen(
   self : StreamTerminalBridgeState,
-  screen : TerminalScreen,
+  screen : @pagelist.TerminalScreen,
 ) -> Bool {
   if self.active_screen == screen {
     return false
@@ -2414,8 +2414,8 @@ fn StreamTerminalBridgeState::switch_active_screen(
 ///|
 fn StreamTerminalBridgeState::copy_cursor_between_screens(
   self : StreamTerminalBridgeState,
-  from : TerminalScreen,
-  to : TerminalScreen,
+  from : @pagelist.TerminalScreen,
+  to : @pagelist.TerminalScreen,
 ) -> Unit {
   let source = match from {
     Primary => self.primary_storage.cursor
@@ -2478,7 +2478,7 @@ fn StreamTerminalBridgeState::switch_screen_mode(
   }
 
   let from = self.active_screen
-  let to = if enabled { TerminalScreen::Alternate } else { Primary }
+  let to = if enabled { @pagelist.TerminalScreen::Alternate } else { Primary }
   let changed = self.switch_active_screen(to)
   match mode {
     Mode47 | Mode1047 =>
@@ -3520,17 +3520,6 @@ fn truncate_utf8(value : String, max_bytes : Int) -> String {
 /// in the grid file (the grid keeps its own private copy in @grid).
 fn min_int(a : Int, b : Int) -> Int {
   if a < b {
-    a
-  } else {
-    b
-  }
-}
-
-///|
-/// Larger of two ints. Hub-local copy of the trivial helper that used to live
-/// in the grid file.
-fn max_int(a : Int, b : Int) -> Int {
-  if a > b {
     a
   } else {
     b

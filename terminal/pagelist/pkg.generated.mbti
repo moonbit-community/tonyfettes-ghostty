@@ -1,0 +1,132 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/pagelist"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/charsets",
+  "tonyfettes/ghostty/terminal/cursor",
+  "tonyfettes/ghostty/terminal/grid",
+  "tonyfettes/ghostty/terminal/hyperlink",
+  "tonyfettes/ghostty/terminal/page",
+  "tonyfettes/ghostty/terminal/point",
+  "tonyfettes/ghostty/terminal/style",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type PageList
+pub fn PageList::active_grid(Self) -> @grid.ScreenGridState
+pub fn PageList::active_node(Self) -> PageListNode
+pub fn PageList::capture_full_screen_scroll_down(Self, @grid.ScreenGridState, Int) -> Unit
+pub fn PageList::capture_top_scroll_region_up(Self, @grid.ScreenGridState, Int, Int) -> Unit
+pub fn PageList::cell(Self, @grid.ScreenGridState, UInt16, UInt16) -> @page.PageCellState?
+pub fn PageList::cell_at_point(Self, @grid.ScreenGridState, @point.Point) -> @page.PageCellState?
+pub fn PageList::cell_hyperlink(Self, @grid.ScreenGridState, UInt16, UInt16) -> @hyperlink.CellHyperlink?
+pub fn PageList::cell_hyperlink_id(Self, @grid.ScreenGridState, UInt16, UInt16) -> @hyperlink.HyperlinkId
+pub fn PageList::clear_history(Self) -> Unit
+pub fn PageList::full_reset(Self, UInt16) -> Unit
+pub fn PageList::new(UInt16, UInt16, Int) -> Self
+pub fn PageList::pin(Self, @grid.ScreenGridState, @point.Point) -> PageListPin?
+pub fn PageList::pin_from_tracked_pin(Self, PageListPin) -> PageListPin?
+pub fn PageList::pin_x(Self, PageListPin) -> UInt16?
+pub fn PageList::point_from_pin(Self, @grid.ScreenGridState, PageListPin, @point.Tag) -> @point.Coordinate?
+pub fn PageList::point_from_pin_ref(Self, @grid.ScreenGridState, Pin, @point.Tag) -> @point.Coordinate?
+pub fn PageList::point_from_point(Self, @grid.ScreenGridState, @point.Point, @point.Tag) -> @point.Coordinate?
+pub fn PageList::resize(Self, @grid.ScreenGridState, UInt16, UInt16, @cursor.TerminalCursorState, ScreenSavedCursor?) -> PageListResizeResult
+pub fn PageList::row(Self, @grid.ScreenGridState, UInt16) -> @page.PageRowState?
+pub fn PageList::screen_cell(Self, @grid.ScreenGridState, UInt16, UInt16) -> @page.PageCellState?
+pub fn PageList::screen_cell_hyperlink(Self, @grid.ScreenGridState, UInt16, UInt16) -> @hyperlink.CellHyperlink?
+pub fn PageList::screen_row(Self, @grid.ScreenGridState, UInt16) -> @page.PageRowState?
+pub fn PageList::scroll_bottom(Self) -> Unit
+pub fn PageList::scroll_delta(Self, Int) -> Unit
+pub fn PageList::scroll_top(Self) -> Unit
+pub fn PageList::scrollback_rows(Self) -> UInt
+pub fn PageList::scrollbar(Self, UInt16) -> TerminalScrollbar
+pub fn PageList::total_rows(Self, UInt16) -> UInt
+pub fn PageList::track_pin(Self, PageListNode, UInt16, Int) -> PageListPin
+pub fn PageList::track_pin_at_point(Self, @grid.ScreenGridState, @point.Point) -> PageListPin?
+pub fn PageList::untrack_pin(Self, PageListPin) -> Unit
+pub fn PageList::untrack_pin_ref(Self, Pin) -> Unit
+pub fn PageList::viewport_row_offset(Self) -> Int
+
+pub(all) struct PageListNode {
+  page : PageListPage
+}
+
+pub(all) struct PageListPage {
+  rows : UInt16
+  cols : UInt16
+  descs : FixedArray[@page.PageRowState]
+  cells : FixedArray[FixedArray[@page.PageCellState]]
+  link_ids : FixedArray[FixedArray[@hyperlink.HyperlinkId]?]
+}
+
+pub(all) struct PageListPin {
+  mut node : PageListNode
+  mut y : UInt16
+  mut x : Int
+  mut garbage : Bool
+}
+
+pub(all) struct PageListPoint {
+  x : UInt16
+  y : UInt16
+}
+
+pub(all) struct PageListResizeResult {
+  grid : @grid.ScreenGridState
+  cursor : PageListPoint?
+  saved_cursor : PageListPoint?
+}
+
+pub(all) struct Pin {
+  screen : TerminalScreen
+  pin : PageListPin
+}
+
+type ScreenCharsetState derive(Eq, @debug.Debug)
+pub fn ScreenCharsetState::charset(Self, @charsets.Slots) -> @charsets.Charset
+pub fn ScreenCharsetState::configure(Self, @charsets.Slots, @charsets.Charset) -> Unit
+pub fn ScreenCharsetState::consume_single_shift(Self) -> @charsets.Slots?
+pub fn ScreenCharsetState::gl(Self) -> @charsets.Slots
+pub fn ScreenCharsetState::gr(Self) -> @charsets.Slots
+pub fn ScreenCharsetState::invoke(Self, @charsets.ActiveSlot, @charsets.Slots, Bool) -> Unit
+pub fn ScreenCharsetState::new() -> Self
+pub fn ScreenCharsetState::reset(Self) -> Unit
+pub fn ScreenCharsetState::single_shift(Self) -> @charsets.Slots?
+
+type ScreenSavedCursor derive(Eq, @debug.Debug)
+pub fn ScreenSavedCursor::charset(Self) -> ScreenCharsetState
+pub fn ScreenSavedCursor::cursor_protected(Self) -> Bool
+pub fn ScreenSavedCursor::origin(Self) -> Bool
+pub fn ScreenSavedCursor::pending_wrap(Self) -> Bool
+pub fn ScreenSavedCursor::style(Self) -> @style.CellStyle
+pub fn ScreenSavedCursor::x(Self) -> UInt16
+pub fn ScreenSavedCursor::y(Self) -> UInt16
+
+type ScreenSavedCursorState derive(Eq, @debug.Debug)
+pub fn ScreenSavedCursorState::has_saved(Self) -> Bool
+pub fn ScreenSavedCursorState::new() -> Self
+pub fn ScreenSavedCursorState::reset(Self) -> Unit
+pub fn ScreenSavedCursorState::resize(Self, PageListPoint?, UInt16) -> Unit
+pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
+pub fn ScreenSavedCursorState::save(Self, @cursor.TerminalCursorState, @style.CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
+
+pub(all) enum TerminalScreen {
+  Primary
+  Alternate
+} derive(Eq, @debug.Debug)
+
+type TerminalScrollbar derive(Eq, @debug.Debug)
+pub fn TerminalScrollbar::len(Self) -> UInt
+pub fn TerminalScrollbar::new(UInt, UInt, UInt) -> Self
+pub fn TerminalScrollbar::offset(Self) -> UInt
+pub fn TerminalScrollbar::total(Self) -> UInt
+
+// Type aliases
+
+// Traits
+

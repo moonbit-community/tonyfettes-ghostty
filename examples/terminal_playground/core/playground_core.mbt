@@ -434,7 +434,7 @@ fn cursor_visual_style_json(value : @cursor.CursorVisualStyle) -> Json {
 }
 
 ///|
-fn terminal_screen_json(value : @terminal.TerminalScreen) -> Json {
+fn terminal_screen_json(value : @pagelist.TerminalScreen) -> Json {
   Json::string(
     match value {
       Primary => "primary"

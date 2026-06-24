@@ -234,7 +234,9 @@ pub fn StreamTerminal::columns(self : StreamTerminal) -> @size.CellCountInt {
 }
 
 ///|
-pub fn StreamTerminal::active_screen(self : StreamTerminal) -> TerminalScreen {
+pub fn StreamTerminal::active_screen(
+  self : StreamTerminal,
+) -> @pagelist.TerminalScreen {
   self.bridge().active_screen()
 }
 
@@ -249,7 +251,9 @@ pub fn StreamTerminal::scrollback_rows(self : StreamTerminal) -> UInt {
 }
 
 ///|
-pub fn StreamTerminal::scrollbar(self : StreamTerminal) -> TerminalScrollbar {
+pub fn StreamTerminal::scrollbar(
+  self : StreamTerminal,
+) -> @pagelist.TerminalScrollbar {
   self.bridge().scrollbar()
 }
 
@@ -360,19 +364,25 @@ pub fn StreamTerminal::semantic_prompt_row_range(
 }
 
 ///|
-pub fn StreamTerminal::pin(self : StreamTerminal, point : @point.Point) -> Pin? {
+pub fn StreamTerminal::pin(
+  self : StreamTerminal,
+  point : @point.Point,
+) -> @pagelist.Pin? {
   self.bridge().pin(point)
 }
 
 ///|
-pub fn StreamTerminal::untrack_pin(self : StreamTerminal, pin : Pin) -> Unit {
+pub fn StreamTerminal::untrack_pin(
+  self : StreamTerminal,
+  pin : @pagelist.Pin,
+) -> Unit {
   self.bridge().untrack_pin(pin)
 }
 
 ///|
 pub fn StreamTerminal::point_from_pin(
   self : StreamTerminal,
-  pin : Pin,
+  pin : @pagelist.Pin,
   tag : @point.Tag,
 ) -> @point.Coordinate? {
   self.bridge().point_from_pin(pin, tag)

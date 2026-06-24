@@ -11,7 +11,7 @@ struct RenderState {
   mut rows : @size.CellCountInt
   mut columns : @size.CellCountInt
   mut dirty : RenderDirty
-  mut screen : TerminalScreen
+  mut screen : @pagelist.TerminalScreen
   mut viewport_origin : @point.Coordinate?
   mut background : @color.RGB
   mut foreground : @color.RGB

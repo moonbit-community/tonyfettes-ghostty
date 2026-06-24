@@ -118,7 +118,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
     None => fail("expected oversized selection to clamp to visible width")
   }
   state.grid = @grid.ScreenGridState::new(2, 2)
-  state.scrollback = PageList::new(2, 2, 0)
+  state.scrollback = @pagelist.PageList::new(2, 2, 0)
   state.grid.cells[1][1] = state.grid.cells[1][1].with_wide(SpacerHead)
   let spacer_head_bounds : FormatterSelectionBounds = {
     start: @point.Coordinate::new(1, 1U),
@@ -147,7 +147,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
     fail("expected blank-row helper to treat missing rows as blank")
   }
   sparse_state.grid = @grid.ScreenGridState::new(1, 2)
-  sparse_state.scrollback = PageList::new(1, 2, 0)
+  sparse_state.scrollback = @pagelist.PageList::new(1, 2, 0)
   let missing_row_cell_probe : FormatterSelectionBounds = {
     start: @point.Coordinate::new(1, 9U),
     end_: @point.Coordinate::new(1, 9U),
@@ -390,7 +390,7 @@ test "formatter helpers/cover explicit empty format guard" {
     hyperlink_table: @hyperlink.HyperlinkTable::new(),
     grapheme_table: @page.GraphemeTable::new(),
   }
-  state.scrollback = PageList::new(0, 0, 0)
+  state.scrollback = @pagelist.PageList::new(0, 0, 0)
   let formatter = plain_formatter(terminal)
   guard formatter.format() == b"" else {
     fail("expected zero-row formatter guard")
