@@ -156,9 +156,9 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
 
 ///|
 test "terminal package smoke/input helpers and encoders" {
-  guard FocusEvent::Gained.encode() == b"\x1B[I" &&
-    paste_is_safe(b"abc") &&
-    PasteOptions::new(true).encode(b"abc") == b"\x1B[200~abc\x1B[201~" else {
+  guard @focus.FocusEvent::Gained.encode() == b"\x1B[I" &&
+    @paste.paste_is_safe(b"abc") &&
+    @paste.PasteOptions::new(true).encode(b"abc") == b"\x1B[200~abc\x1B[201~" else {
     fail("expected focus and paste helper smoke path")
   }
 

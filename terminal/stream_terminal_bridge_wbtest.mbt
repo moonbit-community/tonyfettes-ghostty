@@ -13,7 +13,7 @@ fn StreamTerminalBridgeState::protected_state(
 ///|
 fn StreamTerminalBridgeState::display_state(
   self : StreamTerminalBridgeState,
-) -> TerminalDisplayState {
+) -> @display_state.TerminalDisplayState {
   self.display_state
 }
 

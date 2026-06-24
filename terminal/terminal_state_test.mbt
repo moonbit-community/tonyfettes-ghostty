@@ -33,7 +33,7 @@ test "terminal state/protected off preserves last non-off mode" {
 
 ///|
 test "terminal state/display defaults and setters" {
-  let state = TerminalDisplayState::new()
+  let state = @display_state.TerminalDisplayState::new()
   guard state.status_display() == Main && state.mouse_shape() == Text else {
     fail("expected terminal display defaults")
   }
@@ -47,7 +47,7 @@ test "terminal state/display defaults and setters" {
 
 ///|
 test "terminal state/full reset restores main status display only" {
-  let state = TerminalDisplayState::new()
+  let state = @display_state.TerminalDisplayState::new()
   state.set_status_display(StatusLine)
   state.set_mouse_shape(Wait)
   state.full_reset()

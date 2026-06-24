@@ -9,6 +9,7 @@ import {
   "tonyfettes/ghostty/terminal/csi",
   "tonyfettes/ghostty/terminal/cursor",
   "tonyfettes/ghostty/terminal/device",
+  "tonyfettes/ghostty/terminal/display_state",
   "tonyfettes/ghostty/terminal/grid",
   "tonyfettes/ghostty/terminal/hyperlink",
   "tonyfettes/ghostty/terminal/hyperlink_state",
@@ -34,6 +35,11 @@ import {
 import {
   "tonyfettes/ghostty/terminal/parser",
 } for "wbtest"
+
+import {
+  "tonyfettes/ghostty/terminal/focus",
+  "tonyfettes/ghostty/terminal/paste",
+} for "test"
 
 options(
   targets: {
