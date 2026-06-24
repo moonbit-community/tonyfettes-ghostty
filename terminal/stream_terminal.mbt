@@ -41,7 +41,7 @@ pub fn StreamTerminal::new(
   xtversion? : () -> String = fn() { "" },
 ) -> StreamTerminal {
   let bridge = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(
+    @bridge_effects.StreamTerminalBridgeEffects::new(
       write_pty~,
       bell~,
       color_scheme~,

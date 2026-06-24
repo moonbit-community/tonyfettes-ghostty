@@ -4,6 +4,7 @@ import {
   "moonbitlang/core/encoding/utf8",
   "tonyfettes/ghostty/terminal/ansi",
   "tonyfettes/ghostty/terminal/ascii",
+  "tonyfettes/ghostty/terminal/internal/bridge_effects",
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/color",
   "tonyfettes/ghostty/terminal/csi",

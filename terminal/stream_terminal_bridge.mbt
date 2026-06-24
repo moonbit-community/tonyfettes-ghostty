@@ -20,163 +20,8 @@ const MaxEnquiryBytes : Int = 256
 const MaxXtversionBytes : Int = 256
 
 ///|
-priv struct StreamTerminalBridgeEffects {
-  mut write_pty : (Bytes) -> Unit
-  mut bell : () -> Unit
-  mut color_scheme : () -> @device.ColorScheme?
-  mut device_attributes : () -> @device.DeviceAttributes?
-  mut enquiry : () -> Bytes
-  mut size : () -> @size_report.Size?
-  mut title_changed : () -> Unit
-  mut xtversion : () -> String
-}
-
-///|
-fn StreamTerminalBridgeEffects::new(
-  write_pty? : (Bytes) -> Unit = fn(_data) { () },
-  bell? : () -> Unit = fn() { () },
-  color_scheme? : () -> @device.ColorScheme? = fn() { None },
-  device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
-  enquiry? : () -> Bytes = fn() { b"" },
-  size? : () -> @size_report.Size? = fn() { None },
-  title_changed? : () -> Unit = fn() { () },
-  xtversion? : () -> String = fn() { "" },
-) -> StreamTerminalBridgeEffects {
-  {
-    write_pty,
-    bell,
-    color_scheme,
-    device_attributes,
-    enquiry,
-    size,
-    title_changed,
-    xtversion,
-  }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_write_pty(
-  self : StreamTerminalBridgeEffects,
-  callback : (Bytes) -> Unit,
-) -> Unit {
-  self.write_pty = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_write_pty(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.write_pty = fn(_data) { () }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_bell(
-  self : StreamTerminalBridgeEffects,
-  callback : () -> Unit,
-) -> Unit {
-  self.bell = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_bell(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.bell = fn() { () }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_color_scheme(
-  self : StreamTerminalBridgeEffects,
-  callback : () -> @device.ColorScheme?,
-) -> Unit {
-  self.color_scheme = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_color_scheme(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.color_scheme = fn() { None }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_device_attributes(
-  self : StreamTerminalBridgeEffects,
-  callback : () -> @device.DeviceAttributes?,
-) -> Unit {
-  self.device_attributes = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_device_attributes(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.device_attributes = fn() { None }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_enquiry(
-  self : StreamTerminalBridgeEffects,
-  callback : () -> Bytes,
-) -> Unit {
-  self.enquiry = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_enquiry(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.enquiry = fn() { b"" }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_size(
-  self : StreamTerminalBridgeEffects,
-  callback : () -> @size_report.Size?,
-) -> Unit {
-  self.size = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_size(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.size = fn() { None }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_title_changed(
-  self : StreamTerminalBridgeEffects,
-  callback : () -> Unit,
-) -> Unit {
-  self.title_changed = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_title_changed(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.title_changed = fn() { () }
-}
-
-///|
-fn StreamTerminalBridgeEffects::set_xtversion(
-  self : StreamTerminalBridgeEffects,
-  callback : () -> String,
-) -> Unit {
-  self.xtversion = callback
-}
-
-///|
-fn StreamTerminalBridgeEffects::clear_xtversion(
-  self : StreamTerminalBridgeEffects,
-) -> Unit {
-  self.xtversion = fn() { "" }
-}
-
-///|
 priv struct StreamTerminalBridgeState {
-  effects : StreamTerminalBridgeEffects
+  effects : @bridge_effects.StreamTerminalBridgeEffects
   apc_handler : ApcHandler
   protected_state : @protected.ScreenProtectedState
   display_state : @display_state.TerminalDisplayState
@@ -208,7 +53,7 @@ priv struct StreamTerminalBridgeState {
 
 ///|
 fn StreamTerminalBridgeState::with_effects(
-  effects : StreamTerminalBridgeEffects,
+  effects : @bridge_effects.StreamTerminalBridgeEffects,
 ) -> StreamTerminalBridgeState {
   let primary_storage = TerminalScreenStorage::new(
     DefaultRows,
@@ -1735,12 +1580,12 @@ fn StreamTerminalBridgeState::write_pty(
   self : StreamTerminalBridgeState,
   data : Bytes,
 ) -> Unit {
-  (self.effects.write_pty)(data)
+  self.effects.write_pty(data)
 }
 
 ///|
 fn StreamTerminalBridgeState::bell(self : StreamTerminalBridgeState) -> Unit {
-  (self.effects.bell)()
+  self.effects.bell()
 }
 
 ///|
@@ -1767,7 +1612,7 @@ fn StreamTerminalBridgeState::report_device_attributes(
   self : StreamTerminalBridgeState,
   request : @device.DeviceAttributeRequest,
 ) -> Unit {
-  match (self.effects.device_attributes)() {
+  match self.effects.device_attributes() {
     Some(attributes) => self.write_pty(attributes.encode(request))
     None =>
       self.write_pty(
@@ -1807,7 +1652,7 @@ fn StreamTerminalBridgeState::device_status(
       self.write_pty(buffer.contents())
     }
     ColorScheme =>
-      match (self.effects.color_scheme)() {
+      match self.effects.color_scheme() {
         Some(Dark) => self.write_pty(b"\x1B[?997;1n")
         Some(Light) => self.write_pty(b"\x1B[?997;2n")
         None => ()
@@ -1819,7 +1664,7 @@ fn StreamTerminalBridgeState::device_status(
 fn StreamTerminalBridgeState::report_enquiry(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  let response = (self.effects.enquiry)()
+  let response = self.effects.enquiry()
   if response.length() == 0 || response.length() >= MaxEnquiryBytes {
     return
   }
@@ -1852,7 +1697,7 @@ let default_xtversion_response : Bytes = encode_xtversion_response(
 fn StreamTerminalBridgeState::report_xtversion(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  let version_bytes = @utf8.encode((self.effects.xtversion)())
+  let version_bytes = @utf8.encode(self.effects.xtversion())
   if version_bytes.length() == 0 {
     self.write_pty(default_xtversion_response)
     return
@@ -1870,17 +1715,17 @@ fn StreamTerminalBridgeState::report_size(
 ) -> Unit {
   match style {
     Csi14t =>
-      match (self.effects.size)() {
+      match self.effects.size() {
         Some(size) => self.write_pty(@size_report.encode(Csi14t, size))
         None => ()
       }
     Csi16t =>
-      match (self.effects.size)() {
+      match self.effects.size() {
         Some(size) => self.write_pty(@size_report.encode(Csi16t, size))
         None => ()
       }
     Csi18t =>
-      match (self.effects.size)() {
+      match self.effects.size() {
         Some(size) => self.write_pty(@size_report.encode(Csi18t, size))
         None => ()
       }
@@ -1903,7 +1748,7 @@ fn StreamTerminalBridgeState::window_title(
   raw_title : String,
 ) -> Unit {
   self.metadata.set_title(truncate_utf8(raw_title, MaxTitleBytes))
-  (self.effects.title_changed)()
+  self.effects.title_changed()
 }
 
 ///|
