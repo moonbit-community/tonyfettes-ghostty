@@ -1,5 +1,5 @@
 ///|
-pub(all) struct PageListPage {
+priv struct PageListPage {
   rows : @size.CellCountInt
   cols : @size.CellCountInt
   // Parallel per-row arrays, mirroring `ScreenGridState`: `descs[i]`/`cells[i]`
@@ -13,7 +13,7 @@ pub(all) struct PageListPage {
 }
 
 ///|
-pub(all) struct PageListNode {
+struct PageListNode {
   page : PageListPage
 }
 
@@ -49,7 +49,7 @@ pub(all) struct PageListResizeResult {
 }
 
 ///|
-pub(all) struct PageListPin {
+struct PageListPin {
   mut node : PageListNode
   mut y : @size.CellCountInt
   mut x : Int

@@ -52,24 +52,9 @@ pub fn PageList::untrack_pin(Self, PageListPin) -> Unit
 pub fn PageList::untrack_pin_ref(Self, Pin) -> Unit
 pub fn PageList::viewport_row_offset(Self) -> Int
 
-pub(all) struct PageListNode {
-  page : PageListPage
-}
+type PageListNode
 
-pub(all) struct PageListPage {
-  rows : UInt16
-  cols : UInt16
-  descs : FixedArray[@page.PageRowState]
-  cells : FixedArray[FixedArray[@page.PageCellState]]
-  link_ids : FixedArray[FixedArray[@hyperlink.HyperlinkId]?]
-}
-
-pub(all) struct PageListPin {
-  mut node : PageListNode
-  mut y : UInt16
-  mut x : Int
-  mut garbage : Bool
-}
+type PageListPin
 
 pub(all) struct PageListPoint {
   x : UInt16
