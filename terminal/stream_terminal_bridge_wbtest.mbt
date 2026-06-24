@@ -456,11 +456,14 @@ test "stream terminal bridge/covers reverse index and safe none branches" {
     fail("expected reverse index to be handled")
   }
 
-  state.hyperlink.uri = Some("https://example.com")
-  state.hyperlink.explicit_id = None
-  state.hyperlink.implicit_id = None
+  // After a hyperlink is opened and then closed, no cell hyperlink is active,
+  // so the bridge's pass-through must report None. (The unreachable
+  // uri-set/cell-unset internal state is covered by a white-box test in the
+  // hyperlink_state package.)
+  state.hyperlink.start("https://example.com", None)
+  state.hyperlink.end()
   guard state.active_hyperlink() == None else {
-    fail("expected incomplete hyperlink state to stay safe")
+    fail("expected inactive hyperlink state to stay safe")
   }
 
   state.cursor.y = 0

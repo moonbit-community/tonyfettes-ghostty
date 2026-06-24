@@ -185,10 +185,10 @@ priv struct StreamTerminalBridgeState {
   mut cursor : @cursor.TerminalCursorState
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
-  mut tabstops : TerminalTabstopsState
-  hyperlink : ScreenHyperlinkState
+  mut tabstops : @tabstops.TerminalTabstopsState
+  hyperlink : @hyperlink_state.ScreenHyperlinkState
   mut semantic : @semantic.ScreenSemanticState
-  metadata : TerminalMetadataState
+  metadata : @metadata.TerminalMetadataState
   mut grid : @grid.ScreenGridState
   mut scrollback : @pagelist.PageList
   mut kitty_graphics : KittyGraphicsState
@@ -230,10 +230,10 @@ fn StreamTerminalBridgeState::with_effects(
     cursor: primary_storage.cursor,
     input_flags: TerminalInputFlags::new(),
     kitty_keyboard: KittyKeyboardState::new(),
-    tabstops: TerminalTabstopsState::new(DefaultColumns),
-    hyperlink: ScreenHyperlinkState::new(),
+    tabstops: @tabstops.TerminalTabstopsState::new(DefaultColumns),
+    hyperlink: @hyperlink_state.ScreenHyperlinkState::new(),
     semantic: primary_storage.semantic,
-    metadata: TerminalMetadataState::new(),
+    metadata: @metadata.TerminalMetadataState::new(),
     grid: primary_storage.grid,
     scrollback: primary_storage.scrollback,
     kitty_graphics: primary_storage.kitty_graphics,
@@ -880,7 +880,7 @@ fn StreamTerminalBridgeState::resize(
   ignore(self.primary_storage.resize(rows, columns))
   ignore(self.alternate_storage.resize(rows, columns))
   self.load_active_screen(active_screen)
-  self.tabstops = TerminalTabstopsState::new(columns)
+  self.tabstops = @tabstops.TerminalTabstopsState::new(columns)
   self.width_px = saturated_dimension(columns, cell_width_px)
   self.height_px = saturated_dimension(rows, cell_height_px)
   self.modes = self.modes.set(SynchronizedOutput, false)
@@ -1613,7 +1613,7 @@ fn StreamTerminalBridgeState::full_reset(
   self.modes = @mode.ModeState::new()
   self.input_flags.full_reset()
   self.kitty_keyboard.reset()
-  self.tabstops = TerminalTabstopsState::new(cols)
+  self.tabstops = @tabstops.TerminalTabstopsState::new(cols)
   self.hyperlink.full_reset()
   self.semantic.full_reset()
   self.metadata.full_reset()
