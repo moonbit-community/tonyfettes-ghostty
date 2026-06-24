@@ -1,6 +1,8 @@
 ///|
 fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
-  StreamTerminalBridgeState::with_effects(StreamTerminalBridgeEffects::new())
+  StreamTerminalBridgeState::with_effects(
+    @bridge_effects.StreamTerminalBridgeEffects::new(),
+  )
 }
 
 ///|
@@ -1775,7 +1777,7 @@ test "stream terminal bridge/applies query responses and callbacks" {
     @device.SecondaryDeviceAttributes::new(Vt420, 100, 7),
     @device.TertiaryDeviceAttributes::new(9U),
   )
-  let effects = StreamTerminalBridgeEffects::new(
+  let effects = @bridge_effects.StreamTerminalBridgeEffects::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     bell=fn() { recorder.bell() },
     color_scheme=fn() { Some(Light) },
@@ -1852,7 +1854,7 @@ test "stream terminal bridge/applies query responses and callbacks" {
 test "stream terminal bridge/covers readonly query branches and truncation" {
   let recorder = BridgeEffectsRecorder::new()
   let state = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(
+    @bridge_effects.StreamTerminalBridgeEffects::new(
       write_pty=fn(data) { recorder.write_pty(data) },
       title_changed=fn() { recorder.title_changed() },
     ),
@@ -1881,7 +1883,7 @@ test "stream terminal bridge/covers readonly query branches and truncation" {
 
   let untitled_recorder = BridgeEffectsRecorder::new()
   let untitled_state = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+    @bridge_effects.StreamTerminalBridgeEffects::new(write_pty=fn(data) {
       untitled_recorder.write_pty(data)
     }),
   )
@@ -1897,7 +1899,7 @@ test "stream terminal bridge/covers readonly query branches and truncation" {
 
   let dark_recorder = BridgeEffectsRecorder::new()
   let dark_state = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(
+    @bridge_effects.StreamTerminalBridgeEffects::new(
       write_pty=fn(data) { dark_recorder.write_pty(data) },
       color_scheme=fn() { Some(Dark) },
     ),
@@ -1909,7 +1911,7 @@ test "stream terminal bridge/covers readonly query branches and truncation" {
 
   let overflow_recorder = BridgeEffectsRecorder::new()
   let overflow_state = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(
+    @bridge_effects.StreamTerminalBridgeEffects::new(
       write_pty=fn(data) { overflow_recorder.write_pty(data) },
       enquiry=fn() { @utf8.encode(ascii_string(b'e', 256)) },
       xtversion=fn() { ascii_string(b'v', 257) },
@@ -1947,7 +1949,7 @@ test "stream terminal bridge/handles passive effect and passthrough actions" {
 test "stream terminal bridge/applies kitty graphics transmit display and delete" {
   let recorder = BridgeEffectsRecorder::new()
   let state = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+    @bridge_effects.StreamTerminalBridgeEffects::new(write_pty=fn(data) {
       recorder.write_pty(data)
     }),
   )
@@ -2010,7 +2012,7 @@ test "stream terminal bridge/applies kitty graphics transmit display and delete"
 test "stream terminal bridge/handles kitty graphics query chunking and quiet" {
   let recorder = BridgeEffectsRecorder::new()
   let state = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+    @bridge_effects.StreamTerminalBridgeEffects::new(write_pty=fn(data) {
       recorder.write_pty(data)
     }),
   )
@@ -2054,7 +2056,7 @@ test "stream terminal bridge/handles kitty graphics query chunking and quiet" {
 test "stream terminal bridge/kitty graphics internal error and helper branches" {
   let recorder = BridgeEffectsRecorder::new()
   let state = StreamTerminalBridgeState::with_effects(
-    StreamTerminalBridgeEffects::new(write_pty=fn(data) {
+    @bridge_effects.StreamTerminalBridgeEffects::new(write_pty=fn(data) {
       recorder.write_pty(data)
     }),
   )

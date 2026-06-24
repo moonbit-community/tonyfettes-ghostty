@@ -1,0 +1,44 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/bridge_effects"
+
+import {
+  "tonyfettes/ghostty/terminal/device",
+  "tonyfettes/ghostty/terminal/size_report",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type StreamTerminalBridgeEffects
+pub fn StreamTerminalBridgeEffects::bell(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_bell(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_color_scheme(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_device_attributes(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_enquiry(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_size(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_title_changed(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_write_pty(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::clear_xtversion(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::color_scheme(Self) -> @device.ColorScheme?
+pub fn StreamTerminalBridgeEffects::device_attributes(Self) -> @device.DeviceAttributes?
+pub fn StreamTerminalBridgeEffects::enquiry(Self) -> Bytes
+pub fn StreamTerminalBridgeEffects::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> @device.ColorScheme?, device_attributes? : () -> @device.DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> @size_report.Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
+pub fn StreamTerminalBridgeEffects::set_bell(Self, () -> Unit) -> Unit
+pub fn StreamTerminalBridgeEffects::set_color_scheme(Self, () -> @device.ColorScheme?) -> Unit
+pub fn StreamTerminalBridgeEffects::set_device_attributes(Self, () -> @device.DeviceAttributes?) -> Unit
+pub fn StreamTerminalBridgeEffects::set_enquiry(Self, () -> Bytes) -> Unit
+pub fn StreamTerminalBridgeEffects::set_size(Self, () -> @size_report.Size?) -> Unit
+pub fn StreamTerminalBridgeEffects::set_title_changed(Self, () -> Unit) -> Unit
+pub fn StreamTerminalBridgeEffects::set_write_pty(Self, (Bytes) -> Unit) -> Unit
+pub fn StreamTerminalBridgeEffects::set_xtversion(Self, () -> String) -> Unit
+pub fn StreamTerminalBridgeEffects::size(Self) -> @size_report.Size?
+pub fn StreamTerminalBridgeEffects::title_changed(Self) -> Unit
+pub fn StreamTerminalBridgeEffects::write_pty(Self, Bytes) -> Unit
+pub fn StreamTerminalBridgeEffects::xtversion(Self) -> String
+
+// Type aliases
+
+// Traits
+
