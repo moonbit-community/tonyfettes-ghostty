@@ -6,14 +6,14 @@ fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
 ///|
 fn StreamTerminalBridgeState::protected_state(
   self : StreamTerminalBridgeState,
-) -> ScreenProtectedState {
+) -> @protected.ScreenProtectedState {
   self.protected_state
 }
 
 ///|
 fn StreamTerminalBridgeState::display_state(
   self : StreamTerminalBridgeState,
-) -> TerminalDisplayState {
+) -> @display_state.TerminalDisplayState {
   self.display_state
 }
 
@@ -81,7 +81,7 @@ fn StreamTerminalBridgeState::has_saved_cursor(
 ///|
 fn StreamTerminalBridgeState::semantic_click_mode(
   self : StreamTerminalBridgeState,
-) -> SemanticClickMode {
+) -> @semantic.SemanticClickMode {
   self.semantic.click()
 }
 
@@ -456,11 +456,14 @@ test "stream terminal bridge/covers reverse index and safe none branches" {
     fail("expected reverse index to be handled")
   }
 
-  state.hyperlink.uri = Some("https://example.com")
-  state.hyperlink.explicit_id = None
-  state.hyperlink.implicit_id = None
+  // After a hyperlink is opened and then closed, no cell hyperlink is active,
+  // so the bridge's pass-through must report None. (The unreachable
+  // uri-set/cell-unset internal state is covered by a white-box test in the
+  // hyperlink_state package.)
+  state.hyperlink.start("https://example.com", None)
+  state.hyperlink.end()
   guard state.active_hyperlink() == None else {
-    fail("expected incomplete hyperlink state to stay safe")
+    fail("expected inactive hyperlink state to stay safe")
   }
 
   state.cursor.y = 0
@@ -471,7 +474,7 @@ test "stream terminal bridge/covers reverse index and safe none branches" {
   }
 
   state.cursor.y = state.grid.rows
-  state.semantic.row_prompt = Prompt
+  state.semantic.set_row_prompt(Prompt)
   state.sync_current_row_prompt()
   state.semantic.start_input(false)
   state.apply_semantic_after_newline()
@@ -1778,7 +1781,7 @@ test "stream terminal bridge/applies query responses and callbacks" {
     color_scheme=fn() { Some(Light) },
     device_attributes=fn() { Some(attributes) },
     enquiry=fn() { b"ghostty" },
-    size=fn() { Some(Size::new(24, 80, 9, 18)) },
+    size=fn() { Some(@size_report.Size::new(24, 80, 9, 18)) },
     title_changed=fn() { recorder.title_changed() },
     xtversion=fn() { "ghostty 1.2.3" },
   )

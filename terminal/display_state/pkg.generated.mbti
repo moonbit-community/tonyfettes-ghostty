@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/display_state"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/ansi",
+  "tonyfettes/ghostty/terminal/input",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type TerminalDisplayState derive(Eq, @debug.Debug)
+pub fn TerminalDisplayState::full_reset(Self) -> Unit
+pub fn TerminalDisplayState::mouse_shape(Self) -> @input.MouseShape
+pub fn TerminalDisplayState::new() -> Self
+pub fn TerminalDisplayState::set_mouse_shape(Self, @input.MouseShape) -> Unit
+pub fn TerminalDisplayState::set_status_display(Self, @ansi.StatusDisplay) -> Unit
+pub fn TerminalDisplayState::status_display(Self) -> @ansi.StatusDisplay
+
+// Type aliases
+
+// Traits
+

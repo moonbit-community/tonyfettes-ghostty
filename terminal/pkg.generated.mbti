@@ -8,23 +8,20 @@ import {
   "tonyfettes/ghostty/terminal/cursor",
   "tonyfettes/ghostty/terminal/device",
   "tonyfettes/ghostty/terminal/hyperlink",
-  "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/key_encoder",
   "tonyfettes/ghostty/terminal/mode",
-  "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty/terminal/mouse_encoder",
   "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/pagelist",
   "tonyfettes/ghostty/terminal/point",
   "tonyfettes/ghostty/terminal/result_code",
+  "tonyfettes/ghostty/terminal/size_report",
   "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
 }
 
 // Values
 pub fn build_info() -> BuildInfo
-
-pub fn encode(Style, Size) -> Bytes
-
-pub fn paste_is_safe(Bytes) -> Bool
 
 pub fn terminal_surface_type(String) -> TerminalSurfaceTypeInfo?
 
@@ -59,12 +56,6 @@ pub fn BuildVersion::patch(Self) -> UInt
 pub fn BuildVersion::pre(Self) -> String?
 pub fn BuildVersion::string(Self) -> String
 
-pub(all) enum FocusEvent {
-  Gained
-  Lost
-} derive(Eq, @debug.Debug)
-pub fn FocusEvent::encode(Self) -> Bytes
-
 pub(all) enum Format {
   Plain
   Vt
@@ -89,29 +80,6 @@ pub fn FormatterTerminalExtra::all() -> Self
 pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
-
-type KeyEncoder derive(Eq, @debug.Debug)
-pub fn KeyEncoder::alt_esc_prefix(Self) -> Bool
-pub fn KeyEncoder::backarrow_key_mode(Self) -> Bool
-pub fn KeyEncoder::cursor_key_application(Self) -> Bool
-pub fn KeyEncoder::encode(Self, @input.KeyEvent) -> Bytes
-pub fn KeyEncoder::host_is_macos(Self) -> Bool
-pub fn KeyEncoder::ignore_keypad_with_numlock(Self) -> Bool
-pub fn KeyEncoder::keypad_key_application(Self) -> Bool
-pub fn KeyEncoder::kitty_flags(Self) -> @stream.KittyKeyboardFlags
-pub fn KeyEncoder::macos_option_as_alt(Self) -> OptionAsAlt
-pub fn KeyEncoder::modify_other_keys_state_2(Self) -> Bool
-pub fn KeyEncoder::new() -> Self
-pub fn KeyEncoder::set_alt_esc_prefix(Self, Bool) -> Unit
-pub fn KeyEncoder::set_backarrow_key_mode(Self, Bool) -> Unit
-pub fn KeyEncoder::set_cursor_key_application(Self, Bool) -> Unit
-pub fn KeyEncoder::set_host_is_macos(Self, Bool) -> Unit
-pub fn KeyEncoder::set_ignore_keypad_with_numlock(Self, Bool) -> Unit
-pub fn KeyEncoder::set_keypad_key_application(Self, Bool) -> Unit
-pub fn KeyEncoder::set_kitty_flags(Self, @stream.KittyKeyboardFlags) -> Unit
-pub fn KeyEncoder::set_macos_option_as_alt(Self, OptionAsAlt) -> Unit
-pub fn KeyEncoder::set_modify_other_keys_state_2(Self, Bool) -> Unit
-pub fn KeyEncoder::sync_from_terminal(Self, StreamTerminal) -> Unit
 
 type KittyGraphics
 pub fn KittyGraphics::image(Self, UInt) -> KittyImage?
@@ -206,50 +174,12 @@ type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
 pub fn KittyPlacementViewportPosition::col(Self) -> Int
 pub fn KittyPlacementViewportPosition::row(Self) -> Int
 
-type MouseEncoder derive(Eq, @debug.Debug)
-pub fn MouseEncoder::any_button_pressed(Self) -> Bool
-pub fn MouseEncoder::encode(Self, @input.MouseInputEvent) -> Bytes
-pub fn MouseEncoder::event(Self) -> @input.MouseEvent
-pub fn MouseEncoder::format(Self) -> @input.MouseFormat
-pub fn MouseEncoder::new() -> Self
-pub fn MouseEncoder::reset(Self) -> Unit
-pub fn MouseEncoder::set_any_button_pressed(Self, Bool) -> Unit
-pub fn MouseEncoder::set_event(Self, @input.MouseEvent) -> Unit
-pub fn MouseEncoder::set_format(Self, @input.MouseFormat) -> Unit
-pub fn MouseEncoder::set_size(Self, MouseEncoderSize) -> Unit
-pub fn MouseEncoder::set_track_last_cell(Self, Bool) -> Unit
-pub fn MouseEncoder::size(Self) -> MouseEncoderSize
-pub fn MouseEncoder::sync_from_terminal(Self, StreamTerminal) -> Unit
-pub fn MouseEncoder::track_last_cell(Self) -> Bool
-
-type MouseEncoderSize derive(Eq, @debug.Debug)
-pub fn MouseEncoderSize::cell_height(Self) -> UInt
-pub fn MouseEncoderSize::cell_width(Self) -> UInt
-pub fn MouseEncoderSize::new(UInt, UInt, UInt, UInt, padding_top? : UInt, padding_bottom? : UInt, padding_right? : UInt, padding_left? : UInt) -> Self?
-pub fn MouseEncoderSize::padding_bottom(Self) -> UInt
-pub fn MouseEncoderSize::padding_left(Self) -> UInt
-pub fn MouseEncoderSize::padding_right(Self) -> UInt
-pub fn MouseEncoderSize::padding_top(Self) -> UInt
-pub fn MouseEncoderSize::screen_height(Self) -> UInt
-pub fn MouseEncoderSize::screen_width(Self) -> UInt
-
 pub(all) enum OptimizeMode {
   Debug
   ReleaseSafe
   ReleaseSmall
   ReleaseFast
 } derive(Eq, @debug.Debug)
-
-pub(all) enum OptionAsAlt {
-  False
-  Left
-  Right
-  True
-} derive(Eq, @debug.Debug)
-
-type PasteOptions derive(Eq, @debug.Debug)
-pub fn PasteOptions::encode(Self, Bytes) -> Bytes
-pub fn PasteOptions::new(Bool) -> Self
 
 pub(all) enum RenderDirty {
   False
@@ -296,56 +226,11 @@ pub fn RenderState::rows(Self) -> UInt16
 pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
 pub fn RenderState::update(Self, StreamTerminal) -> Unit
 
-type ScreenHyperlinkState derive(Eq, @debug.Debug)
-pub fn ScreenHyperlinkState::active(Self) -> Bool
-pub fn ScreenHyperlinkState::end(Self) -> Unit
-pub fn ScreenHyperlinkState::explicit_id(Self) -> String?
-pub fn ScreenHyperlinkState::full_reset(Self) -> Unit
-pub fn ScreenHyperlinkState::implicit_id(Self) -> Int?
-pub fn ScreenHyperlinkState::new() -> Self
-pub fn ScreenHyperlinkState::next_implicit_id(Self) -> Int
-pub fn ScreenHyperlinkState::start(Self, String, String?) -> Unit
-pub fn ScreenHyperlinkState::uri(Self) -> String?
-
-type ScreenProtectedState derive(Eq, @debug.Debug)
-pub fn ScreenProtectedState::cursor_protected(Self) -> Bool
-pub fn ScreenProtectedState::mode(Self) -> @ansi.ProtectedMode
-pub fn ScreenProtectedState::new() -> Self
-pub fn ScreenProtectedState::reset(Self) -> Unit
-pub fn ScreenProtectedState::set(Self, @ansi.ProtectedMode) -> Unit
-
-type ScreenSemanticState derive(Eq, @debug.Debug)
-pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPrompt) -> Unit
-pub fn ScreenSemanticState::apply_prompt_start(Self, @osc.SemanticPrompt) -> Unit
-pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
-pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
-pub fn ScreenSemanticState::cursor_content(Self) -> @page.SemanticContent
-pub fn ScreenSemanticState::cursor_content_clear_eol(Self) -> Bool
-pub fn ScreenSemanticState::full_reset(Self) -> Unit
-pub fn ScreenSemanticState::new() -> Self
-pub fn ScreenSemanticState::row_prompt(Self) -> @page.RowSemanticPrompt
-pub fn ScreenSemanticState::seen(Self) -> Bool
-pub fn ScreenSemanticState::set_output(Self) -> Unit
-pub fn ScreenSemanticState::start_input(Self, Bool) -> Unit
-
 type Selection
 pub fn Selection::end(Self) -> @pagelist.Pin
 pub fn Selection::new(@pagelist.Pin, @pagelist.Pin, Bool) -> Self
 pub fn Selection::rectangle(Self) -> Bool
 pub fn Selection::start(Self) -> @pagelist.Pin
-
-pub(all) enum SemanticClickMode {
-  None
-  ClickEvents
-  Cl(@osc.SemanticPromptClick)
-} derive(Eq, @debug.Debug)
-
-type Size derive(Eq, @debug.Debug)
-pub fn Size::cell_height(Self) -> UInt
-pub fn Size::cell_width(Self) -> UInt
-pub fn Size::columns(Self) -> UInt16
-pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
-pub fn Size::rows(Self) -> UInt16
 
 type StreamTerminal
 pub fn StreamTerminal::active_screen(Self) -> @pagelist.TerminalScreen
@@ -382,7 +267,7 @@ pub fn StreamTerminal::kitty_keyboard_flags(Self) -> @stream.KittyKeyboardFlags
 pub fn StreamTerminal::mode_get(Self, @mode.Mode) -> Bool
 pub fn StreamTerminal::mode_set(Self, @mode.Mode, Bool) -> Unit
 pub fn StreamTerminal::mouse_tracking(Self) -> Bool
-pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> @device.ColorScheme?, device_attributes? : () -> @device.DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
+pub fn StreamTerminal::new(write_pty? : (Bytes) -> Unit, bell? : () -> Unit, color_scheme? : () -> @device.ColorScheme?, device_attributes? : () -> @device.DeviceAttributes?, enquiry? : () -> Bytes, size? : () -> @size_report.Size?, title_changed? : () -> Unit, xtversion? : () -> String) -> Self
 pub fn StreamTerminal::next(Self, Byte) -> Unit
 pub fn StreamTerminal::next_slice(Self, Bytes) -> Unit
 pub fn StreamTerminal::palette(Self) -> Array[@color.RGB]
@@ -414,24 +299,19 @@ pub fn StreamTerminal::set_default_palette(Self, Array[@color.RGB]?) -> @result_
 pub fn StreamTerminal::set_device_attributes(Self, () -> @device.DeviceAttributes?) -> Unit
 pub fn StreamTerminal::set_enquiry(Self, () -> Bytes) -> Unit
 pub fn StreamTerminal::set_pwd(Self, String) -> Unit
-pub fn StreamTerminal::set_size(Self, () -> Size?) -> Unit
+pub fn StreamTerminal::set_size(Self, () -> @size_report.Size?) -> Unit
 pub fn StreamTerminal::set_title(Self, String) -> Unit
 pub fn StreamTerminal::set_title_changed(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_write_pty(Self, (Bytes) -> Unit) -> Unit
 pub fn StreamTerminal::set_xtversion(Self, () -> String) -> Unit
+pub fn StreamTerminal::sync_key_encoder(Self, @key_encoder.KeyEncoder) -> Unit
+pub fn StreamTerminal::sync_mouse_encoder(Self, @mouse_encoder.MouseEncoder) -> Unit
 pub fn StreamTerminal::take_scrollback_cleared(Self) -> Bool
 pub fn StreamTerminal::title(Self) -> String?
 pub fn StreamTerminal::total_rows(Self) -> UInt
 pub fn StreamTerminal::untrack_pin(Self, @pagelist.Pin) -> Unit
 pub fn StreamTerminal::untrack_selection(Self, Selection) -> Unit
 pub fn StreamTerminal::width_px(Self) -> UInt
-
-pub(all) enum Style {
-  Mode2048
-  Csi14t
-  Csi16t
-  Csi18t
-} derive(Eq, @debug.Debug)
 
 type SystemImage derive(Eq, @debug.Debug)
 pub fn SystemImage::data(Self) -> Bytes
@@ -446,14 +326,6 @@ pub(all) enum SystemLogLevel {
   Debug
 } derive(Eq, @debug.Debug)
 
-type TerminalDisplayState derive(Eq, @debug.Debug)
-pub fn TerminalDisplayState::full_reset(Self) -> Unit
-pub fn TerminalDisplayState::mouse_shape(Self) -> @input.MouseShape
-pub fn TerminalDisplayState::new() -> Self
-pub fn TerminalDisplayState::set_mouse_shape(Self, @input.MouseShape) -> Unit
-pub fn TerminalDisplayState::set_status_display(Self, @ansi.StatusDisplay) -> Unit
-pub fn TerminalDisplayState::status_display(Self) -> @ansi.StatusDisplay
-
 type TerminalInputFlags derive(Eq, @debug.Debug)
 pub fn TerminalInputFlags::apply_modify_key_format(Self, @ansi.ModifyKeyFormat) -> Unit
 pub fn TerminalInputFlags::full_reset(Self) -> Unit
@@ -461,14 +333,6 @@ pub fn TerminalInputFlags::modify_other_keys_2(Self) -> Bool
 pub fn TerminalInputFlags::mouse_shift_capture(Self) -> Bool?
 pub fn TerminalInputFlags::new() -> Self
 pub fn TerminalInputFlags::set_mouse_shift_capture(Self, Bool) -> Unit
-
-type TerminalMetadataState derive(Eq, @debug.Debug)
-pub fn TerminalMetadataState::full_reset(Self) -> Unit
-pub fn TerminalMetadataState::new() -> Self
-pub fn TerminalMetadataState::set_shell_redraws_prompt(Self, @osc.SemanticPromptRedraw) -> Unit
-pub fn TerminalMetadataState::set_title(Self, String) -> Unit
-pub fn TerminalMetadataState::shell_redraws_prompt(Self) -> @osc.SemanticPromptRedraw
-pub fn TerminalMetadataState::title(Self) -> String?
 
 type TerminalSurfaceTypeInfo derive(Eq, @debug.Debug)
 pub fn TerminalSurfaceTypeInfo::mapping(Self) -> TerminalSurfaceTypeMapping
@@ -481,13 +345,6 @@ pub(all) enum TerminalSurfaceTypeMapping {
   Native
   Absorbed
 } derive(Eq, @debug.Debug)
-
-type TerminalTabstopsState derive(Eq, @debug.Debug)
-pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool
-pub fn TerminalTabstopsState::new(UInt16) -> Self
-pub fn TerminalTabstopsState::reset(Self, UInt16) -> Unit
-pub fn TerminalTabstopsState::set(Self, UInt16) -> Unit
-pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
 
 // Type aliases
 

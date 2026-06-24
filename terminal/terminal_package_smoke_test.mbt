@@ -156,9 +156,9 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
 
 ///|
 test "terminal package smoke/input helpers and encoders" {
-  guard FocusEvent::Gained.encode() == b"\x1B[I" &&
-    paste_is_safe(b"abc") &&
-    PasteOptions::new(true).encode(b"abc") == b"\x1B[200~abc\x1B[201~" else {
+  guard @focus.FocusEvent::Gained.encode() == b"\x1B[I" &&
+    @paste.paste_is_safe(b"abc") &&
+    @paste.PasteOptions::new(true).encode(b"abc") == b"\x1B[200~abc\x1B[201~" else {
     fail("expected focus and paste helper smoke path")
   }
 
@@ -167,16 +167,18 @@ test "terminal package smoke/input helpers and encoders" {
   terminal.mode_set(MouseEventAny, true)
   terminal.mode_set(MouseFormatSgr, true)
 
-  let key_encoder = KeyEncoder::new()
-  key_encoder.sync_from_terminal(terminal)
+  let key_encoder = @key_encoder.KeyEncoder::new()
+  terminal.sync_key_encoder(key_encoder)
   guard key_encoder.cursor_key_application() &&
     key_encoder.encode(package_smoke_key_event(KeyC, utf8=b"c")) == b"c" else {
     fail("expected key encoder package smoke path")
   }
 
-  let mouse_encoder = MouseEncoder::new()
-  mouse_encoder.sync_from_terminal(terminal)
-  mouse_encoder.set_size(MouseEncoderSize::new(80U, 24U, 8U, 16U).unwrap())
+  let mouse_encoder = @mouse_encoder.MouseEncoder::new()
+  terminal.sync_mouse_encoder(mouse_encoder)
+  mouse_encoder.set_size(
+    @mouse_encoder.MouseEncoderSize::new(80U, 24U, 8U, 16U).unwrap(),
+  )
   let mouse_bytes = mouse_encoder.encode(
     package_smoke_mouse_event(Press, Some(Left), 0.0F, 0.0F),
   )

@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/paste"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn paste_is_safe(Bytes) -> Bool
+
+// Errors
+
+// Types and methods
+type PasteOptions derive(Eq, @debug.Debug)
+pub fn PasteOptions::encode(Self, Bytes) -> Bytes
+pub fn PasteOptions::new(Bool) -> Self
+
+// Type aliases
+
+// Traits
+

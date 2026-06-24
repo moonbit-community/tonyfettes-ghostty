@@ -28,12 +28,12 @@ pub fn TerminalMetadataState::set_title(
 }
 
 ///|
-fn TerminalMetadataState::pwd(self : TerminalMetadataState) -> String? {
+pub fn TerminalMetadataState::pwd(self : TerminalMetadataState) -> String? {
   self.pwd
 }
 
 ///|
-fn TerminalMetadataState::set_pwd(
+pub fn TerminalMetadataState::set_pwd(
   self : TerminalMetadataState,
   pwd : String,
 ) -> Unit {

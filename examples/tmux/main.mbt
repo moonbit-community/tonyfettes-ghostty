@@ -570,7 +570,7 @@ fn new_terminal(
       let rows = size.rows.clamp(min=1, max=240)
       let cols = size.cols.clamp(min=1, max=240)
       Some(
-        @terminal.Size::new(
+        @size_report.Size::new(
           rows.to_uint16(),
           cols.to_uint16(),
           CellWidthPx,

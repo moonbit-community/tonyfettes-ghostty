@@ -26,7 +26,7 @@ priv struct StreamTerminalBridgeEffects {
   mut color_scheme : () -> @device.ColorScheme?
   mut device_attributes : () -> @device.DeviceAttributes?
   mut enquiry : () -> Bytes
-  mut size : () -> Size?
+  mut size : () -> @size_report.Size?
   mut title_changed : () -> Unit
   mut xtversion : () -> String
 }
@@ -38,7 +38,7 @@ fn StreamTerminalBridgeEffects::new(
   color_scheme? : () -> @device.ColorScheme? = fn() { None },
   device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
   enquiry? : () -> Bytes = fn() { b"" },
-  size? : () -> Size? = fn() { None },
+  size? : () -> @size_report.Size? = fn() { None },
   title_changed? : () -> Unit = fn() { () },
   xtversion? : () -> String = fn() { "" },
 ) -> StreamTerminalBridgeEffects {
@@ -132,7 +132,7 @@ fn StreamTerminalBridgeEffects::clear_enquiry(
 ///|
 fn StreamTerminalBridgeEffects::set_size(
   self : StreamTerminalBridgeEffects,
-  callback : () -> Size?,
+  callback : () -> @size_report.Size?,
 ) -> Unit {
   self.size = callback
 }
@@ -178,17 +178,17 @@ fn StreamTerminalBridgeEffects::clear_xtversion(
 priv struct StreamTerminalBridgeState {
   effects : StreamTerminalBridgeEffects
   apc_handler : ApcHandler
-  protected_state : ScreenProtectedState
-  display_state : TerminalDisplayState
+  protected_state : @protected.ScreenProtectedState
+  display_state : @display_state.TerminalDisplayState
   colors : @color.TerminalColors
   mut modes : @mode.ModeState
   mut cursor : @cursor.TerminalCursorState
   input_flags : TerminalInputFlags
   kitty_keyboard : KittyKeyboardState
-  mut tabstops : TerminalTabstopsState
-  hyperlink : ScreenHyperlinkState
-  mut semantic : ScreenSemanticState
-  metadata : TerminalMetadataState
+  mut tabstops : @tabstops.TerminalTabstopsState
+  hyperlink : @hyperlink_state.ScreenHyperlinkState
+  mut semantic : @semantic.ScreenSemanticState
+  metadata : @metadata.TerminalMetadataState
   mut grid : @grid.ScreenGridState
   mut scrollback : @pagelist.PageList
   mut kitty_graphics : KittyGraphicsState
@@ -223,17 +223,17 @@ fn StreamTerminalBridgeState::with_effects(
   {
     effects,
     apc_handler: ApcHandler::new(),
-    protected_state: ScreenProtectedState::new(),
-    display_state: TerminalDisplayState::new(),
+    protected_state: @protected.ScreenProtectedState::new(),
+    display_state: @display_state.TerminalDisplayState::new(),
     colors: @color.TerminalColors::new(),
     modes: @mode.ModeState::new(),
     cursor: primary_storage.cursor,
     input_flags: TerminalInputFlags::new(),
     kitty_keyboard: KittyKeyboardState::new(),
-    tabstops: TerminalTabstopsState::new(DefaultColumns),
-    hyperlink: ScreenHyperlinkState::new(),
+    tabstops: @tabstops.TerminalTabstopsState::new(DefaultColumns),
+    hyperlink: @hyperlink_state.ScreenHyperlinkState::new(),
     semantic: primary_storage.semantic,
-    metadata: TerminalMetadataState::new(),
+    metadata: @metadata.TerminalMetadataState::new(),
     grid: primary_storage.grid,
     scrollback: primary_storage.scrollback,
     kitty_graphics: primary_storage.kitty_graphics,
@@ -821,7 +821,7 @@ fn StreamTerminalBridgeState::clear_enquiry(
 ///|
 fn StreamTerminalBridgeState::set_size(
   self : StreamTerminalBridgeState,
-  callback : () -> Size?,
+  callback : () -> @size_report.Size?,
 ) -> Unit {
   self.effects.set_size(callback)
 }
@@ -880,13 +880,16 @@ fn StreamTerminalBridgeState::resize(
   ignore(self.primary_storage.resize(rows, columns))
   ignore(self.alternate_storage.resize(rows, columns))
   self.load_active_screen(active_screen)
-  self.tabstops = TerminalTabstopsState::new(columns)
+  self.tabstops = @tabstops.TerminalTabstopsState::new(columns)
   self.width_px = saturated_dimension(columns, cell_width_px)
   self.height_px = saturated_dimension(rows, cell_height_px)
   self.modes = self.modes.set(SynchronizedOutput, false)
   if self.modes.get(InBandSizeReports) {
     self.write_pty(
-      encode(Mode2048, Size::new(rows, columns, cell_width_px, cell_height_px)),
+      @size_report.encode(
+        Mode2048,
+        @size_report.Size::new(rows, columns, cell_width_px, cell_height_px),
+      ),
     )
   }
   Success
@@ -1613,7 +1616,7 @@ fn StreamTerminalBridgeState::full_reset(
   self.modes = @mode.ModeState::new()
   self.input_flags.full_reset()
   self.kitty_keyboard.reset()
-  self.tabstops = TerminalTabstopsState::new(cols)
+  self.tabstops = @tabstops.TerminalTabstopsState::new(cols)
   self.hyperlink.full_reset()
   self.semantic.full_reset()
   self.metadata.full_reset()
@@ -1706,7 +1709,7 @@ fn StreamTerminalBridgeState::apply_semantic_after_newline(
     return
   }
 
-  self.semantic.row_prompt = PromptContinuation
+  self.semantic.set_row_prompt(PromptContinuation)
   self.grid.set_row_semantic_prompt(self.cursor.y(), PromptContinuation)
 }
 
@@ -1868,17 +1871,17 @@ fn StreamTerminalBridgeState::report_size(
   match style {
     Csi14t =>
       match (self.effects.size)() {
-        Some(size) => self.write_pty(encode(Csi14t, size))
+        Some(size) => self.write_pty(@size_report.encode(Csi14t, size))
         None => ()
       }
     Csi16t =>
       match (self.effects.size)() {
-        Some(size) => self.write_pty(encode(Csi16t, size))
+        Some(size) => self.write_pty(@size_report.encode(Csi16t, size))
         None => ()
       }
     Csi18t =>
       match (self.effects.size)() {
-        Some(size) => self.write_pty(encode(Csi18t, size))
+        Some(size) => self.write_pty(@size_report.encode(Csi18t, size))
         None => ()
       }
     Csi21t => {

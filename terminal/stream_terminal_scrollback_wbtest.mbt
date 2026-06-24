@@ -1,6 +1,8 @@
 ///|
 fn new_5x5_terminal() -> StreamTerminal {
-  let term = StreamTerminal::new(size=fn() { Some(Size::new(5, 5, 0U, 0U)) })
+  let term = StreamTerminal::new(size=fn() {
+    Some(@size_report.Size::new(5, 5, 0U, 0U))
+  })
   ignore(term.resize(5, 5, 0U, 0U))
   term
 }

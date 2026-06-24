@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/hyperlink_state"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/hyperlink",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ScreenHyperlinkState derive(Eq, @debug.Debug)
+pub fn ScreenHyperlinkState::active(Self) -> Bool
+pub fn ScreenHyperlinkState::cell_hyperlink(Self) -> @hyperlink.CellHyperlink?
+pub fn ScreenHyperlinkState::end(Self) -> Unit
+pub fn ScreenHyperlinkState::explicit_id(Self) -> String?
+pub fn ScreenHyperlinkState::full_reset(Self) -> Unit
+pub fn ScreenHyperlinkState::implicit_id(Self) -> Int?
+pub fn ScreenHyperlinkState::new() -> Self
+pub fn ScreenHyperlinkState::next_implicit_id(Self) -> Int
+pub fn ScreenHyperlinkState::start(Self, String, String?) -> Unit
+pub fn ScreenHyperlinkState::uri(Self) -> String?
+
+// Type aliases
+
+// Traits
+

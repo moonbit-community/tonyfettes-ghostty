@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/size_report"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn encode(Style, Size) -> Bytes
+
+// Errors
+
+// Types and methods
+type Size derive(Eq, @debug.Debug)
+pub fn Size::cell_height(Self) -> UInt
+pub fn Size::cell_width(Self) -> UInt
+pub fn Size::columns(Self) -> UInt16
+pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
+pub fn Size::rows(Self) -> UInt16
+
+pub(all) enum Style {
+  Mode2048
+  Csi14t
+  Csi16t
+  Csi18t
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

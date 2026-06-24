@@ -36,7 +36,7 @@ pub fn StreamTerminal::new(
   color_scheme? : () -> @device.ColorScheme? = fn() { None },
   device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
   enquiry? : () -> Bytes = fn() { b"" },
-  size? : () -> Size? = fn() { None },
+  size? : () -> @size_report.Size? = fn() { None },
   title_changed? : () -> Unit = fn() { () },
   xtversion? : () -> String = fn() { "" },
 ) -> StreamTerminal {
@@ -73,6 +73,38 @@ pub fn StreamTerminal::next_slice(self : StreamTerminal, input : Bytes) -> Unit 
 ///|
 pub fn StreamTerminal::reset(self : StreamTerminal) -> Unit {
   self.bridge().reset()
+}
+
+///|
+/// Sync a mouse encoder to this terminal's active reporting mode and format.
+/// The encoder leaf is terminal-agnostic; this hub wrapper resolves the values
+/// off the bridge and hands them over.
+pub fn StreamTerminal::sync_mouse_encoder(
+  self : StreamTerminal,
+  encoder : @mouse_encoder.MouseEncoder,
+) -> Unit {
+  let bridge = self.bridge()
+  encoder.sync(bridge.mouse_event(), bridge.mouse_format())
+}
+
+///|
+/// Sync a key encoder to this terminal's active key-encoding modes and flags.
+/// The encoder leaf is terminal-agnostic; this hub wrapper resolves the values
+/// off the bridge and hands them over.
+pub fn StreamTerminal::sync_key_encoder(
+  self : StreamTerminal,
+  encoder : @key_encoder.KeyEncoder,
+) -> Unit {
+  let bridge = self.bridge()
+  encoder.sync(
+    cursor_key_application=bridge.mode_get(CursorKeys),
+    keypad_key_application=bridge.mode_get(KeypadKeys),
+    ignore_keypad_with_numlock=bridge.mode_get(IgnoreKeypadWithNumlock),
+    alt_esc_prefix=bridge.mode_get(AltEscPrefix),
+    modify_other_keys_state_2=bridge.modify_other_keys_2(),
+    kitty_flags=bridge.kitty_keyboard_flags(),
+    backarrow_key_mode=bridge.mode_get(BackarrowKeyMode),
+  )
 }
 
 ///|
@@ -485,7 +517,7 @@ pub fn StreamTerminal::clear_enquiry(self : StreamTerminal) -> Unit {
 ///|
 pub fn StreamTerminal::set_size(
   self : StreamTerminal,
-  callback : () -> Size?,
+  callback : () -> @size_report.Size?,
 ) -> Unit {
   self.bridge().set_size(callback)
 }

@@ -108,6 +108,14 @@ pub fn ScreenSemanticState::clear_row_prompt(
 }
 
 ///|
+pub fn ScreenSemanticState::set_row_prompt(
+  self : ScreenSemanticState,
+  prompt : @page.RowSemanticPrompt,
+) -> Unit {
+  self.row_prompt = prompt
+}
+
+///|
 pub fn ScreenSemanticState::full_reset(self : ScreenSemanticState) -> Unit {
   self.seen = false
   self.click = None

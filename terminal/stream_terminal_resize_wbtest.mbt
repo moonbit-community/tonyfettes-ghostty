@@ -4,7 +4,7 @@ fn new_terminal(
   rows : @size.CellCountInt,
 ) -> StreamTerminal {
   let term = StreamTerminal::new(size=fn() {
-    Some(Size::new(rows, cols, 0U, 0U))
+    Some(@size_report.Size::new(rows, cols, 0U, 0U))
   })
   ignore(term.resize(cols, rows, 0U, 0U))
   term

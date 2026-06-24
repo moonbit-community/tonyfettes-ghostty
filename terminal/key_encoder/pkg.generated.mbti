@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/key_encoder"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/terminal/input",
+  "tonyfettes/ghostty/terminal/stream",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type KeyEncoder derive(Eq, @debug.Debug)
+pub fn KeyEncoder::alt_esc_prefix(Self) -> Bool
+pub fn KeyEncoder::backarrow_key_mode(Self) -> Bool
+pub fn KeyEncoder::cursor_key_application(Self) -> Bool
+pub fn KeyEncoder::encode(Self, @input.KeyEvent) -> Bytes
+pub fn KeyEncoder::host_is_macos(Self) -> Bool
+pub fn KeyEncoder::ignore_keypad_with_numlock(Self) -> Bool
+pub fn KeyEncoder::keypad_key_application(Self) -> Bool
+pub fn KeyEncoder::kitty_flags(Self) -> @stream.KittyKeyboardFlags
+pub fn KeyEncoder::macos_option_as_alt(Self) -> OptionAsAlt
+pub fn KeyEncoder::modify_other_keys_state_2(Self) -> Bool
+pub fn KeyEncoder::new() -> Self
+pub fn KeyEncoder::set_alt_esc_prefix(Self, Bool) -> Unit
+pub fn KeyEncoder::set_backarrow_key_mode(Self, Bool) -> Unit
+pub fn KeyEncoder::set_cursor_key_application(Self, Bool) -> Unit
+pub fn KeyEncoder::set_host_is_macos(Self, Bool) -> Unit
+pub fn KeyEncoder::set_ignore_keypad_with_numlock(Self, Bool) -> Unit
+pub fn KeyEncoder::set_keypad_key_application(Self, Bool) -> Unit
+pub fn KeyEncoder::set_kitty_flags(Self, @stream.KittyKeyboardFlags) -> Unit
+pub fn KeyEncoder::set_macos_option_as_alt(Self, OptionAsAlt) -> Unit
+pub fn KeyEncoder::set_modify_other_keys_state_2(Self, Bool) -> Unit
+pub fn KeyEncoder::sync(Self, cursor_key_application~ : Bool, keypad_key_application~ : Bool, ignore_keypad_with_numlock~ : Bool, alt_esc_prefix~ : Bool, modify_other_keys_state_2~ : Bool, kitty_flags~ : @stream.KittyKeyboardFlags, backarrow_key_mode~ : Bool) -> Unit
+
+pub(all) enum OptionAsAlt {
+  False
+  Left
+  Right
+  True
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

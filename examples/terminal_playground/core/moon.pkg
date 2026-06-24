@@ -1,5 +1,6 @@
 import {
   "tonyfettes/ghostty/terminal",
+  "tonyfettes/ghostty/terminal/size_report",
   "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/point",
   "tonyfettes/ghostty/terminal/cursor",

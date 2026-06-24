@@ -1,6 +1,6 @@
 ///|
 test "terminal state/protected mode defaults and reset" {
-  let state = ScreenProtectedState::new()
+  let state = @protected.ScreenProtectedState::new()
   guard state.mode() == Off && !state.cursor_protected() else {
     fail("expected protected state defaults")
   }
@@ -18,7 +18,7 @@ test "terminal state/protected mode defaults and reset" {
 
 ///|
 test "terminal state/protected off preserves last non-off mode" {
-  let state = ScreenProtectedState::new()
+  let state = @protected.ScreenProtectedState::new()
   state.set(Iso)
   state.set(Off)
   guard state.mode() == Iso && !state.cursor_protected() else {
@@ -33,7 +33,7 @@ test "terminal state/protected off preserves last non-off mode" {
 
 ///|
 test "terminal state/display defaults and setters" {
-  let state = TerminalDisplayState::new()
+  let state = @display_state.TerminalDisplayState::new()
   guard state.status_display() == Main && state.mouse_shape() == Text else {
     fail("expected terminal display defaults")
   }
@@ -47,7 +47,7 @@ test "terminal state/display defaults and setters" {
 
 ///|
 test "terminal state/full reset restores main status display only" {
-  let state = TerminalDisplayState::new()
+  let state = @display_state.TerminalDisplayState::new()
   state.set_status_display(StatusLine)
   state.set_mouse_shape(Wait)
   state.full_reset()
