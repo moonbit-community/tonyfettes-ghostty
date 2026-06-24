@@ -187,7 +187,7 @@ priv struct StreamTerminalBridgeState {
   kitty_keyboard : KittyKeyboardState
   mut tabstops : TerminalTabstopsState
   hyperlink : ScreenHyperlinkState
-  mut semantic : ScreenSemanticState
+  mut semantic : @semantic.ScreenSemanticState
   metadata : TerminalMetadataState
   mut grid : @grid.ScreenGridState
   mut scrollback : @pagelist.PageList
@@ -1706,7 +1706,7 @@ fn StreamTerminalBridgeState::apply_semantic_after_newline(
     return
   }
 
-  self.semantic.row_prompt = PromptContinuation
+  self.semantic.set_row_prompt(PromptContinuation)
   self.grid.set_row_semantic_prompt(self.cursor.y(), PromptContinuation)
 }
 

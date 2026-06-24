@@ -307,31 +307,11 @@ pub fn ScreenHyperlinkState::next_implicit_id(Self) -> Int
 pub fn ScreenHyperlinkState::start(Self, String, String?) -> Unit
 pub fn ScreenHyperlinkState::uri(Self) -> String?
 
-type ScreenSemanticState derive(Eq, @debug.Debug)
-pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPrompt) -> Unit
-pub fn ScreenSemanticState::apply_prompt_start(Self, @osc.SemanticPrompt) -> Unit
-pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
-pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
-pub fn ScreenSemanticState::cursor_content(Self) -> @page.SemanticContent
-pub fn ScreenSemanticState::cursor_content_clear_eol(Self) -> Bool
-pub fn ScreenSemanticState::full_reset(Self) -> Unit
-pub fn ScreenSemanticState::new() -> Self
-pub fn ScreenSemanticState::row_prompt(Self) -> @page.RowSemanticPrompt
-pub fn ScreenSemanticState::seen(Self) -> Bool
-pub fn ScreenSemanticState::set_output(Self) -> Unit
-pub fn ScreenSemanticState::start_input(Self, Bool) -> Unit
-
 type Selection
 pub fn Selection::end(Self) -> @pagelist.Pin
 pub fn Selection::new(@pagelist.Pin, @pagelist.Pin, Bool) -> Self
 pub fn Selection::rectangle(Self) -> Bool
 pub fn Selection::start(Self) -> @pagelist.Pin
-
-pub(all) enum SemanticClickMode {
-  None
-  ClickEvents
-  Cl(@osc.SemanticPromptClick)
-} derive(Eq, @debug.Debug)
 
 type Size derive(Eq, @debug.Debug)
 pub fn Size::cell_height(Self) -> UInt

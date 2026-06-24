@@ -81,7 +81,7 @@ fn StreamTerminalBridgeState::has_saved_cursor(
 ///|
 fn StreamTerminalBridgeState::semantic_click_mode(
   self : StreamTerminalBridgeState,
-) -> SemanticClickMode {
+) -> @semantic.SemanticClickMode {
   self.semantic.click()
 }
 
@@ -471,7 +471,7 @@ test "stream terminal bridge/covers reverse index and safe none branches" {
   }
 
   state.cursor.y = state.grid.rows
-  state.semantic.row_prompt = Prompt
+  state.semantic.set_row_prompt(Prompt)
   state.sync_current_row_prompt()
   state.semantic.start_input(false)
   state.apply_semantic_after_newline()

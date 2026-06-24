@@ -9,7 +9,7 @@ priv struct TerminalScreenStorage {
   // fullscreen apps must not inherit the primary screen's OSC 133 zones,
   // and its rows must not be stamped with the primary's leftover prompt
   // state. Swapped alongside grid/cursor/scrollback in load/store.
-  mut semantic : ScreenSemanticState
+  mut semantic : @semantic.ScreenSemanticState
 }
 
 ///|
@@ -64,6 +64,6 @@ fn TerminalScreenStorage::new(
     saved_cursor: @pagelist.ScreenSavedCursorState::new(),
     scrollback,
     kitty_graphics: KittyGraphicsState::new(),
-    semantic: ScreenSemanticState::new(),
+    semantic: @semantic.ScreenSemanticState::new(),
   }
 }
