@@ -21,7 +21,11 @@ fn sample_kitty_image(
 
 ///|
 fn sample_kitty_pin(scrollback : @pagelist.PageList) -> @pagelist.PageListPin {
-  scrollback.track_pin(scrollback.active_node(), 0, 0)
+  // Use the public, bounds-checked pin path (origin is always valid) rather
+  // than the unchecked internal `track_pin`.
+  scrollback
+  .pin(scrollback.active_grid(), Active(@point.Coordinate::new(0, 0)))
+  .unwrap()
 }
 
 ///|

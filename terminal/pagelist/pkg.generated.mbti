@@ -19,7 +19,6 @@ import {
 // Types and methods
 type PageList
 pub fn PageList::active_grid(Self) -> @grid.ScreenGridState
-pub fn PageList::active_node(Self) -> PageListNode
 pub fn PageList::capture_full_screen_scroll_down(Self, @grid.ScreenGridState, Int) -> Unit
 pub fn PageList::capture_top_scroll_region_up(Self, @grid.ScreenGridState, Int, Int) -> Unit
 pub fn PageList::cell(Self, @grid.ScreenGridState, UInt16, UInt16) -> @page.PageCellState?
@@ -46,13 +45,10 @@ pub fn PageList::scroll_top(Self) -> Unit
 pub fn PageList::scrollback_rows(Self) -> UInt
 pub fn PageList::scrollbar(Self, UInt16) -> TerminalScrollbar
 pub fn PageList::total_rows(Self, UInt16) -> UInt
-pub fn PageList::track_pin(Self, PageListNode, UInt16, Int) -> PageListPin
 pub fn PageList::track_pin_at_point(Self, @grid.ScreenGridState, @point.Point) -> PageListPin?
 pub fn PageList::untrack_pin(Self, PageListPin) -> Unit
 pub fn PageList::untrack_pin_ref(Self, Pin) -> Unit
 pub fn PageList::viewport_row_offset(Self) -> Int
-
-type PageListNode
 
 type PageListPin
 

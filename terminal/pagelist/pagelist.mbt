@@ -13,7 +13,7 @@ priv struct PageListPage {
 }
 
 ///|
-struct PageListNode {
+priv struct PageListNode {
   page : PageListPage
 }
 
@@ -495,7 +495,7 @@ pub fn PageList::clear_history(self : PageList) -> Unit {
 }
 
 ///|
-pub fn PageList::track_pin(
+fn PageList::track_pin(
   self : PageList,
   node : PageListNode,
   y : @size.CellCountInt,
@@ -2283,11 +2283,4 @@ pub(all) enum TerminalScreen {
 pub(all) struct Pin {
   screen : TerminalScreen
   pin : PageListPin
-}
-
-///|
-/// The currently-active page node. Exposed so the hub can seed a tracked pin at
-/// the active screen origin without reaching into `PageList`'s private fields.
-pub fn PageList::active_node(self : PageList) -> PageListNode {
-  self.active_node
 }

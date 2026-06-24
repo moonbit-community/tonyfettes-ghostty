@@ -43,11 +43,16 @@ pub fn make_row_cells(cols : Int) -> FixedArray[@page.PageCellState] {
 }
 
 ///|
-/// `pub(all)` so consumers across the package boundary (the bridge, formatter,
-/// pagelist) can read its dimensions, intern tables, and cell arrays. All
-/// fields are immutable bindings — the grid mutates through the FixedArray /
-/// intern-table contents, never by reassigning a field — so this exposes
-/// read-only structure, not mutable state.
+/// `pub(all)` because this is shared low-level cell storage: the owning
+/// `PageList` reads AND writes `descs`/`cells`/`link_ids` directly (scroll,
+/// reflow, history rebuild), and `active_grid` aliases a page's arrays into a
+/// grid view — so the storage is genuinely shared between this package and
+/// `pagelist`, mirroring upstream's freely-touched `Page` arrays. MoonBit
+/// visibility is per-package, so there is no way to open this to `pagelist`
+/// while sealing it from read-only consumers (formatter/render, which only read
+/// `rows`/`cols` and the intern tables). The fields are immutable *bindings*
+/// (the arrays are never reassigned), so what's exposed is the storage handles,
+/// not the ability to swap them out.
 pub(all) struct ScreenGridState {
   rows : @size.CellCountInt
   cols : @size.CellCountInt
