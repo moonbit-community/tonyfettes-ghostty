@@ -253,7 +253,7 @@ pub fn KittyPlacement::z(self : KittyPlacement) -> Int {
 }
 
 ///|
-pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
+pub fn KittyPlacement::rect(self : KittyPlacement) -> @selection.Selection? {
   let placement_pin = match self.placement.location {
     Pin(pin) => pin
     Virtual => return None
@@ -307,7 +307,7 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
     }
   }
   Some(
-    Selection::new(
+    @selection.Selection::new(
       { screen: self.screen, pin: top_left },
       { screen: self.screen, pin: bottom_right },
       true,

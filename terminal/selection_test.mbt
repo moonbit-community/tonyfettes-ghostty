@@ -8,7 +8,7 @@ test "selection/preserves endpoints and rectangle flag" {
 
   let start = terminal.pin(Active(@point.Coordinate::new(1, 0U))).unwrap()
   let end_ = terminal.pin(Active(@point.Coordinate::new(2, 1U))).unwrap()
-  let selection = Selection::new(start, end_, true)
+  let selection = @selection.Selection::new(start, end_, true)
 
   guard terminal.point_from_pin(selection.start(), Active) ==
     Some(@point.Coordinate::new(1, 0U)) else {

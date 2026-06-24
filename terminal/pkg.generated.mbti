@@ -15,6 +15,7 @@ import {
   "tonyfettes/ghostty/terminal/pagelist",
   "tonyfettes/ghostty/terminal/point",
   "tonyfettes/ghostty/terminal/result_code",
+  "tonyfettes/ghostty/terminal/selection",
   "tonyfettes/ghostty/terminal/size_report",
   "tonyfettes/ghostty/terminal/stream",
   "tonyfettes/ghostty/terminal/style",
@@ -67,7 +68,7 @@ pub fn Formatter::format(Self) -> Bytes
 pub fn Formatter::new_terminal(StreamTerminal, FormatterOptions) -> Self
 
 type FormatterOptions
-pub fn FormatterOptions::new(Format, unwrap? : Bool, trim? : Bool, selection? : Selection?, extra? : FormatterTerminalExtra) -> Self
+pub fn FormatterOptions::new(Format, unwrap? : Bool, trim? : Bool, selection? : @selection.Selection?, extra? : FormatterTerminalExtra) -> Self
 
 type FormatterScreenExtra derive(Eq, @debug.Debug)
 pub fn FormatterScreenExtra::all() -> Self
@@ -127,7 +128,7 @@ pub fn KittyPlacement::image_id(Self) -> UInt
 pub fn KittyPlacement::is_virtual(Self) -> Bool
 pub fn KittyPlacement::pixel_size(Self) -> KittyPlacementPixelSize
 pub fn KittyPlacement::placement_id(Self) -> UInt
-pub fn KittyPlacement::rect(Self) -> Selection?
+pub fn KittyPlacement::rect(Self) -> @selection.Selection?
 pub fn KittyPlacement::render_info(Self) -> KittyPlacementRenderInfo
 pub fn KittyPlacement::rows(Self) -> UInt
 pub fn KittyPlacement::source_height(Self) -> UInt
@@ -226,12 +227,6 @@ pub fn RenderState::rows(Self) -> UInt16
 pub fn RenderState::set_dirty(Self, RenderDirty) -> Unit
 pub fn RenderState::update(Self, StreamTerminal) -> Unit
 
-type Selection
-pub fn Selection::end(Self) -> @pagelist.Pin
-pub fn Selection::new(@pagelist.Pin, @pagelist.Pin, Bool) -> Self
-pub fn Selection::rectangle(Self) -> Bool
-pub fn Selection::start(Self) -> @pagelist.Pin
-
 type StreamTerminal
 pub fn StreamTerminal::active_screen(Self) -> @pagelist.TerminalScreen
 pub fn StreamTerminal::background_color(Self) -> @color.RGB?
@@ -288,7 +283,7 @@ pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
 pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
 pub fn StreamTerminal::scrollback_rows(Self) -> UInt
 pub fn StreamTerminal::scrollbar(Self) -> @pagelist.TerminalScrollbar
-pub fn StreamTerminal::selection(Self, @point.Point, @point.Point, Bool) -> Selection?
+pub fn StreamTerminal::selection(Self, @point.Point, @point.Point, Bool) -> @selection.Selection?
 pub fn StreamTerminal::semantic_prompt_row_range(Self, UInt16) -> (UInt16, UInt16)?
 pub fn StreamTerminal::set_bell(Self, () -> Unit) -> Unit
 pub fn StreamTerminal::set_color_scheme(Self, () -> @device.ColorScheme?) -> Unit
@@ -310,7 +305,7 @@ pub fn StreamTerminal::take_scrollback_cleared(Self) -> Bool
 pub fn StreamTerminal::title(Self) -> String?
 pub fn StreamTerminal::total_rows(Self) -> UInt
 pub fn StreamTerminal::untrack_pin(Self, @pagelist.Pin) -> Unit
-pub fn StreamTerminal::untrack_selection(Self, Selection) -> Unit
+pub fn StreamTerminal::untrack_selection(Self, @selection.Selection) -> Unit
 pub fn StreamTerminal::width_px(Self) -> UInt
 
 type SystemImage derive(Eq, @debug.Debug)

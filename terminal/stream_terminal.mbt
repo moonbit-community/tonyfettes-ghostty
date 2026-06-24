@@ -426,12 +426,13 @@ pub fn StreamTerminal::selection(
   start : @point.Point,
   end_ : @point.Point,
   rectangle : Bool,
-) -> Selection? {
+) -> @selection.Selection? {
   match self.pin(start) {
     None => None
     Some(start_pin) =>
       match self.pin(end_) {
-        Some(end_pin) => Some(Selection::new(start_pin, end_pin, rectangle))
+        Some(end_pin) =>
+          Some(@selection.Selection::new(start_pin, end_pin, rectangle))
         None => {
           self.untrack_pin(start_pin)
           None
@@ -443,7 +444,7 @@ pub fn StreamTerminal::selection(
 ///|
 pub fn StreamTerminal::untrack_selection(
   self : StreamTerminal,
-  selection : Selection,
+  selection : @selection.Selection,
 ) -> Unit {
   self.untrack_pin(selection.start())
   self.untrack_pin(selection.end())

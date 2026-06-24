@@ -617,7 +617,7 @@ fn json_coordinate(value : @point.Coordinate?) -> Json {
 ///|
 fn json_selection_rect(
   terminal : @terminal.StreamTerminal,
-  value : @terminal.Selection?,
+  value : @selection.Selection?,
 ) -> Json {
   match value {
     Some(selection) => {

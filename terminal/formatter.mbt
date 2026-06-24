@@ -104,7 +104,7 @@ struct FormatterOptions {
   emit : Format
   unwrap : Bool
   trim : Bool
-  selection : Selection?
+  selection : @selection.Selection?
   extra : FormatterTerminalExtra
 }
 
@@ -113,7 +113,7 @@ pub fn FormatterOptions::new(
   emit : Format,
   unwrap? : Bool = false,
   trim? : Bool = true,
-  selection? : Selection? = None,
+  selection? : @selection.Selection? = None,
   extra? : FormatterTerminalExtra = FormatterTerminalExtra::styles(),
 ) -> FormatterOptions {
   { emit, unwrap, trim, selection, extra }

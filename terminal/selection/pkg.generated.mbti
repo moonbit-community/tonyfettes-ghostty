@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/terminal/selection"
+
+import {
+  "tonyfettes/ghostty/terminal/pagelist",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Selection
+pub fn Selection::end(Self) -> @pagelist.Pin
+pub fn Selection::new(@pagelist.Pin, @pagelist.Pin, Bool) -> Self
+pub fn Selection::rectangle(Self) -> Bool
+pub fn Selection::start(Self) -> @pagelist.Pin
+
+// Type aliases
+
+// Traits
+
