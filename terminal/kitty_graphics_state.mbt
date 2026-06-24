@@ -174,8 +174,8 @@ fn KittyGraphicsPlacement::source_rect(
 fn KittyGraphicsPlacement::pixel_size(
   self : KittyGraphicsPlacement,
   image : KittyGraphicsImage,
-  terminal_cols : CellCountInt,
-  terminal_rows : CellCountInt,
+  terminal_cols : @size.CellCountInt,
+  terminal_rows : @size.CellCountInt,
   width_px : UInt,
   height_px : UInt,
 ) -> KittyGraphicsPixelSize {
@@ -220,8 +220,8 @@ fn KittyGraphicsPlacement::pixel_size(
 fn KittyGraphicsPlacement::grid_size(
   self : KittyGraphicsPlacement,
   image : KittyGraphicsImage,
-  terminal_cols : CellCountInt,
-  terminal_rows : CellCountInt,
+  terminal_cols : @size.CellCountInt,
+  terminal_rows : @size.CellCountInt,
   width_px : UInt,
   height_px : UInt,
 ) -> KittyGraphicsGridSize {

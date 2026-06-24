@@ -96,12 +96,12 @@ pub fn StreamTerminal::set_pwd(self : StreamTerminal, pwd : String) -> Unit {
 }
 
 ///|
-pub fn StreamTerminal::cursor_x(self : StreamTerminal) -> CellCountInt {
+pub fn StreamTerminal::cursor_x(self : StreamTerminal) -> @size.CellCountInt {
   self.bridge().cursor_x()
 }
 
 ///|
-pub fn StreamTerminal::cursor_y(self : StreamTerminal) -> CellCountInt {
+pub fn StreamTerminal::cursor_y(self : StreamTerminal) -> @size.CellCountInt {
   self.bridge().cursor_y()
 }
 
@@ -123,28 +123,30 @@ pub fn StreamTerminal::cursor_pending_wrap(self : StreamTerminal) -> Bool {
 }
 
 ///|
-pub fn StreamTerminal::cursor_top_margin(self : StreamTerminal) -> CellCountInt {
+pub fn StreamTerminal::cursor_top_margin(
+  self : StreamTerminal,
+) -> @size.CellCountInt {
   self.bridge().cursor_top_margin()
 }
 
 ///|
 pub fn StreamTerminal::cursor_bottom_margin(
   self : StreamTerminal,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.bridge().cursor_bottom_margin()
 }
 
 ///|
 pub fn StreamTerminal::cursor_left_margin(
   self : StreamTerminal,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.bridge().cursor_left_margin()
 }
 
 ///|
 pub fn StreamTerminal::cursor_right_margin(
   self : StreamTerminal,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.bridge().cursor_right_margin()
 }
 
@@ -195,8 +197,8 @@ pub fn StreamTerminal::mode_set(
 ///|
 pub fn StreamTerminal::resize(
   self : StreamTerminal,
-  columns : CellCountInt,
-  rows : CellCountInt,
+  columns : @size.CellCountInt,
+  rows : @size.CellCountInt,
   cell_width_px : UInt,
   cell_height_px : UInt,
 ) -> @result_code.TerminalResultCode {
@@ -222,12 +224,12 @@ pub fn StreamTerminal::scroll_viewport_delta(
 }
 
 ///|
-pub fn StreamTerminal::rows(self : StreamTerminal) -> CellCountInt {
+pub fn StreamTerminal::rows(self : StreamTerminal) -> @size.CellCountInt {
   self.bridge().rows()
 }
 
 ///|
-pub fn StreamTerminal::columns(self : StreamTerminal) -> CellCountInt {
+pub fn StreamTerminal::columns(self : StreamTerminal) -> @size.CellCountInt {
   self.bridge().columns()
 }
 
@@ -344,7 +346,7 @@ pub fn StreamTerminal::set_default_palette(
 ///|
 pub fn StreamTerminal::screen_row_snapshot(
   self : StreamTerminal,
-  row : CellCountInt,
+  row : @size.CellCountInt,
 ) -> @page.PageRowState? {
   self.bridge().screen_row_snapshot(row)
 }
@@ -352,8 +354,8 @@ pub fn StreamTerminal::screen_row_snapshot(
 ///|
 pub fn StreamTerminal::semantic_prompt_row_range(
   self : StreamTerminal,
-  row : CellCountInt,
-) -> (CellCountInt, CellCountInt)? {
+  row : @size.CellCountInt,
+) -> (@size.CellCountInt, @size.CellCountInt)? {
   self.bridge().semantic_prompt_row_range(row)
 }
 
@@ -512,8 +514,8 @@ pub fn StreamTerminal::clear_xtversion(self : StreamTerminal) -> Unit {
 ///|
 pub fn StreamTerminal::screen_cell_snapshot(
   self : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState? {
   self.bridge().screen_cell_snapshot(row, col)
 }
@@ -525,8 +527,8 @@ pub fn StreamTerminal::screen_cell_snapshot(
 // `screen_cell_hyperlink_snapshot`.
 fn StreamTerminal::screen_cell_hyperlink_id_snapshot(
   self : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @hyperlink.HyperlinkId {
   self.bridge().screen_cell_hyperlink_id_snapshot(row, col)
 }
@@ -537,8 +539,8 @@ fn StreamTerminal::screen_cell_hyperlink_id_snapshot(
 // (color, attributes) go through here rather than the cell directly.
 pub fn StreamTerminal::screen_cell_style_snapshot(
   self : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @style.CellStyle? {
   match self.bridge().screen_cell_snapshot(row, col) {
     Some(cell) => Some(self.active_style_table().get(cell.style_id()))
@@ -552,8 +554,8 @@ pub fn StreamTerminal::screen_cell_style_snapshot(
 // `link_ids` side array, so this resolves by position, not from the cell value.
 pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
   self : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @hyperlink.CellHyperlink? {
   self.bridge().screen_cell_hyperlink_snapshot(row, col)
 }
@@ -563,8 +565,8 @@ pub fn StreamTerminal::screen_cell_hyperlink_snapshot(
 // the cell is absent or not a grapheme cluster. Cells store only a `@page.GraphemeId`.
 pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(
   self : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> ReadOnlyArray[UInt] {
   match self.bridge().screen_cell_snapshot(row, col) {
     Some(cell) => self.active_grapheme_table().get(cell.grapheme_id())

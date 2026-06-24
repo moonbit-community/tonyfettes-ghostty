@@ -1,5 +1,8 @@
 ///|
-fn expect_row(grid : ScreenGridState, row : CellCountInt) -> @page.PageRowState {
+fn expect_row(
+  grid : ScreenGridState,
+  row : @size.CellCountInt,
+) -> @page.PageRowState {
   grid.row(row).unwrap()
 }
 
@@ -7,8 +10,8 @@ fn expect_row(grid : ScreenGridState, row : CellCountInt) -> @page.PageRowState 
 // Standalone test grid: mints its own style table. Production paths that must
 // share a table with a `PageList` use `new_with_table` instead.
 fn ScreenGridState::new(
-  rows : CellCountInt,
-  cols : CellCountInt,
+  rows : @size.CellCountInt,
+  cols : @size.CellCountInt,
 ) -> ScreenGridState {
   ScreenGridState::new_with_table(
     rows,
@@ -51,8 +54,8 @@ fn ScreenGridState::cell_hyperlink(
 ///|
 fn ScreenGridState::cell(
   self : ScreenGridState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState? {
   let row_idx = row.to_int()
   let col_idx = col.to_int()
@@ -69,8 +72,8 @@ fn ScreenGridState::cell(
 ///|
 fn expect_cell(
   grid : ScreenGridState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState {
   grid.cell(row, col).unwrap()
 }

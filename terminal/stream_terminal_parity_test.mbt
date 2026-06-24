@@ -46,8 +46,8 @@ fn expect_parity_write(
 ///|
 fn expect_parity_cell(
   terminal : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState {
   terminal.screen_cell_snapshot(row, col).unwrap()
 }
@@ -55,8 +55,8 @@ fn expect_parity_cell(
 ///|
 fn expect_ascii_text(
   terminal : StreamTerminal,
-  row : CellCountInt,
-  start_col : CellCountInt,
+  row : @size.CellCountInt,
+  start_col : @size.CellCountInt,
   expected : Bytes,
 ) -> Unit raise {
   for offset in 0..<expected.length() {

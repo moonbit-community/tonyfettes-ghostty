@@ -44,8 +44,8 @@ fn make_row_cells(cols : Int) -> FixedArray[@page.PageCellState] {
 
 ///|
 priv struct ScreenGridState {
-  rows : CellCountInt
-  cols : CellCountInt
+  rows : @size.CellCountInt
+  cols : @size.CellCountInt
   // Parallel per-row arrays: `descs[i]` and `cells[i]` are row `i`'s descriptor
   // and cell buffer. See the comment above for why they are split.
   descs : FixedArray[@page.PageRowState]
@@ -83,8 +83,8 @@ priv struct ScreenGridState {
 
 ///|
 fn ScreenGridState::new_with_table(
-  rows : CellCountInt,
-  cols : CellCountInt,
+  rows : @size.CellCountInt,
+  cols : @size.CellCountInt,
   style_table : @style.StyleTable,
   hyperlink_table : @hyperlink.HyperlinkTable,
   grapheme_table : @page.GraphemeTable,
@@ -199,7 +199,7 @@ fn ScreenGridState::set_blank_row(
 ///|
 fn ScreenGridState::row(
   self : ScreenGridState,
-  row : CellCountInt,
+  row : @size.CellCountInt,
 ) -> @page.PageRowState? {
   let idx = row.to_int()
   if idx < 0 || idx >= self.rows.to_int() {
@@ -215,7 +215,7 @@ fn ScreenGridState::row(
 /// in place — they go through here to write the `descs[idx]` slot.
 fn ScreenGridState::set_row_semantic_prompt(
   self : ScreenGridState,
-  row : CellCountInt,
+  row : @size.CellCountInt,
   prompt : @page.RowSemanticPrompt,
 ) -> Unit {
   let idx = row.to_int()
@@ -1458,7 +1458,7 @@ fn ScreenGridState::recompute_row_flags(
 }
 
 ///|
-fn screen_dimension(value : CellCountInt) -> CellCountInt {
+fn screen_dimension(value : @size.CellCountInt) -> @size.CellCountInt {
   if value == 0 {
     1
   } else {

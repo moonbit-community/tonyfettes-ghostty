@@ -1,5 +1,8 @@
 ///|
-fn new_terminal(cols : CellCountInt, rows : CellCountInt) -> StreamTerminal {
+fn new_terminal(
+  cols : @size.CellCountInt,
+  rows : @size.CellCountInt,
+) -> StreamTerminal {
   let term = StreamTerminal::new(size=fn() {
     Some(Size::new(rows, cols, 0U, 0U))
   })
@@ -15,8 +18,8 @@ fn plain_format(term : StreamTerminal) -> Bytes {
 ///|
 fn cell_codepoint(
   term : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> UInt {
   term.screen_cell_snapshot(row, col).unwrap().codepoint()
 }
@@ -24,8 +27,8 @@ fn cell_codepoint(
 ///|
 fn cell_wide(
   term : StreamTerminal,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellWide {
   term.screen_cell_snapshot(row, col).unwrap().wide()
 }

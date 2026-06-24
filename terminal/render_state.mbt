@@ -8,8 +8,8 @@ pub(all) enum RenderDirty {
 ///|
 struct RenderState {
   mut initialized : Bool
-  mut rows : CellCountInt
-  mut columns : CellCountInt
+  mut rows : @size.CellCountInt
+  mut columns : @size.CellCountInt
   mut dirty : RenderDirty
   mut screen : TerminalScreen
   mut viewport_origin : Coordinate?
@@ -73,12 +73,12 @@ pub fn RenderState::new() -> RenderState {
 }
 
 ///|
-pub fn RenderState::rows(self : RenderState) -> CellCountInt {
+pub fn RenderState::rows(self : RenderState) -> @size.CellCountInt {
   self.rows
 }
 
 ///|
-pub fn RenderState::columns(self : RenderState) -> CellCountInt {
+pub fn RenderState::columns(self : RenderState) -> @size.CellCountInt {
   self.columns
 }
 
@@ -236,8 +236,8 @@ pub fn RenderState::update(
 fn RenderState::snapshot_all_rows(
   self : RenderState,
   terminal : StreamTerminal,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Unit {
   let row_states : Array[@page.PageRowState] = []
   let row_cells : Array[FixedArray[@page.PageCellState]] = []
@@ -264,8 +264,8 @@ fn RenderState::snapshot_all_rows(
 fn RenderState::update_changed_rows(
   self : RenderState,
   terminal : StreamTerminal,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Bool {
   let mut any_row_dirty = false
   let mut row_idx = 0
@@ -293,8 +293,8 @@ fn RenderState::update_changed_rows(
 ///|
 fn resolve_viewport_origin(
   terminal : StreamTerminal,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Coordinate? {
   if rows == 0 || columns == 0 {
     None
@@ -352,8 +352,8 @@ fn resolve_cursor_viewport(terminal : StreamTerminal) -> (Coordinate?, Bool) {
 ///|
 fn render_row_storage_matches(
   state : RenderState,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Bool {
   if state.row_states.length() != rows.to_int() ||
     state.row_cells.length() != rows.to_int() {
@@ -373,7 +373,7 @@ fn render_row_storage_matches(
 ///|
 fn snapshot_render_row(
   terminal : StreamTerminal,
-  row : CellCountInt,
+  row : @size.CellCountInt,
 ) -> @page.PageRowState {
   match terminal.screen_row_snapshot(row) {
     Some(snapshot) => snapshot
@@ -384,8 +384,8 @@ fn snapshot_render_row(
 ///|
 fn snapshot_render_cells(
   terminal : StreamTerminal,
-  row : CellCountInt,
-  columns : CellCountInt,
+  row : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> FixedArray[@page.PageCellState] {
   let width = columns.to_int()
   let result : FixedArray[@page.PageCellState] = FixedArray::make(
@@ -405,7 +405,7 @@ fn snapshot_render_cells(
 ///|
 fn snapshot_render_link_ids(
   terminal : StreamTerminal,
-  row : CellCountInt,
+  row : @size.CellCountInt,
   cells : FixedArray[@page.PageCellState],
 ) -> FixedArray[@hyperlink.HyperlinkId]? {
   // Only a row that actually holds a hyperlinked cell allocates an id array; the

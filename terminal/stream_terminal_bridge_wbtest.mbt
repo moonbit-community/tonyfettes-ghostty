@@ -34,7 +34,7 @@ fn StreamTerminalBridgeState::mouse_shift_capture(
 ///|
 fn StreamTerminalBridgeState::tabstop(
   self : StreamTerminalBridgeState,
-  col : CellCountInt,
+  col : @size.CellCountInt,
 ) -> Bool {
   self.tabstops.get(col)
 }
@@ -294,7 +294,7 @@ fn apply_stream_bytes(state : StreamTerminalBridgeState, bytes : Bytes) -> Bool 
 ///|
 fn expect_bridge_row(
   state : StreamTerminalBridgeState,
-  row : CellCountInt,
+  row : @size.CellCountInt,
 ) -> @page.PageRowState {
   state.screen_row_snapshot(row).unwrap()
 }
@@ -302,8 +302,8 @@ fn expect_bridge_row(
 ///|
 fn expect_bridge_cell(
   state : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState {
   state.screen_cell_snapshot(row, col).unwrap()
 }
@@ -312,8 +312,8 @@ fn expect_bridge_cell(
 // Resolve a snapshot cell's style through the active grid's shared table.
 fn expect_bridge_cell_style(
   state : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @style.CellStyle {
   state.grid.style_table.get(expect_bridge_cell(state, row, col).style_id())
 }
@@ -323,8 +323,8 @@ fn expect_bridge_cell_style(
 // `link_ids` side array now, not in the cell.
 fn expect_bridge_cell_hyperlink(
   state : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @hyperlink.CellHyperlink? {
   state.screen_cell_hyperlink_snapshot(row, col)
 }

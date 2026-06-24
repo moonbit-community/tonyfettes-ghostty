@@ -571,7 +571,6 @@ pub fn TerminalTabstopsState::set(Self, UInt16) -> Unit
 pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
 
 // Type aliases
-pub type CellCountInt = UInt16
 
 // Traits
 

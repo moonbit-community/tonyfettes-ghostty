@@ -7,22 +7,22 @@ pub(all) enum CursorVisualStyle {
 
 ///|
 struct TerminalCursorState {
-  mut rows : CellCountInt
-  mut columns : CellCountInt
-  mut x : CellCountInt
-  mut y : CellCountInt
+  mut rows : @size.CellCountInt
+  mut columns : @size.CellCountInt
+  mut x : @size.CellCountInt
+  mut y : @size.CellCountInt
   mut visual_style : CursorVisualStyle
   mut pending_wrap : Bool
-  mut top_margin : CellCountInt
-  mut bottom_margin : CellCountInt
-  mut left_margin : CellCountInt
-  mut right_margin : CellCountInt
+  mut top_margin : @size.CellCountInt
+  mut bottom_margin : @size.CellCountInt
+  mut left_margin : @size.CellCountInt
+  mut right_margin : @size.CellCountInt
 } derive(Eq, Debug)
 
 ///|
 pub fn TerminalCursorState::new(
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> TerminalCursorState {
   let actual_rows = nonzero_dimension(rows)
   let actual_columns = nonzero_dimension(columns)
@@ -41,12 +41,12 @@ pub fn TerminalCursorState::new(
 }
 
 ///|
-pub fn TerminalCursorState::x(self : TerminalCursorState) -> CellCountInt {
+pub fn TerminalCursorState::x(self : TerminalCursorState) -> @size.CellCountInt {
   self.x
 }
 
 ///|
-pub fn TerminalCursorState::y(self : TerminalCursorState) -> CellCountInt {
+pub fn TerminalCursorState::y(self : TerminalCursorState) -> @size.CellCountInt {
   self.y
 }
 
@@ -65,28 +65,28 @@ pub fn TerminalCursorState::pending_wrap(self : TerminalCursorState) -> Bool {
 ///|
 pub fn TerminalCursorState::top_margin(
   self : TerminalCursorState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.top_margin
 }
 
 ///|
 pub fn TerminalCursorState::bottom_margin(
   self : TerminalCursorState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.bottom_margin
 }
 
 ///|
 pub fn TerminalCursorState::left_margin(
   self : TerminalCursorState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.left_margin
 }
 
 ///|
 pub fn TerminalCursorState::right_margin(
   self : TerminalCursorState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.right_margin
 }
 
@@ -138,8 +138,8 @@ pub fn TerminalCursorState::apply_cursor_style(
 ///|
 pub fn TerminalCursorState::set_cursor_pos(
   self : TerminalCursorState,
-  row_req : CellCountInt,
-  col_req : CellCountInt,
+  row_req : @size.CellCountInt,
+  col_req : @size.CellCountInt,
   origin_mode : Bool,
 ) -> Unit {
   let row = one_indexed_request(row_req)
@@ -165,8 +165,8 @@ pub fn TerminalCursorState::set_cursor_pos(
 ///|
 pub fn TerminalCursorState::set_top_and_bottom_margin(
   self : TerminalCursorState,
-  top_req : CellCountInt,
-  bottom_req : CellCountInt,
+  top_req : @size.CellCountInt,
+  bottom_req : @size.CellCountInt,
   origin_mode : Bool,
 ) -> Unit {
   let top = one_indexed_request(top_req)
@@ -184,8 +184,8 @@ pub fn TerminalCursorState::set_top_and_bottom_margin(
 pub fn TerminalCursorState::set_left_and_right_margin(
   self : TerminalCursorState,
   enabled : Bool,
-  left_req : CellCountInt,
-  right_req : CellCountInt,
+  left_req : @size.CellCountInt,
+  right_req : @size.CellCountInt,
   origin_mode : Bool,
 ) -> Unit {
   if !enabled {
@@ -218,8 +218,8 @@ pub fn TerminalCursorState::full_reset(self : TerminalCursorState) -> Unit {
 ///|
 fn TerminalCursorState::resize(
   self : TerminalCursorState,
-  rows : CellCountInt,
-  columns : CellCountInt,
+  rows : @size.CellCountInt,
+  columns : @size.CellCountInt,
 ) -> Unit {
   let actual_rows = nonzero_dimension(rows)
   let actual_columns = nonzero_dimension(columns)
@@ -237,7 +237,7 @@ fn TerminalCursorState::resize(
 }
 
 ///|
-fn nonzero_dimension(value : CellCountInt) -> CellCountInt {
+fn nonzero_dimension(value : @size.CellCountInt) -> @size.CellCountInt {
   if value == 0 {
     1
   } else {
@@ -246,7 +246,7 @@ fn nonzero_dimension(value : CellCountInt) -> CellCountInt {
 }
 
 ///|
-fn one_indexed_request(value : CellCountInt) -> Int {
+fn one_indexed_request(value : @size.CellCountInt) -> Int {
   if value == 0 {
     1
   } else {
@@ -255,7 +255,10 @@ fn one_indexed_request(value : CellCountInt) -> Int {
 }
 
 ///|
-fn clamped_bottom_margin(request : CellCountInt, limit : CellCountInt) -> Int {
+fn clamped_bottom_margin(
+  request : @size.CellCountInt,
+  limit : @size.CellCountInt,
+) -> Int {
   if request == 0 || request > limit {
     limit.to_int()
   } else {
@@ -268,7 +271,7 @@ fn bounded_one_indexed_position(
   value : Int,
   offset : Int,
   limit : Int,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   let adjusted = value + offset
   let bounded = if adjusted > limit { limit } else { adjusted }
   (bounded - 1).to_uint16()
@@ -276,9 +279,9 @@ fn bounded_one_indexed_position(
 
 ///|
 fn min_cursor_coordinate(
-  value : CellCountInt,
-  limit : CellCountInt,
-) -> CellCountInt {
+  value : @size.CellCountInt,
+  limit : @size.CellCountInt,
+) -> @size.CellCountInt {
   if value >= limit {
     limit - 1
   } else {

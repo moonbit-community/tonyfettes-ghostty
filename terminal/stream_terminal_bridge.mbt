@@ -1,8 +1,8 @@
 ///|
-const DefaultRows : CellCountInt = 24
+const DefaultRows : @size.CellCountInt = 24
 
 ///|
-const DefaultColumns : CellCountInt = 80
+const DefaultColumns : @size.CellCountInt = 80
 
 ///|
 const DefaultMaxScrollback : Int = 10_000
@@ -286,14 +286,14 @@ fn StreamTerminalBridgeState::mode_enabled(
 ///|
 fn StreamTerminalBridgeState::cursor_x(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.x()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_y(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.y()
 }
 
@@ -321,28 +321,28 @@ fn StreamTerminalBridgeState::cursor_pending_wrap(
 ///|
 fn StreamTerminalBridgeState::cursor_top_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.top_margin()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_bottom_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.bottom_margin()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_left_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.left_margin()
 }
 
 ///|
 fn StreamTerminalBridgeState::cursor_right_margin(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.cursor.right_margin()
 }
 
@@ -458,7 +458,7 @@ fn StreamTerminalBridgeState::set_default_palette(
 ///|
 fn StreamTerminalBridgeState::screen_row_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
+  row : @size.CellCountInt,
 ) -> @page.PageRowState? {
   self.scrollback.row(self.grid, row)
 }
@@ -466,8 +466,8 @@ fn StreamTerminalBridgeState::screen_row_snapshot(
 ///|
 fn StreamTerminalBridgeState::screen_cell_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @page.PageCellState? {
   self.scrollback.cell(self.grid, row, col)
 }
@@ -475,8 +475,8 @@ fn StreamTerminalBridgeState::screen_cell_snapshot(
 ///|
 fn StreamTerminalBridgeState::screen_cell_hyperlink_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @hyperlink.CellHyperlink? {
   self.scrollback.cell_hyperlink(self.grid, row, col)
 }
@@ -484,8 +484,8 @@ fn StreamTerminalBridgeState::screen_cell_hyperlink_snapshot(
 ///|
 fn StreamTerminalBridgeState::screen_cell_hyperlink_id_snapshot(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-  col : CellCountInt,
+  row : @size.CellCountInt,
+  col : @size.CellCountInt,
 ) -> @hyperlink.HyperlinkId {
   self.scrollback.cell_hyperlink_id(self.grid, row, col)
 }
@@ -499,8 +499,8 @@ fn StreamTerminalBridgeState::screen_cell_hyperlink_id_snapshot(
 // Returns None when no OSC 133 sequences have been seen yet.
 fn StreamTerminalBridgeState::semantic_prompt_row_range(
   self : StreamTerminalBridgeState,
-  row : CellCountInt,
-) -> (CellCountInt, CellCountInt)? {
+  row : @size.CellCountInt,
+) -> (@size.CellCountInt, @size.CellCountInt)? {
   guard self.semantic.seen() else { return None }
   let prompt = match self.scrollback.row(self.grid, row) {
     None => return None
@@ -612,14 +612,14 @@ fn StreamTerminalBridgeState::cell_at_point(
 ///|
 fn StreamTerminalBridgeState::rows(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.grid.rows
 }
 
 ///|
 fn StreamTerminalBridgeState::columns(
   self : StreamTerminalBridgeState,
-) -> CellCountInt {
+) -> @size.CellCountInt {
   self.grid.cols
 }
 
@@ -866,8 +866,8 @@ fn StreamTerminalBridgeState::clear_xtversion(
 ///|
 fn StreamTerminalBridgeState::resize(
   self : StreamTerminalBridgeState,
-  columns : CellCountInt,
-  rows : CellCountInt,
+  columns : @size.CellCountInt,
+  rows : @size.CellCountInt,
   cell_width_px : UInt,
   cell_height_px : UInt,
 ) -> @result_code.TerminalResultCode {
@@ -2980,7 +2980,7 @@ fn StreamTerminalBridgeState::apply_color_reset(
 }
 
 ///|
-fn movement_count(movement : @stream.CursorMovement) -> CellCountInt {
+fn movement_count(movement : @stream.CursorMovement) -> @size.CellCountInt {
   if movement.0 == 0 {
     1
   } else {
@@ -3003,7 +3003,7 @@ fn bounded_count(request : Int, max : Int) -> Int {
 }
 
 ///|
-fn saturated_request(value : Int) -> CellCountInt {
+fn saturated_request(value : Int) -> @size.CellCountInt {
   if value > 0xFFFF {
     0xFFFF
   } else {
@@ -3484,7 +3484,7 @@ fn codepoint_in_ranges(
 }
 
 ///|
-fn saturated_dimension(count : CellCountInt, unit : UInt) -> UInt {
+fn saturated_dimension(count : @size.CellCountInt, unit : UInt) -> UInt {
   let product = count.to_uint64() * unit.to_uint64()
   if product > 0xFFFFFFFFUL {
     0xFFFFFFFF

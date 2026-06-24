@@ -1216,7 +1216,10 @@ fn formatter_coord_before(lhs : Coordinate, rhs : Coordinate) -> Bool {
 }
 
 ///|
-fn min_cell_count(lhs : CellCountInt, rhs : CellCountInt) -> CellCountInt {
+fn min_cell_count(
+  lhs : @size.CellCountInt,
+  rhs : @size.CellCountInt,
+) -> @size.CellCountInt {
   if lhs < rhs {
     lhs
   } else {
@@ -1225,7 +1228,10 @@ fn min_cell_count(lhs : CellCountInt, rhs : CellCountInt) -> CellCountInt {
 }
 
 ///|
-fn max_cell_count(lhs : CellCountInt, rhs : CellCountInt) -> CellCountInt {
+fn max_cell_count(
+  lhs : @size.CellCountInt,
+  rhs : @size.CellCountInt,
+) -> @size.CellCountInt {
   if lhs > rhs {
     lhs
   } else {
