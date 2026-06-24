@@ -307,13 +307,6 @@ pub fn ScreenHyperlinkState::next_implicit_id(Self) -> Int
 pub fn ScreenHyperlinkState::start(Self, String, String?) -> Unit
 pub fn ScreenHyperlinkState::uri(Self) -> String?
 
-type ScreenProtectedState derive(Eq, @debug.Debug)
-pub fn ScreenProtectedState::cursor_protected(Self) -> Bool
-pub fn ScreenProtectedState::mode(Self) -> @ansi.ProtectedMode
-pub fn ScreenProtectedState::new() -> Self
-pub fn ScreenProtectedState::reset(Self) -> Unit
-pub fn ScreenProtectedState::set(Self, @ansi.ProtectedMode) -> Unit
-
 type ScreenSemanticState derive(Eq, @debug.Debug)
 pub fn ScreenSemanticState::apply_fresh_line_new_prompt(Self, @osc.SemanticPrompt) -> Unit
 pub fn ScreenSemanticState::apply_prompt_start(Self, @osc.SemanticPrompt) -> Unit

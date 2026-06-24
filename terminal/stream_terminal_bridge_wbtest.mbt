@@ -6,7 +6,7 @@ fn StreamTerminalBridgeState::new() -> StreamTerminalBridgeState {
 ///|
 fn StreamTerminalBridgeState::protected_state(
   self : StreamTerminalBridgeState,
-) -> ScreenProtectedState {
+) -> @protected.ScreenProtectedState {
   self.protected_state
 }
 

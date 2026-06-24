@@ -178,7 +178,7 @@ fn StreamTerminalBridgeEffects::clear_xtversion(
 priv struct StreamTerminalBridgeState {
   effects : StreamTerminalBridgeEffects
   apc_handler : ApcHandler
-  protected_state : ScreenProtectedState
+  protected_state : @protected.ScreenProtectedState
   display_state : TerminalDisplayState
   colors : @color.TerminalColors
   mut modes : @mode.ModeState
@@ -223,7 +223,7 @@ fn StreamTerminalBridgeState::with_effects(
   {
     effects,
     apc_handler: ApcHandler::new(),
-    protected_state: ScreenProtectedState::new(),
+    protected_state: @protected.ScreenProtectedState::new(),
     display_state: TerminalDisplayState::new(),
     colors: @color.TerminalColors::new(),
     modes: @mode.ModeState::new(),

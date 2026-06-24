@@ -48,7 +48,7 @@ pub fn ScreenProtectedState::reset(self : ScreenProtectedState) -> Unit {
 }
 
 ///|
-fn ScreenProtectedState::set_cursor_protected(
+pub fn ScreenProtectedState::set_cursor_protected(
   self : ScreenProtectedState,
   value : Bool,
 ) -> Unit {

@@ -1,6 +1,6 @@
 ///|
 test "terminal state/protected mode defaults and reset" {
-  let state = ScreenProtectedState::new()
+  let state = @protected.ScreenProtectedState::new()
   guard state.mode() == Off && !state.cursor_protected() else {
     fail("expected protected state defaults")
   }
@@ -18,7 +18,7 @@ test "terminal state/protected mode defaults and reset" {
 
 ///|
 test "terminal state/protected off preserves last non-off mode" {
-  let state = ScreenProtectedState::new()
+  let state = @protected.ScreenProtectedState::new()
   state.set(Iso)
   state.set(Off)
   guard state.mode() == Iso && !state.cursor_protected() else {

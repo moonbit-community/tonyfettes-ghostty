@@ -17,6 +17,7 @@ import {
   "tonyfettes/ghostty/terminal/page",
   "tonyfettes/ghostty/terminal/pagelist",
   "tonyfettes/ghostty/terminal/point",
+  "tonyfettes/ghostty/terminal/protected",
   "tonyfettes/ghostty/terminal/result_code",
   "tonyfettes/ghostty/terminal/sgr",
   "tonyfettes/ghostty/terminal/size",
