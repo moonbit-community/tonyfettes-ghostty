@@ -510,7 +510,16 @@ pub fn PageCellState::with_style_id(
 
 ///|
 pub fn PageCellState::wide(self : PageCellState) -> PageCellWide {
-  self.flags().wide()
+  // Decode the 2-bit wide field directly from the packed word (flags window at
+  // CellFlagsShift, wide in its low CellWideMask bits) instead of routing through
+  // flags() + PageCellFlags::wide(); the single-level match folds in at the call
+  // site like has_grapheme/has_styling.
+  match ((self.0 >> CellFlagsShift) & CellWideMask.to_uint64()).to_int() {
+    1 => Wide
+    2 => SpacerTail
+    3 => SpacerHead
+    _ => Narrow
+  }
 }
 
 ///|

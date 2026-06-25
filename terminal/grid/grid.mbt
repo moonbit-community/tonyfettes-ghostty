@@ -806,10 +806,13 @@ fn ScreenGridState::print_cell(
   let row_idx = cursor.y.to_int()
   let col_idx = cursor.x.to_int()
   let current = self.cells[row_idx][col_idx]
-  if current.wide() != wide {
-    match current.wide() {
-      Narrow => ()
-      Wide => {
+  // Only an existing Wide or SpacerTail cell needs cleanup when the new cell's
+  // width differs (Narrow/SpacerHead were no-ops in the old `!= wide` form).
+  // Folding the width-changed test into the tag match keeps it a plain tag
+  // comparison (`is`) instead of a polymorphic Eq::not_equal/equal call.
+  match current.wide() {
+    Wide =>
+      if !(wide is Wide) {
         if col_idx < self.cols.to_int() - 1 {
           self.clear_row_range(row_idx, col_idx, col_idx + 2, style, false)
         }
@@ -817,7 +820,8 @@ fn ScreenGridState::print_cell(
           self.clear_prev_row_spacer_head(row_idx, style)
         }
       }
-      SpacerTail => {
+    SpacerTail =>
+      if !(wide is SpacerTail) {
         if col_idx > 0 {
           self.clear_row_range(row_idx, col_idx - 1, col_idx + 1, style, false)
         }
@@ -825,8 +829,7 @@ fn ScreenGridState::print_cell(
           self.clear_prev_row_spacer_head(row_idx, style)
         }
       }
-      SpacerHead => ()
-    }
+    Narrow | SpacerHead => ()
   }
 
   // Flags the cell being overwritten contributed to the row. If the new cell
