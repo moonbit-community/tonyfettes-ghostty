@@ -70,6 +70,7 @@ test "kitty graphics wb/rect guards impossible zero-row state" {
   bridge.grid = {
     rows: 0,
     cols: 1,
+    base: 0,
     descs: [],
     cells: [],
     link_ids: [],

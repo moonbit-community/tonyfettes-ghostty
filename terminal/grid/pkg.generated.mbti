@@ -33,6 +33,7 @@ pub(all) enum ScreenEraseLineMode {
 pub(all) struct ScreenGridState {
   rows : UInt16
   cols : UInt16
+  mut base : Int
   descs : FixedArray[@page.PageRowState]
   cells : FixedArray[FixedArray[@page.PageCellState]]
   link_ids : FixedArray[FixedArray[@hyperlink.HyperlinkId]?]
@@ -55,6 +56,7 @@ pub fn ScreenGridState::insert_lines(Self, @cursor.TerminalCursorState, @style.C
 pub fn ScreenGridState::link_id_at(Self, Int, Int) -> @hyperlink.HyperlinkId
 pub fn ScreenGridState::new(UInt16, UInt16) -> Self
 pub fn ScreenGridState::new_with_table(UInt16, UInt16, @style.StyleTable, @hyperlink.HyperlinkTable, @page.GraphemeTable) -> Self
+pub fn ScreenGridState::phys_row(Self, Int) -> Int
 pub fn ScreenGridState::print(Self, @cursor.TerminalCursorState, UInt, Int, @style.CellStyle, Bool, @page.SemanticContent, @page.RowSemanticPrompt, @hyperlink.CellHyperlink?, Bool, Bool) -> Unit
 pub fn ScreenGridState::print_repeat(Self, @cursor.TerminalCursorState, UInt, Int, @style.CellStyle, Bool, @page.SemanticContent, @page.RowSemanticPrompt, @hyperlink.CellHyperlink?, Bool, Bool, UInt16) -> Unit
 pub fn ScreenGridState::recompute_row_flags(Self, Int) -> Unit

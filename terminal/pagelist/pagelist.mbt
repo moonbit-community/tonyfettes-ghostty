@@ -3,8 +3,12 @@ priv struct PageListPage {
   rows : @size.CellCountInt
   cols : @size.CellCountInt
   // Parallel per-row arrays, mirroring `ScreenGridState`: `descs[i]`/`cells[i]`
-  // are row `i`'s descriptor and cell buffer. The active page shares these
-  // arrays with the grid by reference (see `active_grid`).
+  // are physical row `i`'s descriptor and cell buffer. The active page shares
+  // these arrays with the grid by reference (see `active_grid`). The ring-buffer
+  // rotation offset lives on the grid view (`ScreenGridState.base`), not here: the
+  // page's arrays rotate in place, but only a grid view ever indexes them — and
+  // `pagelist` always does so through a passed view's `phys_row` — so the page needs
+  // no offset of its own. (See the INVARIANT on `ScreenGridState.base`.)
   descs : FixedArray[@page.PageRowState]
   cells : FixedArray[FixedArray[@page.PageCellState]]
   // Per-row hyperlink ids, parallel to `cells` (see `ScreenGridState.link_ids`).
@@ -175,6 +179,10 @@ pub fn PageList::active_grid(self : PageList) -> @grid.ScreenGridState {
   {
     rows: self.active_node.page.rows,
     cols: self.cols,
+    // A fresh view starts unrotated. Sound only at the call sites that re-fetch
+    // (construction / post-`full_reset` / post-resize), where the page storage is
+    // fresh or fully blank — see the INVARIANT on `ScreenGridState.base`.
+    base: 0,
     descs: self.active_node.page.descs,
     cells: self.active_node.page.cells,
     link_ids: self.active_node.page.link_ids,
@@ -223,7 +231,7 @@ pub fn PageList::row(
 ) -> @page.PageRowState? {
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(History(index)) => Some(self.history[index].row)
-    Some(Screen(index)) => Some(grid.descs[index])
+    Some(Screen(index)) => Some(grid.descs[grid.phys_row(index)])
     None => None
   }
 }
@@ -242,7 +250,7 @@ pub fn PageList::cell(
 
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(History(index)) => Some(self.history[index].cells[col_idx])
-    Some(Screen(index)) => Some(grid.cells[index][col_idx])
+    Some(Screen(index)) => Some(grid.cells[grid.phys_row(index)][col_idx])
     None => None
   }
 }
@@ -255,7 +263,7 @@ pub fn PageList::screen_row(
 ) -> @page.PageRowState? {
   match self.screen_row_source(grid, row.to_int()) {
     Some(History(index)) => Some(self.history[index].row)
-    Some(Screen(index)) => Some(grid.descs[index])
+    Some(Screen(index)) => Some(grid.descs[grid.phys_row(index)])
     None => None
   }
 }
@@ -274,7 +282,7 @@ pub fn PageList::screen_cell(
 
   match self.screen_row_source(grid, row.to_int()) {
     Some(History(index)) => Some(self.history[index].cells[col_idx])
-    Some(Screen(index)) => Some(grid.cells[index][col_idx])
+    Some(Screen(index)) => Some(grid.cells[grid.phys_row(index)][col_idx])
     None => None
   }
 }
@@ -307,7 +315,7 @@ fn PageList::link_id_at_source(
       }
     }
     Screen(index) =>
-      if grid.cells[index][col_idx].has_hyperlink() {
+      if grid.cells[grid.phys_row(index)][col_idx].has_hyperlink() {
         grid.link_id_at(index, col_idx)
       } else {
         @hyperlink.no_hyperlink_id
@@ -756,7 +764,7 @@ fn PageList::count_wrap_continuations_left_up(
       let mut wrapped = 0
       for row_idx in 0..<=index {
         if row_idx < grid.descs.length() &&
-          grid.descs[row_idx].wrap_continuation() {
+          grid.descs[grid.phys_row(row_idx)].wrap_continuation() {
           wrapped += 1
         }
       }
@@ -1715,7 +1723,7 @@ pub fn PageList::cell_at_point(
 
   match self.row_source_for_point(grid, point) {
     Some(History(index)) => Some(self.history[index].cells[col_idx])
-    Some(Screen(index)) => Some(grid.cells[index][col_idx])
+    Some(Screen(index)) => Some(grid.cells[grid.phys_row(index)][col_idx])
     None => None
   }
 }
@@ -1927,20 +1935,25 @@ fn snapshot_scrollback_row(
   // deep copy into the history row (previously this pre-copied them too, so
   // every captured row was deep-copied twice).
   let width = grid.cols.to_int()
+  // Translate the logical row to its physical slot once; the grid view may be
+  // ring-rotated (see `ScreenGridState.base`).
+  let phys = grid.phys_row(row_idx)
+  let src_cells = grid.cells[phys]
   let cells : FixedArray[@page.PageCellState] = FixedArray::make(
     width,
     @page.PageCellState::new(),
   )
   for col_idx in 0..<width {
-    cells[col_idx] = grid.cells[row_idx][col_idx]
+    cells[col_idx] = src_cells[col_idx]
   }
+  let desc = grid.descs[phys]
   make_pinned_row(
-    grid.descs[row_idx],
+    desc,
     cells,
-    grid.link_ids[row_idx],
+    grid.link_ids[phys],
     grid.cols,
-    grid.descs[row_idx].wrap(),
-    grid.descs[row_idx].wrap_continuation(),
+    desc.wrap(),
+    desc.wrap_continuation(),
     false,
   )
 }
@@ -1950,20 +1963,25 @@ fn snapshot_scrollback_row(
 /// by reference instead of deep-copying them (unlike `snapshot_scrollback_row`).
 ///
 /// Safe only because every caller (`capture_top_scroll_region_up`) is
-/// immediately followed by the grid shift that overwrites `grid` row `row_idx`
-/// with the row below — capture is guarded to top_margin==0 full-width and
-/// harvests exactly the `count` top rows that the shift then vacates, so once
-/// this returns nothing in the active grid aliases these cells. Render snapshots
-/// deep-copy and pins track by node identity, so neither aliases them either.
+/// immediately followed by the grid shift that vacates `grid` row `row_idx` from
+/// the active view — capture is guarded to top_margin==0 full-width and harvests
+/// exactly the `count` top rows the shift then drops. With the ring buffer the
+/// shift bumps `base` past these rows and `set_blank_row` overwrites their now-
+/// freed physical slots with fresh blanks, so once this returns no active-grid
+/// logical row aliases these cells. Render snapshots deep-copy and pins track by
+/// node identity, so neither aliases them either.
 fn harvest_scrollback_row(
   grid : @grid.ScreenGridState,
   row_idx : Int,
 ) -> PageListRow {
-  let desc = grid.descs[row_idx]
+  // Translate the logical row to its physical slot; the grid view may be
+  // ring-rotated (see `ScreenGridState.base`).
+  let phys = grid.phys_row(row_idx)
+  let desc = grid.descs[phys]
   make_pinned_row_owned(
     desc,
-    grid.cells[row_idx],
-    grid.link_ids[row_idx],
+    grid.cells[phys],
+    grid.link_ids[phys],
     grid.cols,
     desc.wrap(),
     desc.wrap_continuation(),

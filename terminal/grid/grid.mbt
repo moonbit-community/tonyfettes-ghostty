@@ -56,8 +56,24 @@ pub fn make_row_cells(cols : Int) -> FixedArray[@page.PageCellState] {
 pub(all) struct ScreenGridState {
   rows : @size.CellCountInt
   cols : @size.CellCountInt
-  // Parallel per-row arrays: `descs[i]` and `cells[i]` are row `i`'s descriptor
-  // and cell buffer. See the comment above for why they are split.
+  // Ring-buffer rotation: the physical index of logical row 0. Logical row `r`
+  // lives at physical slot `phys(r) = (base + r) % rows`, so a full-screen scroll
+  // is an O(1) `base` bump (plus blanking the freed rows) instead of an O(rows)
+  // ref-array blit.
+  //
+  // `base` is owned by this grid view, not the shared page storage — the active
+  // page's `descs`/`cells` arrays rotate in place, but the rotation *offset* lives
+  // only here. This is sound because the one long-lived view (`self.grid` in the
+  // bridge) is created once and mutated in place by scrolls; `active_grid` mints a
+  // fresh `base: 0` view ONLY at points where the page storage is fresh or fully
+  // blank (construction, post-`full_reset` re-fetch, post-resize rebuild), where a
+  // zero offset is correct regardless of the prior rotation. INVARIANT: never call
+  // `active_grid` (or otherwise build a `base: 0` view) over storage that is both
+  // rotated and non-blank — it would read rows at the wrong offset.
+  mut base : Int
+  // Parallel per-row arrays: `descs[i]` and `cells[i]` are physical row `i`'s
+  // descriptor and cell buffer (index through `phys`). See the comment above for
+  // why they are split.
   descs : FixedArray[@page.PageRowState]
   cells : FixedArray[FixedArray[@page.PageCellState]]
   // Per-row hyperlink ids, parallel to `cells`. `link_ids[i]` is `None` for the
@@ -128,6 +144,7 @@ pub fn ScreenGridState::new_with_table(
   {
     rows: actual_rows,
     cols: actual_cols,
+    base: 0,
     descs,
     cells,
     link_ids: FixedArray::make(actual_rows.to_int(), None),
@@ -136,6 +153,95 @@ pub fn ScreenGridState::new_with_table(
     hyperlink_table,
     grapheme_table,
   }
+}
+
+///|
+/// Physical slot backing logical row `logical`. `base` and `logical` are both in
+/// `[0, rows)`, so their sum is in `[0, 2*rows)` and a single conditional subtract
+/// normalizes it — cheaper than `%` on the per-row hot path.
+///
+/// `#inline`: this is called on every per-row access in the print/scroll hot
+/// paths; left as a real call it cost ~10% self time in the wrapped-blob profile
+/// (pure call overhead around two integer ops), so fold it into callers.
+#inline
+fn ScreenGridState::phys(self : ScreenGridState, logical : Int) -> Int {
+  let p = self.base + logical
+  let n = self.rows.to_int()
+  if p >= n {
+    p - n
+  } else {
+    p
+  }
+}
+
+///|
+/// Physical slot for logical row `logical`, for owners (`pagelist`) that index the
+/// shared `descs`/`cells`/`link_ids` arrays directly. The arrays alias the active
+/// page, but `base` rotates only the grid's logical view, so a consumer reading a
+/// raw slot must translate logical→physical through here.
+pub fn ScreenGridState::phys_row(self : ScreenGridState, logical : Int) -> Int {
+  self.phys(logical)
+}
+
+///|
+/// Logical row `r`'s descriptor. `#inline`: a thin `phys` wrapper on the hot path.
+#inline
+fn ScreenGridState::desc(self : ScreenGridState, r : Int) -> @page.PageRowState {
+  self.descs[self.phys(r)]
+}
+
+///|
+/// Write logical row `r`'s descriptor. `#inline`: thin `phys` wrapper, hot path.
+#inline
+fn ScreenGridState::set_desc(
+  self : ScreenGridState,
+  r : Int,
+  value : @page.PageRowState,
+) -> Unit {
+  self.descs[self.phys(r)] = value
+}
+
+///|
+/// Logical row `r`'s cell buffer. `#inline`: thin `phys` wrapper, hot path.
+#inline
+fn ScreenGridState::row_cells(
+  self : ScreenGridState,
+  r : Int,
+) -> FixedArray[@page.PageCellState] {
+  self.cells[self.phys(r)]
+}
+
+///|
+/// Install logical row `r`'s cell buffer. `#inline`: thin `phys` wrapper.
+#inline
+fn ScreenGridState::set_row_cells(
+  self : ScreenGridState,
+  r : Int,
+  value : FixedArray[@page.PageCellState],
+) -> Unit {
+  self.cells[self.phys(r)] = value
+}
+
+///|
+/// Logical row `r`'s hyperlink-id side array (`None` when link-free). `#inline`:
+/// thin `phys` wrapper.
+#inline
+fn ScreenGridState::link_row(
+  self : ScreenGridState,
+  r : Int,
+) -> FixedArray[@hyperlink.HyperlinkId]? {
+  self.link_ids[self.phys(r)]
+}
+
+///|
+/// Install logical row `r`'s hyperlink-id side array. `#inline`: thin wrapper.
+#inline
+fn ScreenGridState::set_link_row(
+  self : ScreenGridState,
+  r : Int,
+  value : FixedArray[@hyperlink.HyperlinkId]?,
+) -> Unit {
+  self.link_ids[self.phys(r)] = value
 }
 
 ///|
@@ -149,7 +255,7 @@ pub fn ScreenGridState::link_id_at(
   row_idx : Int,
   col_idx : Int,
 ) -> @hyperlink.HyperlinkId {
-  match self.link_ids[row_idx] {
+  match self.link_row(row_idx) {
     Some(row) => row[col_idx]
     None => @hyperlink.no_hyperlink_id
   }
@@ -165,11 +271,11 @@ fn ScreenGridState::set_link_id(
   col_idx : Int,
   id : @hyperlink.HyperlinkId,
 ) -> Unit {
-  let row = match self.link_ids[row_idx] {
+  let row = match self.link_row(row_idx) {
     Some(row) => row
     None => {
       let row = FixedArray::make(self.cols.to_int(), @hyperlink.no_hyperlink_id)
-      self.link_ids[row_idx] = Some(row)
+      self.set_link_row(row_idx, Some(row))
       row
     }
   }
@@ -214,12 +320,13 @@ fn ScreenGridState::set_blank_row(
     }
     None => make_blank_row_cells(self.cols.to_int(), style, self.style_table)
   }
-  self.descs[row_idx] = @page.PageRowState::new().with_styled(
+  let phys = self.phys(row_idx)
+  self.descs[phys] = @page.PageRowState::new().with_styled(
     blank_row_is_styled(style),
   )
-  self.cells[row_idx] = cells
+  self.cells[phys] = cells
   // A blank row carries no hyperlinks; drop any link array the recycled slot had.
-  self.link_ids[row_idx] = None
+  self.link_ids[phys] = None
 }
 
 ///|
@@ -231,7 +338,7 @@ pub fn ScreenGridState::row(
   if idx < 0 || idx >= self.rows.to_int() {
     None
   } else {
-    Some(self.descs[idx])
+    Some(self.desc(idx))
   }
 }
 
@@ -246,7 +353,7 @@ pub fn ScreenGridState::set_row_semantic_prompt(
 ) -> Unit {
   let idx = row.to_int()
   if idx >= 0 && idx < self.rows.to_int() {
-    self.descs[idx] = self.descs[idx].with_semantic_prompt(prompt)
+    self.set_desc(idx, self.desc(idx).with_semantic_prompt(prompt))
   }
 }
 
@@ -306,7 +413,7 @@ pub fn ScreenGridState::print(
           self.apply_row_prompt(cursor.y.to_int(), row_prompt)
           if right_limit == self.cols.to_int() {
             let cy = cursor.y.to_int()
-            self.descs[cy] = self.descs[cy].with_wrap(true)
+            self.set_desc(cy, self.desc(cy).with_wrap(true))
             self.print_cell(
               cursor,
               0U,
@@ -423,14 +530,14 @@ pub fn ScreenGridState::append_grapheme(
   if prev_x >= self.cols.to_int() {
     return
   }
+  let row_cells = self.row_cells(row_idx)
   // Resolve SpacerTail → Wide base cell one column to the left.
-  let target_x = if prev_x > 0 &&
-    self.cells[row_idx][prev_x].wide() == SpacerTail {
+  let target_x = if prev_x > 0 && row_cells[prev_x].wide() == SpacerTail {
     prev_x - 1
   } else {
     prev_x
   }
-  let cell = self.cells[row_idx][target_x]
+  let cell = row_cells[target_x]
   if cell.has_text() {
     // Variation selectors retroactively request emoji (U+FE0F → wide) or text
     // (U+FE0E → narrow) presentation for the base cluster. We don't re-width a
@@ -444,12 +551,13 @@ pub fn ScreenGridState::append_grapheme(
       (codepoint == 0xFE0EU && base_is_wide) {
       return
     }
-    self.cells[row_idx][target_x] = cell.with_grapheme_id(
+    row_cells[target_x] = cell.with_grapheme_id(
       self.grapheme_table.append(cell.grapheme_id(), codepoint),
     )
-    self.descs[row_idx] = self.descs[row_idx]
-      .with_grapheme(true)
-      .with_dirty(true)
+    self.set_desc(
+      row_idx,
+      self.desc(row_idx).with_grapheme(true).with_dirty(true),
+    )
   }
 }
 
@@ -473,14 +581,15 @@ pub fn ScreenGridState::insert_blanks(
   }
 
   let row_idx = cursor.y.to_int()
+  let row_cells = self.row_cells(row_idx)
   let blank_style = style
-  let cell = self.cells[row_idx][x]
+  let cell = row_cells[x]
   if cell.wide() == SpacerTail && x > 0 {
     self.clear_row_range(row_idx, x - 1, x + 1, blank_style, false)
   }
 
   let rem = right - x + 1
-  let right_cell = self.cells[row_idx][right]
+  let right_cell = row_cells[right]
   if right_cell.wide() == Wide && right + 1 < self.cols.to_int() {
     self.clear_row_range(row_idx, right, right + 2, blank_style, false)
   }
@@ -489,7 +598,7 @@ pub fn ScreenGridState::insert_blanks(
   let scroll_amount = rem - adjusted_count
   if scroll_amount > 0 {
     let end_col = x + scroll_amount - 1
-    let end_cell = self.cells[row_idx][end_col]
+    let end_cell = row_cells[end_col]
     if end_cell.wide() == Wide && end_col + 1 < self.cols.to_int() {
       self.clear_row_range(row_idx, end_col, end_col + 2, blank_style, false)
     }
@@ -562,7 +671,7 @@ pub fn ScreenGridState::erase_chars(
   let mut count = min_int(remaining, requested)
   if count != remaining {
     let last_col = x + count - 1
-    let last = self.cells[cursor.y.to_int()][last_col]
+    let last = self.row_cells(cursor.y.to_int())[last_col]
     if last.wide() == Wide {
       count += 1
     }
@@ -600,7 +709,7 @@ pub fn ScreenGridState::erase_line(
     Right => {
       self.cursor_reset_wrap(cursor, style)
       (
-        if x > 0 && self.cells[row_idx][x].wide() == SpacerTail {
+        if x > 0 && self.row_cells(row_idx)[x].wide() == SpacerTail {
           x - 1
         } else {
           x
@@ -609,7 +718,14 @@ pub fn ScreenGridState::erase_line(
       )
     }
     Left =>
-      (start, if self.cells[row_idx][x].wide() == Wide { x + 2 } else { x + 1 })
+      (
+        start,
+        if self.row_cells(row_idx)[x].wide() == Wide {
+          x + 2
+        } else {
+          x + 1
+        },
+      )
     Complete => (start, end_)
   }
 
@@ -775,9 +891,10 @@ pub fn ScreenGridState::decaln(
     // flags, so set it here — otherwise a styled DECALN row scrolled into
     // scrollback would report `styled == false`, since the harvest path trusts
     // the live descriptor flag instead of rescanning the cells.
-    self.descs[row_idx] = self.descs[row_idx]
-      .with_styled(!style.is_default())
-      .with_dirty(true)
+    self.set_desc(
+      row_idx,
+      self.desc(row_idx).with_styled(!style.is_default()).with_dirty(true),
+    )
     row_idx += 1
   }
 }
@@ -787,9 +904,13 @@ pub fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
   let mut row_idx = 0
   while row_idx < self.rows.to_int() {
     self.clear_full_row(row_idx, @style.CellStyle::new(), false)
-    self.descs[row_idx] = self.descs[row_idx].with_dirty(false)
+    self.set_desc(row_idx, self.desc(row_idx).with_dirty(false))
     row_idx += 1
   }
+  // A reset screen is canonically unrotated. The rows are now all blank, so the
+  // value is cosmetic, but normalizing keeps physical==logical for any later
+  // consumer that reads a raw slot before the next scroll re-rotates.
+  self.base = 0
 }
 
 ///|
@@ -805,7 +926,7 @@ fn ScreenGridState::print_cell(
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   let col_idx = cursor.x.to_int()
-  let current = self.cells[row_idx][col_idx]
+  let current = self.row_cells(row_idx)[col_idx]
   // Only an existing Wide or SpacerTail cell needs cleanup when the new cell's
   // width differs (Narrow/SpacerHead were no-ops in the old `!= wide` form).
   // Folding the width-changed test into the tag match keeps it a plain tag
@@ -891,7 +1012,10 @@ fn ScreenGridState::write_cell_and_update_row_flags(
     hyperlink_present=has_link,
     semantic_content~,
   )
-  self.cells[row_idx][col_idx] = cell
+  // Resolve the ring offset once for this printed cell; the store and the row-flag
+  // update below both index the same physical row.
+  let phys = self.phys(row_idx)
+  self.cells[phys][col_idx] = cell
   if has_link {
     self.set_link_id(row_idx, col_idx, link_id)
   }
@@ -905,7 +1029,7 @@ fn ScreenGridState::write_cell_and_update_row_flags(
     return
   }
   let descs = self.descs
-  descs[row_idx] = descs[row_idx].record_cell_write(
+  descs[phys] = descs[phys].record_cell_write(
     styled=has_styled,
     hyperlink=has_link,
   )
@@ -921,7 +1045,7 @@ fn ScreenGridState::print_wrap(
   let row_idx = cursor.y.to_int()
   let mark_wrap = cursor.x.to_int() == self.cols.to_int() - 1
   if mark_wrap {
-    self.descs[row_idx] = self.descs[row_idx].with_wrap(true)
+    self.set_desc(row_idx, self.desc(row_idx).with_wrap(true))
   }
 
   cursor.pending_wrap = false
@@ -929,10 +1053,10 @@ fn ScreenGridState::print_wrap(
   cursor.x = cursor.left_margin
   let cy = cursor.y.to_int()
   if semantic_content == Prompt {
-    self.descs[cy] = self.descs[cy].with_semantic_prompt(PromptContinuation)
+    self.set_desc(cy, self.desc(cy).with_semantic_prompt(PromptContinuation))
   }
   if mark_wrap {
-    self.descs[cy] = self.descs[cy].with_wrap_continuation(true)
+    self.set_desc(cy, self.desc(cy).with_wrap_continuation(true))
   }
 }
 
@@ -983,7 +1107,7 @@ fn ScreenGridState::shift_region_down(
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
     self.recompute_row_flags(row_idx)
-    self.descs[row_idx] = self.descs[row_idx].with_dirty(true)
+    self.set_desc(row_idx, self.desc(row_idx).with_dirty(true))
     if row_idx == start_y {
       break
     }
@@ -1010,38 +1134,39 @@ fn ScreenGridState::shift_full_width_down(
     // Survivors are the rows above the scrolled-off block: `[start_y, bottom -
     // count]`. Detaching each from the row that used to precede it breaks any
     // wrap link and orphans a trailing SpacerHead, so clean both before moving.
+    // (Done at the pre-rotation `base`, while these logical indices still resolve
+    // to the survivors' current physical slots.)
     let mut src = bottom - count
     while src >= start_y {
       self.clean_trailing_spacer_head(src, style)
-      self.descs[src] = self.descs[src]
-        .with_wrap(false)
-        .with_wrap_continuation(false)
+      self.set_desc(
+        src,
+        self.desc(src).with_wrap(false).with_wrap_continuation(false),
+      )
       src -= 1
     }
-    // Slide the survivor rows down by `count`: descriptors (scalar) and cell
-    // buffers (by reference) move in lockstep. blit_to picks the overlap-safe
-    // (here backward) copy direction.
-    self.descs.unsafe_blit(
-      start_y + count,
-      self.descs,
-      start_y,
-      bottom - count + 1 - start_y,
-    )
-    self.cells.unsafe_blit(
-      start_y + count,
-      self.cells,
-      start_y,
-      bottom - count + 1 - start_y,
-    )
-    // The per-row link arrays move by reference in lockstep with their cells.
-    self.link_ids.unsafe_blit(
-      start_y + count,
-      self.link_ids,
-      start_y,
-      bottom - count + 1 - start_y,
-    )
+    if start_y == 0 && bottom == self.rows.to_int() - 1 {
+      // Whole-screen scroll-down: the survivors don't move physically — rotate the
+      // ring backward so logical row `count` maps to their slots. O(1) versus the
+      // O(rows) ref-array blit. `phys(rows - count)` is the survivors' old
+      // physical row 0, which becomes the new logical 0.
+      self.base = self.phys(self.rows.to_int() - count)
+    } else {
+      // Sub-screen full-width region: rotating `base` would disturb rows outside
+      // the region, so slide the survivor rows down by `count` one ref at a time
+      // (physical slots may wrap, so a single blit won't do). High→low so a source
+      // is read before it is overwritten.
+      let mut r = bottom
+      while r >= start_y + count {
+        self.set_desc(r, self.desc(r - count))
+        self.set_row_cells(r, self.row_cells(r - count))
+        self.set_link_row(r, self.link_row(r - count))
+        r -= 1
+      }
+    }
   }
-  // Fresh blank rows scroll in at the top (reusing pooled cell arrays).
+  // Fresh blank rows scroll in at the top (reusing pooled cell arrays). Resolved at
+  // the post-rotation `base`, so these land on the freed (scrolled-off) slots.
   let mut row_idx = start_y
   while row_idx < start_y + count {
     self.set_blank_row(row_idx, style)
@@ -1050,7 +1175,7 @@ fn ScreenGridState::shift_full_width_down(
   // Every row's contents moved, so the whole region is dirty.
   let mut dirty_idx = start_y
   while dirty_idx <= bottom {
-    self.descs[dirty_idx] = self.descs[dirty_idx].with_dirty(true)
+    self.set_desc(dirty_idx, self.desc(dirty_idx).with_dirty(true))
     dirty_idx += 1
   }
 }
@@ -1085,7 +1210,7 @@ fn ScreenGridState::shift_region_up(
       self.clear_row_range(row_idx, left, right + 1, style, false)
     }
     self.recompute_row_flags(row_idx)
-    self.descs[row_idx] = self.descs[row_idx].with_dirty(true)
+    self.set_desc(row_idx, self.desc(row_idx).with_dirty(true))
     row_idx += 1
   }
 }
@@ -1114,40 +1239,40 @@ fn ScreenGridState::shift_full_width_up(
     // bottom]`. Clean each before the move — the move detaches it from the row
     // that used to follow it, so any wrap relationship is gone and a trailing
     // SpacerHead (a wide char deferred across the old wrap boundary) is orphaned.
+    // (Done at the pre-rotation `base`, while these logical indices still resolve
+    // to the survivors' current physical slots.)
     let mut src = start_y + count
     while src <= bottom {
       self.clean_trailing_spacer_head(src, style)
-      self.descs[src] = self.descs[src]
-        .with_wrap(false)
-        .with_wrap_continuation(false)
+      self.set_desc(
+        src,
+        self.desc(src).with_wrap(false).with_wrap_continuation(false),
+      )
       src += 1
     }
-    // Slide the survivor rows up by `count`: descriptors (a scalar memmove, zero
-    // refcount) and cell buffers (by reference) move in lockstep. The cells blit
-    // overwrites the scrolled-off slots — those buffers were already harvested
-    // into history by reference, so the overwrite just drops the now-dead slot
-    // ref. blit_to picks the overlap-safe copy direction.
-    self.descs.unsafe_blit(
-      start_y,
-      self.descs,
-      start_y + count,
-      bottom + 1 - count - start_y,
-    )
-    self.cells.unsafe_blit(
-      start_y,
-      self.cells,
-      start_y + count,
-      bottom + 1 - count - start_y,
-    )
-    // The per-row link arrays move by reference in lockstep with their cells.
-    self.link_ids.unsafe_blit(
-      start_y,
-      self.link_ids,
-      start_y + count,
-      bottom + 1 - count - start_y,
-    )
+    if start_y == 0 && bottom == self.rows.to_int() - 1 {
+      // Whole-screen scroll-up (the line-feed hot path): the survivors keep their
+      // cells in place — rotate the ring forward so logical row `count` maps to
+      // logical 0. O(1) versus the O(rows) ref-array blit (and its per-row
+      // incref/decref). The scrolled-off top rows were already harvested into
+      // history by reference; the blank-row pass below reclaims their slots.
+      self.base = self.phys(count)
+    } else {
+      // Sub-screen full-width region: rotating `base` would disturb rows outside
+      // the region, so slide the survivor rows up by `count` one ref at a time
+      // (physical slots may wrap, so a single blit won't do). Low→high so a source
+      // is read before it is overwritten.
+      let mut r = start_y
+      while r <= bottom - count {
+        self.set_desc(r, self.desc(r + count))
+        self.set_row_cells(r, self.row_cells(r + count))
+        self.set_link_row(r, self.link_row(r + count))
+        r += 1
+      }
+    }
   }
-  // Fresh blank rows scroll in at the bottom (reusing pooled cell arrays).
+  // Fresh blank rows scroll in at the bottom (reusing pooled cell arrays). Resolved
+  // at the post-rotation `base`, so they land on the just-vacated top slots.
   let mut row_idx = bottom - count + 1
   while row_idx <= bottom {
     self.set_blank_row(row_idx, style)
@@ -1156,7 +1281,7 @@ fn ScreenGridState::shift_full_width_up(
   // Every row's contents moved, so the whole region is dirty.
   let mut dirty_idx = start_y
   while dirty_idx <= bottom {
-    self.descs[dirty_idx] = self.descs[dirty_idx].with_dirty(true)
+    self.set_desc(dirty_idx, self.desc(dirty_idx).with_dirty(true))
     dirty_idx += 1
   }
 }
@@ -1171,7 +1296,7 @@ fn ScreenGridState::clean_trailing_spacer_head(
   style : @style.CellStyle,
 ) -> Unit {
   let last = self.cols.to_int() - 1
-  if self.cells[row_idx][last].wide() == SpacerHead {
+  if self.row_cells(row_idx)[last].wide() == SpacerHead {
     // clear_row_range recomputes the row flags, so no separate rescan is needed.
     self.clear_row_range(row_idx, last, last + 1, style, false)
   }
@@ -1186,8 +1311,9 @@ fn ScreenGridState::row_will_be_shifted(
   style : @style.CellStyle,
 ) -> Unit {
   let mut changed = false
+  let row_cells = self.row_cells(row_idx)
   if right == self.cols.to_int() - 1 || left < 2 {
-    let end_cell = self.cells[row_idx][self.cols.to_int() - 1]
+    let end_cell = row_cells[self.cols.to_int() - 1]
     if end_cell.wide() == SpacerHead {
       self.clear_row_range(
         row_idx,
@@ -1200,13 +1326,13 @@ fn ScreenGridState::row_will_be_shifted(
     }
   }
 
-  let left_cell = self.cells[row_idx][left]
+  let left_cell = row_cells[left]
   if left > 0 && left_cell.wide() == SpacerTail {
     self.clear_row_range(row_idx, left - 1, left + 1, style, false)
     changed = true
   }
 
-  let right_cell = self.cells[row_idx][right]
+  let right_cell = row_cells[right]
   if right + 1 < self.cols.to_int() && right_cell.wide() == Wide {
     self.clear_row_range(row_idx, right, right + 2, style, false)
     changed = true
@@ -1225,11 +1351,11 @@ fn ScreenGridState::split_cell_boundary(
   style : @style.CellStyle,
 ) -> Unit {
   if x == self.cols.to_int() {
-    if !self.descs[row_idx].wrap() {
+    if !self.desc(row_idx).wrap() {
       return
     }
 
-    let end_cell = self.cells[row_idx][self.cols.to_int() - 1]
+    let end_cell = self.row_cells(row_idx)[self.cols.to_int() - 1]
     if end_cell.wide() == SpacerHead {
       self.clear_row_range(
         row_idx,
@@ -1242,10 +1368,8 @@ fn ScreenGridState::split_cell_boundary(
     return
   }
 
-  if (x == 0 || x == 1) &&
-    self.descs[row_idx].wrap_continuation() &&
-    row_idx > 0 {
-    let first = self.cells[row_idx][0]
+  if (x == 0 || x == 1) && self.desc(row_idx).wrap_continuation() && row_idx > 0 {
+    let first = self.row_cells(row_idx)[0]
     if first.wide() == Wide {
       self.clear_prev_row_spacer_head(row_idx, style)
     }
@@ -1255,7 +1379,7 @@ fn ScreenGridState::split_cell_boundary(
     return
   }
 
-  let left_cell = self.cells[row_idx][x - 1]
+  let left_cell = self.row_cells(row_idx)[x - 1]
   if left_cell.wide() == Wide {
     self.clear_row_range(row_idx, x - 1, x + 1, style, false)
   }
@@ -1269,13 +1393,14 @@ fn ScreenGridState::cursor_reset_wrap(
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   cursor.pending_wrap = false
-  self.descs[row_idx] = self.descs[row_idx].with_wrap(false)
+  self.set_desc(row_idx, self.desc(row_idx).with_wrap(false))
   if row_idx + 1 < self.rows.to_int() {
-    self.descs[row_idx + 1] = self.descs[row_idx + 1].with_wrap_continuation(
-      false,
+    self.set_desc(
+      row_idx + 1,
+      self.desc(row_idx + 1).with_wrap_continuation(false),
     )
   }
-  let end_cell = self.cells[row_idx][self.cols.to_int() - 1]
+  let end_cell = self.row_cells(row_idx)[self.cols.to_int() - 1]
   if end_cell.wide() == SpacerHead {
     self.clear_row_range(
       row_idx,
@@ -1293,7 +1418,7 @@ fn ScreenGridState::cursor_mark_dirty(
   cursor : @cursor.TerminalCursorState,
 ) -> Unit {
   let cy = cursor.y.to_int()
-  self.descs[cy] = self.descs[cy].with_dirty(true)
+  self.set_desc(cy, self.desc(cy).with_dirty(true))
 }
 
 ///|
@@ -1303,7 +1428,7 @@ fn ScreenGridState::apply_row_prompt(
   row_prompt : @page.RowSemanticPrompt,
 ) -> Unit {
   if row_prompt != None {
-    self.descs[row_idx] = self.descs[row_idx].with_semantic_prompt(row_prompt)
+    self.set_desc(row_idx, self.desc(row_idx).with_semantic_prompt(row_prompt))
   }
 }
 
@@ -1332,21 +1457,22 @@ fn ScreenGridState::clear_full_row(
   if respect_protected {
     self.clear_row_range(row_idx, 0, self.cols.to_int(), style, true)
   } else {
-    // Load the row's cell buffer once: indexing `self.cells[row_idx]` per column
-    // would reload (and refcount) the `FixedArray` reference out of the parallel
-    // `cells` array on every cell.
-    let row_cells = self.cells[row_idx]
+    // Load the row's cell buffer once: indexing `self.row_cells(row_idx)` per
+    // column would re-resolve the ring offset and reload (and refcount) the
+    // `FixedArray` reference out of the parallel `cells` array on every cell.
+    let row_cells = self.row_cells(row_idx)
     for col_idx in 0..<self.cols.to_int() {
       row_cells[col_idx] = blank_cell(style, self.style_table)
     }
     // Reset to a blank descriptor, then restore `styled`: `full_reset` cleared
     // it, but a colored erase fills the row with bg-styled blanks, so the flag
     // must track the cells.
-    self.descs[row_idx] = @page.PageRowState::new().with_styled(
-      blank_row_is_styled(style),
+    self.set_desc(
+      row_idx,
+      @page.PageRowState::new().with_styled(blank_row_is_styled(style)),
     )
   }
-  self.descs[row_idx] = self.descs[row_idx].with_dirty(true)
+  self.set_desc(row_idx, self.desc(row_idx).with_dirty(true))
 }
 
 ///|
@@ -1358,7 +1484,7 @@ fn ScreenGridState::clear_row_range(
   style : @style.CellStyle,
   respect_protected : Bool,
 ) -> Unit {
-  let row_cells = self.cells[row_idx]
+  let row_cells = self.row_cells(row_idx)
   let mut col_idx = clamp_int(start_col, 0, self.cols.to_int())
   let limit = clamp_int(end_col, 0, self.cols.to_int())
   while col_idx < limit {
@@ -1379,8 +1505,8 @@ fn ScreenGridState::copy_row_region(
   left : Int,
   right : Int,
 ) -> Unit {
-  let src_cells = self.cells[src_row]
-  let dst_cells = self.cells[dst_row]
+  let src_cells = self.row_cells(src_row)
+  let dst_cells = self.row_cells(dst_row)
   let mut col_idx = left
   while col_idx <= right {
     dst_cells[col_idx] = src_cells[col_idx]
@@ -1390,15 +1516,15 @@ fn ScreenGridState::copy_row_region(
   // actually hold links allocate a destination array; a link-free source leaves
   // the destination untouched, since its copied cells have no presence bit and any
   // stale destination slot is dead.
-  if self.link_ids[src_row] is Some(src_links) {
-    let dst_links = match self.link_ids[dst_row] {
+  if self.link_row(src_row) is Some(src_links) {
+    let dst_links = match self.link_row(dst_row) {
       Some(row) => row
       None => {
         let row = FixedArray::make(
           self.cols.to_int(),
           @hyperlink.no_hyperlink_id,
         )
-        self.link_ids[dst_row] = Some(row)
+        self.set_link_row(dst_row, Some(row))
         row
       }
     }
@@ -1418,7 +1544,7 @@ fn ScreenGridState::clear_prev_row_spacer_head(
 ) -> Unit {
   let prev_row = row_idx - 1
   let last_col = self.cols.to_int() - 1
-  let head = self.cells[prev_row][last_col]
+  let head = self.row_cells(prev_row)[last_col]
   if head.wide() == SpacerHead {
     self.clear_row_range(prev_row, last_col, self.cols.to_int(), style, false)
   }
@@ -1465,7 +1591,7 @@ pub fn ScreenGridState::write_cell(
     semantic_content~,
   )
   // The store is a single inline word write, no allocation.
-  self.cells[row_idx][col_idx] = cell
+  self.row_cells(row_idx)[col_idx] = cell
   // Record the link id by column only when there is one; a link-free write leaves
   // the row's (possibly absent) link array untouched, since the cleared presence
   // bit makes any stale slot dead.
@@ -1485,8 +1611,9 @@ fn ScreenGridState::move_cell_in_row(
   dst_col : Int,
   src_col : Int,
 ) -> Unit {
-  self.cells[row_idx][dst_col] = self.cells[row_idx][src_col]
-  if self.link_ids[row_idx] is Some(links) {
+  let row_cells = self.row_cells(row_idx)
+  row_cells[dst_col] = row_cells[src_col]
+  if self.link_row(row_idx) is Some(links) {
     links[dst_col] = links[src_col]
   }
 }
@@ -1496,7 +1623,7 @@ pub fn ScreenGridState::recompute_row_flags(
   self : ScreenGridState,
   row_idx : Int,
 ) -> Unit {
-  let row_cells = self.cells[row_idx]
+  let row_cells = self.row_cells(row_idx)
   let mut grapheme = false
   let mut styled = false
   let mut hyperlink = false
@@ -1514,11 +1641,15 @@ pub fn ScreenGridState::recompute_row_flags(
     }
     col_idx += 1
   }
-  self.descs[row_idx] = self.descs[row_idx]
+  self.set_desc(
+    row_idx,
+    self
+    .desc(row_idx)
     .with_grapheme(grapheme)
     .with_styled(styled)
     .with_hyperlink(hyperlink)
-    .with_kitty_virtual_placeholder(false)
+    .with_kitty_virtual_placeholder(false),
+  )
 }
 
 ///|
