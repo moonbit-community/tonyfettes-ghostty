@@ -1414,17 +1414,25 @@ pub fn ScreenGridState::write_cell(
 ) -> Unit {
   // Intern the optional link; `None` is the free fast path → id 0. The id is kept
   // in the per-row `link_ids` side array (not the cell); the cell only records
-  // its presence as a flag bit.
-  let link_id = self.hyperlink_table.intern(hyperlink)
+  // its presence as a flag bit. Guard the call on `Some`: `intern(None)` only
+  // fast-returns `no_hyperlink_id`, but the call itself forces a per-cell
+  // incref/decref of the table, so the common unlinked write skips it entirely.
+  let link_id = if hyperlink is Some(_) {
+    self.hyperlink_table.intern(hyperlink)
+  } else {
+    @hyperlink.no_hyperlink_id
+  }
   let has_link = !link_id.is_none()
-  // A printed character fully defines the cell, so pack one fresh `u64` and store
-  // it into the slot — there is nothing to read from the old cell. The store is a
-  // single inline word write, no allocation.
-  self.cells[row_idx][col_idx] = @page.PageCellState::new(
+  // Intern the incoming style into the screen's shared table; the cell keeps only
+  // the id. Default/unstyled prints hit the table's pre-seeded id 0.
+  let style_id = self.style_table.intern(style)
+  // A printed character fully defines the cell, so pack one fresh `u64` — there is
+  // nothing to read from the old cell. Pack into a local first so the indexed
+  // store below has no intervening call; otherwise the row array is held live
+  // across `style_table.intern` and takes an incref/decref per cell.
+  let cell = @page.PageCellState::new(
     codepoint~,
-    // Intern the incoming style into the screen's shared table; the cell keeps
-    // only the id. Default/unstyled prints hit the table's pre-seeded id 0.
-    style_id=self.style_table.intern(style),
+    style_id~,
     wide~,
     protected_flag~,
     // A printed base char has no combining marks yet; they are appended later via
@@ -1432,6 +1440,8 @@ pub fn ScreenGridState::write_cell(
     hyperlink_present=has_link,
     semantic_content~,
   )
+  // The store is a single inline word write, no allocation.
+  self.cells[row_idx][col_idx] = cell
   // Record the link id by column only when there is one; a link-free write leaves
   // the row's (possibly absent) link array untouched, since the cleared presence
   // bit makes any stale slot dead.
