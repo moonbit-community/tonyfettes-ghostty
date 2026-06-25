@@ -62,8 +62,10 @@ pub(all) enum Action {
 /// the state-exit action, the transition action, then the state-entry action.
 /// An immutable `#valtype` of three inline `Action?` words — returned by value
 /// with no heap object, so the hot escape-parsing path allocates nothing per
-/// byte beyond the (rare) `Action` payloads themselves. Indexed `[0]/[1]/[2]`
-/// via `op_get` for exit/transition/entry.
+/// byte beyond the (rare) `Action` payloads themselves. The type stays opaque
+/// (representation/order private); callers read the three slots in dispatch
+/// order through `exit`/`transition`/`entry`, each a single field read that
+/// avoids the `match index` branch the old `op_get` carried.
 #valtype
 struct ActionList {
   exit : Action?
@@ -72,12 +74,21 @@ struct ActionList {
 }
 
 ///|
-pub fn ActionList::op_get(self : ActionList, index : Int) -> Action? {
-  match index {
-    0 => self.exit
-    1 => self.transition
-    _ => self.entry
-  }
+/// The state-exit action (dispatched first), if any.
+pub fn ActionList::exit(self : ActionList) -> Action? {
+  self.exit
+}
+
+///|
+/// The transition action (dispatched second), if any.
+pub fn ActionList::transition(self : ActionList) -> Action? {
+  self.transition
+}
+
+///|
+/// The state-entry action (dispatched last), if any.
+pub fn ActionList::entry(self : ActionList) -> Action? {
+  self.entry
 }
 
 ///|

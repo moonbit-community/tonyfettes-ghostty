@@ -5,7 +5,9 @@
 
 ///|
 fn expect_no_actions(actions : ActionList) -> Unit raise {
-  guard actions[0] is None && actions[1] is None && actions[2] is None else {
+  guard actions.exit() is None &&
+    actions.transition() is None &&
+    actions.entry() is None else {
     fail("expected no parser actions")
   }
 }
@@ -17,7 +19,7 @@ test "parser/osc kitty color dispatch" {
     expect_no_actions(parser.next(byte))
   }
   let actions = parser.next(0x07)
-  guard actions[0] is Some(OscDispatch(KittyColorProtocol(command))) else {
+  guard actions.exit() is Some(OscDispatch(KittyColorProtocol(command))) else {
     fail("expected OSC kitty color dispatch in exit slot")
   }
   guard command.requests() ==
@@ -32,7 +34,7 @@ test "parser/osc kitty color dispatch" {
   guard command.terminator() == Bel else {
     fail("expected kitty color BEL terminator")
   }
-  guard actions[1] is None && actions[2] is None else {
+  guard actions.transition() is None && actions.entry() is None else {
     fail("unexpected OSC kitty color trailing actions")
   }
 }
