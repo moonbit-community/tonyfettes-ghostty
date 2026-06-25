@@ -394,29 +394,38 @@ fn[H : StreamHandler] Stream::next_non_utf8(
   byte : Byte,
 ) -> Unit {
   let actions = self.parser.next(byte)
-  self.dispatch_action(actions.exit())
-  self.dispatch_action(actions.transition())
-  self.dispatch_action(actions.entry())
+  // Skip the dispatch call entirely for the (common) None slots: a single
+  // `next` step usually emits one action or none, so guarding here avoids 2-3
+  // empty `dispatch_action` calls per byte on the hot string-accumulation path
+  // (OSC/DCS body bytes produce an all-None `ActionList`).
+  if actions.exit() is Some(action) {
+    self.dispatch_action(action)
+  }
+  if actions.transition() is Some(action) {
+    self.dispatch_action(action)
+  }
+  if actions.entry() is Some(action) {
+    self.dispatch_action(action)
+  }
 }
 
 ///|
 fn[H : StreamHandler] Stream::dispatch_action(
   self : Stream[H],
-  action : @parser.Action?,
+  action : @parser.Action,
 ) -> Unit {
   match action {
-    Some(Print(codepoint)) => self.print(codepoint)
-    Some(Execute(value)) => self.execute(value)
-    Some(CsiDispatch(csi)) => self.csi_dispatch(csi)
-    Some(EscDispatch(esc)) => self.esc_dispatch(esc)
-    Some(OscDispatch(command)) => self.osc_dispatch(command)
-    Some(DcsHook(dcs)) => self.dcs_hook(dcs)
-    Some(DcsPut(value)) => self.dcs_put(value)
-    Some(DcsUnhook) => self.dcs_unhook()
-    Some(ApcStart) => self.apc_start()
-    Some(ApcPut(value)) => self.apc_put(value)
-    Some(ApcEnd) => self.apc_end()
-    None => ()
+    Print(codepoint) => self.print(codepoint)
+    Execute(value) => self.execute(value)
+    CsiDispatch(csi) => self.csi_dispatch(csi)
+    EscDispatch(esc) => self.esc_dispatch(esc)
+    OscDispatch(command) => self.osc_dispatch(command)
+    DcsHook(dcs) => self.dcs_hook(dcs)
+    DcsPut(value) => self.dcs_put(value)
+    DcsUnhook => self.dcs_unhook()
+    ApcStart => self.apc_start()
+    ApcPut(value) => self.apc_put(value)
+    ApcEnd => self.apc_end()
   }
 }
 
