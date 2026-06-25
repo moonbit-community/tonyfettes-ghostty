@@ -1284,10 +1284,10 @@ fn StreamTerminalBridgeState::print(
   self : StreamTerminalBridgeState,
   codepoint : UInt,
 ) -> Unit {
-  if self.display_state.status_display() != Main {
-    return
-  }
-
+  // Pattern-match the tag instead of `!= Main`: the latter compiles to a
+  // polymorphic Eq::not_equal call (StatusDisplay derives Eq), which on this
+  // per-codepoint hot path is pure overhead versus a direct tag comparison.
+  guard self.display_state.status_display() is Main else { return }
   let width = codepoint_width(codepoint)
   if width <= 0 || is_emoji_modifier(codepoint) {
     // Combine this codepoint onto the previous cell as part of its grapheme
@@ -1323,10 +1323,8 @@ fn StreamTerminalBridgeState::print_repeat(
   self : StreamTerminalBridgeState,
   count : UInt16,
 ) -> Unit {
-  if self.display_state.status_display() != Main {
-    return
-  }
-
+  // See `print`: tag match avoids a polymorphic Eq::not_equal call.
+  guard self.display_state.status_display() is Main else { return }
   match self.previous_char {
     Some(codepoint) => {
       let width = codepoint_width(codepoint)
