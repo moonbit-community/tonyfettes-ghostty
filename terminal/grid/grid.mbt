@@ -905,14 +905,10 @@ fn ScreenGridState::write_cell_and_update_row_flags(
     return
   }
   let descs = self.descs
-  let mut row = descs[row_idx]
-  if has_styled {
-    row = row.set_styled()
-  }
-  if has_link {
-    row = row.set_hyperlink()
-  }
-  descs[row_idx] = row.clear_kitty_virtual_placeholder()
+  descs[row_idx] = descs[row_idx].record_cell_write(
+    styled=has_styled,
+    hyperlink=has_link,
+  )
 }
 
 ///|

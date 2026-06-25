@@ -107,23 +107,21 @@ pub fn PageRowState::with_grapheme(
 }
 
 ///|
-// Unconditional single-bit setters for the incremental write hot path. Unlike
-// `with_bit`, these are branchless single expressions so the cross-package
-// inliner folds them into a plain OR/AND at the call site.
-pub fn PageRowState::set_styled(self : PageRowState) -> PageRowState {
-  self.0 | RowStyledBit
-}
-
-///|
-pub fn PageRowState::set_hyperlink(self : PageRowState) -> PageRowState {
-  self.0 | RowHyperlinkBit
-}
-
-///|
-pub fn PageRowState::clear_kitty_virtual_placeholder(
+// The row-flag delta of a single incremental cell write, as one branchless
+// expression: OR in the styled / hyperlink presence bits when the new cell
+// carries them, and always clear the kitty virtual-placeholder bit (any write
+// to the row invalidates it). A single domain operation rather than granular
+// public bit mutators, and small enough for the cross-package inliner to fold
+// into plain OR/AND at the grid's per-cell write site (the `if b { BIT } else
+// { 0 }` selects lower to branchless `csel`).
+pub fn PageRowState::record_cell_write(
   self : PageRowState,
+  styled~ : Bool,
+  hyperlink~ : Bool,
 ) -> PageRowState {
-  self.0 & RowKittyPlaceholderBit.lnot()
+  let styled_bit = if styled { RowStyledBit } else { 0 }
+  let hyperlink_bit = if hyperlink { RowHyperlinkBit } else { 0 }
+  (self.0 | styled_bit | hyperlink_bit) & RowKittyPlaceholderBit.lnot()
 }
 
 ///|
