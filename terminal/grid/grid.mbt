@@ -870,17 +870,18 @@ fn ScreenGridState::update_row_flags_after_write(
     self.recompute_row_flags(row_idx)
     return
   }
-  let mut row = self.descs[row_idx]
+  let descs = self.descs
+  let mut row = descs[row_idx]
   if has_grapheme {
-    row = row.with_grapheme(true)
+    row = row.set_grapheme()
   }
   if has_styled {
-    row = row.with_styled(true)
+    row = row.set_styled()
   }
   if has_hyperlink {
-    row = row.with_hyperlink(true)
+    row = row.set_hyperlink()
   }
-  self.descs[row_idx] = row.with_kitty_virtual_placeholder(false)
+  descs[row_idx] = row.clear_kitty_virtual_placeholder()
 }
 
 ///|

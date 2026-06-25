@@ -56,6 +56,7 @@ pub(all) enum PageCellWide {
 } derive(Eq, @debug.Debug)
 
 type PageRowState derive(Eq, @debug.Debug)
+pub fn PageRowState::clear_kitty_virtual_placeholder(Self) -> Self
 pub fn PageRowState::dirty(Self) -> Bool
 pub fn PageRowState::equals_ignoring_dirty(Self, Self) -> Bool
 pub fn PageRowState::grapheme(Self) -> Bool
@@ -64,6 +65,9 @@ pub fn PageRowState::kitty_virtual_placeholder(Self) -> Bool
 pub fn PageRowState::managed_memory(Self) -> Bool
 pub fn PageRowState::new() -> Self
 pub fn PageRowState::semantic_prompt(Self) -> RowSemanticPrompt
+pub fn PageRowState::set_grapheme(Self) -> Self
+pub fn PageRowState::set_hyperlink(Self) -> Self
+pub fn PageRowState::set_styled(Self) -> Self
 pub fn PageRowState::styled(Self) -> Bool
 pub fn PageRowState::with_dirty(Self, Bool) -> Self
 pub fn PageRowState::with_grapheme(Self, Bool) -> Self

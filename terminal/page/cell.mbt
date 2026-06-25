@@ -107,6 +107,31 @@ pub fn PageRowState::with_grapheme(
 }
 
 ///|
+// Unconditional single-bit setters for the incremental write hot path. Unlike
+// `with_bit`, these are branchless single expressions so the cross-package
+// inliner folds them into a plain OR/AND at the call site.
+pub fn PageRowState::set_grapheme(self : PageRowState) -> PageRowState {
+  self.0 | RowGraphemeBit
+}
+
+///|
+pub fn PageRowState::set_styled(self : PageRowState) -> PageRowState {
+  self.0 | RowStyledBit
+}
+
+///|
+pub fn PageRowState::set_hyperlink(self : PageRowState) -> PageRowState {
+  self.0 | RowHyperlinkBit
+}
+
+///|
+pub fn PageRowState::clear_kitty_virtual_placeholder(
+  self : PageRowState,
+) -> PageRowState {
+  self.0 & RowKittyPlaceholderBit.lnot()
+}
+
+///|
 pub fn PageRowState::styled(self : PageRowState) -> Bool {
   (self.0 & RowStyledBit) != 0
 }
@@ -267,11 +292,6 @@ fn PageCellFlags::wide(self : PageCellFlags) -> PageCellWide {
 ///|
 fn PageCellFlags::is_protected(self : PageCellFlags) -> Bool {
   (self.0 & CellProtectedBit) != 0
-}
-
-///|
-fn PageCellFlags::has_hyperlink(self : PageCellFlags) -> Bool {
-  (self.0 & CellHyperlinkBit) != 0
 }
 
 ///|
@@ -519,7 +539,11 @@ pub fn PageCellState::with_protected(
 // lookup. The actual `HyperlinkId` lives in the owning grid/row's `link_ids` side
 // array, resolved by position via `ScreenGridState::cell_hyperlink`.
 pub fn PageCellState::has_hyperlink(self : PageCellState) -> Bool {
-  self.flags().has_hyperlink()
+  // Direct test of the absolute hyperlink bit (CellHyperlinkBit 0x08 inside the
+  // flags window at CellFlagsShift 53 → bit 56), matching the single-expression
+  // shape of has_grapheme/has_styling so the cross-package inliner folds it in
+  // rather than emitting an out-of-line flags() + PageCellFlags::has_hyperlink.
+  (self.0 & (1UL << (CellFlagsShift + 3))) != 0UL
 }
 
 ///|
