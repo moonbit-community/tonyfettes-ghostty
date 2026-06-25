@@ -63,6 +63,7 @@ pub fn PageRowState::hyperlink(Self) -> Bool
 pub fn PageRowState::kitty_virtual_placeholder(Self) -> Bool
 pub fn PageRowState::managed_memory(Self) -> Bool
 pub fn PageRowState::new() -> Self
+pub fn PageRowState::record_cell_write(Self, styled~ : Bool, hyperlink~ : Bool) -> Self
 pub fn PageRowState::semantic_prompt(Self) -> RowSemanticPrompt
 pub fn PageRowState::styled(Self) -> Bool
 pub fn PageRowState::with_dirty(Self, Bool) -> Self

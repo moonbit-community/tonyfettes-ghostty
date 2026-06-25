@@ -107,6 +107,24 @@ pub fn PageRowState::with_grapheme(
 }
 
 ///|
+// The row-flag delta of a single incremental cell write, as one branchless
+// expression: OR in the styled / hyperlink presence bits when the new cell
+// carries them, and always clear the kitty virtual-placeholder bit (any write
+// to the row invalidates it). A single domain operation rather than granular
+// public bit mutators, and small enough for the cross-package inliner to fold
+// into plain OR/AND at the grid's per-cell write site (the `if b { BIT } else
+// { 0 }` selects lower to branchless `csel`).
+pub fn PageRowState::record_cell_write(
+  self : PageRowState,
+  styled~ : Bool,
+  hyperlink~ : Bool,
+) -> PageRowState {
+  let styled_bit = if styled { RowStyledBit } else { 0 }
+  let hyperlink_bit = if hyperlink { RowHyperlinkBit } else { 0 }
+  (self.0 | styled_bit | hyperlink_bit) & RowKittyPlaceholderBit.lnot()
+}
+
+///|
 pub fn PageRowState::styled(self : PageRowState) -> Bool {
   (self.0 & RowStyledBit) != 0
 }
@@ -267,11 +285,6 @@ fn PageCellFlags::wide(self : PageCellFlags) -> PageCellWide {
 ///|
 fn PageCellFlags::is_protected(self : PageCellFlags) -> Bool {
   (self.0 & CellProtectedBit) != 0
-}
-
-///|
-fn PageCellFlags::has_hyperlink(self : PageCellFlags) -> Bool {
-  (self.0 & CellHyperlinkBit) != 0
 }
 
 ///|
@@ -490,7 +503,16 @@ pub fn PageCellState::with_style_id(
 
 ///|
 pub fn PageCellState::wide(self : PageCellState) -> PageCellWide {
-  self.flags().wide()
+  // Decode the 2-bit wide field directly from the packed word (flags window at
+  // CellFlagsShift, wide in its low CellWideMask bits) instead of routing through
+  // flags() + PageCellFlags::wide(); the single-level match folds in at the call
+  // site like has_grapheme/has_styling.
+  match ((self.0 >> CellFlagsShift) & CellWideMask.to_uint64()).to_int() {
+    1 => Wide
+    2 => SpacerTail
+    3 => SpacerHead
+    _ => Narrow
+  }
 }
 
 ///|
@@ -519,7 +541,11 @@ pub fn PageCellState::with_protected(
 // lookup. The actual `HyperlinkId` lives in the owning grid/row's `link_ids` side
 // array, resolved by position via `ScreenGridState::cell_hyperlink`.
 pub fn PageCellState::has_hyperlink(self : PageCellState) -> Bool {
-  self.flags().has_hyperlink()
+  // Direct test of the absolute hyperlink bit (CellHyperlinkBit 0x08 inside the
+  // flags window at CellFlagsShift 53 → bit 56), matching the single-expression
+  // shape of has_grapheme/has_styling so the cross-package inliner folds it in
+  // rather than emitting an out-of-line flags() + PageCellFlags::has_hyperlink.
+  (self.0 & (1UL << (CellFlagsShift + 3))) != 0UL
 }
 
 ///|
