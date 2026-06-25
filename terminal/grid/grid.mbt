@@ -834,54 +834,82 @@ fn ScreenGridState::print_cell(
 
   // Flags the cell being overwritten contributed to the row. If the new cell
   // drops any of them, the row flag may need clearing, which only a full rescan
-  // can decide. Capture before write_cell replaces the cell object.
+  // can decide. Capture before the write replaces the cell object.
   let lost_grapheme = current.has_grapheme()
   let lost_styled = current.has_styling()
   let lost_hyperlink = current.has_hyperlink()
-  self.write_cell(
+  self.write_cell_and_update_row_flags(
     row_idx, col_idx, codepoint, wide, style, protected_flag, semantic_content, hyperlink,
-  )
-  self.update_row_flags_after_write(
-    row_idx, col_idx, lost_grapheme, lost_styled, lost_hyperlink,
+    lost_grapheme, lost_styled, lost_hyperlink,
   )
 }
 
 ///|
-/// Incremental row-flag maintenance for the single-cell print hot path.
+/// Fused write + row-flag maintenance for the single-cell print hot path.
 ///
-/// `recompute_row_flags` rescans every column, so calling it once per printed
-/// cell makes filling a row O(cols^2). A freshly written cell can only *add*
-/// row flags, so OR its contribution in directly. A full rescan is only needed
-/// when the overwritten cell *removed* the last source of a flag — detected by
-/// `lost_*` (the old cell had it) combined with the new cell no longer having
-/// it. Net effect matches `recompute_row_flags` exactly.
-fn ScreenGridState::update_row_flags_after_write(
+/// Splitting this across `write_cell` + `update_row_flags_after_write` made the
+/// row's cell slot touched three times per printed cell (read old, write new,
+/// read new) and recomputed the new cell's flags by re-reading the word that was
+/// just packed. Here the new cell's flag contributions are known directly: a
+/// printed base char never carries a grapheme, so `has_grapheme` is always
+/// false; `has_styled` is `style_id != default`; `has_hyperlink` is `has_link`.
+/// So the post-write rescan decision and the OR-in use those values without
+/// re-reading the cell. `write_cell` stays as the standalone path for `decaln`
+/// and tests, which maintain row flags differently (or in bulk).
+fn ScreenGridState::write_cell_and_update_row_flags(
   self : ScreenGridState,
   row_idx : Int,
   col_idx : Int,
+  codepoint : UInt,
+  wide : @page.PageCellWide,
+  style : @style.CellStyle,
+  protected_flag : Bool,
+  semantic_content : @page.SemanticContent,
+  hyperlink : @hyperlink.CellHyperlink?,
   lost_grapheme : Bool,
   lost_styled : Bool,
   lost_hyperlink : Bool,
 ) -> Unit {
-  let cell = self.cells[row_idx][col_idx]
-  let has_grapheme = cell.has_grapheme()
-  let has_styled = cell.has_styling()
-  let has_hyperlink = cell.has_hyperlink()
-  if (lost_grapheme && !has_grapheme) ||
+  // Intern the optional link; `None` is the free fast path → id 0. Guard on
+  // `Some` so the common unlinked write skips the call and its table refcount.
+  let link_id = if hyperlink is Some(_) {
+    self.hyperlink_table.intern(hyperlink)
+  } else {
+    @hyperlink.no_hyperlink_id
+  }
+  let has_link = !link_id.is_none()
+  let style_id = self.style_table.intern(style)
+  let has_styled = !style_id.is_default()
+  // Pack into a local first so the indexed store below has no intervening call;
+  // otherwise the row array is held live across the interns and takes a per-cell
+  // incref/decref.
+  let cell = @page.PageCellState::new(
+    codepoint~,
+    style_id~,
+    wide~,
+    protected_flag~,
+    hyperlink_present=has_link,
+    semantic_content~,
+  )
+  self.cells[row_idx][col_idx] = cell
+  if has_link {
+    self.set_link_id(row_idx, col_idx, link_id)
+  }
+  // Row-flag maintenance. `has_grapheme` of the new cell is always false on this
+  // path, so the rescan-needed test reduces to `lost_grapheme || (lost_styled &&
+  // !has_styled) || (lost_hyperlink && !has_link)`, and grapheme is never OR'd in.
+  if lost_grapheme ||
     (lost_styled && !has_styled) ||
-    (lost_hyperlink && !has_hyperlink) {
+    (lost_hyperlink && !has_link) {
     self.recompute_row_flags(row_idx)
     return
   }
   let descs = self.descs
   let mut row = descs[row_idx]
-  if has_grapheme {
-    row = row.set_grapheme()
-  }
   if has_styled {
     row = row.set_styled()
   }
-  if has_hyperlink {
+  if has_link {
     row = row.set_hyperlink()
   }
   descs[row_idx] = row.clear_kitty_virtual_placeholder()

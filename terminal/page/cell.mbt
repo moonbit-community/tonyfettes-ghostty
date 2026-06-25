@@ -110,11 +110,6 @@ pub fn PageRowState::with_grapheme(
 // Unconditional single-bit setters for the incremental write hot path. Unlike
 // `with_bit`, these are branchless single expressions so the cross-package
 // inliner folds them into a plain OR/AND at the call site.
-pub fn PageRowState::set_grapheme(self : PageRowState) -> PageRowState {
-  self.0 | RowGraphemeBit
-}
-
-///|
 pub fn PageRowState::set_styled(self : PageRowState) -> PageRowState {
   self.0 | RowStyledBit
 }
