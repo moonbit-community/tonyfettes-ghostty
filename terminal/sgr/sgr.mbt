@@ -70,7 +70,7 @@ struct SgrParser {
 ///|
 /// Shared empty parameter view for the no-param parser. The backing empty array
 /// is immutable in practice (length 0), so handing out the same view is safe.
-let empty_sgr_params : ArrayView[UInt16] = ([] : Array[UInt16])
+let empty_sgr_params : ArrayView[UInt16] = []
 
 ///|
 fn SgrParser::empty() -> SgrParser {
@@ -99,6 +99,23 @@ pub fn SgrParser::from_params(
 ///|
 pub fn SgrParser::new() -> SgrParser {
   SgrParser::empty()
+}
+
+///|
+/// Re-point an existing parser at a freshly collected CSI parameter buffer
+/// without allocating. Like `from_params`, but reuses `self` so a caller that
+/// dispatches many SGR sequences (the stream layer) can keep one parser for its
+/// lifetime and avoid a per-sequence allocation. Borrows `params` (no copy), so
+/// the view is valid only for the synchronous dispatch window — identical
+/// lifetime contract to `from_params`.
+pub fn SgrParser::set_view(
+  self : SgrParser,
+  params : ArrayView[UInt16],
+  params_sep : @seplist.SepList,
+) -> Unit {
+  self.params = params
+  self.params_sep = params_sep
+  self.idx = 0
 }
 
 ///|

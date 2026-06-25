@@ -53,6 +53,7 @@ pub fn SgrParser::new() -> Self
 pub fn SgrParser::next(Self) -> SgrAttribute?
 pub fn SgrParser::reset(Self) -> Unit
 pub fn SgrParser::set_params(Self, Array[UInt16], Array[Byte]) -> @result_code.TerminalResultCode
+pub fn SgrParser::set_view(Self, ArrayView[UInt16], @seplist.SepList) -> Unit
 
 pub(all) enum SgrUnderline {
   None
