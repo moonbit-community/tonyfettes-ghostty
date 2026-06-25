@@ -1,6 +1,8 @@
 ///|
 fn expect_no_actions(actions : ActionList) -> Unit raise {
-  guard actions[0] is None && actions[1] is None && actions[2] is None else {
+  guard actions.exit() is None &&
+    actions.transition() is None &&
+    actions.entry() is None else {
     fail("expected no parser actions")
   }
 }
@@ -15,21 +17,22 @@ test "parser/ground print and execute smoke" {
   let parser = Parser::new()
 
   let print_actions = parser.next(b'a')
-  expect_action_none(print_actions[0], "unexpected print exit action")
-  guard print_actions[1] is Some(Print(value)) && value == b'a'.to_uint() else {
+  expect_action_none(print_actions.exit(), "unexpected print exit action")
+  guard print_actions.transition() is Some(Print(value)) &&
+    value == b'a'.to_uint() else {
     fail("expected print action")
   }
-  expect_action_none(print_actions[2], "unexpected print entry action")
+  expect_action_none(print_actions.entry(), "unexpected print entry action")
   guard parser.state == Ground else {
     fail("expected ground state after print")
   }
 
   let execute_actions = parser.next(0x19)
-  expect_action_none(execute_actions[0], "unexpected execute exit action")
-  guard execute_actions[1] is Some(Execute(value)) && value == 0x19 else {
+  expect_action_none(execute_actions.exit(), "unexpected execute exit action")
+  guard execute_actions.transition() is Some(Execute(value)) && value == 0x19 else {
     fail("expected execute action")
   }
-  expect_action_none(execute_actions[2], "unexpected execute entry action")
+  expect_action_none(execute_actions.entry(), "unexpected execute entry action")
 }
 
 ///|
@@ -42,7 +45,7 @@ test "parser/deinit delegates to embedded osc parser" {
 
   let actions = parser.next(0x07)
   expect_action_none(
-    actions[0],
+    actions.exit(),
     "expected parser deinit to reset embedded osc parser",
   )
 }
@@ -54,14 +57,14 @@ test "parser/esc dispatch with intermediate" {
   expect_no_actions(parser.next(b'('))
 
   let actions = parser.next(b'B')
-  expect_action_none(actions[0], "unexpected ESC exit action")
-  guard actions[1] is Some(EscDispatch(dispatch)) else {
+  expect_action_none(actions.exit(), "unexpected ESC exit action")
+  guard actions.transition() is Some(EscDispatch(dispatch)) else {
     fail("expected ESC dispatch")
   }
   guard dispatch.final_byte == b'B' && dispatch.intermediates == [b'('] else {
     fail("unexpected ESC dispatch payload")
   }
-  expect_action_none(actions[2], "unexpected ESC entry action")
+  expect_action_none(actions.entry(), "unexpected ESC entry action")
   guard parser.state == Ground else { fail("expected ground state") }
 }
 
@@ -74,7 +77,7 @@ test "parser/esc intermediate overflow keeps first four bytes" {
   }
 
   let actions = parser.next(b'B')
-  guard actions[1] is Some(EscDispatch(dispatch)) else {
+  guard actions.transition() is Some(EscDispatch(dispatch)) else {
     fail("expected ESC dispatch")
   }
   guard dispatch.intermediates == [b'(', b')', b'*', b'+'] else {
@@ -92,7 +95,7 @@ test "parser/csi dispatch with params" {
   expect_no_actions(parser.next(b'4'))
 
   let actions = parser.next(b'H')
-  guard actions[1] is Some(CsiDispatch(dispatch)) else {
+  guard actions.transition() is Some(CsiDispatch(dispatch)) else {
     fail("expected CSI dispatch")
   }
   guard dispatch.final_byte == b'H' else { fail("unexpected CSI final") }
@@ -108,7 +111,7 @@ test "parser/csi colon handling and blank subparams" {
   }
 
   let actions = parser.next(b'm')
-  guard actions[1] is Some(CsiDispatch(dispatch)) else {
+  guard actions.transition() is Some(CsiDispatch(dispatch)) else {
     fail("expected CSI SGR dispatch")
   }
   guard dispatch.final_byte == b'm' else { fail("unexpected SGR final") }
@@ -134,7 +137,7 @@ test "parser/csi mixed separators stay valid for sgr" {
   }
 
   let actions = parser.next(b'm')
-  guard actions[1] is Some(CsiDispatch(dispatch)) else {
+  guard actions.transition() is Some(CsiDispatch(dispatch)) else {
     fail("expected mixed-separator SGR dispatch")
   }
   guard dispatch.params == [1, 58, 2, 255, 128, 64] else {
@@ -159,7 +162,9 @@ test "parser/csi colon for non-m final suppresses dispatch" {
   }
 
   let actions = parser.next(b'h')
-  guard actions[0] is None && actions[1] is None && actions[2] is None else {
+  guard actions.exit() is None &&
+    actions.transition() is None &&
+    actions.entry() is None else {
     fail("expected colon-separated non-SGR CSI to be dropped")
   }
   guard parser.state == Ground else { fail("expected ground state") }
@@ -174,7 +179,7 @@ test "parser/csi dispatch with intermediates" {
   }
 
   let actions = parser.next(b'p')
-  guard actions[1] is Some(CsiDispatch(dispatch)) else {
+  guard actions.transition() is Some(CsiDispatch(dispatch)) else {
     fail("expected CSI dispatch with intermediates")
   }
   guard dispatch.final_byte == b'p' else { fail("unexpected final") }
@@ -191,11 +196,11 @@ test "parser/osc dispatch on bel and st ordering" {
     expect_no_actions(bel_parser.next(byte))
   }
   let bel_actions = bel_parser.next(0x07)
-  guard bel_actions[0] is Some(OscDispatch(ChangeWindowTitle(title))) &&
+  guard bel_actions.exit() is Some(OscDispatch(ChangeWindowTitle(title))) &&
     title == "abc" else {
     fail("expected OSC BEL dispatch in exit slot")
   }
-  guard bel_actions[1] is None && bel_actions[2] is None else {
+  guard bel_actions.transition() is None && bel_actions.entry() is None else {
     fail("unexpected BEL OSC trailing actions")
   }
 
@@ -204,15 +209,15 @@ test "parser/osc dispatch on bel and st ordering" {
     expect_no_actions(st_parser.next(byte))
   }
   let esc_actions = st_parser.next(0x1B)
-  guard esc_actions[0] is Some(OscDispatch(ChangeWindowTitle(title))) &&
+  guard esc_actions.exit() is Some(OscDispatch(ChangeWindowTitle(title))) &&
     title == "xyz" else {
     fail("expected OSC ST dispatch on ESC exit")
   }
-  guard esc_actions[1] is None && esc_actions[2] is None else {
+  guard esc_actions.transition() is None && esc_actions.entry() is None else {
     fail("unexpected OSC ST ESC-slot actions")
   }
   let slash_actions = st_parser.next(b'\\')
-  guard slash_actions[1] is Some(EscDispatch(dispatch)) &&
+  guard slash_actions.transition() is Some(EscDispatch(dispatch)) &&
     dispatch.final_byte == b'\\' else {
     fail("expected trailing ESC dispatch for ST terminator")
   }
@@ -226,7 +231,7 @@ test "parser/osc embedded minimal color operation" {
   }
 
   let actions = parser.next(0x07)
-  guard actions[0] is Some(OscDispatch(ColorOperation(command))) else {
+  guard actions.exit() is Some(OscDispatch(ColorOperation(command))) else {
     fail("expected OSC color dispatch")
   }
   guard command.op() == Osc112 else { fail("unexpected OSC color operation") }
@@ -243,13 +248,13 @@ test "parser/osc clipboard dispatch" {
   }
 
   let actions = parser.next(0x07)
-  guard actions[0] is Some(OscDispatch(ClipboardContents(contents))) else {
+  guard actions.exit() is Some(OscDispatch(ClipboardContents(contents))) else {
     fail("expected OSC clipboard dispatch in exit slot")
   }
   guard contents.kind() == b'c' && contents.data() == "?" else {
     fail("expected clipboard payload")
   }
-  guard actions[1] is None && actions[2] is None else {
+  guard actions.transition() is None && actions.entry() is None else {
     fail("unexpected OSC clipboard trailing actions")
   }
 }
@@ -263,13 +268,14 @@ test "parser/osc9 desktop notification report-pwd and semantic prompt dispatch" 
     expect_no_actions(notification_parser.next(byte))
   }
   let notification_actions = notification_parser.next(0x07)
-  guard notification_actions[0]
+  guard notification_actions.exit()
     is Some(OscDispatch(ShowDesktopNotification(notification))) &&
     notification.title() == "" &&
     notification.body() == "hello world" else {
     fail("expected OSC 9 desktop notification dispatch in exit slot")
   }
-  guard notification_actions[1] is None && notification_actions[2] is None else {
+  guard notification_actions.transition() is None &&
+    notification_actions.entry() is None else {
     fail("unexpected OSC 9 desktop notification trailing actions")
   }
 
@@ -278,7 +284,7 @@ test "parser/osc9 desktop notification report-pwd and semantic prompt dispatch" 
     expect_no_actions(pwd_parser.next(byte))
   }
   let pwd_actions = pwd_parser.next(0x07)
-  guard pwd_actions[0] is Some(OscDispatch(ReportPwd(value))) &&
+  guard pwd_actions.exit() is Some(OscDispatch(ReportPwd(value))) &&
     value == "file:///tmp" else {
     fail("expected OSC 9 cwd compatibility report-pwd dispatch")
   }
@@ -288,7 +294,7 @@ test "parser/osc9 desktop notification report-pwd and semantic prompt dispatch" 
     expect_no_actions(prompt_parser.next(byte))
   }
   let prompt_actions = prompt_parser.next(0x07)
-  guard prompt_actions[0] is Some(OscDispatch(SemanticPrompt(prompt))) &&
+  guard prompt_actions.exit() is Some(OscDispatch(SemanticPrompt(prompt))) &&
     prompt.action() == FreshLineNewPrompt else {
     fail("expected OSC 9 semantic prompt compatibility dispatch")
   }
@@ -301,7 +307,7 @@ test "parser/osc777 and osc1337 dispatch" {
     expect_no_actions(rxvt_parser.next(byte))
   }
   let rxvt_actions = rxvt_parser.next(0x07)
-  guard rxvt_actions[0]
+  guard rxvt_actions.exit()
     is Some(OscDispatch(ShowDesktopNotification(notification))) &&
     notification.title() == "Title" &&
     notification.body() == "Body" else {
@@ -313,7 +319,7 @@ test "parser/osc777 and osc1337 dispatch" {
     expect_no_actions(copy_parser.next(byte))
   }
   let copy_actions = copy_parser.next(0x07)
-  guard copy_actions[0] is Some(OscDispatch(ClipboardContents(contents))) &&
+  guard copy_actions.exit() is Some(OscDispatch(ClipboardContents(contents))) &&
     contents.kind() == b'c' &&
     contents.data() == "YWJjMTIz" else {
     fail("expected OSC 1337 clipboard bridge dispatch")
@@ -324,7 +330,7 @@ test "parser/osc777 and osc1337 dispatch" {
     expect_no_actions(current_dir_parser.next(byte))
   }
   let current_dir_actions = current_dir_parser.next(0x07)
-  guard current_dir_actions[0] is Some(OscDispatch(ReportPwd(value))) &&
+  guard current_dir_actions.exit() is Some(OscDispatch(ReportPwd(value))) &&
     value == "file:///tmp" else {
     fail("expected OSC 1337 current-dir dispatch")
   }
@@ -337,7 +343,7 @@ test "parser/osc5522 kitty clipboard dispatch" {
     expect_no_actions(parser.next(byte))
   }
   let actions = parser.next(0x07)
-  guard actions[0] is Some(OscDispatch(KittyClipboardProtocol(command))) else {
+  guard actions.exit() is Some(OscDispatch(KittyClipboardProtocol(command))) else {
     fail("expected OSC 5522 dispatch in exit slot")
   }
   guard command.metadata() == "type=read:status=OK" else {
@@ -350,7 +356,7 @@ test "parser/osc5522 kitty clipboard dispatch" {
     command.operation() == Some(KittyClipboardRead) else {
     fail("expected OSC 5522 typed options")
   }
-  guard actions[1] is None && actions[2] is None else {
+  guard actions.transition() is None && actions.entry() is None else {
     fail("unexpected OSC 5522 trailing actions")
   }
 }
@@ -362,14 +368,14 @@ test "parser/osc3008 and osc66 dispatch" {
     expect_no_actions(context_parser.next(byte))
   }
   let context_actions = context_parser.next(0x07)
-  guard context_actions[0] is Some(OscDispatch(ContextSignal(command))) &&
+  guard context_actions.exit() is Some(OscDispatch(ContextSignal(command))) &&
     command.action() == ContextSignalStart &&
     command.id() == "myctx" &&
     command.context_type() == Some(ContextSignalShell) &&
     command.user() == Some("root") else {
     fail("expected OSC 3008 dispatch in exit slot")
   }
-  guard context_actions[1] is None && context_actions[2] is None else {
+  guard context_actions.transition() is None && context_actions.entry() is None else {
     fail("unexpected OSC 3008 trailing actions")
   }
 
@@ -378,7 +384,7 @@ test "parser/osc3008 and osc66 dispatch" {
     expect_no_actions(text_parser.next(byte))
   }
   let text_actions = text_parser.next(0x07)
-  guard text_actions[0] is Some(OscDispatch(KittyTextSizing(command))) &&
+  guard text_actions.exit() is Some(OscDispatch(KittyTextSizing(command))) &&
     command.scale() == 2 &&
     command.width() == 7 &&
     command.numerator() == 13 &&
@@ -388,7 +394,7 @@ test "parser/osc3008 and osc66 dispatch" {
     command.text() == "long" else {
     fail("expected OSC 66 dispatch in exit slot")
   }
-  guard text_actions[1] is None && text_actions[2] is None else {
+  guard text_actions.transition() is None && text_actions.entry() is None else {
     fail("unexpected OSC 66 trailing actions")
   }
 }
@@ -400,12 +406,12 @@ test "parser/osc hyperlink dispatch" {
     expect_no_actions(start_parser.next(byte))
   }
   let start_actions = start_parser.next(0x07)
-  guard start_actions[0] is Some(OscDispatch(HyperlinkStart(link))) &&
+  guard start_actions.exit() is Some(OscDispatch(HyperlinkStart(link))) &&
     link.id() == Some("foo") &&
     link.uri() == "http://example.com" else {
     fail("expected OSC hyperlink start dispatch in exit slot")
   }
-  guard start_actions[1] is None && start_actions[2] is None else {
+  guard start_actions.transition() is None && start_actions.entry() is None else {
     fail("unexpected hyperlink start trailing actions")
   }
 
@@ -414,10 +420,10 @@ test "parser/osc hyperlink dispatch" {
     expect_no_actions(end_parser.next(byte))
   }
   let end_actions = end_parser.next(0x07)
-  guard end_actions[0] is Some(OscDispatch(HyperlinkEnd)) else {
+  guard end_actions.exit() is Some(OscDispatch(HyperlinkEnd)) else {
     fail("expected OSC hyperlink end dispatch in exit slot")
   }
-  guard end_actions[1] is None && end_actions[2] is None else {
+  guard end_actions.transition() is None && end_actions.entry() is None else {
     fail("unexpected hyperlink end trailing actions")
   }
 }
@@ -430,7 +436,7 @@ test "parser/osc semantic prompt dispatch" {
   }
 
   let actions = parser.next(0x07)
-  guard actions[0] is Some(OscDispatch(SemanticPrompt(prompt))) else {
+  guard actions.exit() is Some(OscDispatch(SemanticPrompt(prompt))) else {
     fail("expected OSC semantic prompt dispatch in exit slot")
   }
   guard prompt.action() == FreshLineNewPrompt else {
@@ -445,7 +451,7 @@ test "parser/osc semantic prompt dispatch" {
   guard prompt.redraw() == Some(Enabled) else {
     fail("expected semantic prompt redraw option")
   }
-  guard actions[1] is None && actions[2] is None else {
+  guard actions.transition() is None && actions.entry() is None else {
     fail("unexpected semantic prompt trailing actions")
   }
 }
@@ -476,7 +482,7 @@ test "parser/csi param digits saturate and stop counting" {
   }
 
   let actions = parser.next(b'm')
-  guard actions[1] is Some(CsiDispatch(dispatch)) else {
+  guard actions.transition() is Some(CsiDispatch(dispatch)) else {
     fail("expected CSI dispatch after long numeric run")
   }
   guard dispatch.params == [MaxParamValue] else {
@@ -492,7 +498,7 @@ test "parser/dcs hook put unhook and params" {
   expect_no_actions(parser.next(b'+'))
 
   let hook_actions = parser.next(b'q')
-  guard hook_actions[2] is Some(DcsHook(hook)) else {
+  guard hook_actions.entry() is Some(DcsHook(hook)) else {
     fail("expected DCS hook on entry")
   }
   guard hook.final_byte == b'q' &&
@@ -505,12 +511,12 @@ test "parser/dcs hook put unhook and params" {
   }
 
   let put_actions = parser.next(b'a')
-  guard put_actions[1] is Some(DcsPut(value)) && value == b'a' else {
+  guard put_actions.transition() is Some(DcsPut(value)) && value == b'a' else {
     fail("expected DCS put action")
   }
 
   let unhook_actions = parser.next(0x1B)
-  guard unhook_actions[0] is Some(DcsUnhook) else {
+  guard unhook_actions.exit() is Some(DcsUnhook) else {
     fail("expected DCS unhook on exit")
   }
 }
@@ -523,7 +529,7 @@ test "parser/dcs params and overflow regression" {
     expect_no_actions(param_parser.next(byte))
   }
   let hook_actions = param_parser.next(b'p')
-  guard hook_actions[2] is Some(DcsHook(hook)) && hook.params == [1000] else {
+  guard hook_actions.entry() is Some(DcsHook(hook)) && hook.params == [1000] else {
     fail("expected DCS params to finalize on hook")
   }
 
@@ -542,7 +548,7 @@ test "parser/dcs params and overflow regression" {
 test "parser/apc start put and end ordering" {
   let parser = Parser::new()
   let start_actions = parser.next(0x9F)
-  guard start_actions[2] is Some(ApcStart) else {
+  guard start_actions.entry() is Some(ApcStart) else {
     fail("expected APC start on entry")
   }
   guard parser.state == SosPmApcString else {
@@ -550,11 +556,13 @@ test "parser/apc start put and end ordering" {
   }
 
   let put_actions = parser.next(b'a')
-  guard put_actions[1] is Some(ApcPut(value)) && value == b'a' else {
+  guard put_actions.transition() is Some(ApcPut(value)) && value == b'a' else {
     fail("expected APC put action")
   }
 
   let end_actions = parser.next(0x9C)
-  guard end_actions[0] is Some(ApcEnd) else { fail("expected APC end on exit") }
+  guard end_actions.exit() is Some(ApcEnd) else {
+    fail("expected APC end on exit")
+  }
   guard parser.state == Ground else { fail("expected ground after APC end") }
 }

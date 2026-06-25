@@ -394,9 +394,9 @@ fn[H : StreamHandler] Stream::next_non_utf8(
   byte : Byte,
 ) -> Unit {
   let actions = self.parser.next(byte)
-  self.dispatch_action(actions[0])
-  self.dispatch_action(actions[1])
-  self.dispatch_action(actions[2])
+  self.dispatch_action(actions.exit())
+  self.dispatch_action(actions.transition())
+  self.dispatch_action(actions.entry())
 }
 
 ///|
