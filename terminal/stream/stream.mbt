@@ -193,6 +193,11 @@ struct Stream[H] {
   // Reused UTF-32 scratch for the ground-state bulk decode
   // (`decode_utf8_until_control_seq`). Allocated once; never escapes the stream.
   cp_buf : FixedArray[UInt]
+  // Reused SGR iterator. `emit_sgr` re-points it at each CSI `m` parameter view
+  // via `set_view` instead of allocating a fresh parser per sequence (SGR is a
+  // very hot CSI). The stored param view aliases the parser buffer only for the
+  // synchronous dispatch window, like the parser's own reused accumulators.
+  sgr_parser : @sgr.SgrParser
 }
 
 ///|
@@ -202,6 +207,7 @@ pub fn[H] Stream::new(handler : H) -> Stream[H] {
     parser: @parser.Parser::new(),
     utf8decoder: @utf8_decoder.Utf8Decoder::new(),
     cp_buf: FixedArray::make(CP_BUF_LEN, 0U),
+    sgr_parser: @sgr.SgrParser::new(),
   }
 }
 
@@ -453,8 +459,8 @@ fn[H : StreamHandler] Stream::emit_sgr(
   params : ArrayView[UInt16],
   params_sep : @seplist.SepList,
 ) -> Unit {
-  let parser = @sgr.SgrParser::from_params(params, params_sep)
-  while parser.next() is Some(attribute) {
+  self.sgr_parser.set_view(params, params_sep)
+  while self.sgr_parser.next() is Some(attribute) {
     self.emit(StreamSetAttribute(attribute))
   }
 }
