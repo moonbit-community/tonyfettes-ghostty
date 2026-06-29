@@ -1,0 +1,66 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/font/raster"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn circle(Double, Double, Double, segments? : Int) -> Path
+
+pub fn point(Double, Double) -> Point
+
+pub fn rect(Double, Double, Double, Double) -> Path
+
+pub fn regular_polygon(Double, Double, Double, Int, rotation? : Double) -> Path
+
+pub fn render(Path, Int, Int, FillRule) -> Coverage
+
+pub fn render_supersampled(Path, Int, Int, FillRule, samples? : Int) -> Coverage
+
+pub fn ring(Double, Double, Double, Double, segments? : Int) -> Path
+
+pub fn star(Double, Double, Double, points? : Int) -> Path
+
+pub fn triangle(Point, Point, Point) -> Path
+
+// Errors
+
+// Types and methods
+type Coverage
+pub fn Coverage::get(Self, Int, Int) -> Double
+pub fn Coverage::max_abs_diff(Self, Self) -> Double
+pub fn Coverage::mean_abs_diff(Self, Self) -> Double
+pub fn Coverage::new(Int, Int) -> Self
+pub fn Coverage::to_ascii(Self) -> String
+pub fn Coverage::total(Self) -> Double
+
+pub(all) enum FillRule {
+  NonZero
+  EvenOdd
+} derive(Eq, @debug.Debug)
+
+type Path
+pub fn Path::area(Self) -> Double
+pub fn Path::new(Array[Array[Point]]) -> Self
+pub fn Path::point_inside(Self, Double, Double, FillRule) -> Bool
+pub fn Path::signed_area(Self) -> Double
+
+type PathBuilder
+pub fn PathBuilder::build(Self) -> Path
+pub fn PathBuilder::close(Self) -> Unit
+pub fn PathBuilder::cubic_to(Self, Double, Double, Double, Double, Double, Double) -> Unit
+pub fn PathBuilder::line_to(Self, Double, Double) -> Unit
+pub fn PathBuilder::move_to(Self, Double, Double) -> Unit
+pub fn PathBuilder::new(tolerance? : Double) -> Self
+pub fn PathBuilder::quadratic_to(Self, Double, Double, Double, Double) -> Unit
+
+pub struct Point {
+  x : Double
+  y : Double
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+
