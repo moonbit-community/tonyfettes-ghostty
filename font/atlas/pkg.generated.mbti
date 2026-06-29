@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/font"
+package "tonyfettes/ghostty/font/atlas"
 
 import {
   "moonbitlang/core/debug",
