@@ -1,0 +1,13 @@
+import {
+  "moonbit-community/harfbuzz/blob",
+  "moonbit-community/harfbuzz/common",
+  "moonbit-community/harfbuzz/draw",
+  "moonbit-community/harfbuzz/face" @hb_face,
+  "moonbit-community/harfbuzz/font",
+  "tonyfettes/ghostty/font/raster",
+}
+
+import {
+  "tonyfettes/ghostty/font/atlas",
+  "tonyfettes/ghostty/font/glyph",
+} for "test"

@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/font/face"
+
+import {
+  "tonyfettes/ghostty/font/raster",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Face
+pub fn Face::glyph_index(Self, UInt) -> UInt? raise
+pub fn Face::load(Bytes) -> Self raise
+pub fn Face::rasterize(Self, UInt, Int, Int, Int, Double, Double, tolerance? : Double) -> @raster.Coverage raise
+pub fn Face::upem(Self) -> Int
+
+// Type aliases
+
+// Traits
+
