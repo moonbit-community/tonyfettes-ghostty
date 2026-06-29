@@ -1,8 +1,8 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/selection"
+package "tonyfettes/ghostty-terminal/selection"
 
 import {
-  "tonyfettes/ghostty/terminal/pagelist",
+  "tonyfettes/ghostty-terminal/pagelist",
 }
 
 // Values

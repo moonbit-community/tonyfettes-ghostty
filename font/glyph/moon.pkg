@@ -1,4 +1,4 @@
 import {
-  "tonyfettes/ghostty/font/atlas",
-  "tonyfettes/ghostty/font/raster",
+  "tonyfettes/ghostty-font/atlas",
+  "tonyfettes/ghostty-font/raster",
 }

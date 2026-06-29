@@ -1,8 +1,8 @@
 import {
-  "tonyfettes/ghostty/terminal/osc",
-  "tonyfettes/ghostty/terminal/page",
+  "tonyfettes/ghostty-terminal/osc",
+  "tonyfettes/ghostty-terminal/page",
 }
 
 import {
-  "tonyfettes/ghostty/terminal/stream",
+  "tonyfettes/ghostty-terminal/stream",
 } for "test"

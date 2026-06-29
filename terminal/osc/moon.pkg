@@ -1,8 +1,8 @@
 import {
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
-  "tonyfettes/ghostty/terminal/ascii",
-  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty-terminal/ascii",
+  "tonyfettes/ghostty-terminal/color",
 }
 
 import {

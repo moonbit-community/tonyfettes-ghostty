@@ -1,4 +1,4 @@
 import {
-  "tonyfettes/ghostty/terminal/device",
-  "tonyfettes/ghostty/terminal/size_report",
+  "tonyfettes/ghostty-terminal/device",
+  "tonyfettes/ghostty-terminal/size_report",
 }

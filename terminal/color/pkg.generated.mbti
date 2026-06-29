@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/color"
+package "tonyfettes/ghostty-terminal/color"
 
 import {
   "moonbitlang/core/debug",

@@ -1,8 +1,8 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/font/face"
+package "tonyfettes/ghostty-font/face"
 
 import {
-  "tonyfettes/ghostty/font/raster",
+  "tonyfettes/ghostty-font/raster",
 }
 
 // Values

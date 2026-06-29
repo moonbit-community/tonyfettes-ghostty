@@ -1,10 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/font/glyph"
+package "tonyfettes/ghostty-font/glyph"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/font/atlas",
-  "tonyfettes/ghostty/font/raster",
+  "tonyfettes/ghostty-font/atlas",
+  "tonyfettes/ghostty-font/raster",
 }
 
 // Values

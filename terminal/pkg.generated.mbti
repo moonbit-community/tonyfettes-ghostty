@@ -1,24 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal"
+package "tonyfettes/ghostty-terminal"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/terminal/ansi",
-  "tonyfettes/ghostty/terminal/color",
-  "tonyfettes/ghostty/terminal/cursor",
-  "tonyfettes/ghostty/terminal/device",
-  "tonyfettes/ghostty/terminal/hyperlink",
-  "tonyfettes/ghostty/terminal/key_encoder",
-  "tonyfettes/ghostty/terminal/mode",
-  "tonyfettes/ghostty/terminal/mouse_encoder",
-  "tonyfettes/ghostty/terminal/page",
-  "tonyfettes/ghostty/terminal/pagelist",
-  "tonyfettes/ghostty/terminal/point",
-  "tonyfettes/ghostty/terminal/result_code",
-  "tonyfettes/ghostty/terminal/selection",
-  "tonyfettes/ghostty/terminal/size_report",
-  "tonyfettes/ghostty/terminal/stream",
-  "tonyfettes/ghostty/terminal/style",
+  "tonyfettes/ghostty-terminal/ansi",
+  "tonyfettes/ghostty-terminal/color",
+  "tonyfettes/ghostty-terminal/cursor",
+  "tonyfettes/ghostty-terminal/device",
+  "tonyfettes/ghostty-terminal/hyperlink",
+  "tonyfettes/ghostty-terminal/key_encoder",
+  "tonyfettes/ghostty-terminal/mode",
+  "tonyfettes/ghostty-terminal/mouse_encoder",
+  "tonyfettes/ghostty-terminal/page",
+  "tonyfettes/ghostty-terminal/pagelist",
+  "tonyfettes/ghostty-terminal/point",
+  "tonyfettes/ghostty-terminal/result_code",
+  "tonyfettes/ghostty-terminal/selection",
+  "tonyfettes/ghostty-terminal/size_report",
+  "tonyfettes/ghostty-terminal/stream",
+  "tonyfettes/ghostty-terminal/style",
 }
 
 // Values

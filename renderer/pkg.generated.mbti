@@ -1,15 +1,15 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/renderer"
+package "tonyfettes/ghostty-renderer"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/font/glyph",
-  "tonyfettes/ghostty/terminal",
-  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty-font/glyph",
+  "tonyfettes/ghostty-terminal",
+  "tonyfettes/ghostty-terminal/color",
 }
 
 // Values
-pub fn build(@terminal.RenderState, (UInt) -> @glyph.Glyph? raise) -> Contents raise
+pub fn build(@ghostty-terminal.RenderState, (UInt) -> @glyph.Glyph? raise) -> Contents raise
 
 // Errors
 

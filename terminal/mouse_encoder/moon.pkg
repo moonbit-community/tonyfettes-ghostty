@@ -1,8 +1,8 @@
 import {
   "moonbitlang/core/buffer",
-  "tonyfettes/ghostty/terminal/ascii",
-  "tonyfettes/ghostty/terminal/input",
-  "tonyfettes/ghostty/terminal/point",
+  "tonyfettes/ghostty-terminal/ascii",
+  "tonyfettes/ghostty-terminal/input",
+  "tonyfettes/ghostty-terminal/point",
 }
 
 import {
