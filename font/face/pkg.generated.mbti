@@ -6,6 +6,9 @@ import {
 }
 
 // Values
+pub let inconsolata_subset : Bytes
+
+pub let inconsolata_subset_upem : Int
 
 // Errors
 

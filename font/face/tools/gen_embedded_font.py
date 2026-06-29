@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate font/face/embedded_font_test.mbt from a subset TTF.
+"""Regenerate font/face/embedded_font.mbt from a subset TTF.
 
 The font is a fully-instantiated (static), subset Inconsolata embedded as a
 MoonBit Bytes literal so the face tests need no filesystem and stay
@@ -14,7 +14,7 @@ Build the subset (needs fontTools) then run this:
         --output-file=subset.ttf --no-hinting --desubroutinize \
         --no-glyph-names --layout-features='' --notdef-outline \
         --recalc-bounds --drop-tables+=GSUB,GPOS,GDEF,kern,STAT,name,post,OS/2
-    python gen_embedded_font.py subset.ttf > ../embedded_font_test.mbt
+    python gen_embedded_font.py subset.ttf > ../embedded_font.mbt
 """
 import sys
 
@@ -28,7 +28,7 @@ out.append("// filesystem), mirroring harfbuzz.mbt's own *_gen.mbt font fixtures
 out.append("")
 out.append("///|")
 out.append("/// The embedded subset font's units-per-em (head table).")
-out.append("let inconsolata_subset_upem : Int = 1000")
+out.append("pub let inconsolata_subset_upem : Int = 1000")
 out.append("")
 out.append("///|")
 out.append("/// Raw bytes of the embedded subset Inconsolata font.")
@@ -36,7 +36,7 @@ chunks = []
 for i in range(0, len(data), per_line):
     seg = data[i:i+per_line]
     chunks.append('  b"' + "".join(f"\\x{b:02x}" for b in seg) + '"')
-out.append("let inconsolata_subset : Bytes = " + chunks[0].strip())
+out.append("pub let inconsolata_subset : Bytes = " + chunks[0].strip())
 for c in chunks[1:]:
     out[-1] += " +"
     out.append(c)

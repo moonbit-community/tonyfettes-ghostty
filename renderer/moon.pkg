@@ -1,0 +1,10 @@
+import {
+  "tonyfettes/ghostty/font/glyph",
+  "tonyfettes/ghostty/terminal",
+  "tonyfettes/ghostty/terminal/color",
+}
+
+import {
+  "tonyfettes/ghostty/font/atlas",
+  "tonyfettes/ghostty/font/face",
+} for "test"
