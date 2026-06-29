@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/font/glyph"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty/font/atlas",
+  "tonyfettes/ghostty/font/raster",
+}
+
+// Values
+pub fn render_glyph(@atlas.Atlas, @raster.Coverage) -> Glyph raise @atlas.AtlasError
+
+// Errors
+
+// Types and methods
+pub struct Glyph {
+  width : Int
+  height : Int
+  offset_x : Int
+  offset_y : Int
+  atlas_x : Int
+  atlas_y : Int
+} derive(Eq, @debug.Debug)
+
+type GlyphCache
+pub fn GlyphCache::atlas(Self) -> @atlas.Atlas
+pub fn GlyphCache::count(Self) -> Int
+pub fn GlyphCache::get(Self, GlyphKey) -> Glyph?
+pub fn GlyphCache::new(Int, @atlas.Format) -> Self
+pub fn GlyphCache::render(Self, GlyphKey, @raster.Coverage) -> Glyph raise @atlas.AtlasError
+
+pub(all) struct GlyphKey {
+  font : Int
+  glyph : Int
+  px : Int
+} derive(Eq, Hash, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

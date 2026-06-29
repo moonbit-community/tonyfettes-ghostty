@@ -29,11 +29,13 @@ pub fn triangle(Point, Point, Point) -> Path
 // Types and methods
 type Coverage
 pub fn Coverage::get(Self, Int, Int) -> Double
+pub fn Coverage::height(Self) -> Int
 pub fn Coverage::max_abs_diff(Self, Self) -> Double
 pub fn Coverage::mean_abs_diff(Self, Self) -> Double
 pub fn Coverage::new(Int, Int) -> Self
 pub fn Coverage::to_ascii(Self) -> String
 pub fn Coverage::total(Self) -> Double
+pub fn Coverage::width(Self) -> Int
 
 pub(all) enum FillRule {
   NonZero

@@ -17,6 +17,18 @@ pub fn Coverage::get(self : Coverage, x : Int, y : Int) -> Double {
 }
 
 ///|
+/// Buffer width in pixels.
+pub fn Coverage::width(self : Coverage) -> Int {
+  self.width
+}
+
+///|
+/// Buffer height in pixels.
+pub fn Coverage::height(self : Coverage) -> Int {
+  self.height
+}
+
+///|
 /// Sum of all pixel coverage. Because each pixel has unit area, this equals the
 /// rendered area in px² — the quantity compared against the analytic shoelace
 /// area in the area-conservation tests.
