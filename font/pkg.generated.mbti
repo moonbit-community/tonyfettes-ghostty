@@ -1,0 +1,46 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/font"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+pub suberror AtlasError {
+  AtlasFull
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+type Atlas
+pub fn Atlas::clear(Self) -> Unit
+pub fn Atlas::data(Self) -> Array[Byte]
+pub fn Atlas::format(Self) -> Format
+pub fn Atlas::grow(Self, Int) -> Unit
+pub fn Atlas::modified(Self) -> Int
+pub fn Atlas::new(Int, Format) -> Self
+pub fn Atlas::reserve(Self, Int, Int) -> Region raise AtlasError
+pub fn Atlas::resized(Self) -> Int
+pub fn Atlas::set(Self, Region, Array[Byte]) -> Unit
+pub fn Atlas::set_from_larger(Self, Region, Array[Byte], Int, Int, Int) -> Unit
+pub fn Atlas::size(Self) -> Int
+
+pub(all) enum Format {
+  Grayscale
+  Bgr
+  Bgra
+} derive(Eq, @debug.Debug)
+pub fn Format::depth(Self) -> Int
+
+pub struct Region {
+  x : Int
+  y : Int
+  width : Int
+  height : Int
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+
