@@ -86,6 +86,25 @@ test "a resolver returning None draws no foreground" {
 }
 
 ///|
+test "SGR inverse swaps a cell's foreground and background" {
+  // ESC[7m turns on inverse video; the cell still relies on the terminal's
+  // default fg (white) / bg (black), so the swap must surface as black glyph on
+  // a white cell — proving inverse is resolved against the defaults, not dropped.
+  let state = render_state_of(b"\x1B[7ma", 2, 1)
+  let face = @face.Face::load(@face.inconsolata_subset)
+  let cache = @glyph.GlyphCache::new(256, Grayscale)
+  let contents = build(state, real_resolver(face, cache, 24))
+  let fg = contents.text()[0].color
+  assert_eq(fg.r, 0)
+  assert_eq(fg.g, 0)
+  assert_eq(fg.b, 0)
+  let bg = contents.bg_at(0, 0)
+  assert_eq(bg.r, 255)
+  assert_eq(bg.g, 255)
+  assert_eq(bg.b, 255)
+}
+
+///|
 test "default foreground/background fill the instance colors" {
   let state = render_state_of(b"a", 2, 1)
   let face = @face.Face::load(@face.inconsolata_subset)
