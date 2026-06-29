@@ -26,6 +26,13 @@ pub struct Glyph {
 } derive(Eq, Debug)
 
 ///|
+/// Raised when a glyph's bitmap depth does not match the atlas format — here, a
+/// grayscale coverage aimed at a `Bgr`/`Bgra` atlas. Mirrors Ghostty's
+/// `error.WrongAtlas` in `face.renderGlyph`; it lives in this layer, not in the
+/// atlas, because the format mismatch is a property of what is being rendered.
+pub suberror WrongAtlas derive(Eq, Debug)
+
+///|
 /// Quantize a coverage value in `[0, 1]` to an 8-bit grayscale byte, rounded.
 fn to_byte(v : Double) -> Byte {
   let mut n = (v * 255.0 + 0.5).to_int()
@@ -43,11 +50,19 @@ fn to_byte(v : Double) -> Byte {
 /// the glyph metadata. A blank coverage (e.g. a space) yields a zero-sized glyph
 /// and consumes no atlas space.
 ///
+/// The atlas must be `Grayscale`: coverage is a single scalar channel, so the
+/// bitmap is one byte per pixel, while `atlas.set` copies `width * height *
+/// depth` bytes. Raising `WrongAtlas` for a `Bgr`/`Bgra` atlas avoids reading
+/// past the buffer — color glyphs come from a separate bitmap path, as in
+/// Ghostty's `face.renderGlyph`, where a grayscale bitmap into a non-grayscale
+/// atlas returns `error.WrongAtlas`.
+///
 /// Raises `AtlasFull` if the atlas cannot fit the bitmap.
 pub fn render_glyph(
   atlas : @atlas.Atlas,
   cov : @raster.Coverage,
-) -> Glyph raise @atlas.AtlasError {
+) -> Glyph raise {
+  guard atlas.format() is Grayscale else { raise WrongAtlas }
   let w = cov.width()
   let h = cov.height()
   // Inked bounding box: the extent of any non-zero (anti-aliased) coverage.

@@ -46,12 +46,13 @@ pub fn GlyphCache::count(self : GlyphCache) -> Int {
 ///|
 /// Return the cached glyph for `key`, or render `cov` into the atlas, cache it,
 /// and return it. The coverage is only consulted on a miss, so callers may
-/// rasterize lazily. Raises `AtlasFull` if a fresh glyph does not fit.
+/// rasterize lazily. Raises `AtlasFull` if a fresh glyph does not fit, or
+/// `WrongAtlas` if the backing atlas is not grayscale.
 pub fn GlyphCache::render(
   self : GlyphCache,
   key : GlyphKey,
   cov : @raster.Coverage,
-) -> Glyph raise @atlas.AtlasError {
+) -> Glyph raise {
   match self.glyphs.get(key) {
     Some(g) => g
     None => {

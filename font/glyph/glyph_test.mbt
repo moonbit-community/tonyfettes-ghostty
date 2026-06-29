@@ -21,6 +21,23 @@ test "render_glyph crops to the inked bbox and packs a tight bitmap" {
 }
 
 ///|
+test "render_glyph into a non-grayscale atlas raises WrongAtlas" {
+  // Coverage is single-channel; a Bgra atlas would copy depth*bytes and read
+  // past the grayscale buffer, so render_glyph rejects it (cf. Ghostty's
+  // face.renderGlyph -> error.WrongAtlas) rather than corrupting memory.
+  let atlas = @atlas.Atlas::new(64, Bgra)
+  let cov = @raster.render(@raster.rect(8.0, 8.0, 16.0, 16.0), 32, 32, NonZero)
+  let raised = try {
+    @glyph.render_glyph(atlas, cov) |> ignore
+    false
+  } catch {
+    @glyph.WrongAtlas => true
+    _ => false
+  }
+  assert_true(raised)
+}
+
+///|
 test "render_glyph of a blank coverage is a zero-sized glyph" {
   let atlas = @atlas.Atlas::new(64, Grayscale)
   let blank = @raster.Coverage::new(16, 16) // all zero

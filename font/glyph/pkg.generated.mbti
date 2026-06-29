@@ -8,9 +8,10 @@ import {
 }
 
 // Values
-pub fn render_glyph(@atlas.Atlas, @raster.Coverage) -> Glyph raise @atlas.AtlasError
+pub fn render_glyph(@atlas.Atlas, @raster.Coverage) -> Glyph raise
 
 // Errors
+pub suberror WrongAtlas derive(Eq, @debug.Debug)
 
 // Types and methods
 pub struct Glyph {
@@ -27,7 +28,7 @@ pub fn GlyphCache::atlas(Self) -> @atlas.Atlas
 pub fn GlyphCache::count(Self) -> Int
 pub fn GlyphCache::get(Self, GlyphKey) -> Glyph?
 pub fn GlyphCache::new(Int, @atlas.Format) -> Self
-pub fn GlyphCache::render(Self, GlyphKey, @raster.Coverage) -> Glyph raise @atlas.AtlasError
+pub fn GlyphCache::render(Self, GlyphKey, @raster.Coverage) -> Glyph raise
 
 pub(all) struct GlyphKey {
   font : Int

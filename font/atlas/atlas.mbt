@@ -74,8 +74,11 @@ struct Atlas {
 }
 
 ///|
-/// Raw texture bytes, row-major at `depth` bytes per pixel. Read-only in spirit:
-/// the uploader streams this to the GPU; do not mutate it directly.
+/// Raw texture bytes, row-major at `depth` bytes per pixel. Returned live (not
+/// copied) so the GPU uploader can stream it straight to the texture, exactly as
+/// Ghostty's renderer reads `atlas.data` (a plain `[]u8`) in
+/// `replaceRegion(.., atlas.data)`. Treat it as read-only: write through
+/// `set`/`clear` so `modified` is bumped and dirty tracking stays correct.
 pub fn Atlas::data(self : Atlas) -> Array[Byte] {
   self.data
 }
