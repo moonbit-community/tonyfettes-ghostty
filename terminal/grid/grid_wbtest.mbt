@@ -15,7 +15,7 @@ fn ScreenGridState::cell_style(
   row : Int,
   col : Int,
 ) -> @style.CellStyle {
-  self.style_table.get(self.cells[row][col].style_id())
+  self.style_table.get(self.cells[self.phys_row(row)][col].style_id())
 }
 
 ///|
@@ -28,7 +28,7 @@ fn ScreenGridState::cell_hyperlink(
   row : Int,
   col : Int,
 ) -> @hyperlink.CellHyperlink? {
-  if self.cells[row][col].has_hyperlink() {
+  if self.cells[self.phys_row(row)][col].has_hyperlink() {
     self.hyperlink_table.get(self.link_id_at(row, col))
   } else {
     None
@@ -49,7 +49,7 @@ fn ScreenGridState::cell(
     col_idx >= self.cols.to_int() {
     None
   } else {
-    Some(self.cells[row_idx][col_idx])
+    Some(self.cells[self.phys_row(row_idx)][col_idx])
   }
 }
 
@@ -71,7 +71,7 @@ fn set_test_cell(
   col : Int,
   cell : @page.PageCellState,
 ) -> Unit {
-  grid.cells[row][col] = cell
+  grid.cells[grid.phys_row(row)][col] = cell
 }
 
 ///|
