@@ -380,6 +380,52 @@ P17.B.3 accepted design checkpoint:
   `moon fmt`, `moon info`, and `.mbti` public API review confirming no
   registry/draw helper leaked publicly.
 
+P17.B.4 accepted design checkpoint:
+
+- Goal: translate the rect/box-only subset of upstream
+  `font/sprite/draw/special.zig` while keeping the sprite face direct-dispatch
+  model from P17.B.3.
+- Accepted design: add package-private special sprite draw routines only for
+  upstream functions whose bodies use the already-translated
+  `SpriteCanvas.rect`/`box`/`pixel` primitives. Do not add z2d context, path,
+  stroke, fill, arc, branch drawing, generator output, a registry, `DrawFn`, or
+  a `draw_sprite -> Bool` helper in this slice.
+- Target files/surfaces: `font/sprite_draw_special.mbt`,
+  `font/sprite_face.mbt`, `font/sprite_face_wbtest.mbt`,
+  `font/pkg.generated.mbti`, and this plan file.
+- API/interface diff: no public API is expected. `SpriteFace`, special draw
+  routines, and special dispatch helpers remain package-private. The existing
+  public `Sprite` codepoint value surface is reused as-is.
+- Included upstream symbols: `underline`, `underline_double`,
+  `underline_dashed`, `strikethrough`, `overline`, `cursor_rect`,
+  `cursor_hollow_rect`, `cursor_bar`, and `cursor_underline`.
+- Deferred upstream symbols: `underline_dotted` and `underline_curly` require
+  z2d-style context/path/curve/fill/stroke behavior and remain deferred.
+  `font/sprite/draw/branch.zig` is also deferred because it depends on
+  `box.zig` `arc(...)` and z2d context `arc`/`stroke`/`fill` behavior.
+- Intentional MoonBit naming/type adapters: Zig special sprite enum field names
+  become explicit special-codepoint match arms corresponding to
+  `Sprite::...().codepoint()` in `SpriteFace.render_glyph` and
+  `SpriteFace.has_codepoint`. Only implemented special sprite codepoints should
+  return true from `has_codepoint`; deferred special sprite codepoints continue
+  to fall back to a blank glyph. A package-private `saturating_add_uint` helper
+  in `font/sprite_draw_special.mbt` stands in for Zig `+|` where upstream
+  clamps decoration positions to the padded canvas extent.
+- Why existing code cannot be reused as-is: P17.B.3 only dispatches Unicode
+  block and braille ranges. It does not handle upstream special sprite
+  codepoints such as decorations and cursors.
+- Open questions: exact z2d-compatible rasterization semantics for dotted and
+  curly underlines, branch arcs, path strokes/fills, PNG golden diff, and Wuffs
+  remain separate P17.B follow-up work.
+- Next implementation step: add the special rect-only draw file, extend direct
+  dispatch and `has_codepoint`, and add focused white-box tests that verify
+  implemented special sprites render while deferred special sprites remain
+  unsupported.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for touched font files,
+  `moon fmt`, `moon info`, and `.mbti` public API review confirming no special
+  draw helper leaked publicly.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -700,6 +746,26 @@ P17.B.3:
   diff tests, Wuffs decode, special sprite drawing, and the remaining
   `sprite/draw/*.zig` ranges remain deferred.
 
+P17.B.4:
+
+- Dependency boundary review: no z2d context/path/stroke/fill/arc API, Wuffs
+  PNG decode/export, platform font backend, renderer backend, GPU surface,
+  generator package, or runtime registry abstraction was introduced.
+- Public API visibility review: rect-only special draw routines remain
+  package-private and are reachable only through `SpriteFace` direct dispatch.
+  No public `DrawFn`, registry table, special draw helper, or rasterizer
+  adapter surface exists.
+- `.mbti` review: `font/pkg.generated.mbti` remains unchanged for this slice
+  because the new special sprite draw code is internal.
+- Coverage findings review: `font/sprite_draw_special.mbt` and
+  `font/sprite_face.mbt` have no uncovered executable lines after targeted
+  caret coverage. The pre-existing `font/sprite_draw_braille.mbt` invariant
+  residuals remain unchanged.
+- Deferred adapter confirmation: `underline_dotted`, `underline_curly`,
+  `branch.zig`, `box.zig` arcs, path/curve/triangle rasterization, PNG golden
+  diff tests, Wuffs decode, and remaining `sprite/draw/*.zig` ranges remain
+  deferred.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -782,6 +848,22 @@ Implementation reviews must include:
   documented layout invariant residuals;
   `moon fmt`;
   `moon info`.
+- P17.B.4 added package-private rect-only special sprite draw routines for
+  underline, double underline, dashed underline, strikethrough, overline, rect
+  cursor, hollow rect cursor, bar cursor, and underline cursor. `SpriteFace`
+  direct dispatch now recognizes only those implemented special codepoints;
+  dotted and curly underlines remain unsupported and return the upstream blank
+  glyph shape through the fallback branch.
+- P17.B.4 validation passed:
+  `moon check`;
+  `moon test font` with 63 tests passed;
+  `moon test` with 632 tests passed;
+  `moon coverage analyze` reported 290 uncovered lines in 36 files, with no new
+  touched-source residuals;
+  targeted caret coverage for `font/sprite_draw_special.mbt` and
+  `font/sprite_face.mbt` reported no uncovered lines;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -827,6 +909,15 @@ P17.B.3 does not intentionally extend `font/pkg.generated.mbti`:
   package-private.
 - No public registry, generator output, draw function type, or draw helper API
   is added.
+- No parser/terminal public API churn.
+
+P17.B.4 does not intentionally extend `font/pkg.generated.mbti`:
+
+- `underline`, `underline_double`, `underline_dashed`, `strikethrough`,
+  `overline`, `cursor_rect`, `cursor_hollow_rect`, `cursor_bar`, and
+  `cursor_underline` remain package-private.
+- No public special sprite draw API, registry, generator output, rasterizer
+  adapter, or draw helper API is added.
 - No parser/terminal public API churn.
 
 For implementation tasks:

@@ -15,6 +15,15 @@ fn SpriteFace::new(metrics : Metrics) -> SpriteFace {
 fn SpriteFace::has_codepoint(self : SpriteFace, cp : UInt) -> Bool {
   ignore(self)
   match cp {
+    0x110000 => true
+    0x110001 => true
+    0x110003 => true
+    0x110005 => true
+    0x110006 => true
+    0x110007 => true
+    0x110008 => true
+    0x110009 => true
+    0x11000A => true
     0x2580..=0x259F => true
     0x2800..=0x28FF => true
     _ => false
@@ -40,6 +49,15 @@ fn SpriteFace::render_glyph(
   let canvas = SpriteCanvas::new(width, height, padding_x, padding_y)
 
   match cp {
+    0x110000 => underline(cp, canvas, width, height, metrics)
+    0x110001 => underline_double(cp, canvas, width, height, metrics)
+    0x110003 => underline_dashed(cp, canvas, width, height, metrics)
+    0x110005 => strikethrough(cp, canvas, width, height, metrics)
+    0x110006 => overline(cp, canvas, width, height, metrics)
+    0x110007 => cursor_rect(cp, canvas, width, height, metrics)
+    0x110008 => cursor_hollow_rect(cp, canvas, width, height, metrics)
+    0x110009 => cursor_bar(cp, canvas, width, height, metrics)
+    0x11000A => cursor_underline(cp, canvas, width, height, metrics)
     0x2580..=0x259F => draw2580_259f(cp, canvas, width, height, metrics)
     0x2800..=0x28FF => draw2800_28ff(cp, canvas, width, height, metrics)
     _ => return sprite_blank_glyph()

@@ -29,6 +29,17 @@ fn sprite_face_atlas_pixel(atlas : Atlas, x : UInt, y : UInt) -> Byte {
 ///|
 test "sprite face has codepoint for translated direct ranges" {
   let face = SpriteFace::new(sprite_face_test_metrics())
+  assert_true(face.has_codepoint(Sprite::underline().codepoint()))
+  assert_true(face.has_codepoint(Sprite::underline_double().codepoint()))
+  assert_false(face.has_codepoint(Sprite::underline_dotted().codepoint()))
+  assert_true(face.has_codepoint(Sprite::underline_dashed().codepoint()))
+  assert_false(face.has_codepoint(Sprite::underline_curly().codepoint()))
+  assert_true(face.has_codepoint(Sprite::strikethrough().codepoint()))
+  assert_true(face.has_codepoint(Sprite::overline().codepoint()))
+  assert_true(face.has_codepoint(Sprite::cursor_rect().codepoint()))
+  assert_true(face.has_codepoint(Sprite::cursor_hollow_rect().codepoint()))
+  assert_true(face.has_codepoint(Sprite::cursor_bar().codepoint()))
+  assert_true(face.has_codepoint(Sprite::cursor_underline().codepoint()))
   assert_true(face.has_codepoint(0x2580U))
   assert_true(face.has_codepoint(0x259FU))
   assert_true(face.has_codepoint(0x2800U))
@@ -49,6 +60,35 @@ test "sprite face unsupported codepoint returns blank glyph" {
     fail("expected unsupported sprite to return a blank glyph")
   }
   assert_eq(atlas.modified, 1U)
+}
+
+///|
+test "sprite face deferred special codepoints return blank glyph" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(32U, Grayscale)
+  let dotted = face.render_glyph(
+    atlas,
+    Sprite::underline_dotted().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  let curly = face.render_glyph(
+    atlas,
+    Sprite::underline_curly().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard dotted == sprite_blank_glyph() && curly == sprite_blank_glyph() else {
+    fail("expected deferred special sprites to remain blank")
+  }
+}
+
+///|
+test "special draw saturating add matches zig saturating arithmetic" {
+  assert_eq(saturating_add_uint(1U, 2U), 3U)
+  assert_eq(saturating_add_uint(0xFFFFFFFFU, 1U), 0xFFFFFFFFU)
 }
 
 ///|
@@ -194,4 +234,188 @@ test "sprite face passes wide cell width to braille draw routine" {
   }
   assert_true(wide.width > normal.width)
   assert_eq(wide.height, normal.height)
+}
+
+///|
+test "sprite face renders rect only special sprites" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(256U, Grayscale)
+
+  let underline = face.render_glyph(
+    atlas,
+    Sprite::underline().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(underline.width, 8U)
+  assert_eq(underline.height, 1U)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, underline.atlas_x, underline.atlas_y),
+    0xFF,
+  )
+
+  let underline_double = face.render_glyph(
+    atlas,
+    Sprite::underline_double().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(underline_double.width, 8U)
+  assert_eq(underline_double.height, 3U)
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      underline_double.atlas_x,
+      underline_double.atlas_y,
+    ),
+    0xFF,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      underline_double.atlas_x,
+      underline_double.atlas_y + 1U,
+    ),
+    0x00,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      underline_double.atlas_x,
+      underline_double.atlas_y + 2U,
+    ),
+    0xFF,
+  )
+
+  let underline_dashed = face.render_glyph(
+    atlas,
+    Sprite::underline_dashed().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(underline_dashed.width, 9U)
+  assert_eq(underline_dashed.height, 1U)
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      underline_dashed.atlas_x,
+      underline_dashed.atlas_y,
+    ),
+    0xFF,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      underline_dashed.atlas_x + 3U,
+      underline_dashed.atlas_y,
+    ),
+    0x00,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      underline_dashed.atlas_x + 6U,
+      underline_dashed.atlas_y,
+    ),
+    0xFF,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      underline_dashed.atlas_x + 8U,
+      underline_dashed.atlas_y,
+    ),
+    0xFF,
+  )
+
+  let strikethrough = face.render_glyph(
+    atlas,
+    Sprite::strikethrough().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(strikethrough.width, 8U)
+  assert_eq(strikethrough.height, 1U)
+
+  let overline = face.render_glyph(atlas, Sprite::overline().codepoint(), None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(overline.width, 8U)
+  assert_eq(overline.height, 1U)
+
+  let cursor_rect = face.render_glyph(
+    atlas,
+    Sprite::cursor_rect().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(cursor_rect.width, 8U)
+  assert_eq(cursor_rect.height, 16U)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, cursor_rect.atlas_x, cursor_rect.atlas_y),
+    0xFF,
+  )
+
+  let cursor_hollow_rect = face.render_glyph(
+    atlas,
+    Sprite::cursor_hollow_rect().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(cursor_hollow_rect.width, 8U)
+  assert_eq(cursor_hollow_rect.height, 16U)
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      cursor_hollow_rect.atlas_x,
+      cursor_hollow_rect.atlas_y,
+    ),
+    0xFF,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      cursor_hollow_rect.atlas_x + 1U,
+      cursor_hollow_rect.atlas_y + 1U,
+    ),
+    0x00,
+  )
+
+  let cursor_bar = face.render_glyph(
+    atlas,
+    Sprite::cursor_bar().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(cursor_bar.width, 1U)
+  assert_eq(cursor_bar.height, 16U)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, cursor_bar.atlas_x, cursor_bar.atlas_y),
+    0xFF,
+  )
+
+  let cursor_underline = face.render_glyph(
+    atlas,
+    Sprite::cursor_underline().codepoint(),
+    None,
+  ) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(cursor_underline.width, 8U)
+  assert_eq(cursor_underline.height, 1U)
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      cursor_underline.atlas_x,
+      cursor_underline.atlas_y,
+    ),
+    0xFF,
+  )
 }
