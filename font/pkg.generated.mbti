@@ -8,11 +8,50 @@ import {
 // Values
 
 // Errors
+pub suberror AtlasError {
+  AtlasFull
+} derive(Eq, @debug.Debug)
+
 pub suberror ModifierParseError {
   InvalidFormat
 } derive(Eq, @debug.Debug)
 
 // Types and methods
+pub(all) struct Atlas {
+  mut data : Array[Byte]
+  mut size : UInt
+  mut nodes : Array[AtlasNode]
+  mut format : AtlasFormat
+  mut modified : UInt
+  mut resized : UInt
+} derive(Eq, @debug.Debug)
+pub fn Atlas::clear(Self) -> Unit
+pub fn Atlas::grow(Self, UInt) -> Unit
+pub fn Atlas::new(UInt, AtlasFormat) -> Self
+pub fn Atlas::reserve(Self, UInt, UInt) -> AtlasRegion raise AtlasError
+pub fn Atlas::set(Self, AtlasRegion, ArrayView[Byte]) -> Unit
+pub fn Atlas::set_from_larger(Self, AtlasRegion, ArrayView[Byte], UInt, UInt, UInt) -> Unit
+
+pub(all) enum AtlasFormat {
+  Grayscale
+  Bgr
+  Bgra
+} derive(Eq, @debug.Debug)
+pub fn AtlasFormat::depth(Self) -> Byte
+
+pub(all) struct AtlasNode {
+  mut x : UInt
+  mut y : UInt
+  mut width : UInt
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AtlasRegion {
+  mut x : UInt
+  mut y : UInt
+  width : UInt
+  height : UInt
+} derive(Eq, @debug.Debug)
+
 pub(all) struct CodepointMap {
   mut list : Array[CodepointMapEntry]
 } derive(Eq, @debug.Debug)

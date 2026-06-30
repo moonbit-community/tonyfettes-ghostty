@@ -246,6 +246,23 @@ P17.B.1 accepted design checkpoint:
   package-level `AtlasFormat`/`AtlasRegion`; Zig `setFromLarger` becomes
   `set_from_larger`; Zig `[]const u8` inputs become MoonBit read-only byte
   views; allocator errors are omitted because MoonBit allocation is GC-managed.
+- Revised implementation shape approved before code:
+  - `Atlas.data` uses `Array[Byte]` rather than `Bytes` because MoonBit
+    `Bytes` is immutable at the public API level and cannot model Zig's
+    mutable `[]u8` backing storage.
+  - `Atlas.nodes` is exposed as `Array[AtlasNode]`. MoonBit has no per-field
+    public/private visibility equivalent, so exposing the upstream public
+    `Atlas` fields requires the node field to appear too.
+  - `AtlasNode`, `AtlasRegion`, and `Atlas` use `UInt` for upstream
+    `u32`/`usize` values where MoonBit indexing requires conversion through
+    `Int`.
+  - `Atlas::set` and `Atlas::set_from_larger` accept `ArrayView[Byte]` as the
+    read-only slice counterpart for upstream `[]const u8`.
+  - `modified` and `resized` are mutable `UInt` counters standing in for
+    upstream `std.atomic.Value(usize)`.
+  - `init` is exposed as `Atlas::new` because MoonBit has no allocator
+    parameter; allocator/OOM/tripwire/deinit/debug dump/Wasm APIs remain
+    deferred adapters for this pure GC-backed slice.
 - Why existing code cannot be reused as-is: the current `font` package only
   contains glyph/metrics/descriptor/codepoint-map values. No existing
   terminal or font module owns atlas pixel storage or rectangle packing.
@@ -394,6 +411,14 @@ P17.A:
 - The remaining global coverage findings are pre-existing non-`font` gaps in
   bench/example/terminal files and are outside P17.A.
 
+P17.B.1:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F font/atlas.mbt` reported no uncovered
+  executable lines.
+- The remaining global coverage findings are pre-existing non-`font` gaps in
+  bench/example/terminal files and are outside P17.B.1.
+
 Each later implementation subplan must record coverage findings for every
 touched MoonBit executable file before review.
 
@@ -492,6 +517,23 @@ P17.A faithful repair checkpoint:
   caret coverage for touched `font/*.mbt` files, `moon fmt`, `moon info`, and
   `.mbti` review for intentionally public mutable field surface.
 
+P17.B.1:
+
+- Dependency boundary review: no sprite canvas, rasterizer, Wuffs, GPU, or
+  platform FFI surface was introduced.
+- Public API visibility review: `Atlas` intentionally exposes mutable
+  `data/size/nodes/format/modified/resized` fields to preserve upstream field
+  access. `AtlasNode` is public because MoonBit lacks per-field visibility for
+  a partially public struct.
+- `.mbti` review: `font/pkg.generated.mbti` adds only the atlas surface:
+  `Atlas`, `AtlasFormat`, `AtlasNode`, `AtlasRegion`, `AtlasError`, and the
+  translated methods `new/reserve/set/set_from_larger/grow/clear/depth`.
+- Coverage findings review: `font/atlas.mbt` has no uncovered executable lines
+  after targeted caret coverage review.
+- Deferred adapter confirmation: allocator/OOM/tripwire/deinit/debug dump/Wasm
+  APIs remain deferred; `Array[Byte]`/`ArrayView[Byte]` stand in for Zig byte
+  slices and `UInt` counters stand in for atomics.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -527,6 +569,18 @@ Implementation reviews must include:
   `moon coverage analyze` plus targeted touched-file caret review;
   `moon fmt`;
   `moon info`.
+- P17.B.1 added `Atlas` packing and byte-buffer storage with translated tests
+  for depth, exact fit, full-atlas failures, multi-region packing, skyline y
+  raising, direct writes, larger-source writes, growth, BGR writes/growth,
+  clear, and assertion panic paths. The debug dump, Wasm wrapper, explicit
+  allocator failure tests, `deinit`, and tripwire failure injection are
+  deferred adapters because this MoonBit slice is GC-backed and headless.
+- P17.B.1 validation passed:
+  `moon check`;
+  `moon test` with 603 tests passed;
+  `moon coverage analyze` plus targeted `font/atlas.mbt` caret review;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -542,6 +596,16 @@ faithful-translation priority:
 - opaque owner types remain preferred only where upstream storage is not a
   simple public field carrier, such as `ModifierSet`
 - no parser/terminal public API churn
+
+P17.B.1 extends `font/pkg.generated.mbti` with the atlas surface:
+
+- `Atlas.data` is public mutable `Array[Byte]` to model upstream mutable
+  `[]u8` storage.
+- `Atlas.nodes` and `AtlasNode` are public mutable adapter surface because
+  MoonBit cannot expose only selected fields of a public record.
+- `Atlas.modified` and `Atlas.resized` are public mutable `UInt` counters
+  standing in for upstream atomic values.
+- No parser/terminal public API churn.
 
 For implementation tasks:
 
