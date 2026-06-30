@@ -13,11 +13,19 @@
 /// cell whose resolved glyph has a non-empty bitmap — blanks and spaces
 /// contribute background only, exactly as the GPU renderer expects.
 ///
-/// Combining marks are not yet rendered: only a cell's base codepoint is
-/// resolved, so a cluster like `e` + U+0301 draws as the bare base glyph. Full
-/// grapheme support needs run-based HarfBuzz shaping (one cell can map to
-/// several positioned glyphs), like Ghostty's `font/shaper` run iterator — a
-/// larger change deferred until this renderer is wired to the GPU/shaper.
+/// SGR 8 (invisible) cells draw their background but emit no glyph, matching
+/// xterm and Ghostty's renderer.
+///
+/// Two style-aware features are deferred until this renderer is wired to the
+/// `font/shaper`, since both need face selection the bare-codepoint resolver
+/// can't express:
+/// - Combining marks: only a cell's base codepoint is resolved, so a cluster
+///   like `e` + U+0301 draws as the bare base glyph. Full grapheme support needs
+///   run-based HarfBuzz shaping (one cell can map to several positioned glyphs),
+///   like Ghostty's `font/shaper` run iterator.
+/// - Bold/italic (SGR 1/3): the resolver keys only on the codepoint, so styled
+///   text renders with the regular face. Selecting a bold/italic face requires
+///   threading `CellStyle` (or a font style) through the resolver/shape key.
 pub fn build(
   state : @terminal.RenderState,
   glyph_of : (UInt) -> @glyph.Glyph? raise,
@@ -60,7 +68,8 @@ pub fn build(
         Some(c) => Rgba::from_rgb(c)
         None => default_fg
       }
-      let inverse = cells.cell_style() is Some(style) && style.inverse()
+      let style = cells.cell_style()
+      let inverse = style is Some(s) && s.inverse()
       let (cell_bg, cell_fg) = if inverse {
         (fg_color, bg_color)
       } else {
@@ -68,15 +77,19 @@ pub fn build(
       }
       bg[y * cols + x] = cell_bg
 
+      // SGR 8 (invisible/concealed): the background is still drawn, but no
+      // foreground glyph is emitted, so concealed text (password fields, etc.)
+      // never reaches the GPU glyph path. Matches xterm and Ghostty's renderer,
+      // which does `if (style.flags.invisible) continue;` after the bg write.
+      if style is Some(s) && s.invisible() {
+        continue
+      }
+
       // Foreground: skip empty cells and spaces — they draw no glyph.
       let cp = cell.codepoint()
       if cp == 0 || cp == 0x20 {
         continue
       }
-      // TODO(grapheme): only the base codepoint is resolved; combining marks
-      // from cells.cell_grapheme_codepoints() are dropped, so clusters render as
-      // the bare base glyph. Rendering the marks needs run-based shaping (one
-      // cell -> several positioned glyphs), not this per-cell single-glyph lookup.
       if glyph_of(cp) is Some(g) && g.width > 0 && g.height > 0 {
         text.push({
           grid_col: x,

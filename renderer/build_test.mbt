@@ -105,6 +105,21 @@ test "SGR inverse swaps a cell's foreground and background" {
 }
 
 ///|
+test "SGR invisible cells draw background but emit no glyph" {
+  // ESC[8m conceals the text (password fields, etc.): 'a' would normally ink a
+  // glyph, but invisible cells must contribute background only — matching xterm
+  // and Ghostty's renderer, which skips the foreground for invisible cells.
+  let state = render_state_of(b"\x1B[8ma", 2, 1)
+  let face = @face.Face::load(@face.inconsolata_subset)
+  let cache = @glyph.GlyphCache::new(256, Grayscale)
+  let contents = build(state, real_resolver(face, cache, 24))
+  // No foreground glyph for the concealed 'a'.
+  assert_eq(contents.text().length(), 0)
+  // Background is still produced densely over the grid.
+  assert_eq(contents.bg().length(), 2)
+}
+
+///|
 test "default foreground/background fill the instance colors" {
   let state = render_state_of(b"a", 2, 1)
   let face = @face.Face::load(@face.inconsolata_subset)
