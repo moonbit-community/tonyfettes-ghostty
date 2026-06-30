@@ -289,8 +289,8 @@ P17.B.2 accepted design checkpoint:
   logic.
 - Target files/surfaces: `font/sprite.mbt`, `font/sprite_canvas.mbt`,
   `font/sprite_canvas_test.mbt`, `font/pkg.generated.mbti`, and this plan
-  file. `docs/plan.md` remains `P17.B todo` until the sprite substrate and
-  draw-routine registry are complete.
+  file. `docs/plan.md` remains `P17.B todo` until the sprite substrate,
+  direct draw-routine dispatch, and sprite face rendering are complete.
 - API/interface diff: add public `Sprite`, `SpriteColor`,
   `SpritePoint[T]`, `SpriteLine[T]`, `SpriteBox[T]`, `SpriteRect[T]`,
   `SpriteTriangle[T]`, `SpriteQuad[T]`, and `SpriteCanvas`. `SpriteCanvas`
@@ -335,6 +335,50 @@ P17.B.2 accepted design checkpoint:
 - Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
   `moon coverage analyze`, targeted caret coverage for the new sprite files,
   `moon fmt`, `moon info`, and `.mbti` public API review.
+
+P17.B.3 accepted design checkpoint:
+
+- Goal: translate upstream `font/sprite/Face.zig` sprite dispatch in the
+  simplest MoonBit shape while preserving upstream draw routine behavior.
+- Accepted design: do not add a generator, function-pointer table, draw
+  registry type, `get_draw_fn`, or `draw_sprite -> Bool` helper. MoonBit will
+  use explicit `match cp` range dispatch directly in `render_glyph`: each
+  matching range calls the corresponding package-private translated draw
+  routine, and the fallback branch immediately returns a blank glyph. This is
+  the approved adapter for Zig's comptime reflection-generated
+  `getDrawFn(cp) orelse return glyph`.
+- Target files/surfaces: `font/sprite_face.mbt`, package-private
+  `font/sprite_draw_*.mbt` files as draw routines are translated,
+  `font/sprite_face_test.mbt` or `_wbtest.mbt`, `font/pkg.generated.mbti`, and
+  this plan file.
+- API/interface diff: no public registry, no public draw function type, and no
+  public draw routine surface. `SpriteFace` remains package-private unless
+  later P17.C/P17.D integration needs a recorded public caller story.
+  `has_codepoint`, if needed for sprite fallback, should also be a direct
+  range match and should not reuse a hidden registry abstraction.
+- Intentional MoonBit naming/type adapters: Zig's comptime declaration scan is
+  replaced with hand-maintained explicit range arms. Each arm must correspond
+  to an upstream `drawXXXX` or `drawXXXX_YYYY` symbol and should stay ordered
+  by codepoint range for reviewability. Until P17.C translates the full
+  `font.face.RenderOptions`, `render_glyph` takes a package-private
+  `cell_width : UInt?` adapter for the single upstream option that
+  `sprite/Face.zig` reads. This adapter must be replaced by the real
+  `RenderOptions` surface when P17.C lands.
+- Why existing code cannot be reused as-is: P17.B.2 only provides the alpha
+  canvas primitives. It has no sprite face, no draw dispatch, and no
+  translated draw routines.
+- Open questions: the z2d-equivalent path/curve/triangle rasterizer and PNG
+  golden-diff/Wuffs boundary remain separate P17.B work. The first executable
+  slice may translate only draw routines whose dependencies are already present
+  in `SpriteCanvas`.
+- Next implementation step: add the direct-dispatch sprite face slice with
+  package-private draw routines for an initial green subset, plus tests that
+  unsupported codepoints return a blank glyph and supported ranges call the
+  translated routine through `render_glyph`.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for touched font files,
+  `moon fmt`, `moon info`, and `.mbti` public API review confirming no
+  registry/draw helper leaked publicly.
 
 ### P17.C face contract without rasterizer FFI
 
@@ -632,6 +676,30 @@ P17.B.2:
   surface before indexing the MoonBit array. This is the safe local stand-in
   for z2d surface bounds handling and is covered by tests.
 
+P17.B.3:
+
+- Dependency boundary review: no z2d path API, Wuffs PNG decode/export,
+  platform font backend, renderer backend, GPU surface, generator package, or
+  runtime registry abstraction was introduced.
+- Public API visibility review: `SpriteFace`, translated draw routines, draw
+  helpers, and the temporary `cell_width : UInt?` render option adapter remain
+  package-private. No public `DrawFn`, `get_draw_fn`, registry table, or draw
+  routine surface exists.
+- `.mbti` review: `font/pkg.generated.mbti` should remain unchanged for this
+  slice because the new sprite face/direct-dispatch code is internal until
+  P17.C/P17.D records a public caller story.
+- Coverage findings review: `font/sprite_draw_block.mbt`,
+  `font/sprite_draw_common.mbt`, and `font/sprite_face.mbt` have no uncovered
+  executable lines after targeted caret coverage. `font/sprite_draw_braille.mbt`
+  has four uncovered lines: the final "increase dot width" branch and three
+  post-layout invariant aborts. These mirror upstream assert-style safety paths;
+  exhaustive local search over practical cell sizes found the final adjustment
+  unreachable after the preceding margin/spacing adjustments, and the invariant
+  aborts are only reachable if that layout math is internally broken.
+- Deferred adapter confirmation: path/curve/triangle rasterization, PNG golden
+  diff tests, Wuffs decode, special sprite drawing, and the remaining
+  `sprite/draw/*.zig` ranges remain deferred.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -693,6 +761,27 @@ Implementation reviews must include:
   `font/sprite_canvas.mbt`, and `font/atlas.mbt` caret review;
   `moon fmt`;
   `moon info`.
+- P17.B.3 added package-private `SpriteFace` direct range dispatch and the
+  initial pure draw routines for Block Elements (`U+2580..U+259F`) and Braille
+  Patterns (`U+2800..U+28FF`). Unsupported codepoints return the upstream
+  blank glyph shape through `render_glyph`; supported initial ranges draw into
+  `SpriteCanvas` and write through the existing atlas path. The implementation
+  intentionally does not add a generator, function pointer registry,
+  `get_draw_fn`, or `draw_sprite -> Bool`.
+- P17.B.3 validation passed:
+  `moon check`;
+  `moon test font` with 60 tests passed;
+  `moon test` with 629 tests passed;
+  `moon coverage analyze` reported 290 uncovered lines in 36 files, with only
+  `font/sprite_draw_braille.mbt` touched-file residuals documented in the
+  P17.B.3 coverage review;
+  targeted caret coverage for `font/sprite_draw_block.mbt`,
+  `font/sprite_draw_common.mbt`, and `font/sprite_face.mbt` reported no
+  uncovered lines;
+  targeted caret coverage for `font/sprite_draw_braille.mbt` reported only the
+  documented layout invariant residuals;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -730,6 +819,14 @@ P17.B.2 extends `font/pkg.generated.mbti` with the sprite substrate:
 - Generic `SpritePoint`, `SpriteLine`, `SpriteBox`, `SpriteRect`,
   `SpriteTriangle`, and `SpriteQuad` are public constructible value carriers
   standing in for Zig comptime geometry factories.
+- No parser/terminal public API churn.
+
+P17.B.3 does not intentionally extend `font/pkg.generated.mbti`:
+
+- `SpriteFace`, `draw2580_259f`, `draw2800_28ff`, and draw helper types remain
+  package-private.
+- No public registry, generator output, draw function type, or draw helper API
+  is added.
 - No parser/terminal public API churn.
 
 For implementation tasks:
