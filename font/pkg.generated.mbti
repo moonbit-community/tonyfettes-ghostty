@@ -8,34 +8,36 @@ import {
 // Values
 
 // Errors
-pub suberror MetricModifierParseError {
+pub suberror ModifierParseError {
   InvalidFormat
 } derive(Eq, @debug.Debug)
 
 // Types and methods
-type CodepointMap derive(Eq, @debug.Debug)
+pub(all) struct CodepointMap {
+  mut list : Array[CodepointMapEntry]
+} derive(Eq, @debug.Debug)
 pub fn CodepointMap::add(Self, CodepointMapEntry) -> Unit
 pub fn CodepointMap::get(Self, UInt) -> Descriptor?
 pub fn CodepointMap::hashcode(Self) -> UInt
 pub fn CodepointMap::new() -> Self
 
 pub(all) struct CodepointMapEntry {
-  start : UInt
-  end : UInt
+  range : (UInt, UInt)
   descriptor : Descriptor
 } derive(Eq, @debug.Debug)
 
-type Descriptor derive(Eq, @debug.Debug)
-pub fn Descriptor::bold(Self) -> Bool
-pub fn Descriptor::codepoint(Self) -> UInt
-pub fn Descriptor::family(Self) -> String?
+pub(all) struct Descriptor {
+  family : String?
+  style : String?
+  codepoint : UInt
+  size : Float
+  bold : Bool
+  italic : Bool
+  monospace : Bool
+  variations : Array[FontVariation]
+} derive(Eq, @debug.Debug)
 pub fn Descriptor::hashcode(Self) -> UInt
-pub fn Descriptor::italic(Self) -> Bool
-pub fn Descriptor::monospace(Self) -> Bool
-pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Double, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : Array[FontVariation]) -> Self
-pub fn Descriptor::size(Self) -> Double
-pub fn Descriptor::style(Self) -> String?
-pub fn Descriptor::variations(Self) -> Array[FontVariation]
+pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Float, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : Array[FontVariation]) -> Self
 
 pub(all) struct FaceMetrics {
   px_per_em : Double
@@ -67,18 +69,23 @@ pub(all) struct FontVariation {
   value : Double
 } derive(Eq, @debug.Debug)
 
-type FontVariationId derive(Eq, @debug.Debug)
-pub fn FontVariationId::new(Byte, Byte, Byte, Byte) -> Self
-pub fn FontVariationId::to_uint(Self) -> UInt
+pub(all) struct FontVariationId {
+  a : Byte
+  b : Byte
+  c : Byte
+  d : Byte
+} derive(Eq, @debug.Debug)
+pub fn FontVariationId::init(BytesView) -> Self
+pub fn FontVariationId::str(Self) -> Bytes
 
-type Glyph derive(Eq, @debug.Debug)
-pub fn Glyph::atlas_x(Self) -> UInt
-pub fn Glyph::atlas_y(Self) -> UInt
-pub fn Glyph::height(Self) -> UInt
-pub fn Glyph::new(UInt, UInt, Int, Int, UInt, UInt) -> Self
-pub fn Glyph::offset_x(Self) -> Int
-pub fn Glyph::offset_y(Self) -> Int
-pub fn Glyph::width(Self) -> UInt
+pub(all) struct Glyph {
+  width : UInt
+  height : UInt
+  offset_x : Int
+  offset_y : Int
+  atlas_x : UInt
+  atlas_y : UInt
+} derive(Eq, @debug.Debug)
 
 pub(all) enum MetricKey {
   CellWidth
@@ -100,37 +107,38 @@ pub(all) enum MetricKey {
   FaceY
 } derive(Eq, Hash, @debug.Debug)
 
-pub(all) enum MetricModifier {
+pub(all) struct Metrics {
+  mut cell_width : UInt
+  mut cell_height : UInt
+  mut cell_baseline : UInt
+  mut underline_position : UInt
+  mut underline_thickness : UInt
+  mut strikethrough_position : UInt
+  mut strikethrough_thickness : UInt
+  mut overline_position : Int
+  mut overline_thickness : UInt
+  mut box_thickness : UInt
+  mut cursor_thickness : UInt
+  mut cursor_height : UInt
+  mut icon_height : Double
+  mut icon_height_single : Double
+  mut face_width : Double
+  mut face_height : Double
+  mut face_y : Double
+} derive(Eq, @debug.Debug)
+pub fn Metrics::apply(Self, ModifierSet) -> Unit
+pub fn Metrics::calc(FaceMetrics) -> Self
+
+pub(all) enum Modifier {
   Percent(Double)
   Absolute(Int)
 } derive(Eq, @debug.Debug)
-pub fn MetricModifier::parse(String) -> Self raise MetricModifierParseError
+pub fn Modifier::parse(String) -> Self raise ModifierParseError
 
-type MetricModifierSet
-pub fn MetricModifierSet::get(Self, MetricKey) -> MetricModifier?
-pub fn MetricModifierSet::new() -> Self
-pub fn MetricModifierSet::set(Self, MetricKey, MetricModifier) -> Unit
-
-type Metrics derive(Eq, @debug.Debug)
-pub fn Metrics::apply(Self, MetricModifierSet) -> Unit
-pub fn Metrics::box_thickness(Self) -> UInt
-pub fn Metrics::calc(FaceMetrics) -> Self
-pub fn Metrics::cell_baseline(Self) -> UInt
-pub fn Metrics::cell_height(Self) -> UInt
-pub fn Metrics::cell_width(Self) -> UInt
-pub fn Metrics::cursor_height(Self) -> UInt
-pub fn Metrics::cursor_thickness(Self) -> UInt
-pub fn Metrics::face_height(Self) -> Double
-pub fn Metrics::face_width(Self) -> Double
-pub fn Metrics::face_y(Self) -> Double
-pub fn Metrics::icon_height(Self) -> Double
-pub fn Metrics::icon_height_single(Self) -> Double
-pub fn Metrics::overline_position(Self) -> Int
-pub fn Metrics::overline_thickness(Self) -> UInt
-pub fn Metrics::strikethrough_position(Self) -> UInt
-pub fn Metrics::strikethrough_thickness(Self) -> UInt
-pub fn Metrics::underline_position(Self) -> UInt
-pub fn Metrics::underline_thickness(Self) -> UInt
+type ModifierSet
+pub fn ModifierSet::get(Self, MetricKey) -> Modifier?
+pub fn ModifierSet::new() -> Self
+pub fn ModifierSet::set(Self, MetricKey, Modifier) -> Unit
 
 // Type aliases
 

@@ -1,22 +1,23 @@
 ///|
 /// A four-byte OpenType variation axis identifier.
-struct FontVariationId(UInt) derive(Eq, Debug)
+pub(all) struct FontVariationId {
+  a : Byte
+  b : Byte
+  c : Byte
+  d : Byte
+} derive(Eq, Debug)
 
 ///|
-pub fn FontVariationId::new(
-  a : Byte,
-  b : Byte,
-  c : Byte,
-  d : Byte,
-) -> FontVariationId {
-  FontVariationId(
-    (a.to_uint() << 24) | (b.to_uint() << 16) | (c.to_uint() << 8) | d.to_uint(),
-  )
+pub fn FontVariationId::init(value : BytesView) -> FontVariationId {
+  guard value.length() == 4 else {
+    abort("FontVariationId requires four bytes")
+  }
+  { a: value[0], b: value[1], c: value[2], d: value[3] }
 }
 
 ///|
-pub fn FontVariationId::to_uint(self : FontVariationId) -> UInt {
-  self.0
+pub fn FontVariationId::str(self : FontVariationId) -> Bytes {
+  Bytes::from_array([self.a, self.b, self.c, self.d])
 }
 
 ///|
@@ -27,11 +28,11 @@ pub(all) struct FontVariation {
 
 ///|
 /// Pure font-discovery descriptor. Platform discovery adapters are deferred.
-struct Descriptor {
+pub(all) struct Descriptor {
   family : String?
   style : String?
   codepoint : UInt
-  size : Double
+  size : Float
   bold : Bool
   italic : Bool
   monospace : Bool
@@ -43,7 +44,7 @@ pub fn Descriptor::new(
   family? : String? = None,
   style? : String? = None,
   codepoint? : UInt = 0U,
-  size? : Double = 0.0,
+  size? : Float = 0.0,
   bold? : Bool = false,
   italic? : Bool = false,
   monospace? : Bool = false,
@@ -62,46 +63,6 @@ pub fn Descriptor::new(
 }
 
 ///|
-pub fn Descriptor::family(self : Descriptor) -> String? {
-  self.family
-}
-
-///|
-pub fn Descriptor::style(self : Descriptor) -> String? {
-  self.style
-}
-
-///|
-pub fn Descriptor::codepoint(self : Descriptor) -> UInt {
-  self.codepoint
-}
-
-///|
-pub fn Descriptor::size(self : Descriptor) -> Double {
-  self.size
-}
-
-///|
-pub fn Descriptor::bold(self : Descriptor) -> Bool {
-  self.bold
-}
-
-///|
-pub fn Descriptor::italic(self : Descriptor) -> Bool {
-  self.italic
-}
-
-///|
-pub fn Descriptor::monospace(self : Descriptor) -> Bool {
-  self.monospace
-}
-
-///|
-pub fn Descriptor::variations(self : Descriptor) -> Array[FontVariation] {
-  clone_variations(self.variations)
-}
-
-///|
 pub fn Descriptor::hashcode(self : Descriptor) -> UInt {
   let hasher = Hasher(seed=0)
   self.hash_combine(hasher)
@@ -113,15 +74,23 @@ fn Descriptor::hash_combine(self : Descriptor, hasher : Hasher) -> Unit {
   hash_optional_string(hasher, self.family)
   hash_optional_string(hasher, self.style)
   hasher.combine_uint(self.codepoint)
-  hasher.combine_double(self.size)
+  hasher.combine_uint(self.size.reinterpret_as_uint())
   hasher.combine_bool(self.bold)
   hasher.combine_bool(self.italic)
   hasher.combine_bool(self.monospace)
   hasher.combine_int(self.variations.length())
   for variation in self.variations {
-    hasher.combine_uint(variation.id.to_uint())
-    hasher.combine_double(variation.value)
+    hasher.combine_uint(font_variation_id_to_uint(variation.id))
+    hasher.combine_int64(variation.value.to_int64())
   }
+}
+
+///|
+fn font_variation_id_to_uint(id : FontVariationId) -> UInt {
+  (id.a.to_uint() << 24) |
+  (id.b.to_uint() << 16) |
+  (id.c.to_uint() << 8) |
+  id.d.to_uint()
 }
 
 ///|

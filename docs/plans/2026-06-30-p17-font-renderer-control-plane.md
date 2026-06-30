@@ -171,20 +171,22 @@ Accepted design checkpoint:
 
 - Goal: translate the pure MoonBit font value layer needed before any face,
   discovery, shaper, atlas, or renderer implementation.
-- Accepted design: add a new top-level `font` package. Keep owner types opaque
-  by default: `Glyph`, `Metrics`, `Descriptor`, `CodepointMap`, and
-  `MetricModifierSet`. Expose value enums and data carriers only where later
-  packages need to construct or select behavior: `MetricKey`,
-  `MetricModifier`, `FaceMetrics`, `FontVariationId`, `FontVariation`, and
-  `CodepointMapEntry`.
+- Accepted design: add a new top-level `font` package and keep P17.A as close
+  to upstream Zig field and method shape as MoonBit can express. `Glyph`,
+  `Metrics`, `Descriptor`, `CodepointMap`, `CodepointMapEntry`,
+  `FaceMetrics`, `FontVariationId`, and `FontVariation` are public data
+  carriers because the upstream structs expose those fields directly.
+  `ModifierSet` remains opaque because it stands in for Zig's unmanaged hash
+  map storage.
 - Target files/surfaces: `font/moon.pkg`, `font/glyph.mbt`,
   `font/metrics.mbt`, `font/descriptor.mbt`, `font/codepoint_map.mbt`,
   package tests, `font/pkg.generated.mbti`, plus this plan and
   `docs/plan.md`.
 - API/interface diff: new public package `tonyfettes/ghostty/font` with
-  `Glyph::new` and getters, `Metrics::calc`, `Metrics::apply` and getters,
-  `MetricModifier::parse`, `MetricModifierSet::new/set/get`, `Descriptor::new`
-  and getters, `CodepointMap::new/add/get/hashcode`, and hashcode helpers for
+  upstream-shaped public fields for the pure value structs, `Metrics::calc`,
+  `Metrics::apply`, `Modifier::parse`, `ModifierSet::new/set/get`,
+  `Descriptor::new`, `Descriptor::hashcode`,
+  `CodepointMap::new/add/get/hashcode`, and hashcode helpers for
   descriptor/codepoint-map comparison. No existing `terminal` package API is
   changed.
 - Why existing code is not reused: the current terminal/render-state package
@@ -416,19 +418,79 @@ P17.A:
 - Dependency boundary review: no harfbuzz import was added, no OpenType table
   parser was duplicated, and no FreeType/CoreText/WebCanvas/fontconfig/Wuffs/
   oniguruma/GPU FFI surface was introduced.
-- Public API visibility review: `Glyph`, `Metrics`, `Descriptor`,
-  `CodepointMap`, `MetricModifierSet`, and `FontVariationId` are opaque owner
-  types. `FaceMetrics`, `FontVariation`, `CodepointMapEntry`,
-  `MetricModifier`, and `MetricKey` are public construction/selection values.
-  There are no public mutable fields.
-- `.mbti` review: `font/pkg.generated.mbti` contains only the P17.A package
-  API; no existing `terminal` package interface changed. `CodepointMapEntry`
-  is consumed by `CodepointMap::add`.
-  `MetricModifier::apply_*` helpers and metrics internals remain private.
+- Public API visibility review: superseded by the faithful repair below. The
+  first implementation used opaque owner APIs, but the accepted P17 priority is
+  Zig field parity over MoonBit API minimization.
+- `.mbti` review: superseded by the faithful repair below. No existing
+  `terminal` package interface changed.
 - Coverage findings review: all touched executable `font/*.mbt` files have no
   uncovered lines after targeted caret coverage review.
 - Deferred adapter confirmation: system discovery, rasterization, image decode,
   regex link matching, and GPU backends remain absent.
+
+P17.A faithful repair checkpoint:
+
+- Problem: the first P17.A implementation preserved much of the pure font value
+  behavior, but it was not a strict line-by-line translation. It introduced
+  MoonBit-style opaque owner APIs/getters, changed some upstream field shapes,
+  and changed descriptor hash behavior. This conflicts with the revised P17
+  priority that faithful Zig translation is higher priority than API
+  minimization.
+- Accepted design: repair only the already-landed P17.A value layer so its
+  public field shape, method set, and hash semantics follow upstream
+  `Glyph.zig`, `Metrics.zig`, `CodepointMap.zig`, `discovery.Descriptor`, and
+  `face.Variation` as closely as MoonBit can express. Any remaining MoonBit
+  adapters must be named and documented as adapters, not hidden redesigns.
+- Target files/surfaces: `font/glyph.mbt`, `font/metrics.mbt`,
+  `font/descriptor.mbt`, `font/codepoint_map.mbt`, `font/font_test.mbt`,
+  `font/metrics_wbtest.mbt`, `font/pkg.generated.mbti`, and this plan file.
+- Expected API/interface diff:
+  - `Glyph` becomes a public field carrier matching upstream fields instead of
+    an opaque type with constructor/getter API.
+  - `Metrics` becomes a public mutable field carrier matching upstream fields;
+    getter methods that only hid fields are removed.
+  - `FaceMetrics` remains a public field carrier and keeps upstream helper
+    methods translated to MoonBit snake_case.
+  - `FontVariationId` changes from a packed `UInt` wrapper to an `a/b/c/d`
+    field carrier matching upstream `Variation.Id`; `FontVariation` keeps
+    `id/value`.
+  - `Descriptor.size` changes to `Float` to match upstream `f32`; descriptor
+    and codepoint-map hash functions restore upstream semantics, including
+    truncating variation decimal values for hashing. Hashcode still returns
+    `UInt` as the MoonBit-sized stand-in for upstream `u64`, and this adapter
+    remains recorded.
+  - `CodepointMapEntry` changes from `start/end` to a range pair shape matching
+    upstream `Entry.range: [2]u21` as closely as MoonBit can express.
+  - `CodepointMap` exposes a public mutable `list` field as the MoonBit Array
+    stand-in for upstream `std.MultiArrayList(Entry)`.
+- Why existing code cannot be reused as-is: it was intentionally API-shaped for
+  opaque MoonBit consumers, but P17 now requires Zig-first public field and
+  behavior parity. Continuing with the existing API would keep translating
+  downstream P17 files against a MoonBit-specific abstraction that does not
+  exist upstream.
+- Open questions: no blocking questions for this repair. Allocator/deinit/clone
+  are still not translated where they only model Zig allocator ownership that
+  MoonBit GC does not expose; each omission must be recorded as a MoonBit
+  adapter rather than an upstream behavior claim.
+- Remaining adapters:
+  - `Descriptor::new` is a MoonBit convenience constructor for upstream struct
+    field defaults; direct field construction remains available through
+    `pub(all)`.
+  - `ModifierSet` is an opaque wrapper around `HashMap`, standing in for
+    upstream `std.AutoHashMapUnmanaged(Key, Modifier)`.
+  - `MetricKey` is a package-level enum standing in for upstream
+    `Metrics.Key`, which is generated from struct fields at comptime.
+  - `hashcode` returns MoonBit `UInt` and uses MoonBit `Hasher(seed=0)`, while
+    upstream returns `u64` from Zig Wyhash.
+  - `CodepointMap.list` uses `Array[CodepointMapEntry]` as the
+    `std.MultiArrayList(Entry)` stand-in.
+  - `Modifier.parseCLI` and `Modifier.formatEntry` remain deferred because the
+    corresponding Ghostty config formatter/parser surface has not been ported.
+- Next implementation step: revise the P17.A files and tests before starting
+  any P17.B atlas code.
+- Validation plan: `moon check`, `moon test`, `moon coverage analyze`, targeted
+  caret coverage for touched `font/*.mbt` files, `moon fmt`, `moon info`, and
+  `.mbti` review for intentionally public mutable field surface.
 
 Implementation reviews must include:
 
@@ -451,14 +513,17 @@ Implementation reviews must include:
 - The first useful renderer target is headless command/state generation, not a
   live GUI renderer.
 - P17.A added `tonyfettes/ghostty/font` with pure `Glyph`, `Metrics`,
-  `FaceMetrics`, `MetricModifier`, `MetricModifierSet`, `Descriptor`,
-  `FontVariation`, and `CodepointMap` behavior. Hashcodes use MoonBit's
+  `FaceMetrics`, `Modifier`, `ModifierSet`, `Descriptor`, `FontVariation`,
+  `FontVariationId`, and `CodepointMap` behavior. The faithful repair changed
+  the first implementation from MoonBit-style opaque/getter APIs to
+  upstream-shaped public fields and restored descriptor hash details such as
+  `f32` size bits and truncated variation values. Hashcodes use MoonBit's
   deterministic `Hasher(seed=0)` and return `UInt`; this preserves the
   descriptor/map identity contract without pretending to expose upstream Zig's
   `u64` Wyhash implementation.
 - P17.A validation passed:
   `moon check`;
-  `moon test` with 586 tests passed;
+  `moon test` with 588 tests passed;
   `moon coverage analyze` plus targeted touched-file caret review;
   `moon fmt`;
   `moon info`.
@@ -468,11 +533,14 @@ Implementation reviews must include:
 P17.0 changes docs only and does not change `.mbti`.
 
 P17.A adds `font/pkg.generated.mbti`. The public API is intentional for future
-font face, resolver, shaper, and renderer consumers:
+font face, resolver, shaper, and renderer consumers and is now governed by the
+faithful-translation priority:
 
-- opaque owner types for lifecycle/stateful values
-- public data carriers where future packages must construct inputs
-- no public mutable fields
+- public fields are allowed where upstream structs expose direct fields
+- public mutable fields on `Metrics` and `CodepointMap.list` are intentional
+  because upstream mutates those fields/storage directly
+- opaque owner types remain preferred only where upstream storage is not a
+  simple public field carrier, such as `ModifierSet`
 - no parser/terminal public API churn
 
 For implementation tasks:

@@ -81,7 +81,7 @@ pub fn FaceMetrics::strikethrough_position(self : FaceMetrics) -> Double {
 }
 
 ///|
-struct Metrics {
+pub(all) struct Metrics {
   mut cell_width : UInt
   mut cell_height : UInt
   mut cell_baseline : UInt
@@ -123,45 +123,40 @@ pub(all) enum MetricKey {
 } derive(Eq, Debug, Hash)
 
 ///|
-pub suberror MetricModifierParseError {
+pub suberror ModifierParseError {
   InvalidFormat
 } derive(Eq, Debug)
 
 ///|
-pub(all) enum MetricModifier {
+pub(all) enum Modifier {
   Percent(Double)
   Absolute(Int)
 } derive(Eq, Debug)
 
 ///|
-struct MetricModifierSet(@hashmap.HashMap[MetricKey, MetricModifier])
+struct ModifierSet(@hashmap.HashMap[MetricKey, Modifier])
 
 ///|
-pub fn MetricModifierSet::new() -> MetricModifierSet {
-  MetricModifierSet(HashMap([]))
+pub fn ModifierSet::new() -> ModifierSet {
+  ModifierSet(HashMap([]))
 }
 
 ///|
-pub fn MetricModifierSet::set(
-  self : MetricModifierSet,
+pub fn ModifierSet::set(
+  self : ModifierSet,
   key : MetricKey,
-  modifier : MetricModifier,
+  modifier : Modifier,
 ) -> Unit {
   self.0.set(key, modifier)
 }
 
 ///|
-pub fn MetricModifierSet::get(
-  self : MetricModifierSet,
-  key : MetricKey,
-) -> MetricModifier? {
+pub fn ModifierSet::get(self : ModifierSet, key : MetricKey) -> Modifier? {
   self.0.get(key)
 }
 
 ///|
-pub fn MetricModifier::parse(
-  input : String,
-) -> MetricModifier raise MetricModifierParseError {
+pub fn Modifier::parse(input : String) -> Modifier raise ModifierParseError {
   if input is "" {
     raise InvalidFormat
   }
@@ -237,7 +232,7 @@ pub fn Metrics::calc(face : FaceMetrics) -> Metrics {
 }
 
 ///|
-pub fn Metrics::apply(self : Metrics, mods : MetricModifierSet) -> Unit {
+pub fn Metrics::apply(self : Metrics, mods : ModifierSet) -> Unit {
   for entry in mods.0.iter() {
     let key = entry.0
     let modifier = entry.1
@@ -342,7 +337,7 @@ fn Metrics::clamp(self : Metrics) -> Unit {
 }
 
 ///|
-fn MetricModifier::apply_uint(self : MetricModifier, value : UInt) -> UInt {
+fn Modifier::apply_uint(self : Modifier, value : UInt) -> UInt {
   match self {
     Percent(percent) =>
       @math.round(value.to_double() * nonnegative(percent)).to_uint()
@@ -351,7 +346,7 @@ fn MetricModifier::apply_uint(self : MetricModifier, value : UInt) -> UInt {
 }
 
 ///|
-fn MetricModifier::apply_int(self : MetricModifier, value : Int) -> Int {
+fn Modifier::apply_int(self : Modifier, value : Int) -> Int {
   match self {
     Percent(percent) =>
       @math.round(value.to_double() * nonnegative(percent)).to_int()
@@ -360,10 +355,7 @@ fn MetricModifier::apply_int(self : MetricModifier, value : Int) -> Int {
 }
 
 ///|
-fn MetricModifier::apply_double(
-  self : MetricModifier,
-  value : Double,
-) -> Double {
+fn Modifier::apply_double(self : Modifier, value : Double) -> Double {
   match self {
     Percent(percent) => value * nonnegative(percent)
     Absolute(delta) => value + delta.to_double()
@@ -436,89 +428,4 @@ fn max_uint(left : UInt, right : UInt) -> UInt {
   } else {
     right
   }
-}
-
-///|
-pub fn Metrics::cell_width(self : Metrics) -> UInt {
-  self.cell_width
-}
-
-///|
-pub fn Metrics::cell_height(self : Metrics) -> UInt {
-  self.cell_height
-}
-
-///|
-pub fn Metrics::cell_baseline(self : Metrics) -> UInt {
-  self.cell_baseline
-}
-
-///|
-pub fn Metrics::underline_position(self : Metrics) -> UInt {
-  self.underline_position
-}
-
-///|
-pub fn Metrics::underline_thickness(self : Metrics) -> UInt {
-  self.underline_thickness
-}
-
-///|
-pub fn Metrics::strikethrough_position(self : Metrics) -> UInt {
-  self.strikethrough_position
-}
-
-///|
-pub fn Metrics::strikethrough_thickness(self : Metrics) -> UInt {
-  self.strikethrough_thickness
-}
-
-///|
-pub fn Metrics::overline_position(self : Metrics) -> Int {
-  self.overline_position
-}
-
-///|
-pub fn Metrics::overline_thickness(self : Metrics) -> UInt {
-  self.overline_thickness
-}
-
-///|
-pub fn Metrics::box_thickness(self : Metrics) -> UInt {
-  self.box_thickness
-}
-
-///|
-pub fn Metrics::cursor_thickness(self : Metrics) -> UInt {
-  self.cursor_thickness
-}
-
-///|
-pub fn Metrics::cursor_height(self : Metrics) -> UInt {
-  self.cursor_height
-}
-
-///|
-pub fn Metrics::icon_height(self : Metrics) -> Double {
-  self.icon_height
-}
-
-///|
-pub fn Metrics::icon_height_single(self : Metrics) -> Double {
-  self.icon_height_single
-}
-
-///|
-pub fn Metrics::face_width(self : Metrics) -> Double {
-  self.face_width
-}
-
-///|
-pub fn Metrics::face_height(self : Metrics) -> Double {
-  self.face_height
-}
-
-///|
-pub fn Metrics::face_y(self : Metrics) -> Double {
-  self.face_y
 }
