@@ -179,6 +179,86 @@ pub fn ModifierSet::get(Self, MetricKey) -> Modifier?
 pub fn ModifierSet::new() -> Self
 pub fn ModifierSet::set(Self, MetricKey, Modifier) -> Unit
 
+type Sprite derive(Eq, @debug.Debug)
+pub fn Sprite::codepoint(Self) -> UInt
+pub fn Sprite::cursor_bar() -> Self
+pub fn Sprite::cursor_hollow_rect() -> Self
+pub fn Sprite::cursor_rect() -> Self
+pub fn Sprite::cursor_underline() -> Self
+pub fn Sprite::end() -> UInt
+pub fn Sprite::from_codepoint(UInt) -> Self?
+pub fn Sprite::overline() -> Self
+pub fn Sprite::start() -> UInt
+pub fn Sprite::strikethrough() -> Self
+pub fn Sprite::underline() -> Self
+pub fn Sprite::underline_curly() -> Self
+pub fn Sprite::underline_dashed() -> Self
+pub fn Sprite::underline_dotted() -> Self
+pub fn Sprite::underline_double() -> Self
+
+pub(all) struct SpriteBox[T] {
+  p0 : SpritePoint[T]
+  p1 : SpritePoint[T]
+} derive(Eq, @debug.Debug)
+pub fn SpriteBox::rect(Self[Int]) -> SpriteRect[Int]
+
+pub(all) struct SpriteCanvas {
+  mut data : Array[Byte]
+  width : UInt
+  height : UInt
+  padding_x : UInt
+  padding_y : UInt
+  mut clip_top : UInt
+  mut clip_left : UInt
+  mut clip_right : UInt
+  mut clip_bottom : UInt
+} derive(Eq, @debug.Debug)
+pub fn SpriteCanvas::box(Self, Int, Int, Int, Int, SpriteColor) -> Unit
+pub fn SpriteCanvas::clear_clipping_regions(Self) -> Unit
+pub fn SpriteCanvas::flip_horizontal(Self) -> Unit
+pub fn SpriteCanvas::flip_vertical(Self) -> Unit
+pub fn SpriteCanvas::invert(Self) -> Unit
+pub fn SpriteCanvas::new(UInt, UInt, UInt, UInt) -> Self
+pub fn SpriteCanvas::pixel(Self, Int, Int, SpriteColor) -> Unit
+pub fn SpriteCanvas::rect(Self, SpriteRect[Int], SpriteColor) -> Unit
+pub fn SpriteCanvas::write_atlas(Self, Atlas) -> AtlasRegion raise AtlasError
+
+type SpriteColor derive(Eq, @debug.Debug)
+pub fn SpriteColor::from_byte(Byte) -> Self
+pub fn SpriteColor::off() -> Self
+pub fn SpriteColor::on() -> Self
+pub fn SpriteColor::value(Self) -> Byte
+
+pub(all) struct SpriteLine[T] {
+  p0 : SpritePoint[T]
+  p1 : SpritePoint[T]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SpritePoint[T] {
+  x : T
+  y : T
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SpriteQuad[T] {
+  p0 : SpritePoint[T]
+  p1 : SpritePoint[T]
+  p2 : SpritePoint[T]
+  p3 : SpritePoint[T]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SpriteRect[T] {
+  x : T
+  y : T
+  width : T
+  height : T
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SpriteTriangle[T] {
+  p0 : SpritePoint[T]
+  p1 : SpritePoint[T]
+  p2 : SpritePoint[T]
+} derive(Eq, @debug.Debug)
+
 // Type aliases
 
 // Traits

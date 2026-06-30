@@ -276,6 +276,66 @@ P17.B.1 accepted design checkpoint:
   targeted caret coverage for `font/atlas.mbt`, `moon fmt`, `moon info`, and
   `.mbti` public API review.
 
+P17.B.2 accepted design checkpoint:
+
+- Goal: translate the pure sprite/canvas substrate from upstream
+  `font/sprite.zig` and `font/sprite/canvas.zig`, so later sprite draw
+  routines have a platform-independent alpha surface that can write into the
+  translated `Atlas`.
+- Accepted design: keep the sprite/canvas surface inside the existing `font`
+  package for now. This preserves a direct path from `Canvas.writeAtlas` to
+  `Atlas` and avoids a future package cycle between `font` and
+  `font/sprite` when sprite fallback is integrated into collection/face
+  logic.
+- Target files/surfaces: `font/sprite.mbt`, `font/sprite_canvas.mbt`,
+  `font/sprite_canvas_test.mbt`, `font/pkg.generated.mbti`, and this plan
+  file. `docs/plan.md` remains `P17.B todo` until the sprite substrate and
+  draw-routine registry are complete.
+- API/interface diff: add public `Sprite`, `SpriteColor`,
+  `SpritePoint[T]`, `SpriteLine[T]`, `SpriteBox[T]`, `SpriteRect[T]`,
+  `SpriteTriangle[T]`, `SpriteQuad[T]`, and `SpriteCanvas`. `SpriteCanvas`
+  exposes `data`, `width`, `height`, `padding_x`, `padding_y`, and clip
+  fields because upstream `Canvas` exposes the drawable surface and clip
+  state inside the sprite namespace. Add methods corresponding to the pure
+  upstream canvas operations: `new`, `write_atlas`,
+  `clear_clipping_regions`, `pixel`, `rect`, `box`, `invert`,
+  `flip_horizontal`, and `flip_vertical`.
+- Intentional MoonBit naming/type adapters:
+  - Zig `Sprite = enum(u32)` becomes an opaque scalar `Sprite` with
+    `start/end`, tag constructors, `codepoint`, and `from_codepoint` helpers,
+    because MoonBit enums do not expose Zig-style raw integer tags.
+  - Zig open raw `Color = enum(u8) { on = 255, off = 0, _ }` becomes
+    `SpriteColor(Byte)` with `on/off/from_byte/value` helpers so later shade
+    drawing can still pass arbitrary alpha values.
+  - Zig comptime geometry factories `Point(T)`, `Line(T)`, `Box(T)`,
+    `Rect(T)`, `Triangle(T)`, and `Quad(T)` become public generic MoonBit
+    structs with `Sprite*` prefixes. `SpriteBox::rect` is implemented for the
+    integer rectangle path used by the pure canvas primitive.
+  - Zig `z2d.Surface` is represented by public `SpriteCanvas.data` plus
+    `width`/`height` fields, storing alpha bytes directly. This is an
+    approved local substitute for the z2d alpha8 surface, not a renderer/GPU
+    backend.
+  - Allocator/deinit/OOM behavior is omitted in this GC-backed slice.
+- Deferred from P17.B.2: `getContext`, `staticPath`, `line`, `triangle`,
+  `quad`, `strokePath`, `fillPath`, `innerStrokePath`, PNG golden-diff tests,
+  Wuffs decode, `sprite/Face.zig` `renderGlyph`, and any z2d-equivalent path
+  rasterizer. These require either P17.C face options or a separately
+  approved rasterizer adapter.
+- Why existing code cannot be reused as-is: `Atlas` owns packed texture
+  storage but has no drawable alpha surface, clipping state, or padded cell
+  coordinate system. Existing terminal renderer snapshots are not suitable as
+  a sprite glyph raster surface.
+- Open questions: no blocker for the pure alpha canvas. The path rasterizer
+  strategy for curved/triangular sprite drawing remains an explicit follow-up
+  before porting all `draw/*.zig` routines.
+- Next implementation step: add `Sprite`, the pure `SpriteCanvas` operations,
+  and focused tests for codepoint mapping, geometry normalization, padded
+  pixel/rectangle writes, trimming into an atlas, clipping-region clearing,
+  inversion, and horizontal/vertical flips.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for the new sprite files,
+  `moon fmt`, `moon info`, and `.mbti` public API review.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -419,6 +479,19 @@ P17.B.1:
 - The remaining global coverage findings are pre-existing non-`font` gaps in
   bench/example/terminal files and are outside P17.B.1.
 
+P17.B.2:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F font/sprite.mbt` reported no
+  uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/sprite_canvas.mbt` reported no
+  uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/atlas.mbt` reported no uncovered
+  executable lines after the record-type annotation needed by the new
+  `SpriteRect` public shape.
+- The remaining global coverage findings are pre-existing non-`font` gaps in
+  bench/example/terminal files and are outside P17.B.2.
+
 Each later implementation subplan must record coverage findings for every
 touched MoonBit executable file before review.
 
@@ -534,6 +607,31 @@ P17.B.1:
   APIs remain deferred; `Array[Byte]`/`ArrayView[Byte]` stand in for Zig byte
   slices and `UInt` counters stand in for atomics.
 
+P17.B.2:
+
+- Dependency boundary review: no `z2d` path API, Wuffs PNG decode/export,
+  sprite `Face.renderGlyph`, platform font backend, renderer backend, or GPU
+  surface was introduced.
+- Public API visibility review: `Sprite` and `SpriteColor` are opaque scalar
+  wrappers with public constructors/accessors for the approved raw-codepoint
+  and raw-alpha adapters. `SpriteCanvas` intentionally exposes mutable
+  `data` and clip fields to model upstream's drawable alpha surface and clip
+  state.
+- `.mbti` review: `font/pkg.generated.mbti` adds only the approved sprite
+  substrate surface: `Sprite`, `SpriteColor`, generic `Sprite*` geometry
+  structs, `SpriteCanvas`, and the pure canvas operations. No
+  parser/terminal package interface changed.
+- Coverage findings review: `font/sprite.mbt`, `font/sprite_canvas.mbt`, and
+  the touched `font/atlas.mbt` line have no uncovered executable lines after
+  targeted caret coverage review.
+- Deferred adapter confirmation: `getContext`, `staticPath`, line/triangle/
+  quad/path stroke/fill operations, z2d-equivalent rasterization, PNG golden
+  diff tests, Wuffs decode, and `sprite/Face.zig` glyph rendering remain
+  deferred.
+- Adapter note: `SpriteCanvas.pixel` clips writes outside the local alpha
+  surface before indexing the MoonBit array. This is the safe local stand-in
+  for z2d surface bounds handling and is covered by tests.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -581,6 +679,20 @@ Implementation reviews must include:
   `moon coverage analyze` plus targeted `font/atlas.mbt` caret review;
   `moon fmt`;
   `moon info`.
+- P17.B.2 added `Sprite`, `SpriteColor`, generic sprite geometry value types,
+  and `SpriteCanvas` pure alpha-surface operations. The canvas covers padded
+  coordinate writes, rectangle/box filling, trim-to-atlas writes,
+  clipping-region clearing, inversion, and horizontal/vertical flips. Path
+  rasterization, PNG diff tests, Wuffs, and `sprite/Face.zig` rendering remain
+  deferred adapters.
+- P17.B.2 validation passed:
+  `moon check`;
+  `moon test font` with 49 tests passed;
+  `moon test` with 618 tests passed;
+  `moon coverage analyze` plus targeted `font/sprite.mbt`,
+  `font/sprite_canvas.mbt`, and `font/atlas.mbt` caret review;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -605,6 +717,19 @@ P17.B.1 extends `font/pkg.generated.mbti` with the atlas surface:
   MoonBit cannot expose only selected fields of a public record.
 - `Atlas.modified` and `Atlas.resized` are public mutable `UInt` counters
   standing in for upstream atomic values.
+- No parser/terminal public API churn.
+
+P17.B.2 extends `font/pkg.generated.mbti` with the sprite substrate:
+
+- `Sprite` is opaque and exposes raw-codepoint constructors/accessors instead
+  of a MoonBit enum because upstream uses `enum(u32)` values outside Unicode.
+- `SpriteColor` is opaque and exposes `from_byte` so arbitrary alpha values can
+  model upstream's open `Color` enum.
+- `SpriteCanvas.data` and clip fields are public mutable to model the upstream
+  canvas alpha surface and clip state.
+- Generic `SpritePoint`, `SpriteLine`, `SpriteBox`, `SpriteRect`,
+  `SpriteTriangle`, and `SpriteQuad` are public constructible value carriers
+  standing in for Zig comptime geometry factories.
 - No parser/terminal public API churn.
 
 For implementation tasks:

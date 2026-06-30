@@ -65,7 +65,7 @@ pub fn Atlas::reserve(
   width : UInt,
   height : UInt,
 ) -> AtlasRegion raise AtlasError {
-  let region = { x: 0U, y: 0U, width, height }
+  let region : AtlasRegion = { x: 0U, y: 0U, width, height }
   if width == 0U && height == 0U {
     return region
   }

@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/cmp",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/math",
   "moonbitlang/core/string",
