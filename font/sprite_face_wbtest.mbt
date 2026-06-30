@@ -40,6 +40,12 @@ test "sprite face has codepoint for translated direct ranges" {
   assert_true(face.has_codepoint(Sprite::cursor_hollow_rect().codepoint()))
   assert_true(face.has_codepoint(Sprite::cursor_bar().codepoint()))
   assert_true(face.has_codepoint(Sprite::cursor_underline().codepoint()))
+  assert_true(face.has_codepoint(0x2500U))
+  assert_true(face.has_codepoint(0x256CU))
+  assert_false(face.has_codepoint(0x256DU))
+  assert_false(face.has_codepoint(0x2573U))
+  assert_true(face.has_codepoint(0x2574U))
+  assert_true(face.has_codepoint(0x257FU))
   assert_true(face.has_codepoint(0x2580U))
   assert_true(face.has_codepoint(0x259FU))
   assert_true(face.has_codepoint(0x2800U))
@@ -50,7 +56,7 @@ test "sprite face has codepoint for translated direct ranges" {
   assert_true(face.has_codepoint(0x1CE8FU))
   assert_true(face.has_codepoint(0x1CE90U))
   assert_true(face.has_codepoint(0x1CEAFU))
-  assert_false(face.has_codepoint(0x257FU))
+  assert_false(face.has_codepoint(0x24FFU))
   assert_false(face.has_codepoint(0x2600U))
   assert_false(face.has_codepoint(0x2900U))
   assert_false(face.has_codepoint(0x1CC20U))
@@ -97,6 +103,21 @@ test "sprite face deferred special codepoints return blank glyph" {
 }
 
 ///|
+test "sprite face deferred box drawing codepoints return blank glyph" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(32U, Grayscale)
+  for cp in 0x256DU..<=0x2573U {
+    assert_false(face.has_codepoint(cp))
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph == sprite_blank_glyph() else {
+      fail("expected deferred box drawing sprite to remain blank")
+    }
+  }
+}
+
+///|
 test "sprite face deferred legacy supplement codepoints return blank glyph" {
   let face = SpriteFace::new(sprite_face_test_metrics())
   let atlas = Atlas::new(32U, Grayscale)
@@ -112,6 +133,210 @@ test "sprite face deferred legacy supplement codepoints return blank glyph" {
       fail("expected deferred legacy supplement sprite to remain blank")
     }
   }
+}
+
+///|
+test "box draw thickness height matches upstream" {
+  assert_eq(ThicknessLight.height(4U), 4U)
+  assert_eq(ThicknessHeavy.height(4U), 8U)
+}
+
+///|
+test "box dash fallback draws solid centered lines" {
+  let metrics = {
+    ..sprite_face_test_metrics(),
+    cell_width: 3U,
+    cell_height: 3U,
+  }
+  let horizontal = SpriteCanvas::new(3U, 3U, 0U, 0U)
+  dash_horizontal(
+    metrics,
+    horizontal,
+    2U,
+    ThicknessLight.height(metrics.box_thickness),
+    ThicknessLight.height(metrics.box_thickness),
+  )
+  assert_eq(horizontal.data[3], 0xFF)
+  assert_eq(horizontal.data[4], 0xFF)
+  assert_eq(horizontal.data[5], 0xFF)
+
+  let vertical = SpriteCanvas::new(3U, 3U, 0U, 0U)
+  dash_vertical(
+    metrics,
+    vertical,
+    2U,
+    ThicknessLight.height(metrics.box_thickness),
+    ThicknessLight.height(metrics.box_thickness),
+  )
+  assert_eq(vertical.data[1], 0xFF)
+  assert_eq(vertical.data[4], 0xFF)
+  assert_eq(vertical.data[7], 0xFF)
+}
+
+///|
+test "panic horizontal box dash rejects unsupported count" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  dash_horizontal(
+    metrics,
+    canvas,
+    1U,
+    ThicknessLight.height(metrics.box_thickness),
+    ThicknessLight.height(metrics.box_thickness),
+  )
+}
+
+///|
+test "panic vertical box dash rejects unsupported count" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  dash_vertical(
+    metrics,
+    canvas,
+    5U,
+    ThicknessLight.height(metrics.box_thickness),
+    ThicknessLight.height(metrics.box_thickness),
+  )
+}
+
+///|
+test "sprite face renders simple box drawing through direct dispatch" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(128U, Grayscale)
+
+  let horizontal = face.render_glyph(atlas, 0x2500U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(horizontal.width, 8U)
+  assert_eq(horizontal.height, 1U)
+  assert_eq(horizontal.offset_x, 0)
+  assert_eq(horizontal.offset_y, 9)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, horizontal.atlas_x, horizontal.atlas_y),
+    0xFF,
+  )
+
+  let vertical = face.render_glyph(atlas, 0x2502U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(vertical.width, 1U)
+  assert_eq(vertical.height, 16U)
+  assert_eq(vertical.offset_x, 3)
+  assert_eq(vertical.offset_y, 16)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, vertical.atlas_x, vertical.atlas_y),
+    0xFF,
+  )
+}
+
+///|
+test "sprite face renders dashed and double box drawing" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(128U, Grayscale)
+
+  let dashed = face.render_glyph(atlas, 0x2504U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(dashed.width, 7U)
+  assert_eq(dashed.height, 1U)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, dashed.atlas_x, dashed.atlas_y),
+    0xFF,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, dashed.atlas_x + 2U, dashed.atlas_y),
+    0x00,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, dashed.atlas_x + 3U, dashed.atlas_y),
+    0xFF,
+  )
+
+  let double = face.render_glyph(atlas, 0x2550U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(double.width, 8U)
+  assert_eq(double.height, 3U)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, double.atlas_x, double.atlas_y),
+    0xFF,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, double.atlas_x, double.atlas_y + 1U),
+    0x00,
+  )
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, double.atlas_x, double.atlas_y + 2U),
+    0xFF,
+  )
+}
+
+///|
+test "sprite face renders every implemented box drawing arm" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(1024U, Grayscale)
+  for cp in 0x2500U..<=0x256CU {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected box drawing glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+  for cp in 0x2574U..<=0x257FU {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected box drawing glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+}
+
+///|
+test "panic box draw rejects deferred arc and diagonal range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw2500_257f(
+    0x256DU,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
+}
+
+///|
+test "panic box draw rejects codepoint outside range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw2500_257f(
+    0x24FFU,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
 }
 
 ///|

@@ -27,6 +27,86 @@ fn SpriteDrawShade::color(self : SpriteDrawShade) -> SpriteColor {
 }
 
 ///|
+priv enum SpriteDrawThickness {
+  ThicknessLight
+  ThicknessHeavy
+}
+
+///|
+fn SpriteDrawThickness::height(self : SpriteDrawThickness, base : UInt) -> UInt {
+  match self {
+    ThicknessLight => base
+    ThicknessHeavy => base * 2U
+  }
+}
+
+///|
+fn vline(
+  canvas : SpriteCanvas,
+  y1 : Int,
+  y2 : Int,
+  x : Int,
+  thickness_px : UInt,
+) -> Unit {
+  canvas.box(
+    x,
+    y1,
+    x + thickness_px.reinterpret_as_int(),
+    y2,
+    SpriteColor::on(),
+  )
+}
+
+///|
+fn hline(
+  canvas : SpriteCanvas,
+  x1 : Int,
+  x2 : Int,
+  y : Int,
+  thickness_px : UInt,
+) -> Unit {
+  canvas.box(
+    x1,
+    y,
+    x2,
+    y + thickness_px.reinterpret_as_int(),
+    SpriteColor::on(),
+  )
+}
+
+///|
+fn vline_middle(
+  metrics : Metrics,
+  canvas : SpriteCanvas,
+  thickness : SpriteDrawThickness,
+) -> Unit {
+  let thick_px = thickness.height(metrics.box_thickness)
+  vline(
+    canvas,
+    0,
+    metrics.cell_height.reinterpret_as_int(),
+    (saturating_sub_uint(metrics.cell_width, thick_px) / 2U).reinterpret_as_int(),
+    thick_px,
+  )
+}
+
+///|
+fn hline_middle(
+  metrics : Metrics,
+  canvas : SpriteCanvas,
+  thickness : SpriteDrawThickness,
+) -> Unit {
+  let thick_px = thickness.height(metrics.box_thickness)
+  hline(
+    canvas,
+    0,
+    metrics.cell_width.reinterpret_as_int(),
+    (saturating_sub_uint(metrics.cell_height, thick_px) / 2U).reinterpret_as_int(),
+    thick_px,
+  )
+}
+
+///|
 priv enum SpriteDrawHorizontalAlignment {
   Left
   Right

@@ -24,6 +24,8 @@ fn SpriteFace::has_codepoint(self : SpriteFace, cp : UInt) -> Bool {
     0x110008 => true
     0x110009 => true
     0x11000A => true
+    0x2500..=0x256C => true
+    0x2574..=0x257F => true
     0x2580..=0x259F => true
     0x2800..=0x28FF => true
     0x1CC21..=0x1CC2F => true
@@ -61,6 +63,8 @@ fn SpriteFace::render_glyph(
     0x110008 => cursor_hollow_rect(cp, canvas, width, height, metrics)
     0x110009 => cursor_bar(cp, canvas, width, height, metrics)
     0x11000A => cursor_underline(cp, canvas, width, height, metrics)
+    0x2500..=0x256C => draw2500_257f(cp, canvas, width, height, metrics)
+    0x2574..=0x257F => draw2500_257f(cp, canvas, width, height, metrics)
     0x2580..=0x259F => draw2580_259f(cp, canvas, width, height, metrics)
     0x2800..=0x28FF => draw2800_28ff(cp, canvas, width, height, metrics)
     0x1CC21..=0x1CC2F => draw1cc21_1cc2f(cp, canvas, width, height, metrics)

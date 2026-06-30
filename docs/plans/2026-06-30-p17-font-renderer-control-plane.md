@@ -479,6 +479,60 @@ P17.B.5 accepted design checkpoint:
   `moon fmt`, `moon info`, and `.mbti` public API review confirming no legacy
   supplement draw helper leaked publicly.
 
+P17.B.6 accepted design checkpoint:
+
+- Goal: translate the pure `canvas.box` subset of upstream
+  `font/sprite/draw/box.zig`, including the shared box-line helpers needed by
+  later legacy supplement line composites.
+- Accepted design: add package-private `box.zig` draw routines and helpers for
+  the upstream arms that use `linesChar`, `dashHorizontal`, or `dashVertical`.
+  Keep `SpriteFace` direct range dispatch from P17.B.3; do not add a generator,
+  registry, `DrawFn`, function-pointer table, or `draw_sprite -> Bool` helper.
+- Target files/surfaces: new `font/sprite_draw_box.mbt`,
+  `font/sprite_draw_common.mbt`, `font/sprite_face.mbt`,
+  `font/sprite_face_wbtest.mbt`, `font/pkg.generated.mbti`, and this plan
+  file.
+- API/interface diff: no public API is expected. Box draw routines, line-style
+  values, line specs, thickness helpers, and hline/vline helpers remain
+  package-private. The generated `font/pkg.generated.mbti` should remain
+  unchanged.
+- Included upstream symbols:
+  - `draw2500_257F`, limited at face-dispatch time to implemented arms
+    `U+2500..U+256C` and `U+2574..U+257F`.
+  - `linesChar`.
+  - `dashHorizontal` and `dashVertical`.
+  - `common.Thickness.height`, `hline`, `vline`, `hlineMiddle`, and
+    `vlineMiddle`.
+- Deferred upstream symbols/arms:
+  - `U+256D..U+2570` depend on `arc`, `staticPath`, and `strokePath`.
+  - `U+2571..U+2573` depend on `canvas.line`.
+  - `arc`, `lightDiagonalUpperRightToLowerLeft`,
+    `lightDiagonalUpperLeftToLowerRight`, and `lightDiagonalCross` remain
+    deferred with the broader P17.B rasterizer boundary.
+- Intentional MoonBit naming/type adapters: Zig nested `Lines.Style` becomes a
+  package-private `SpriteDrawLineStyle` enum and Zig `Lines` becomes a
+  package-private `SpriteDrawLines` struct. Because MoonBit cannot express
+  Zig's defaulted struct literal `. { .left = .light }`, a package-private
+  `sprite_draw_lines(...)` constructor provides optional fields defaulting to
+  `LineNone`. Zig `Thickness` becomes package-private
+  `SpriteDrawThickness`; only variants needed by upstream pure box drawing are
+  translated in this slice.
+- Why existing code cannot be reused as-is: P17.B.3/P17.B.4/P17.B.5 only cover
+  block, braille, special decoration/cursor, and selected legacy supplement
+  fills. They do not include box drawing intersection geometry, double-line
+  edge joining, or dashed line distribution.
+- Open questions: no blocker for the pure box subset. Arc/path/diagonal line
+  rasterization remains a separate P17.B adapter decision before `U+256D..U+2573`
+  can be marked supported.
+- Next implementation step: add the box draw file, extend direct dispatch and
+  `has_codepoint` for implemented box-drawing arms only, and add focused
+  white-box tests for simple, dashed, double, and deferred box drawing
+  codepoints.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for touched font files,
+  `moon fmt`, `moon info`, and `.mbti` public API review confirming no box draw
+  helper leaked publicly.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -648,6 +702,22 @@ P17.B.5:
 - The remaining global coverage findings are pre-existing bench/example/
   terminal gaps plus the already-documented `font/sprite_draw_braille.mbt`
   invariant residuals, and are outside P17.B.5.
+
+P17.B.6:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F font/sprite_draw_box.mbt` reported two
+  uncovered assert-style invariant aborts in `dash_horizontal` and
+  `dash_vertical`. These mirror upstream `assert(...)` checks for dash width/
+  height accounting and are only reachable if the local layout arithmetic is
+  internally broken.
+- `moon coverage analyze -- -f caret -F font/sprite_draw_common.mbt` reported
+  no uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/sprite_face.mbt` reported no
+  uncovered executable lines.
+- The remaining global coverage findings are pre-existing bench/example/
+  terminal gaps plus the already-documented `font/sprite_draw_braille.mbt`
+  invariant residuals, and are outside P17.B.6.
 
 Each later implementation subplan must record coverage findings for every
 touched MoonBit executable file before review.
@@ -853,6 +923,31 @@ P17.B.5:
   characters, circle/path rasterization, PNG golden diff tests, Wuffs decode,
   and remaining legacy supplement ranges remain deferred.
 
+P17.B.6:
+
+- Dependency boundary review: no z2d context/path/stroke/fill/arc API, Wuffs
+  PNG decode/export, platform font backend, renderer backend, GPU surface,
+  generator package, or runtime registry abstraction was introduced.
+- Public API visibility review: box draw routines, line styles, line specs,
+  thickness helpers, hline/vline helpers, and dash helpers remain
+  package-private and are reachable through `SpriteFace` direct dispatch or
+  white-box tests only. No public `DrawFn`, registry table, draw helper, or
+  rasterizer adapter surface exists.
+- `.mbti` review: `font/pkg.generated.mbti` remains unchanged for this slice
+  because the new box drawing code is internal.
+- Coverage findings review: `font/sprite_draw_common.mbt` and
+  `font/sprite_face.mbt` have no uncovered executable lines after targeted
+  caret coverage. `font/sprite_draw_box.mbt` has two uncovered assert-style
+  invariant aborts in dash width/height accounting; these mirror upstream
+  `assert(...)` checks and should only be reachable if the translated layout
+  math is internally broken. The pre-existing `font/sprite_draw_braille.mbt`
+  invariant residuals remain unchanged.
+- Deferred adapter confirmation: `U+256D..U+2570` arcs, `U+2571..U+2573`
+  diagonals, `arc`, `lightDiagonalUpperRightToLowerLeft`,
+  `lightDiagonalUpperLeftToLowerRight`, `lightDiagonalCross`, path/line
+  rasterization, PNG golden diff tests, Wuffs decode, and remaining
+  rasterizer-dependent `sprite/draw/*.zig` ranges remain deferred.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -970,6 +1065,25 @@ Implementation reviews must include:
   uncovered lines;
   `moon fmt`;
   `moon info`.
+- P17.B.6 added package-private pure box drawing routines for
+  `U+2500..U+256C` and `U+2574..U+257F`, including translated `linesChar`,
+  dash, hline/vline, and thickness helper behavior. `SpriteFace` direct
+  dispatch now recognizes only those implemented box drawing codepoints;
+  `U+256D..U+2573` arc/diagonal codepoints remain unsupported and return the
+  upstream blank glyph shape through the fallback branch.
+- P17.B.6 validation passed:
+  `moon check`;
+  `moon test font` with 77 tests passed;
+  `moon test` with 646 tests passed;
+  `moon coverage analyze` reported 292 uncovered lines in 37 files, with two
+  new touched-source residuals documented as upstream assert-style dash
+  invariant aborts;
+  targeted caret coverage for `font/sprite_draw_common.mbt` and
+  `font/sprite_face.mbt` reported no uncovered lines;
+  targeted caret coverage for `font/sprite_draw_box.mbt` reported only the two
+  documented dash invariant residuals;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -1032,6 +1146,14 @@ P17.B.5 does not intentionally extend `font/pkg.generated.mbti`:
   `SpriteDrawFraction` variants remain package-private.
 - No public legacy supplement draw API, registry, generator output,
   rasterizer adapter, or draw helper API is added.
+- No parser/terminal public API churn.
+
+P17.B.6 does not intentionally extend `font/pkg.generated.mbti`:
+
+- `draw2500_257f`, `lines_char`, box line-style/spec types, thickness helpers,
+  hline/vline helpers, and dash helpers remain package-private.
+- No public box draw API, registry, generator output, rasterizer adapter, or
+  draw helper API is added.
 - No parser/terminal public API churn.
 
 For implementation tasks:
