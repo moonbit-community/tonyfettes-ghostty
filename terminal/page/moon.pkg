@@ -1,11 +1,11 @@
 import {
-  "tonyfettes/ghostty/terminal/style",
+  "tonyfettes/ghostty-terminal/style",
 }
 
 // Test-only: the cell/style integration tests build styled cells, which need the
 // color (RGB) and sgr (Attribute) leaf packages to construct the inputs. Both sit
 // below `style`, so this adds no cycle.
 import {
-  "tonyfettes/ghostty/terminal/color",
-  "tonyfettes/ghostty/terminal/sgr",
+  "tonyfettes/ghostty-terminal/color",
+  "tonyfettes/ghostty-terminal/sgr",
 } for "test"

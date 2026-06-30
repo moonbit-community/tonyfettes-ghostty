@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/hyperlink_state"
+package "tonyfettes/ghostty-terminal/hyperlink_state"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/terminal/hyperlink",
+  "tonyfettes/ghostty-terminal/hyperlink",
 }
 
 // Values

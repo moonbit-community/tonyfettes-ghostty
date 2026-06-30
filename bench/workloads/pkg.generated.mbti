@@ -2,7 +2,7 @@
 package "tonyfettes/ghostty-bench/workloads"
 
 import {
-  "tonyfettes/ghostty/terminal",
+  "tonyfettes/ghostty-terminal",
 }
 
 // Values
@@ -34,7 +34,7 @@ pub fn wrapped_blob() -> Workload
 
 // Types and methods
 type Workload
-pub fn Workload::process(Self) -> @terminal.StreamTerminal
+pub fn Workload::process(Self) -> @ghostty-terminal.StreamTerminal
 pub fn Workload::run_main(Self) -> Unit
 
 // Type aliases

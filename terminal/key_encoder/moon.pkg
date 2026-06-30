@@ -1,6 +1,6 @@
 import {
   "moonbitlang/core/encoding/utf8",
-  "tonyfettes/ghostty/terminal/ascii",
-  "tonyfettes/ghostty/terminal/input",
-  "tonyfettes/ghostty/terminal/stream",
+  "tonyfettes/ghostty-terminal/ascii",
+  "tonyfettes/ghostty-terminal/input",
+  "tonyfettes/ghostty-terminal/stream",
 }

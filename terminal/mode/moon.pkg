@@ -1,4 +1,4 @@
 import {
   "moonbitlang/core/buffer",
-  "tonyfettes/ghostty/terminal/ascii",
+  "tonyfettes/ghostty-terminal/ascii",
 }

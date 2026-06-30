@@ -1,0 +1,53 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty-renderer"
+
+import {
+  "moonbitlang/core/debug",
+  "tonyfettes/ghostty-font/glyph",
+  "tonyfettes/ghostty-terminal",
+  "tonyfettes/ghostty-terminal/color",
+}
+
+// Values
+pub fn build(@ghostty-terminal.RenderState, (UInt) -> @glyph.Glyph? raise) -> Contents raise
+
+// Errors
+
+// Types and methods
+pub(all) enum AtlasKind {
+  Grayscale
+  Color
+} derive(Eq, @debug.Debug)
+
+pub struct CellText {
+  grid_col : Int
+  grid_row : Int
+  glyph_x : Int
+  glyph_y : Int
+  glyph_w : Int
+  glyph_h : Int
+  bearing_x : Int
+  bearing_y : Int
+  color : Rgba
+  atlas : AtlasKind
+} derive(Eq, @debug.Debug)
+
+type Contents
+pub fn Contents::bg(Self) -> Array[Rgba]
+pub fn Contents::bg_at(Self, Int, Int) -> Rgba
+pub fn Contents::cols(Self) -> Int
+pub fn Contents::rows(Self) -> Int
+pub fn Contents::text(Self) -> Array[CellText]
+
+pub struct Rgba {
+  r : Byte
+  g : Byte
+  b : Byte
+  a : Byte
+} derive(Eq, @debug.Debug)
+pub fn Rgba::from_rgb(@color.RGB) -> Self
+
+// Type aliases
+
+// Traits
+
