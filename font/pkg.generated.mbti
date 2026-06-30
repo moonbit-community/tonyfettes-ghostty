@@ -1,0 +1,138 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/ghostty/font"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+pub suberror MetricModifierParseError {
+  InvalidFormat
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+type CodepointMap derive(Eq, @debug.Debug)
+pub fn CodepointMap::add(Self, CodepointMapEntry) -> Unit
+pub fn CodepointMap::get(Self, UInt) -> Descriptor?
+pub fn CodepointMap::hashcode(Self) -> UInt
+pub fn CodepointMap::new() -> Self
+
+pub(all) struct CodepointMapEntry {
+  start : UInt
+  end : UInt
+  descriptor : Descriptor
+} derive(Eq, @debug.Debug)
+
+type Descriptor derive(Eq, @debug.Debug)
+pub fn Descriptor::bold(Self) -> Bool
+pub fn Descriptor::codepoint(Self) -> UInt
+pub fn Descriptor::family(Self) -> String?
+pub fn Descriptor::hashcode(Self) -> UInt
+pub fn Descriptor::italic(Self) -> Bool
+pub fn Descriptor::monospace(Self) -> Bool
+pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Double, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : Array[FontVariation]) -> Self
+pub fn Descriptor::size(Self) -> Double
+pub fn Descriptor::style(Self) -> String?
+pub fn Descriptor::variations(Self) -> Array[FontVariation]
+
+pub(all) struct FaceMetrics {
+  px_per_em : Double
+  cell_width : Double
+  ascent : Double
+  descent : Double
+  line_gap : Double
+  underline_position : Double?
+  underline_thickness : Double?
+  strikethrough_position : Double?
+  strikethrough_thickness : Double?
+  cap_height : Double?
+  ex_height : Double?
+  ascii_height : Double?
+  ic_width : Double?
+} derive(Eq, @debug.Debug)
+pub fn FaceMetrics::ascii_height(Self) -> Double
+pub fn FaceMetrics::cap_height(Self) -> Double
+pub fn FaceMetrics::ex_height(Self) -> Double
+pub fn FaceMetrics::ic_width(Self) -> Double
+pub fn FaceMetrics::line_height(Self) -> Double
+pub fn FaceMetrics::strikethrough_position(Self) -> Double
+pub fn FaceMetrics::strikethrough_thickness(Self) -> Double
+pub fn FaceMetrics::underline_position(Self) -> Double
+pub fn FaceMetrics::underline_thickness(Self) -> Double
+
+pub(all) struct FontVariation {
+  id : FontVariationId
+  value : Double
+} derive(Eq, @debug.Debug)
+
+type FontVariationId derive(Eq, @debug.Debug)
+pub fn FontVariationId::new(Byte, Byte, Byte, Byte) -> Self
+pub fn FontVariationId::to_uint(Self) -> UInt
+
+type Glyph derive(Eq, @debug.Debug)
+pub fn Glyph::atlas_x(Self) -> UInt
+pub fn Glyph::atlas_y(Self) -> UInt
+pub fn Glyph::height(Self) -> UInt
+pub fn Glyph::new(UInt, UInt, Int, Int, UInt, UInt) -> Self
+pub fn Glyph::offset_x(Self) -> Int
+pub fn Glyph::offset_y(Self) -> Int
+pub fn Glyph::width(Self) -> UInt
+
+pub(all) enum MetricKey {
+  CellWidth
+  CellHeight
+  CellBaseline
+  UnderlinePosition
+  UnderlineThickness
+  StrikethroughPosition
+  StrikethroughThickness
+  OverlinePosition
+  OverlineThickness
+  BoxThickness
+  CursorThickness
+  CursorHeight
+  IconHeight
+  IconHeightSingle
+  FaceWidth
+  FaceHeight
+  FaceY
+} derive(Eq, Hash, @debug.Debug)
+
+pub(all) enum MetricModifier {
+  Percent(Double)
+  Absolute(Int)
+} derive(Eq, @debug.Debug)
+pub fn MetricModifier::parse(String) -> Self raise MetricModifierParseError
+
+type MetricModifierSet
+pub fn MetricModifierSet::get(Self, MetricKey) -> MetricModifier?
+pub fn MetricModifierSet::new() -> Self
+pub fn MetricModifierSet::set(Self, MetricKey, MetricModifier) -> Unit
+
+type Metrics derive(Eq, @debug.Debug)
+pub fn Metrics::apply(Self, MetricModifierSet) -> Unit
+pub fn Metrics::box_thickness(Self) -> UInt
+pub fn Metrics::calc(FaceMetrics) -> Self
+pub fn Metrics::cell_baseline(Self) -> UInt
+pub fn Metrics::cell_height(Self) -> UInt
+pub fn Metrics::cell_width(Self) -> UInt
+pub fn Metrics::cursor_height(Self) -> UInt
+pub fn Metrics::cursor_thickness(Self) -> UInt
+pub fn Metrics::face_height(Self) -> Double
+pub fn Metrics::face_width(Self) -> Double
+pub fn Metrics::face_y(Self) -> Double
+pub fn Metrics::icon_height(Self) -> Double
+pub fn Metrics::icon_height_single(Self) -> Double
+pub fn Metrics::overline_position(Self) -> Int
+pub fn Metrics::overline_thickness(Self) -> UInt
+pub fn Metrics::strikethrough_position(Self) -> UInt
+pub fn Metrics::strikethrough_thickness(Self) -> UInt
+pub fn Metrics::underline_position(Self) -> UInt
+pub fn Metrics::underline_thickness(Self) -> UInt
+
+// Type aliases
+
+// Traits
+

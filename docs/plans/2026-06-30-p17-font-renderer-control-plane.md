@@ -167,6 +167,42 @@ Acceptance notes:
 - Audit harfbuzz.mbt `sfnt`, `face`, and `font` interfaces before adding any
   Ghostty-specific table parser.
 
+Accepted design checkpoint:
+
+- Goal: translate the pure MoonBit font value layer needed before any face,
+  discovery, shaper, atlas, or renderer implementation.
+- Accepted design: add a new top-level `font` package. Keep owner types opaque
+  by default: `Glyph`, `Metrics`, `Descriptor`, `CodepointMap`, and
+  `MetricModifierSet`. Expose value enums and data carriers only where later
+  packages need to construct or select behavior: `MetricKey`,
+  `MetricModifier`, `FaceMetrics`, `FontVariationId`, `FontVariation`, and
+  `CodepointMapEntry`.
+- Target files/surfaces: `font/moon.pkg`, `font/glyph.mbt`,
+  `font/metrics.mbt`, `font/descriptor.mbt`, `font/codepoint_map.mbt`,
+  package tests, `font/pkg.generated.mbti`, plus this plan and
+  `docs/plan.md`.
+- API/interface diff: new public package `tonyfettes/ghostty/font` with
+  `Glyph::new` and getters, `Metrics::calc`, `Metrics::apply` and getters,
+  `MetricModifier::parse`, `MetricModifierSet::new/set/get`, `Descriptor::new`
+  and getters, `CodepointMap::new/add/get/hashcode`, and hashcode helpers for
+  descriptor/codepoint-map comparison. No existing `terminal` package API is
+  changed.
+- Why existing code is not reused: the current terminal/render-state package
+  models terminal snapshot state, not upstream font metrics, glyph atlas
+  entries, descriptor hashes, or codepoint fallback lookup. The sibling
+  harfbuzz package covers shaping/SFNT primitives but not Ghostty's metrics,
+  descriptor, or codepoint-map policy.
+- Open questions: no blocking questions for this pure value step. Platform
+  rasterizers, font discovery, Wuffs, oniguruma, and GPU adapters remain
+  deferred. Harfbuzz workspace validation is deferred until the first
+  harfbuzz-backed P17 task.
+- Next implementation step: port `Glyph.zig`, `Metrics.zig`,
+  `CodepointMap.zig`, and the pure `discovery.Descriptor` value behavior into
+  the new `font` package with translated tests.
+- Validation plan: `moon check`, `moon test`, `moon coverage analyze`, review
+  uncovered touched executable lines, `moon fmt`, `moon info`, and review
+  `font/pkg.generated.mbti` for public API shape.
+
 ### P17.B atlas and sprite font
 
 Scope:
@@ -304,8 +340,22 @@ Harfbuzz workspace validation, before P17.E implementation:
 
 P17.0 is docs-only, so coverage is not applicable.
 
-Each implementation subplan must record coverage findings for every touched
-MoonBit executable file before review.
+P17.A:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F font/metrics.mbt` reported no
+  uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/descriptor.mbt` reported no
+  uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/codepoint_map.mbt` reported no
+  uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/glyph.mbt` reported no uncovered
+  executable lines.
+- The remaining global coverage findings are pre-existing non-`font` gaps in
+  bench/example/terminal files and are outside P17.A.
+
+Each later implementation subplan must record coverage findings for every
+touched MoonBit executable file before review.
 
 ## Commit scope
 
@@ -321,7 +371,26 @@ Implementation phases:
 
 ## Review findings
 
-Pending. P17.0 requires doc review only.
+P17.0 required doc review only.
+
+P17.A:
+
+- Dependency boundary review: no harfbuzz import was added, no OpenType table
+  parser was duplicated, and no FreeType/CoreText/WebCanvas/fontconfig/Wuffs/
+  oniguruma/GPU FFI surface was introduced.
+- Public API visibility review: `Glyph`, `Metrics`, `Descriptor`,
+  `CodepointMap`, `MetricModifierSet`, and `FontVariationId` are opaque owner
+  types. `FaceMetrics`, `FontVariation`, `CodepointMapEntry`,
+  `MetricModifier`, and `MetricKey` are public construction/selection values.
+  There are no public mutable fields.
+- `.mbti` review: `font/pkg.generated.mbti` contains only the P17.A package
+  API; no existing `terminal` package interface changed. `CodepointMapEntry`
+  is consumed by `CodepointMap::add`.
+  `MetricModifier::apply_*` helpers and metrics internals remain private.
+- Coverage findings review: all touched executable `font/*.mbt` files have no
+  uncovered lines after targeted caret coverage review.
+- Deferred adapter confirmation: system discovery, rasterization, image decode,
+  regex link matching, and GPU backends remain absent.
 
 Implementation reviews must include:
 
@@ -343,10 +412,30 @@ Implementation reviews must include:
   require C FFI or platform/runtime bindings.
 - The first useful renderer target is headless command/state generation, not a
   live GUI renderer.
+- P17.A added `tonyfettes/ghostty/font` with pure `Glyph`, `Metrics`,
+  `FaceMetrics`, `MetricModifier`, `MetricModifierSet`, `Descriptor`,
+  `FontVariation`, and `CodepointMap` behavior. Hashcodes use MoonBit's
+  deterministic `Hasher(seed=0)` and return `UInt`; this preserves the
+  descriptor/map identity contract without pretending to expose upstream Zig's
+  `u64` Wyhash implementation.
+- P17.A validation passed:
+  `moon check`;
+  `moon test` with 586 tests passed;
+  `moon coverage analyze` plus targeted touched-file caret review;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
 P17.0 changes docs only and does not change `.mbti`.
+
+P17.A adds `font/pkg.generated.mbti`. The public API is intentional for future
+font face, resolver, shaper, and renderer consumers:
+
+- opaque owner types for lifecycle/stateful values
+- public data carriers where future packages must construct inputs
+- no public mutable fields
+- no parser/terminal public API churn
 
 For implementation tasks:
 
