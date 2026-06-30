@@ -426,6 +426,59 @@ P17.B.4 accepted design checkpoint:
   `moon fmt`, `moon info`, and `.mbti` public API review confirming no special
   draw helper leaked publicly.
 
+P17.B.5 accepted design checkpoint:
+
+- Goal: translate the pure box/fill subset of upstream
+  `font/sprite/draw/symbols_for_legacy_computing_supplement.zig` that can run
+  on the already-translated `SpriteCanvas` primitives.
+- Accepted design: add package-private draw routines for only the three
+  upstream ranges whose bodies use `canvas.box` or `common.fill` directly:
+  `draw1CC21_1CC2F`, `draw1CE51_1CE8F`, and `draw1CE90_1CEAF`. Keep
+  `SpriteFace` direct range dispatch from P17.B.3; do not add a generator,
+  registry, `DrawFn`, function-pointer table, or `draw_sprite -> Bool` helper.
+- Target files/surfaces: new
+  `font/sprite_draw_legacy_computing_supplement.mbt`,
+  `font/sprite_draw_common.mbt`, `font/sprite_face.mbt`,
+  `font/sprite_face_wbtest.mbt`, `font/pkg.generated.mbti`, and this plan
+  file.
+- API/interface diff: no public API is expected. The legacy supplement draw
+  routines and the extra fraction variants remain package-private. The
+  generated `font/pkg.generated.mbti` should remain unchanged.
+- Included upstream symbols:
+  - `draw1CC21_1CC2F`: separated block quadrants.
+  - `draw1CE51_1CE8F`: separated block sextants.
+  - `draw1CE90_1CEAF`: sixteenth blocks.
+- Deferred upstream symbols:
+  - `draw1CD00_1CDE5` depends on `octants.txt` and the policy for translating
+    Zig comptime `@embedFile` tables.
+  - `draw1CC30_1CC3F`, `draw1CE0B`, and `draw1CE0C` depend on
+    `staticPath`/`strokePath` circle-piece rasterization.
+  - `draw1CC1B_1CC1E` and `draw1CE16_1CE19` call `box.linesChar` and wait for
+    a `box.zig` translation slice.
+  - Other line/path/arc/rasterizer-dependent legacy supplement symbols remain
+    deferred with the broader P17.B rasterizer boundary.
+- Intentional MoonBit naming/type adapters: extend private
+  `SpriteDrawFraction` with quarter fractions corresponding to upstream
+  `common.Fraction.quarters`, so `draw1CE90_1CEAF` can remain a direct switch
+  over upstream fill arms. Zig packed `Quads`/`Sextants` bit casts are
+  translated to explicit bit-mask reads from `cp - range_base`, preserving the
+  upstream bit order without adding helper structs that leak into `.mbti`.
+- Why existing code cannot be reused as-is: P17.B.3/P17.B.4 only cover Block
+  Elements, Braille Patterns, and rect-only special sprites. The legacy
+  computing supplement ranges live in a separate upstream draw file and need
+  their own package-private translation and dispatch arms.
+- Open questions: no blocker for these three pure ranges. Octant embedded data,
+  `box.zig`, circle/path rasterization, Wuffs PNG golden diffs, and broader
+  rasterizer compatibility remain separate approved-deferred boundaries.
+- Next implementation step: add the legacy supplement draw file, extend
+  package-private fraction support, wire the three ranges into
+  `SpriteFace.has_codepoint` and `SpriteFace.render_glyph`, and add focused
+  white-box tests for included ranges and deferred nearby ranges.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for touched font files,
+  `moon fmt`, `moon info`, and `.mbti` public API review confirming no legacy
+  supplement draw helper leaked publicly.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -581,6 +634,20 @@ P17.B.2:
   `SpriteRect` public shape.
 - The remaining global coverage findings are pre-existing non-`font` gaps in
   bench/example/terminal files and are outside P17.B.2.
+
+P17.B.5:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F
+  font/sprite_draw_legacy_computing_supplement.mbt` reported no uncovered
+  executable lines.
+- `moon coverage analyze -- -f caret -F font/sprite_draw_common.mbt` reported
+  no uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/sprite_face.mbt` reported no
+  uncovered executable lines.
+- The remaining global coverage findings are pre-existing bench/example/
+  terminal gaps plus the already-documented `font/sprite_draw_braille.mbt`
+  invariant residuals, and are outside P17.B.5.
 
 Each later implementation subplan must record coverage findings for every
 touched MoonBit executable file before review.
@@ -766,6 +833,26 @@ P17.B.4:
   diff tests, Wuffs decode, and remaining `sprite/draw/*.zig` ranges remain
   deferred.
 
+P17.B.5:
+
+- Dependency boundary review: no z2d context/path/stroke/fill/arc API, Wuffs
+  PNG decode/export, platform font backend, renderer backend, GPU surface,
+  generator package, or runtime registry abstraction was introduced.
+- Public API visibility review: legacy supplement draw routines and the
+  quarter `SpriteDrawFraction` variants remain package-private and are
+  reachable only through `SpriteFace` direct dispatch. No public `DrawFn`,
+  registry table, draw helper, or rasterizer adapter surface exists.
+- `.mbti` review: `font/pkg.generated.mbti` remains unchanged for this slice
+  because the new legacy supplement draw code is internal.
+- Coverage findings review:
+  `font/sprite_draw_legacy_computing_supplement.mbt`,
+  `font/sprite_draw_common.mbt`, and `font/sprite_face.mbt` have no uncovered
+  executable lines after targeted caret coverage. The pre-existing
+  `font/sprite_draw_braille.mbt` invariant residuals remain unchanged.
+- Deferred adapter confirmation: octant embedded data, `box.zig` line
+  characters, circle/path rasterization, PNG golden diff tests, Wuffs decode,
+  and remaining legacy supplement ranges remain deferred.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -864,6 +951,25 @@ Implementation reviews must include:
   `font/sprite_face.mbt` reported no uncovered lines;
   `moon fmt`;
   `moon info`.
+- P17.B.5 added package-private pure legacy supplement draw routines for
+  separated block quadrants (`U+1CC21..U+1CC2F`), separated block sextants
+  (`U+1CE51..U+1CE8F`), and sixteenth blocks (`U+1CE90..U+1CEAF`).
+  `SpriteFace` direct dispatch now recognizes only those implemented ranges;
+  octants, circle pieces, `box.zig` line-character composites, and other
+  rasterizer-dependent legacy supplement codepoints remain unsupported and
+  return the upstream blank glyph shape through the fallback branch.
+- P17.B.5 validation passed:
+  `moon check`;
+  `moon test font` with 67 tests passed;
+  `moon test` with 636 tests passed;
+  `moon coverage analyze` reported 290 uncovered lines in 36 files, with no new
+  touched-source residuals;
+  targeted caret coverage for
+  `font/sprite_draw_legacy_computing_supplement.mbt`,
+  `font/sprite_draw_common.mbt`, and `font/sprite_face.mbt` reported no
+  uncovered lines;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -918,6 +1024,14 @@ P17.B.4 does not intentionally extend `font/pkg.generated.mbti`:
   `cursor_underline` remain package-private.
 - No public special sprite draw API, registry, generator output, rasterizer
   adapter, or draw helper API is added.
+- No parser/terminal public API churn.
+
+P17.B.5 does not intentionally extend `font/pkg.generated.mbti`:
+
+- `draw1cc21_1cc2f`, `draw1ce51_1ce8f`, `draw1ce90_1ceaf`, and quarter
+  `SpriteDrawFraction` variants remain package-private.
+- No public legacy supplement draw API, registry, generator output,
+  rasterizer adapter, or draw helper API is added.
 - No parser/terminal public API churn.
 
 For implementation tasks:

@@ -44,9 +44,20 @@ test "sprite face has codepoint for translated direct ranges" {
   assert_true(face.has_codepoint(0x259FU))
   assert_true(face.has_codepoint(0x2800U))
   assert_true(face.has_codepoint(0x28FFU))
+  assert_true(face.has_codepoint(0x1CC21U))
+  assert_true(face.has_codepoint(0x1CC2FU))
+  assert_true(face.has_codepoint(0x1CE51U))
+  assert_true(face.has_codepoint(0x1CE8FU))
+  assert_true(face.has_codepoint(0x1CE90U))
+  assert_true(face.has_codepoint(0x1CEAFU))
   assert_false(face.has_codepoint(0x257FU))
   assert_false(face.has_codepoint(0x2600U))
   assert_false(face.has_codepoint(0x2900U))
+  assert_false(face.has_codepoint(0x1CC20U))
+  assert_false(face.has_codepoint(0x1CC30U))
+  assert_false(face.has_codepoint(0x1CD00U))
+  assert_false(face.has_codepoint(0x1CE50U))
+  assert_false(face.has_codepoint(0x1CEB0U))
 }
 
 ///|
@@ -82,6 +93,24 @@ test "sprite face deferred special codepoints return blank glyph" {
   }
   guard dotted == sprite_blank_glyph() && curly == sprite_blank_glyph() else {
     fail("expected deferred special sprites to remain blank")
+  }
+}
+
+///|
+test "sprite face deferred legacy supplement codepoints return blank glyph" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(32U, Grayscale)
+  let deferred : ReadOnlyArray[UInt] = [
+    0x1CC30U, 0x1CD00U, 0x1CE0BU, 0x1CE0CU, 0x1CE16U,
+  ]
+  for cp in deferred {
+    assert_false(face.has_codepoint(cp))
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph == sprite_blank_glyph() else {
+      fail("expected deferred legacy supplement sprite to remain blank")
+    }
   }
 }
 
@@ -138,6 +167,104 @@ test "sprite face renders every block element arm" {
       fail("expected block element glyph for U+\{cp.to_string(radix=16)}")
     }
   }
+}
+
+///|
+test "sprite face renders legacy supplement pure block geometry" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(128U, Grayscale)
+
+  let separated_quadrant = face.render_glyph(atlas, 0x1CC21U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(separated_quadrant.width, 2U)
+  assert_eq(separated_quadrant.height, 6U)
+  assert_eq(separated_quadrant.offset_x, 1)
+  assert_eq(separated_quadrant.offset_y, 15)
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      separated_quadrant.atlas_x,
+      separated_quadrant.atlas_y,
+    ),
+    0xFF,
+  )
+
+  let separated_sextant = face.render_glyph(atlas, 0x1CE51U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(separated_sextant.width, 2U)
+  assert_eq(separated_sextant.height, 3U)
+  assert_eq(separated_sextant.offset_x, 1)
+  assert_eq(separated_sextant.offset_y, 15)
+  assert_eq(
+    sprite_face_atlas_pixel(
+      atlas,
+      separated_sextant.atlas_x,
+      separated_sextant.atlas_y,
+    ),
+    0xFF,
+  )
+
+  let sixteenth = face.render_glyph(atlas, 0x1CE90U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(sixteenth.width, 2U)
+  assert_eq(sixteenth.height, 4U)
+  assert_eq(sixteenth.offset_x, 0)
+  assert_eq(sixteenth.offset_y, 16)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, sixteenth.atlas_x, sixteenth.atlas_y),
+    0xFF,
+  )
+}
+
+///|
+test "sprite face renders every pure legacy supplement arm" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(512U, Grayscale)
+  for cp in 0x1CC21U..<=0x1CC2FU {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected separated quadrant glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+  for cp in 0x1CE51U..<=0x1CE8FU {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected separated sextant glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+  for cp in 0x1CE90U..<=0x1CEAFU {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected sixteenth block glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+}
+
+///|
+test "panic sixteenth block draw rejects codepoint outside range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw1ce90_1ceaf(
+    0x1CE8FU,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
 }
 
 ///|
