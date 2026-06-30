@@ -219,6 +219,44 @@ Acceptance notes:
   must be tested.
 - Sprite draw routines must remain independent of platform font backends.
 
+P17.B.1 accepted design checkpoint:
+
+- Goal: translate upstream `font/Atlas.zig` as the first green slice of P17.B,
+  before sprite canvas and draw routines.
+- Accepted design: add atlas packing and byte-buffer storage to the existing
+  `font` package. Follow the upstream field and method contract first, even
+  when that exposes mutable backing storage. `Atlas.data` is intentionally
+  reachable like Zig's `data: []u8`; callers that can reach it can observe and
+  mutate the backing buffer. This is recorded as an intentional exception to
+  the general public-mutable-field ban for faithful translation.
+- Target files/surfaces: `font/atlas.mbt`, `font/atlas_test.mbt`,
+  `font/pkg.generated.mbti`, this plan file, and later P17.B audit notes.
+  `docs/plan.md` remains `P17.B todo` until sprite substrate also lands.
+- API/interface diff: new public `Atlas` field surface matching upstream as
+  closely as MoonBit can express it: `data`, `size`, `format`, `modified`, and
+  `resized` are public mutable state; the node list may remain private unless
+  MoonBit requires exposing a named `AtlasNode` to keep the field model
+  faithful. New public `AtlasFormat` and `AtlasRegion`; `AtlasError` only
+  contains upstream's real `AtlasFull` error. Methods map directly from
+  upstream names/behavior: `Atlas::new`/init, `reserve`, `set`,
+  `set_from_larger`, `grow`, `clear`, and `AtlasFormat::depth`.
+- Intentional MoonBit naming/type adapters: Zig nested `Format`/`Region` become
+  package-level `AtlasFormat`/`AtlasRegion`; Zig `setFromLarger` becomes
+  `set_from_larger`; Zig `[]const u8` inputs become MoonBit read-only byte
+  views; allocator errors are omitted because MoonBit allocation is GC-managed.
+- Why existing code cannot be reused as-is: the current `font` package only
+  contains glyph/metrics/descriptor/codepoint-map values. No existing
+  terminal or font module owns atlas pixel storage or rectangle packing.
+- Open questions: no blocker for atlas. Sprite canvas and z2d-equivalent path
+  drawing remain the next P17.B substep.
+- Next implementation step: port `Format.depth`, `Region`, `init/clear`,
+  `reserve/fit/merge`, `set`, `setFromLarger`, and `grow` from
+  `Atlas.zig`, with translated tests for exact fit, full atlas, multiple fit,
+  writes, larger-source writes, growth, and BGR depth.
+- Validation plan: `moon check`, `moon test`, `moon coverage analyze`,
+  targeted caret coverage for `font/atlas.mbt`, `moon fmt`, `moon info`, and
+  `.mbti` public API review.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
