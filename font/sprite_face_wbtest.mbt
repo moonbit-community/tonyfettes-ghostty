@@ -49,7 +49,7 @@ fn sprite_face_glyph_contains(
 }
 
 ///|
-test "sprite face has codepoint for translated direct ranges" {
+test "sprite face has codepoint for translated draw function lookup ranges" {
   let face = SpriteFace::new(sprite_face_test_metrics())
   assert_true(face.has_codepoint(Sprite::underline().codepoint()))
   assert_true(face.has_codepoint(Sprite::underline_double().codepoint()))
@@ -111,6 +111,28 @@ test "sprite face has codepoint for translated direct ranges" {
   assert_false(face.has_codepoint(0x1FBD0U))
   assert_false(face.has_codepoint(0x1FBE0U))
   assert_false(face.has_codepoint(0x1FBE8U))
+}
+
+///|
+test "sprite face get draw fn returns optional draw routine" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  match get_draw_fn(0x2588U) {
+    Some(draw_fn) =>
+      draw_fn(0x2588U, canvas, metrics.cell_width, metrics.cell_height, metrics)
+    None => fail("expected full block draw function")
+  }
+  assert_eq(canvas.data[0], 0xFF)
+
+  match get_draw_fn(0x2600U) {
+    Some(_) => fail("expected unsupported codepoint to have no draw function")
+    None => ()
+  }
 }
 
 ///|

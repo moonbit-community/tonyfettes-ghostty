@@ -338,6 +338,10 @@ P17.B.2 accepted design checkpoint:
 
 P17.B.3 accepted design checkpoint:
 
+Superseded by P17.B.10 for the current implementation shape. This checkpoint
+records the original direct-dispatch adapter decision and is retained as
+history.
+
 - Goal: translate upstream `font/sprite/Face.zig` sprite dispatch in the
   simplest MoonBit shape while preserving upstream draw routine behavior.
 - Accepted design: do not add a generator, function-pointer table, draw
@@ -744,6 +748,62 @@ P17.B.9 implementation audit:
 - Remaining P17.B work is now limited to the `octants.txt` embedded-data
   policy and the z2d/Wuffs-dependent rasterizer/golden-diff adapter decision.
 
+P17.B.10 accepted design checkpoint:
+
+- Goal: realign translated `SpriteFace` dispatch with upstream
+  `sprite/Face.zig`'s `getDrawFn(cp) orelse return glyph` control flow after
+  the user explicitly reversed the earlier P17.B.3 direct-dispatch adapter.
+- Accepted design: add a package-private `SpriteDrawFn` closure newtype and a
+  package-private `get_draw_fn(cp)` lookup in `font/sprite_face.mbt`. The
+  lookup uses the same hand-maintained `match cp` range arms that direct
+  dispatch used, returning `Some(draw_fn)` for implemented draw symbols and
+  `None` for unsupported/deferred codepoints. `render_glyph` calls
+  `get_draw_fn(cp)`, returns `sprite_blank_glyph()` on `None`, and invokes the
+  returned draw function on `Some`, matching upstream's control-flow shape.
+  `has_codepoint` should use `get_draw_fn(cp)` so supported-range policy is
+  not duplicated.
+- Target files/surfaces: `font/sprite_face.mbt`,
+  `font/sprite_face_wbtest.mbt`, `font/pkg.generated.mbti`,
+  `docs/plan.md`, and this plan file.
+- API/interface diff: no public API is expected. `SpriteDrawFn`,
+  `get_draw_fn`, `SpriteFace`, and all draw routines remain package-private.
+  The generated `font/pkg.generated.mbti` should remain unchanged.
+- Intentional MoonBit naming/type adapters: Zig `DrawFn` becomes a
+  package-private closure newtype instead of a pointer type. Zig optional
+  function lookup maps to `SpriteDrawFn?`. Zig comptime declaration scanning is
+  still not translated; the range arms remain explicit and must continue to map
+  one-to-one to translated upstream draw symbols. No generator package, runtime
+  registry, registration API, public `DrawFn`, or `draw_sprite -> Bool` helper
+  is introduced.
+- Why existing code cannot be reused as-is: the current `SpriteFace` has two
+  separate direct range matches, one in `has_codepoint` and one in
+  `render_glyph`. That preserves behavior but does not match the upstream
+  lookup-and-call structure the user now wants as the higher-priority
+  line-by-line translation target.
+- Open questions: none for this dispatch refactor. Rasterizer-dependent draw
+  functions and embedded-data adapters remain outside this slice.
+- Next implementation step: introduce the package-private lookup, route
+  `has_codepoint` and `render_glyph` through it, add focused white-box coverage
+  for `Some`/`None` lookup behavior, and update audits to record that P17.B.10
+  supersedes the P17.B.3 direct-dispatch adapter.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for touched executable font
+  files, `moon fmt`, `moon info`, and `.mbti` public API review confirming no
+  draw lookup surface leaked publicly.
+
+P17.B.10 implementation audit:
+
+- Replaced the duplicated `SpriteFace.has_codepoint` and
+  `SpriteFace.render_glyph` range matches with package-private
+  `get_draw_fn(cp) -> SpriteDrawFn?` lookup and call flow.
+- `render_glyph` now matches upstream control flow: unsupported codepoints
+  return the blank glyph before any atlas write, while supported codepoints
+  call the returned draw routine and then write the canvas to the atlas.
+- `SpriteDrawFn` and `get_draw_fn` remain package-private; no generator,
+  registry, registration API, public draw function type, or
+  `draw_sprite -> Bool` helper was introduced.
+- `font/pkg.generated.mbti` did not change.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -944,6 +1004,16 @@ P17.B.9:
   terminal gaps plus the already-documented `font/sprite_draw_box.mbt`
   assert-style invariant residuals and `font/sprite_draw_braille.mbt`
   invariant residuals, and are outside P17.B.9.
+
+P17.B.10:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F font/sprite_face.mbt` reported no
+  uncovered executable lines.
+- The remaining global coverage findings are pre-existing bench/example/
+  terminal gaps plus the already-documented `font/sprite_draw_box.mbt`
+  assert-style invariant residuals and `font/sprite_draw_braille.mbt`
+  invariant residuals, and are outside P17.B.10.
 
 Each later implementation subplan must record coverage findings for every
 touched MoonBit executable file before review.

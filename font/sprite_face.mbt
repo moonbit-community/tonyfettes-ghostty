@@ -1,4 +1,7 @@
 ///|
+priv struct SpriteDrawFn((UInt, SpriteCanvas, UInt, UInt, Metrics) -> Unit)
+
+///|
 #warnings("-unused_value")
 priv struct SpriteFace {
   metrics : Metrics
@@ -14,31 +17,42 @@ fn SpriteFace::new(metrics : Metrics) -> SpriteFace {
 #warnings("-unused_value")
 fn SpriteFace::has_codepoint(self : SpriteFace, cp : UInt) -> Bool {
   ignore(self)
+  match get_draw_fn(cp) {
+    Some(_) => true
+    None => false
+  }
+}
+
+///|
+fn get_draw_fn(cp : UInt) -> SpriteDrawFn? {
   match cp {
-    0x110000 => true
-    0x110001 => true
-    0x110003 => true
-    0x110005 => true
-    0x110006 => true
-    0x110007 => true
-    0x110008 => true
-    0x110009 => true
-    0x11000A => true
-    0x2500..=0x256C => true
-    0x2574..=0x257F => true
-    0x2580..=0x259F => true
-    0x2800..=0x28FF => true
-    0x1CC1B..=0x1CC1E => true
-    0x1CC21..=0x1CC2F => true
-    0x1CE16..=0x1CE19 => true
-    0x1CE51..=0x1CE8F => true
-    0x1CE90..=0x1CEAF => true
-    0x1FB00..=0x1FB3B => true
-    0x1FB70..=0x1FB97 => true
-    0x1FBAF => true
-    0x1FBCE..=0x1FBCF => true
-    0x1FBE4..=0x1FBE7 => true
-    _ => false
+    0x110000 => Some(SpriteDrawFn(underline))
+    0x110001 => Some(SpriteDrawFn(underline_double))
+    0x110003 => Some(SpriteDrawFn(underline_dashed))
+    0x110005 => Some(SpriteDrawFn(strikethrough))
+    0x110006 => Some(SpriteDrawFn(overline))
+    0x110007 => Some(SpriteDrawFn(cursor_rect))
+    0x110008 => Some(SpriteDrawFn(cursor_hollow_rect))
+    0x110009 => Some(SpriteDrawFn(cursor_bar))
+    0x11000A => Some(SpriteDrawFn(cursor_underline))
+    0x2500..=0x256C => Some(SpriteDrawFn(draw2500_257f))
+    0x2574..=0x257F => Some(SpriteDrawFn(draw2500_257f))
+    0x2580..=0x259F => Some(SpriteDrawFn(draw2580_259f))
+    0x2800..=0x28FF => Some(SpriteDrawFn(draw2800_28ff))
+    0x1CC1B..=0x1CC1E => Some(SpriteDrawFn(draw1cc1b_1cc1e))
+    0x1CC21..=0x1CC2F => Some(SpriteDrawFn(draw1cc21_1cc2f))
+    0x1CE16..=0x1CE19 => Some(SpriteDrawFn(draw1ce16_1ce19))
+    0x1CE51..=0x1CE8F => Some(SpriteDrawFn(draw1ce51_1ce8f))
+    0x1CE90..=0x1CEAF => Some(SpriteDrawFn(draw1ce90_1ceaf))
+    0x1FB00..=0x1FB3B => Some(SpriteDrawFn(draw1fb00_1fb3b))
+    0x1FB70..=0x1FB75 => Some(SpriteDrawFn(draw1fb70_1fb75))
+    0x1FB76..=0x1FB7B => Some(SpriteDrawFn(draw1fb76_1fb7b))
+    0x1FB7C..=0x1FB97 => Some(SpriteDrawFn(draw1fb7c_1fb97))
+    0x1FBAF => Some(SpriteDrawFn(draw1fbaf))
+    0x1FBCE => Some(SpriteDrawFn(draw1fbce))
+    0x1FBCF => Some(SpriteDrawFn(draw1fbcf))
+    0x1FBE4..=0x1FBE7 => Some(SpriteDrawFn(draw1fbe0_1fbef))
+    _ => None
   }
 }
 
@@ -60,35 +74,11 @@ fn SpriteFace::render_glyph(
   let padding_y = height / 4U
   let canvas = SpriteCanvas::new(width, height, padding_x, padding_y)
 
-  match cp {
-    0x110000 => underline(cp, canvas, width, height, metrics)
-    0x110001 => underline_double(cp, canvas, width, height, metrics)
-    0x110003 => underline_dashed(cp, canvas, width, height, metrics)
-    0x110005 => strikethrough(cp, canvas, width, height, metrics)
-    0x110006 => overline(cp, canvas, width, height, metrics)
-    0x110007 => cursor_rect(cp, canvas, width, height, metrics)
-    0x110008 => cursor_hollow_rect(cp, canvas, width, height, metrics)
-    0x110009 => cursor_bar(cp, canvas, width, height, metrics)
-    0x11000A => cursor_underline(cp, canvas, width, height, metrics)
-    0x2500..=0x256C => draw2500_257f(cp, canvas, width, height, metrics)
-    0x2574..=0x257F => draw2500_257f(cp, canvas, width, height, metrics)
-    0x2580..=0x259F => draw2580_259f(cp, canvas, width, height, metrics)
-    0x2800..=0x28FF => draw2800_28ff(cp, canvas, width, height, metrics)
-    0x1CC1B..=0x1CC1E => draw1cc1b_1cc1e(cp, canvas, width, height, metrics)
-    0x1CC21..=0x1CC2F => draw1cc21_1cc2f(cp, canvas, width, height, metrics)
-    0x1CE16..=0x1CE19 => draw1ce16_1ce19(cp, canvas, width, height, metrics)
-    0x1CE51..=0x1CE8F => draw1ce51_1ce8f(cp, canvas, width, height, metrics)
-    0x1CE90..=0x1CEAF => draw1ce90_1ceaf(cp, canvas, width, height, metrics)
-    0x1FB00..=0x1FB3B => draw1fb00_1fb3b(cp, canvas, width, height, metrics)
-    0x1FB70..=0x1FB75 => draw1fb70_1fb75(cp, canvas, width, height, metrics)
-    0x1FB76..=0x1FB7B => draw1fb76_1fb7b(cp, canvas, width, height, metrics)
-    0x1FB7C..=0x1FB97 => draw1fb7c_1fb97(cp, canvas, width, height, metrics)
-    0x1FBAF => draw1fbaf(cp, canvas, width, height, metrics)
-    0x1FBCE => draw1fbce(cp, canvas, width, height, metrics)
-    0x1FBCF => draw1fbcf(cp, canvas, width, height, metrics)
-    0x1FBE4..=0x1FBE7 => draw1fbe0_1fbef(cp, canvas, width, height, metrics)
-    _ => return sprite_blank_glyph()
+  let draw_fn = match get_draw_fn(cp) {
+    Some(draw_fn) => draw_fn
+    None => return sprite_blank_glyph()
   }
+  draw_fn(cp, canvas, width, height, metrics)
 
   let region = canvas.write_atlas(atlas)
   {
