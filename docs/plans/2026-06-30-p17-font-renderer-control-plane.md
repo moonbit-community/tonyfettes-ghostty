@@ -804,6 +804,75 @@ P17.B.10 implementation audit:
   `draw_sprite -> Bool` helper was introduced.
 - `font/pkg.generated.mbti` did not change.
 
+P17.B.11 accepted design checkpoint:
+
+- Goal: translate upstream
+  `font/sprite/draw/symbols_for_legacy_computing_supplement.zig`
+  `draw1CD00_1CDE5` octant drawing while preserving upstream's
+  `octants.txt` source data as a repo-local generated-data input.
+- Accepted design: copy upstream `octants.txt` into `font/octants.txt`, add a
+  separate `tools` MoonBit module with a main package that reads the copied text
+  using `moonbitlang/async/fs`, computes paths with `moonbitlang/x/path`, and
+  generates a package-private MoonBit octant mask table in the `font` package.
+  `draw1cd00_1cde5` will use the generated mask table and the existing
+  `fill`/`SpriteDrawFraction` helpers, and `get_draw_fn(cp)` will gain the
+  `0x1CD00..=0x1CDE5` range arm so `SpriteFace.render_glyph` keeps the
+  upstream `getDrawFn(cp) orelse return glyph` shape from P17.B.10.
+- Target files/surfaces: `font/octants.txt`,
+  `font/sprite_draw_legacy_computing_octants_data.mbt`,
+  `font/sprite_draw_legacy_computing_supplement.mbt`,
+  `font/sprite_face.mbt`, `font/sprite_face_wbtest.mbt`,
+  `font/pkg.generated.mbti`, `tools/moon.mod`,
+  `tools/gen_octants/moon.pkg`, `tools/gen_octants/main.mbt`,
+  `tools/gen_octants/pkg.generated.mbti`, `docs/plan.md`, and this plan file.
+- API/interface diff: no public `font` API is expected. The copied data file,
+  generated mask table, generator package, `draw1cd00_1cde5`, and `get_draw_fn`
+  range arm remain package-private or tooling-only. The generated
+  `font/pkg.generated.mbti` should remain unchanged.
+- Intentional MoonBit naming/type adapters: Zig `draw1CD00_1CDE5` becomes
+  package-private `draw1cd00_1cde5`; Zig comptime `@embedFile("octants.txt")`
+  parsing becomes a checked MoonBit generator that emits static mask data;
+  Zig's packed `Octant` struct becomes integer bit masks where bits 0 through
+  7 represent octants 1 through 8. This is an approved embedded-data adapter,
+  not a runtime registry or public draw API.
+- Why existing code cannot be reused as-is: MoonBit has no Zig comptime
+  `@embedFile` plus compile-time parsing block in ordinary package code, and
+  the current `font` package has no octant table. The existing pure
+  fill/block helpers can draw the geometry, but they cannot recover the Unicode
+  octant order without the upstream data file.
+- Open questions: none for octants. z2d/path/curve/triangle/PNG-golden
+  adapters and Wuffs-dependent image decode remain outside this slice.
+- Next implementation step: copy the upstream data file, add the `tools`
+  generator module, generate the mask table, add `draw1cd00_1cde5`, wire the
+  range into `get_draw_fn`, and extend white-box tests for lookup, render, and
+  panic boundaries.
+- Validation plan: `moon -C tools check`, `moon -C tools run gen_octants`,
+  root `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for touched executable font
+  files, `moon -C tools fmt`, root `moon fmt`, `moon -C tools info`, root
+  `moon info`, and `.mbti` public API review confirming no font API churn.
+
+P17.B.11 implementation audit:
+
+- Copied upstream `font/sprite/draw/octants.txt` to `font/octants.txt` as the
+  repo-local source data for the octant table.
+- Added the `tonyfettes/ghostty-tools` MoonBit module and
+  `tools/gen_octants` main package. The generator uses
+  `moonbitlang/async/fs` for file reads/writes and `moonbitlang/x/path` for
+  source/output path construction, parses the copied text into 230 integer
+  masks, and emits `font/sprite_draw_legacy_computing_octants_data.mbt`.
+- Added package-private `draw1cd00_1cde5`, matching upstream's eight octant
+  fill checks against the generated mask table, and wired
+  `0x1CD00..=0x1CDE5` through package-private `get_draw_fn(cp)`.
+- Extended white-box coverage for lookup boundaries, deferred-neighbor
+  fallback, representative octant geometry, full octant range rendering, and
+  direct out-of-range panic behavior.
+- `font/pkg.generated.mbti` did not change. `tools/gen_octants/pkg.generated.mbti`
+  is an empty generated interface for the tooling main package.
+- Remaining P17.B work is now limited to z2d/Wuffs-dependent rasterizer and
+  PNG-golden-diff adapter decisions for paths, curves, lines, triangles, arcs,
+  circles, and related mixed draw ranges.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -1014,6 +1083,25 @@ P17.B.10:
   terminal gaps plus the already-documented `font/sprite_draw_box.mbt`
   assert-style invariant residuals and `font/sprite_draw_braille.mbt`
   invariant residuals, and are outside P17.B.10.
+
+P17.B.11:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F
+  font/sprite_draw_legacy_computing_supplement.mbt` reported no uncovered
+  executable lines.
+- `moon coverage analyze -- -f caret -F font/sprite_face.mbt` reported no
+  uncovered executable lines.
+- `moon coverage analyze -- -f caret -F
+  font/sprite_draw_legacy_computing_octants_data.mbt` reported no uncovered
+  executable lines.
+- The tools generator was validated with `moon -C tools check`,
+  `moon -C tools run gen_octants`, and `moon -C tools info`; it is not part of
+  the root package coverage set.
+- The remaining global coverage findings are pre-existing bench/example/
+  terminal gaps plus the already-documented `font/sprite_draw_box.mbt`
+  assert-style invariant residuals and `font/sprite_draw_braille.mbt`
+  invariant residuals, and are outside P17.B.11.
 
 Each later implementation subplan must record coverage findings for every
 touched MoonBit executable file before review.
@@ -1287,6 +1375,27 @@ P17.B.8:
   non-rasterizer ranges, so P17.B remains open for at least one more pure
   translation slice before moving to P17.C.
 
+P17.B.11:
+
+- Dependency boundary review: no z2d context/path/stroke/fill/arc API, Wuffs
+  PNG decode/export, platform font backend, renderer backend, GPU surface,
+  runtime registry abstraction, or public draw function registry was
+  introduced. The new dependency surface is limited to the separate tools
+  module using `moonbitlang/async/fs` and `moonbitlang/x/path`.
+- Public API visibility review: octant draw code, generated mask data, and
+  `get_draw_fn` wiring remain package-private. `font/pkg.generated.mbti` is
+  unchanged. `tools/gen_octants/pkg.generated.mbti` exposes no values or types.
+- `.mbti` review: no `font` package API churn; the only new interface file is
+  the empty tools main package interface generated by `moon -C tools info`.
+- Coverage findings review:
+  `font/sprite_draw_legacy_computing_supplement.mbt`, `font/sprite_face.mbt`,
+  and `font/sprite_draw_legacy_computing_octants_data.mbt` have no uncovered
+  executable lines after targeted caret coverage. The generator is validated by
+  check/run/info rather than root package coverage.
+- Deferred adapter confirmation: path/curve/line/triangle/arc/circle sprite
+  ranges, z2d-compatible rasterization, Wuffs decode, and PNG golden-diff
+  infrastructure remain deferred.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -1450,6 +1559,23 @@ Implementation reviews must include:
 - P17.B.8 validation passed by docs review against upstream
   `sprite/canvas.zig` and `sprite/draw/*.zig`; no MoonBit validation was
   required because no MoonBit source or `.mbti` files changed.
+- P17.B.11 added a MoonBit tools generator for the upstream octant data file,
+  generated the octant mask table, and translated `draw1CD00_1CDE5` with the
+  existing fill helpers. `SpriteFace` now recognizes `U+1CD00..U+1CDE5`
+  through `get_draw_fn`; unsupported neighboring legacy supplement codepoints
+  still return the upstream blank glyph shape.
+- P17.B.11 validation passed:
+  `moon -C tools check`;
+  `moon -C tools run gen_octants`;
+  `moon check`;
+  `moon test font` with 89 tests passed;
+  `moon test` with 658 tests passed;
+  `moon coverage analyze` reported 292 uncovered lines in 37 files, with no
+  touched-source residuals after targeted caret review;
+  `moon -C tools fmt`;
+  `moon fmt`;
+  `moon -C tools info`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -1535,6 +1661,14 @@ P17.B.8 does not intentionally extend `font/pkg.generated.mbti`:
   changed.
 - No public sprite rasterizer, path, generator, registry, draw helper, or
   `SpriteFace` API is added.
+
+P17.B.11 does not intentionally extend `font/pkg.generated.mbti`:
+
+- `draw1cd00_1cde5`, `legacy_computing_octants`, and the new `get_draw_fn`
+  range arm remain package-private.
+- `tools/gen_octants/pkg.generated.mbti` is an empty tooling main-package
+  interface. It is not part of the public `font` API.
+- No parser/terminal public API churn.
 
 For implementation tasks:
 

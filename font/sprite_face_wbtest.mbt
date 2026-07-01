@@ -76,6 +76,8 @@ test "sprite face has codepoint for translated draw function lookup ranges" {
   assert_true(face.has_codepoint(0x1CC1EU))
   assert_true(face.has_codepoint(0x1CC21U))
   assert_true(face.has_codepoint(0x1CC2FU))
+  assert_true(face.has_codepoint(0x1CD00U))
+  assert_true(face.has_codepoint(0x1CDE5U))
   assert_true(face.has_codepoint(0x1CE16U))
   assert_true(face.has_codepoint(0x1CE19U))
   assert_true(face.has_codepoint(0x1CE51U))
@@ -98,7 +100,8 @@ test "sprite face has codepoint for translated draw function lookup ranges" {
   assert_false(face.has_codepoint(0x1CC1FU))
   assert_false(face.has_codepoint(0x1CC20U))
   assert_false(face.has_codepoint(0x1CC30U))
-  assert_false(face.has_codepoint(0x1CD00U))
+  assert_false(face.has_codepoint(0x1CCFFU))
+  assert_false(face.has_codepoint(0x1CDE6U))
   assert_false(face.has_codepoint(0x1CE15U))
   assert_false(face.has_codepoint(0x1CE1AU))
   assert_false(face.has_codepoint(0x1CE50U))
@@ -191,7 +194,8 @@ test "sprite face deferred legacy supplement codepoints return blank glyph" {
   let face = SpriteFace::new(sprite_face_test_metrics())
   let atlas = Atlas::new(32U, Grayscale)
   let deferred : ReadOnlyArray[UInt] = [
-    0x1CC1AU, 0x1CC1FU, 0x1CC30U, 0x1CD00U, 0x1CE0BU, 0x1CE0CU, 0x1CE15U, 0x1CE1AU,
+    0x1CC1AU, 0x1CC1FU, 0x1CC30U, 0x1CCFFU, 0x1CDE6U, 0x1CE0BU, 0x1CE0CU, 0x1CE15U,
+    0x1CE1AU,
   ]
   for cp in deferred {
     assert_false(face.has_codepoint(cp))
@@ -519,6 +523,18 @@ test "sprite face renders legacy supplement pure block geometry" {
     0xFF,
   )
 
+  let octant = face.render_glyph(atlas, 0x1CD00U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(octant.width, 4U)
+  assert_eq(octant.height, 4U)
+  assert_eq(octant.offset_x, 0)
+  assert_eq(octant.offset_y, 12)
+  assert_eq(
+    sprite_face_atlas_pixel(atlas, octant.atlas_x, octant.atlas_y),
+    0xFF,
+  )
+
   let separated_sextant = face.render_glyph(atlas, 0x1CE51U, None) catch {
     AtlasFull => fail("unexpected atlas full")
   }
@@ -568,6 +584,14 @@ test "sprite face renders every pure legacy supplement arm" {
     }
     guard glyph.width > 0U && glyph.height > 0U else {
       fail("expected separated quadrant glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+  for cp in 0x1CD00U..<=0x1CDE5U {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected octant glyph for U+\{cp.to_string(radix=16)}")
     }
   }
   for cp in 0x1CE16U..<=0x1CE19U {
@@ -645,6 +669,24 @@ test "panic sixteenth block draw rejects codepoint outside range" {
   )
   draw1ce90_1ceaf(
     0x1CE8FU,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
+}
+
+///|
+test "panic octant draw rejects codepoint outside range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw1cd00_1cde5(
+    0x1CCFFU,
     canvas,
     metrics.cell_width,
     metrics.cell_height,

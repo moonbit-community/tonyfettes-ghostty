@@ -41,6 +41,7 @@ fn get_draw_fn(cp : UInt) -> SpriteDrawFn? {
     0x2800..=0x28FF => Some(SpriteDrawFn(draw2800_28ff))
     0x1CC1B..=0x1CC1E => Some(SpriteDrawFn(draw1cc1b_1cc1e))
     0x1CC21..=0x1CC2F => Some(SpriteDrawFn(draw1cc21_1cc2f))
+    0x1CD00..=0x1CDE5 => Some(SpriteDrawFn(draw1cd00_1cde5))
     0x1CE16..=0x1CE19 => Some(SpriteDrawFn(draw1ce16_1ce19))
     0x1CE51..=0x1CE8F => Some(SpriteDrawFn(draw1ce51_1ce8f))
     0x1CE90..=0x1CEAF => Some(SpriteDrawFn(draw1ce90_1ceaf))

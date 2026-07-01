@@ -764,14 +764,17 @@ not vendored into this repository. Implementation must first validate the
 workspace-member setup and record the local checkout requirement.
 
 P17.B.9 completed the remaining pure `symbols_for_legacy_computing.zig` ranges
-that use the current canvas/block/box helpers. P17.B remains open only for
-`octants.txt` embedded-data policy and z2d/Wuffs-dependent rasterizer work
-such as paths, lines, triangles, arcs, circles, curves, and PNG golden diffs.
-P17.B.10 realigned sprite face dispatch to a package-private
-`get_draw_fn(cp)` lookup that mirrors upstream `getDrawFn(cp) orelse return
-glyph`, superseding the earlier direct-dispatch adapter. Move to P17.C only
-after the user either approves deferring those remaining sprite adapters or
-chooses the next sprite adapter strategy.
+that use the current canvas/block/box helpers. P17.B.10 realigned sprite face
+dispatch to a package-private `get_draw_fn(cp)` lookup that mirrors upstream
+`getDrawFn(cp) orelse return glyph`, superseding the earlier direct-dispatch
+adapter. P17.B.11 copied upstream
+`octants.txt`, added a MoonBit tools generator using `moonbitlang/async/fs` and
+`moonbitlang/x/path`, generated the octant mask table, and translated
+`draw1CD00_1CDE5`. P17.B remains open only for z2d/Wuffs-dependent rasterizer
+work such as paths, lines, triangles, arcs, circles, curves, and PNG golden
+diffs.
+Move to P17.C only after the user either approves deferring those remaining
+sprite adapters or chooses the next sprite adapter strategy.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|

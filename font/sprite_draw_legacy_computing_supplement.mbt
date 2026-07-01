@@ -1,4 +1,10 @@
 ///|
+const OctantMin : UInt = 0x1CD00U
+
+///|
+const OctantMax : UInt = 0x1CDE5U
+
+///|
 fn draw1cc1b_1cc1e(
   cp : UInt,
   canvas : SpriteCanvas,
@@ -84,6 +90,45 @@ fn draw1cc21_1cc2f(
       gap + h + mid_gap_y + h,
       SpriteColor::on(),
     )
+  }
+}
+
+///|
+fn draw1cd00_1cde5(
+  cp : UInt,
+  canvas : SpriteCanvas,
+  width : UInt,
+  height : UInt,
+  metrics : Metrics,
+) -> Unit {
+  ignore(width)
+  ignore(height)
+
+  guard cp >= OctantMin && cp <= OctantMax else { abort("unreachable octant") }
+  let oct = legacy_computing_octants[(cp - OctantMin).reinterpret_as_int()]
+  if (oct & 0x01) != 0 {
+    fill(metrics, canvas, Zero, Half, Zero, OneQuarter)
+  }
+  if (oct & 0x02) != 0 {
+    fill(metrics, canvas, Half, Full, Zero, OneQuarter)
+  }
+  if (oct & 0x04) != 0 {
+    fill(metrics, canvas, Zero, Half, OneQuarter, TwoQuarters)
+  }
+  if (oct & 0x08) != 0 {
+    fill(metrics, canvas, Half, Full, OneQuarter, TwoQuarters)
+  }
+  if (oct & 0x10) != 0 {
+    fill(metrics, canvas, Zero, Half, TwoQuarters, ThreeQuarters)
+  }
+  if (oct & 0x20) != 0 {
+    fill(metrics, canvas, Half, Full, TwoQuarters, ThreeQuarters)
+  }
+  if (oct & 0x40) != 0 {
+    fill(metrics, canvas, Zero, Half, ThreeQuarters, Full)
+  }
+  if (oct & 0x80) != 0 {
+    fill(metrics, canvas, Half, Full, ThreeQuarters, Full)
   }
 }
 
