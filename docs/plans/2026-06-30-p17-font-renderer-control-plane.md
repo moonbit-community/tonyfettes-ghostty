@@ -581,6 +581,85 @@ P17.B.7 accepted design checkpoint:
   `moon fmt`, `moon info`, and `.mbti` public API review confirming no legacy
   line-composite draw helper leaked publicly.
 
+P17.B.8 accepted design checkpoint:
+
+- Goal: audit the remaining upstream sprite draw surface after P17.B.7,
+  separate pure MoonBit work from z2d/Wuffs/embedded-data adapters, and decide
+  the next P17.B step without introducing new implementation code.
+- Accepted design: do not add `SpritePath`, a rasterizer adapter, line/arc/
+  triangle/path primitives, generator output, registry tables, PNG golden
+  infrastructure, Wuffs decode, or public sprite API in this slice. Keep P17.B
+  open because the audit found remaining pure `symbols_for_legacy_computing`
+  ranges that can still be translated line-by-line before the rasterizer
+  boundary needs an implementation decision. The next implementation slice
+  should target those pure ranges first; P17.C should wait until that pure
+  sprite work is either completed or explicitly deferred by a later user
+  decision.
+- Target files/surfaces:
+  `docs/plans/2026-06-30-p17-font-renderer-control-plane.md` and
+  `docs/plan.md`. No MoonBit source or generated interface files are changed.
+- API/interface diff: none. `font/pkg.generated.mbti` is not expected to
+  change because this is a docs-only boundary audit.
+- Implemented P17.B first-wave surface:
+  - `Atlas.zig`: atlas packing/grow/write/clear/depth behavior.
+  - `sprite.zig` and pure `sprite/canvas.zig` alpha-surface operations:
+    `writeAtlas`, clipping-region clearing, `pixel`, `rect`, `box`, `invert`,
+    and flips.
+  - `sprite/Face.zig`: package-private direct dispatch without generator,
+    registry, or public draw helpers.
+  - `draw/block.zig`, `draw/braille.zig`, rect-only `draw/special.zig`,
+    selected pure `draw/symbols_for_legacy_computing_supplement.zig`,
+    and the pure `linesChar`/dash subset of `draw/box.zig`.
+- Remaining pure MoonBit candidate work before rasterizer:
+  - `draw/symbols_for_legacy_computing.zig` ranges whose bodies use only
+    already-translated fill/block/box/lines helpers or simple integer
+    checkerboard rectangles: `draw1FB00_1FB3B`, `draw1FB70_1FB75`,
+    `draw1FB76_1FB7B`, most of `draw1FB7C_1FB97`,
+    `draw1FBAF`, `draw1FBCE`, and `draw1FBCF`.
+  - `draw1FBE0_1FBEF` has a mixed body: `U+1FBE4..U+1FBE7` are pure block
+    helpers, while the circle arms remain rasterizer-dependent.
+- Remaining embedded-data adapter work:
+  - `draw/symbols_for_legacy_computing_supplement.zig`
+    `draw1CD00_1CDE5` depends on `octants.txt` and a policy for translating
+    Zig comptime `@embedFile` data into reviewable MoonBit source or a
+    checked generated artifact.
+- Remaining rasterizer-dependent work:
+  - `sprite/canvas.zig`: `getContext`, `staticPath`, `quad`, `triangle`,
+    `line`, `strokePath`, `innerStrokePath`, and `fillPath`.
+  - `draw/box.zig`: `U+256D..U+2570` arcs and `U+2571..U+2573` diagonals,
+    plus `arc` and diagonal helpers.
+  - `draw/special.zig`: dotted and curly underlines.
+  - `draw/branch.zig`: branch arcs and circular fills/strokes.
+  - `draw/geometric_shapes.zig`: triangle fills and inner-stroked triangle
+    outlines.
+  - `draw/powerline.zig`: triangle, diagonal line, path stroke/fill, inner
+    stroke, and curved path symbols.
+  - `draw/symbols_for_legacy_computing.zig`: smooth mosaics, edge triangles,
+    diagonal fills/lines, corner diagonals, cell diagonals, circles, and any
+    mixed range arms that call those helpers.
+  - `draw/symbols_for_legacy_computing_supplement.zig`: circle pieces,
+    ellipses, and circle reuse through `symbols_for_legacy_computing.zig`.
+- Intentional MoonBit adapter decisions: keep direct range dispatch until a
+  later approved design changes it; keep rasterizer helpers package-private if
+  they are introduced later; do not expose `SpriteFace` publicly before
+  P17.C/P17.D records a caller story; keep Wuffs/PNG golden diff outside the
+  first pure sprite wave.
+- Why existing code cannot be reused as-is: the current sprite canvas stores
+  alpha bytes and supports integer rect/box-style drawing, but upstream path
+  operations rely on z2d's path nodes, transforms, stroke caps, fill rules,
+  cubic curves, arcs, anti-aliased rasterization, and inner-stroke masking.
+  Those semantics are not represented by existing MoonBit helpers.
+- Open questions: whether to implement a small z2d-compatible package-private
+  rasterizer, bind/use a third-party rasterizer, or keep all path/curve/line/
+  triangle sprite code deferred until a renderer/rasterizer adapter is chosen.
+  This remains explicitly unresolved after P17.B.8.
+- Next implementation step: add a P17.B.9 slice for the pure
+  `symbols_for_legacy_computing.zig` ranges listed above, keeping all mixed or
+  rasterizer-dependent arms unsupported through `SpriteFace` fallback.
+- Validation plan: docs-only review against upstream files and plan
+  consistency; no `moon` validation is required because this slice changes no
+  MoonBit source or generated interfaces.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -1021,6 +1100,24 @@ P17.B.7:
   PNG golden diff tests, Wuffs decode, and other rasterizer-dependent legacy
   supplement symbols remain deferred.
 
+P17.B.8:
+
+- Dependency boundary review: no z2d context/path/stroke/fill/arc API, Wuffs
+  PNG decode/export, platform font backend, renderer backend, GPU surface,
+  generator package, or runtime registry abstraction was introduced.
+- Public API visibility review: docs-only change; no public sprite API,
+  `SpriteFace`, rasterizer adapter, registry, or draw helper surface is added.
+- `.mbti` review: no MoonBit source or generated interface files are changed.
+- Coverage findings review: not applicable for this docs-only audit. The
+  latest implementation coverage findings from P17.B.7 remain the current
+  code baseline.
+- Deferred adapter confirmation: rasterizer-dependent `sprite/canvas.zig`
+  primitives, octant embedded data, Wuffs/PNG golden diff, and mixed
+  path/curve/line/triangle sprite ranges remain deferred. The audit also
+  records that `draw/symbols_for_legacy_computing.zig` still contains pure
+  non-rasterizer ranges, so P17.B remains open for at least one more pure
+  translation slice before moving to P17.C.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -1175,6 +1272,15 @@ Implementation reviews must include:
   `font/sprite_face.mbt` reported no uncovered lines;
   `moon fmt`;
   `moon info`.
+- P17.B.8 audited the remaining upstream sprite draw surface and kept P17.B
+  open. The original closeout assumption was revised because
+  `draw/symbols_for_legacy_computing.zig` still has pure fill/block/box helper
+  ranges that can be translated before any z2d-compatible rasterizer decision.
+  Rasterizer-dependent path/curve/line/triangle/arc symbols, octant embedded
+  data, and Wuffs/PNG golden diff infrastructure remain explicitly deferred.
+- P17.B.8 validation passed by docs review against upstream
+  `sprite/canvas.zig` and `sprite/draw/*.zig`; no MoonBit validation was
+  required because no MoonBit source or `.mbti` files changed.
 
 ## Public API visibility findings
 
@@ -1253,6 +1359,13 @@ P17.B.7 does not intentionally extend `font/pkg.generated.mbti`:
 - No public legacy supplement line-composite draw API, registry, generator
   output, rasterizer adapter, or draw helper API is added.
 - No parser/terminal public API churn.
+
+P17.B.8 does not intentionally extend `font/pkg.generated.mbti`:
+
+- Docs-only boundary audit. No MoonBit source or generated interface files are
+  changed.
+- No public sprite rasterizer, path, generator, registry, draw helper, or
+  `SpriteFace` API is added.
 
 For implementation tasks:
 
