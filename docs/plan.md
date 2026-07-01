@@ -770,9 +770,10 @@ dispatch to a package-private `get_draw_fn(cp)` lookup that mirrors upstream
 adapter. P17.B.11 copied upstream
 `octants.txt`, added a MoonBit tools generator using `moonbitlang/async/fs` and
 `moonbitlang/x/path`, generated the octant mask table, and translated
-`draw1CD00_1CDE5`. P17.B remains open only for z2d/Wuffs-dependent rasterizer
-work such as paths, lines, triangles, arcs, circles, curves, and PNG golden
-diffs.
+`draw1CD00_1CDE5`; generator parse failures now use a private typed suberror
+with `raise` instead of `abort`. P17.B remains open only for
+z2d/Wuffs-dependent rasterizer work such as paths, lines, triangles, arcs,
+circles, curves, and PNG golden diffs.
 Move to P17.C only after the user either approves deferring those remaining
 sprite adapters or chooses the next sprite adapter strategy.
 
