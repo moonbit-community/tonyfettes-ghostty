@@ -1,4 +1,44 @@
 ///|
+fn draw1cc1b_1cc1e(
+  cp : UInt,
+  canvas : SpriteCanvas,
+  width : UInt,
+  height : UInt,
+  metrics : Metrics,
+) -> Unit {
+  let w = width.reinterpret_as_int()
+  let h = height.reinterpret_as_int()
+  let t = metrics.box_thickness.reinterpret_as_int()
+  match cp {
+    0x1CC1B => {
+      lines_char(
+        metrics,
+        canvas,
+        sprite_draw_lines(left=LineLight, right=LineLight),
+      )
+      canvas.box(w - t, 0, w, h / 2, SpriteColor::on())
+    }
+    0x1CC1C => {
+      lines_char(
+        metrics,
+        canvas,
+        sprite_draw_lines(left=LineLight, right=LineLight),
+      )
+      canvas.box(w - t, h / 2, w, h, SpriteColor::on())
+    }
+    0x1CC1D => {
+      canvas.box(0, 0, w, t, SpriteColor::on())
+      canvas.box(0, 0, t, h / 2, SpriteColor::on())
+    }
+    0x1CC1E => {
+      canvas.box(0, h - t, w, h, SpriteColor::on())
+      canvas.box(0, h / 2, t, h, SpriteColor::on())
+    }
+    _ => abort("unreachable legacy supplement line composite")
+  }
+}
+
+///|
 fn draw1cc21_1cc2f(
   cp : UInt,
   canvas : SpriteCanvas,
@@ -44,6 +84,54 @@ fn draw1cc21_1cc2f(
       gap + h + mid_gap_y + h,
       SpriteColor::on(),
     )
+  }
+}
+
+///|
+fn draw1ce16_1ce19(
+  cp : UInt,
+  canvas : SpriteCanvas,
+  width : UInt,
+  height : UInt,
+  metrics : Metrics,
+) -> Unit {
+  let w = width.reinterpret_as_int()
+  let h = height.reinterpret_as_int()
+  let t = metrics.box_thickness.reinterpret_as_int()
+  match cp {
+    0x1CE16 => {
+      lines_char(
+        metrics,
+        canvas,
+        sprite_draw_lines(up=LineLight, down=LineLight),
+      )
+      canvas.box(w / 2, 0, w, t, SpriteColor::on())
+    }
+    0x1CE17 => {
+      lines_char(
+        metrics,
+        canvas,
+        sprite_draw_lines(up=LineLight, down=LineLight),
+      )
+      canvas.box(w / 2, h - t, w, h, SpriteColor::on())
+    }
+    0x1CE18 => {
+      lines_char(
+        metrics,
+        canvas,
+        sprite_draw_lines(up=LineLight, down=LineLight),
+      )
+      canvas.box(0, 0, w / 2, t, SpriteColor::on())
+    }
+    0x1CE19 => {
+      lines_char(
+        metrics,
+        canvas,
+        sprite_draw_lines(up=LineLight, down=LineLight),
+      )
+      canvas.box(0, h - t, w / 2, h, SpriteColor::on())
+    }
+    _ => abort("unreachable legacy supplement vertical line composite")
   }
 }
 

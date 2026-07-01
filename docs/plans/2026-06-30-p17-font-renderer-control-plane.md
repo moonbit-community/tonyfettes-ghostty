@@ -533,6 +533,54 @@ P17.B.6 accepted design checkpoint:
   `moon fmt`, `moon info`, and `.mbti` public API review confirming no box draw
   helper leaked publicly.
 
+P17.B.7 accepted design checkpoint:
+
+- Goal: translate the legacy supplement line-composite ranges that were
+  explicitly deferred in P17.B.5 only because `box.linesChar` was not yet
+  translated.
+- Accepted design: add package-private routines for upstream
+  `draw1CC1B_1CC1E` and `draw1CE16_1CE19` in the existing legacy supplement
+  draw file. Keep the P17.B.3 direct `SpriteFace` range dispatch model. Do not
+  add a generator, registry, `DrawFn`, function-pointer table, `draw_sprite ->
+  Bool` helper, or rasterizer adapter.
+- Target files/surfaces:
+  `font/sprite_draw_legacy_computing_supplement.mbt`,
+  `font/sprite_face.mbt`, `font/sprite_face_wbtest.mbt`,
+  `font/pkg.generated.mbti`, and this plan file.
+- API/interface diff: no public API is expected. The added legacy supplement
+  draw routines remain package-private and should not appear in
+  `font/pkg.generated.mbti`.
+- Included upstream symbols:
+  - `draw1CC1B_1CC1E`.
+  - `draw1CE16_1CE19`.
+- Deferred upstream symbols/arms:
+  - `draw1CC1F` and `draw1CC20` are still not part of upstream
+    `draw1CC1B_1CC1E` because upstream records their diagonal alignment as
+    unresolved TODO.
+  - `draw1CC30_1CC3F`, `draw1CD00_1CDE5`, `draw1CE00`, `draw1CE01`,
+    `draw1CE0B`, `draw1CE0C`, circle/path/ellipse pieces, octant embedded
+    data, PNG golden diff tests, Wuffs decode, and other rasterizer-dependent
+    legacy supplement symbols remain deferred.
+- Intentional MoonBit naming/type adapters: Zig `box.linesChar(metrics,
+  canvas, .{ ... })` maps directly to the existing package-private
+  `lines_char(metrics, canvas, sprite_draw_lines(...))` adapter introduced in
+  P17.B.6. Zig `@divFloor(w, 2)`/`@divFloor(h, 2)` use integer division in
+  this slice because width/height are non-negative sprite dimensions.
+- Why existing code cannot be reused as-is: P17.B.5 implemented only
+  separated quadrant/sextant/sixteenth block fills, while P17.B.6 supplied the
+  box-line helper needed by these two upstream line-composite ranges.
+- Open questions: no blocker for these two ranges. The broader path/curve/
+  ellipse/rasterizer and embedded octant data policy remains outside this
+  slice.
+- Next implementation step: add the two package-private draw routines, extend
+  `SpriteFace.has_codepoint` and `SpriteFace.render_glyph` for these ranges,
+  and add focused white-box tests for supported and still-deferred nearby
+  legacy supplement codepoints.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for touched font files,
+  `moon fmt`, `moon info`, and `.mbti` public API review confirming no legacy
+  line-composite draw helper leaked publicly.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -948,6 +996,31 @@ P17.B.6:
   rasterization, PNG golden diff tests, Wuffs decode, and remaining
   rasterizer-dependent `sprite/draw/*.zig` ranges remain deferred.
 
+P17.B.7:
+
+- Dependency boundary review: no z2d context/path/stroke/fill/arc API, Wuffs
+  PNG decode/export, platform font backend, renderer backend, GPU surface,
+  generator package, or runtime registry abstraction was introduced.
+- Public API visibility review: legacy supplement line-composite draw routines
+  remain package-private and are reachable only through `SpriteFace` direct
+  dispatch or white-box tests. No public `DrawFn`, registry table, draw helper,
+  or rasterizer adapter surface exists.
+- `.mbti` review: `font/pkg.generated.mbti` remains unchanged for this slice
+  because the new legacy supplement line-composite code is internal.
+- Coverage findings review:
+  `font/sprite_draw_legacy_computing_supplement.mbt` and
+  `font/sprite_face.mbt` have no uncovered executable lines after targeted
+  caret coverage. `font/sprite_face_wbtest.mbt` has no coverage source data in
+  `moon coverage analyze -- -f caret`, which is the tool's behavior for this
+  white-box test file and not a source coverage residual. The pre-existing
+  `font/sprite_draw_box.mbt` dash invariant residuals and
+  `font/sprite_draw_braille.mbt` invariant residuals remain unchanged.
+- Deferred adapter confirmation: `draw1CC1F`, `draw1CC20`,
+  `draw1CC30_1CC3F`, `draw1CD00_1CDE5`, `draw1CE00`, `draw1CE01`,
+  `draw1CE0B`, `draw1CE0C`, circle/path/ellipse pieces, octant embedded data,
+  PNG golden diff tests, Wuffs decode, and other rasterizer-dependent legacy
+  supplement symbols remain deferred.
+
 Implementation reviews must include:
 
 - dependency boundary review
@@ -1084,6 +1157,24 @@ Implementation reviews must include:
   documented dash invariant residuals;
   `moon fmt`;
   `moon info`.
+- P17.B.7 added package-private legacy supplement line-composite draw routines
+  for `U+1CC1B..U+1CC1E` and `U+1CE16..U+1CE19`, unblocking the two ranges that
+  P17.B.5 had deferred until `box.linesChar` was translated. `SpriteFace`
+  direct dispatch now recognizes only those newly implemented ranges; nearby
+  upstream TODO diagonals, circle pieces, ellipses, and octants remain
+  unsupported and return the upstream blank glyph shape through the fallback
+  branch.
+- P17.B.7 validation passed:
+  `moon check`;
+  `moon test font` with 79 tests passed;
+  `moon test` with 648 tests passed;
+  `moon coverage analyze` reported 292 uncovered lines in 37 files, with no new
+  touched-source residuals;
+  targeted caret coverage for
+  `font/sprite_draw_legacy_computing_supplement.mbt` and
+  `font/sprite_face.mbt` reported no uncovered lines;
+  `moon fmt`;
+  `moon info`.
 
 ## Public API visibility findings
 
@@ -1154,6 +1245,13 @@ P17.B.6 does not intentionally extend `font/pkg.generated.mbti`:
   hline/vline helpers, and dash helpers remain package-private.
 - No public box draw API, registry, generator output, rasterizer adapter, or
   draw helper API is added.
+- No parser/terminal public API churn.
+
+P17.B.7 does not intentionally extend `font/pkg.generated.mbti`:
+
+- `draw1cc1b_1cc1e` and `draw1ce16_1ce19` remain package-private.
+- No public legacy supplement line-composite draw API, registry, generator
+  output, rasterizer adapter, or draw helper API is added.
 - No parser/terminal public API churn.
 
 For implementation tasks:
