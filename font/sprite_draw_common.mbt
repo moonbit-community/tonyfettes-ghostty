@@ -157,10 +157,16 @@ priv struct SpriteDrawQuads {
 ///|
 priv enum SpriteDrawFraction {
   Zero
+  OneEighth
   OneQuarter
+  OneThird
+  ThreeEighths
   Half
   TwoQuarters
+  FiveEighths
+  TwoThirds
   ThreeQuarters
+  SevenEighths
   Full
 }
 
@@ -179,10 +185,16 @@ fn SpriteDrawFraction::max(self : SpriteDrawFraction, size : UInt) -> Int {
 fn SpriteDrawFraction::fraction(self : SpriteDrawFraction) -> Double {
   match self {
     Zero => 0.0
+    OneEighth => 0.125
     OneQuarter => 0.25
+    OneThird => 1.0 / 3.0
+    ThreeEighths => 0.375
     Half => 0.5
     TwoQuarters => 0.5
+    FiveEighths => 0.625
+    TwoThirds => 2.0 / 3.0
     ThreeQuarters => 0.75
+    SevenEighths => 0.875
     Full => 1.0
   }
 }

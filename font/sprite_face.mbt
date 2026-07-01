@@ -33,6 +33,11 @@ fn SpriteFace::has_codepoint(self : SpriteFace, cp : UInt) -> Bool {
     0x1CE16..=0x1CE19 => true
     0x1CE51..=0x1CE8F => true
     0x1CE90..=0x1CEAF => true
+    0x1FB00..=0x1FB3B => true
+    0x1FB70..=0x1FB97 => true
+    0x1FBAF => true
+    0x1FBCE..=0x1FBCF => true
+    0x1FBE4..=0x1FBE7 => true
     _ => false
   }
 }
@@ -74,6 +79,14 @@ fn SpriteFace::render_glyph(
     0x1CE16..=0x1CE19 => draw1ce16_1ce19(cp, canvas, width, height, metrics)
     0x1CE51..=0x1CE8F => draw1ce51_1ce8f(cp, canvas, width, height, metrics)
     0x1CE90..=0x1CEAF => draw1ce90_1ceaf(cp, canvas, width, height, metrics)
+    0x1FB00..=0x1FB3B => draw1fb00_1fb3b(cp, canvas, width, height, metrics)
+    0x1FB70..=0x1FB75 => draw1fb70_1fb75(cp, canvas, width, height, metrics)
+    0x1FB76..=0x1FB7B => draw1fb76_1fb7b(cp, canvas, width, height, metrics)
+    0x1FB7C..=0x1FB97 => draw1fb7c_1fb97(cp, canvas, width, height, metrics)
+    0x1FBAF => draw1fbaf(cp, canvas, width, height, metrics)
+    0x1FBCE => draw1fbce(cp, canvas, width, height, metrics)
+    0x1FBCF => draw1fbcf(cp, canvas, width, height, metrics)
+    0x1FBE4..=0x1FBE7 => draw1fbe0_1fbef(cp, canvas, width, height, metrics)
     _ => return sprite_blank_glyph()
   }
 

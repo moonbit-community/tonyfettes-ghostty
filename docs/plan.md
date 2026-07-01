@@ -763,12 +763,12 @@ Out of scope until explicitly planned as adapters:
 not vendored into this repository. Implementation must first validate the
 workspace-member setup and record the local checkout requirement.
 
-P17.B.8 rasterizer-boundary audit keeps P17.B open: the remaining
-`sprite/draw/*.zig` surface is split between pure `symbols_for_legacy_computing`
-ranges that can still be translated with the current canvas helpers, an
-`octants.txt` embedded-data adapter, and z2d/Wuffs-dependent rasterizer work.
-Do the pure legacy-computing slice before moving P17.C unless the user
-explicitly defers it.
+P17.B.9 completed the remaining pure `symbols_for_legacy_computing.zig` ranges
+that use the current canvas/block/box helpers. P17.B remains open only for
+`octants.txt` embedded-data policy and z2d/Wuffs-dependent rasterizer work
+such as paths, lines, triangles, arcs, circles, curves, and PNG golden diffs.
+Move to P17.C only after the user either approves deferring those remaining
+sprite adapters or chooses the next sprite adapter strategy.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|

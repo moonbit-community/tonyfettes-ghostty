@@ -82,6 +82,15 @@ test "sprite face has codepoint for translated direct ranges" {
   assert_true(face.has_codepoint(0x1CE8FU))
   assert_true(face.has_codepoint(0x1CE90U))
   assert_true(face.has_codepoint(0x1CEAFU))
+  assert_true(face.has_codepoint(0x1FB00U))
+  assert_true(face.has_codepoint(0x1FB3BU))
+  assert_true(face.has_codepoint(0x1FB70U))
+  assert_true(face.has_codepoint(0x1FB97U))
+  assert_true(face.has_codepoint(0x1FBAFU))
+  assert_true(face.has_codepoint(0x1FBCEU))
+  assert_true(face.has_codepoint(0x1FBCFU))
+  assert_true(face.has_codepoint(0x1FBE4U))
+  assert_true(face.has_codepoint(0x1FBE7U))
   assert_false(face.has_codepoint(0x24FFU))
   assert_false(face.has_codepoint(0x2600U))
   assert_false(face.has_codepoint(0x2900U))
@@ -94,6 +103,14 @@ test "sprite face has codepoint for translated direct ranges" {
   assert_false(face.has_codepoint(0x1CE1AU))
   assert_false(face.has_codepoint(0x1CE50U))
   assert_false(face.has_codepoint(0x1CEB0U))
+  assert_false(face.has_codepoint(0x1FB3CU))
+  assert_false(face.has_codepoint(0x1FB68U))
+  assert_false(face.has_codepoint(0x1FB98U))
+  assert_false(face.has_codepoint(0x1FBA0U))
+  assert_false(face.has_codepoint(0x1FBBDU))
+  assert_false(face.has_codepoint(0x1FBD0U))
+  assert_false(face.has_codepoint(0x1FBE0U))
+  assert_false(face.has_codepoint(0x1FBE8U))
 }
 
 ///|
@@ -161,6 +178,25 @@ test "sprite face deferred legacy supplement codepoints return blank glyph" {
     }
     guard glyph == sprite_blank_glyph() else {
       fail("expected deferred legacy supplement sprite to remain blank")
+    }
+  }
+}
+
+///|
+test "sprite face deferred legacy computing codepoints return blank glyph" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(32U, Grayscale)
+  let deferred : ReadOnlyArray[UInt] = [
+    0x1FB3CU, 0x1FB68U, 0x1FB98U, 0x1FB9AU, 0x1FBA0U, 0x1FBBDU, 0x1FBD0U, 0x1FBE0U,
+    0x1FBE8U,
+  ]
+  for cp in deferred {
+    assert_false(face.has_codepoint(cp))
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph == sprite_blank_glyph() else {
+      fail("expected deferred legacy computing sprite to remain blank")
     }
   }
 }
@@ -605,6 +641,215 @@ test "panic block draw rejects codepoint outside block range" {
   )
   draw2580_259f(
     0x257FU,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
+}
+
+///|
+test "sprite face renders legacy computing pure geometry" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(512U, Grayscale)
+
+  let sextant = face.render_glyph(atlas, 0x1FB00U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard sextant.width > 0U && sextant.height > 0U else {
+    fail("expected legacy sextant glyph")
+  }
+  assert_true(sprite_face_glyph_contains(atlas, sextant, 0xFF))
+
+  let vertical_eighth = face.render_glyph(atlas, 0x1FB70U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard vertical_eighth.width > 0U && vertical_eighth.height > 0U else {
+    fail("expected legacy vertical one-eighth glyph")
+  }
+  assert_true(sprite_face_glyph_contains(atlas, vertical_eighth, 0xFF))
+
+  let horizontal_1358 = face.render_glyph(atlas, 0x1FB81U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard horizontal_1358.width > 0U && horizontal_1358.height > 0U else {
+    fail("expected legacy horizontal one-eighth composite glyph")
+  }
+  assert_true(sprite_face_glyph_contains(atlas, horizontal_1358, 0xFF))
+
+  let medium = face.render_glyph(atlas, 0x1FB90U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_true(sprite_face_glyph_contains(atlas, medium, 0x80))
+
+  let empty = face.render_glyph(atlas, 0x1FB93U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  assert_eq(empty.width, 0U)
+  assert_eq(empty.height, 0U)
+
+  let checkerboard = face.render_glyph(atlas, 0x1FB95U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard checkerboard.width > 0U && checkerboard.height > 0U else {
+    fail("expected checkerboard glyph")
+  }
+  assert_true(sprite_face_glyph_contains(atlas, checkerboard, 0xFF))
+
+  let rows = face.render_glyph(atlas, 0x1FB97U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard rows.width > 0U && rows.height > 0U else {
+    fail("expected legacy horizontal rows glyph")
+  }
+
+  let line = face.render_glyph(atlas, 0x1FBAFU, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard line.width > 0U && line.height > 0U else {
+    fail("expected legacy mixed light/heavy line glyph")
+  }
+
+  let two_thirds = face.render_glyph(atlas, 0x1FBCEU, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard two_thirds.width > 0U && two_thirds.height > 0U else {
+    fail("expected legacy two-thirds block glyph")
+  }
+
+  let centered = face.render_glyph(atlas, 0x1FBE4U, None) catch {
+    AtlasFull => fail("unexpected atlas full")
+  }
+  guard centered.width > 0U && centered.height > 0U else {
+    fail("expected legacy centered half block glyph")
+  }
+}
+
+///|
+test "sprite face renders every pure legacy computing arm" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(1024U, Grayscale)
+
+  for cp in 0x1FB00U..<=0x1FB3BU {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected legacy sextant glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+
+  for cp in 0x1FB70U..<=0x1FB97U {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    if cp == 0x1FB93U {
+      guard glyph.width == 0U && glyph.height == 0U else {
+        fail("expected legacy U+1FB93 hole to remain empty")
+      }
+    } else {
+      guard glyph.width > 0U && glyph.height > 0U else {
+        fail("expected legacy block glyph for U+\{cp.to_string(radix=16)}")
+      }
+    }
+  }
+
+  let singletons : ReadOnlyArray[UInt] = [
+    0x1FBAFU, 0x1FBCEU, 0x1FBCFU, 0x1FBE4U, 0x1FBE5U, 0x1FBE6U, 0x1FBE7U,
+  ]
+  for cp in singletons {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    guard glyph.width > 0U && glyph.height > 0U else {
+      fail("expected legacy singleton glyph for U+\{cp.to_string(radix=16)}")
+    }
+  }
+}
+
+///|
+test "panic legacy sextant draw rejects codepoint outside range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw1fb00_1fb3b(
+    0x1FB3CU,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
+}
+
+///|
+test "panic vertical one-eighth draw rejects codepoint outside range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw1fb70_1fb75(
+    0x1FB6FU,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
+}
+
+///|
+test "panic horizontal one-eighth draw rejects codepoint outside range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw1fb76_1fb7b(
+    0x1FB74U,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
+}
+
+///|
+test "panic legacy block draw rejects codepoint outside range" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw1fb7c_1fb97(
+    0x1FB98U,
+    canvas,
+    metrics.cell_width,
+    metrics.cell_height,
+    metrics,
+  )
+}
+
+///|
+test "panic legacy circle block draw rejects deferred arm" {
+  let metrics = sprite_face_test_metrics()
+  let canvas = SpriteCanvas::new(
+    metrics.cell_width,
+    metrics.cell_height,
+    0U,
+    0U,
+  )
+  draw1fbe0_1fbef(
+    0x1FBE0U,
     canvas,
     metrics.cell_width,
     metrics.cell_height,

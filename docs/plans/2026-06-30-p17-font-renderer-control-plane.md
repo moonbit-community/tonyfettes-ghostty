@@ -660,6 +660,90 @@ P17.B.8 accepted design checkpoint:
   consistency; no `moon` validation is required because this slice changes no
   MoonBit source or generated interfaces.
 
+P17.B.9 accepted design checkpoint:
+
+- Goal: translate the remaining pure MoonBit subset of upstream
+  `font/sprite/draw/symbols_for_legacy_computing.zig` before crossing the
+  rasterizer/data-adapter boundary.
+- Accepted design: add a package-private
+  `font/sprite_draw_legacy_computing.mbt` for only the upstream routines and
+  arms that use the already-translated `fill`, `block`, `fullBlockShade`,
+  `blockShade`, `canvas.box`, checkerboard rectangle filling, or
+  `box.linesChar` behavior. Keep the P17.B.3 direct `SpriteFace` range
+  dispatch model. Do not add a generator, registry, `DrawFn`, function-pointer
+  table, `draw_sprite -> Bool` helper, z2d path/rasterizer adapter, Wuffs/PNG
+  golden-diff infrastructure, or embedded-data generator in this slice.
+- Target files/surfaces: new `font/sprite_draw_legacy_computing.mbt`,
+  `font/sprite_draw_common.mbt`, `font/sprite_face.mbt`,
+  `font/sprite_face_wbtest.mbt`, `font/pkg.generated.mbti`, this plan file,
+  and `docs/plan.md` only if the top-level P17.B status/audit needs updating
+  after validation.
+- API/interface diff: no public API is expected. The legacy-computing draw
+  routines, extra fraction variants, and any local checkerboard helper remain
+  package-private. The generated `font/pkg.generated.mbti` should remain
+  unchanged.
+- Included upstream symbols:
+  - `draw1FB00_1FB3B`: sextants.
+  - `draw1FB70_1FB75`: vertical one-eighth blocks.
+  - `draw1FB76_1FB7B`: horizontal one-eighth blocks, including the upstream
+    internal `0x1FB75` and `0x1FB7C` helper calls used by
+    `draw1FB7C_1FB97`.
+  - `draw1FB7C_1FB97`: only the upstream arms in that range, including the
+    intentional empty `U+1FB93` hole.
+  - `draw1FBAF`.
+  - `draw1FBCE` and `draw1FBCF`.
+  - `draw1FBE0_1FBEF`: only pure block arms `U+1FBE4..U+1FBE7`.
+- Deferred upstream symbols/arms:
+  - `draw1FB3C_1FB67`, `draw1FB68_1FB6F`, `draw1FB98`, `draw1FB99`,
+    `draw1FB9A_1FB9F`, `draw1FBA0_1FBAE`, `draw1FBBD`, `draw1FBBE`,
+    `draw1FBBF`, `draw1FBD0_1FBDF`, and the circle arms of
+    `draw1FBE0_1FBEF` remain rasterizer-dependent.
+  - No `symbols_for_legacy_computing_supplement.zig` embedded-data work is
+    added here; `draw1CD00_1CDE5` still waits for an explicit `octants.txt`
+    data policy.
+- Intentional MoonBit naming/type adapters: extend the private
+  `SpriteDrawFraction` enum with thirds and eighths corresponding to upstream
+  `common.Fraction` values, so `fill` calls can stay line-by-line. Zig packed
+  `Sextants` bit casting is represented by explicit bit-mask checks over the
+  upstream `idx + idx / 0x14 + 1` value. Zig `block.block`/`blockShade`/
+  `fullBlockShade` map to the existing package-private `block`,
+  `block_shade`, and `full_block_shade` helpers from P17.B.4/P17.B.5. The
+  four pure `draw1FBE0_1FBEF` arms use the existing alignment helpers
+  (`upper`, `lower`, `left`, `right`) because they are equivalent to upstream
+  `.upper_center`, `.lower_center`, `.middle_left`, and `.middle_right` for a
+  half-width/half-height block.
+- Why existing code cannot be reused as-is: P17.B.5/P17.B.7 cover
+  `symbols_for_legacy_computing_supplement.zig`, not the base
+  `symbols_for_legacy_computing.zig` block. Existing block and box helpers are
+  reused, but there is no package-private file or dispatch arm for this
+  upstream draw file.
+- Open questions: the z2d-compatible path/line/triangle/circle rasterizer,
+  circle/ellipse golden diff strategy, and embedded octant data policy remain
+  outside P17.B.9 and are still unresolved.
+- Next implementation step: add the new draw file, wire only the included
+  ranges and pure singleton arms into `SpriteFace.has_codepoint` and
+  `SpriteFace.render_glyph`, and add white-box tests that distinguish included
+  codepoints from deferred rasterizer-dependent neighbors.
+- Validation plan: `moon check`, targeted `moon test font`, full `moon test`,
+  `moon coverage analyze`, targeted caret coverage for every touched executable
+  font file, `moon fmt`, `moon info`, and `.mbti` public API review confirming
+  no legacy-computing draw helper leaked publicly.
+
+P17.B.9 implementation audit:
+
+- Implemented the included pure legacy-computing sprite routines in
+  `font/sprite_draw_legacy_computing.mbt` and wired them through direct
+  `SpriteFace` range dispatch.
+- Kept `draw1FB3C_1FB67`, `draw1FB68_1FB6F`, `draw1FB98`, `draw1FB99`,
+  `draw1FB9A_1FB9F`, `draw1FBA0_1FBAE`, `draw1FBBD`, `draw1FBBE`,
+  `draw1FBBF`, `draw1FBD0_1FBDF`, and the circle arms of
+  `draw1FBE0_1FBEF` unsupported through `SpriteFace` fallback because they
+  still require the rasterizer boundary.
+- `font/pkg.generated.mbti` did not change; no draw routine or helper was
+  added to the public API.
+- Remaining P17.B work is now limited to the `octants.txt` embedded-data
+  policy and the z2d/Wuffs-dependent rasterizer/golden-diff adapter decision.
+
 ### P17.C face contract without rasterizer FFI
 
 Scope:
@@ -845,6 +929,21 @@ P17.B.6:
 - The remaining global coverage findings are pre-existing bench/example/
   terminal gaps plus the already-documented `font/sprite_draw_braille.mbt`
   invariant residuals, and are outside P17.B.6.
+
+P17.B.9:
+
+- `moon coverage analyze` was run after `moon test`.
+- `moon coverage analyze -- -f caret -F
+  font/sprite_draw_legacy_computing.mbt` reported no uncovered executable
+  lines.
+- `moon coverage analyze -- -f caret -F font/sprite_draw_common.mbt` reported
+  no uncovered executable lines.
+- `moon coverage analyze -- -f caret -F font/sprite_face.mbt` reported no
+  uncovered executable lines.
+- The remaining global coverage findings are pre-existing bench/example/
+  terminal gaps plus the already-documented `font/sprite_draw_box.mbt`
+  assert-style invariant residuals and `font/sprite_draw_braille.mbt`
+  invariant residuals, and are outside P17.B.9.
 
 Each later implementation subplan must record coverage findings for every
 touched MoonBit executable file before review.
