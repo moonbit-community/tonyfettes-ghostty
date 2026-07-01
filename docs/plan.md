@@ -771,17 +771,17 @@ adapter. P17.B.11 copied upstream
 `octants.txt`, added a MoonBit tools generator using `moonbitlang/async/fs` and
 `moonbitlang/x/path`, generated the octant mask table, and translated
 `draw1CD00_1CDE5`; generator parse failures now use a private typed suberror
-with `raise` instead of `abort`. P17.B remains open only for
-z2d/Wuffs-dependent rasterizer work such as paths, lines, triangles, arcs,
-circles, curves, and PNG golden diffs.
-Move to P17.C only after the user either approves deferring those remaining
-sprite adapters or chooses the next sprite adapter strategy.
+with `raise` instead of `abort`. The user approved closing P17.B with the
+remaining z2d/Wuffs-dependent rasterizer work deferred to an explicit adapter
+track: paths, lines, triangles, arcs, circles, curves, and PNG golden diffs are
+not part of the pure sprite substrate completion. P17.C explorer mapping is now
+recorded in the P17 control-plane plan and implementation remains pending.
 
 | ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
 |---|---|---|---|---|---|---|---|---|---|---|
 | P17.0 | done | `src/font/*`, `src/renderer/*` contracts | font/renderer inventory, package map, dependency policy | P14.C | none | main | scope, package boundaries, harfbuzz workspace-member policy, deferred FFI adapters, and phase split are recorded before implementation starts | doc review | `[R]` main | `docs(font-renderer)` |
 | P17.A | done | `font/Glyph.zig`, `font/Metrics.zig`, `font/CodepointMap.zig`, OpenType table users | pure font values, metrics, codepoint map, and table-adapter surface | P17.0 | P17.B | `[W]` | pure data and metrics behavior lands with translated tests; OpenType table access prefers `moonbit-community/harfbuzz/sfnt` instead of duplicate parsers where the API covers the need | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
-| P17.B | todo | `font/Atlas.zig`, `font/sprite.zig`, `font/sprite/*` | atlas and sprite-font pure rendering substrate | P17.0 | P17.A | `[W]` | atlas packing/grow/write behavior, sprite canvas, `get_draw_fn` sprite face lookup dispatch, and pure draw routines land with translated tests and no platform font dependency; rasterizer-dependent path/curve/line/triangle/arc work remains deferred until an adapter is approved | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
+| P17.B | done | `font/Atlas.zig`, `font/sprite.zig`, `font/sprite/*` | atlas and sprite-font pure rendering substrate | P17.0 | P17.A | `[W]` | atlas packing/grow/write behavior, sprite canvas, `get_draw_fn` sprite face lookup dispatch, and pure draw routines landed with translated tests and no platform font dependency; z2d/Wuffs-dependent path/curve/line/triangle/arc/circle and PNG golden-diff work is explicitly deferred to an adapter track | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
 | P17.C | todo | `font/face.zig`, backend-independent face contracts | in-memory/embedded face contract and deferred backend adapter notes | P17.A, P17.B | none | `[E]` then `[W]` | backend-independent face options, glyph sizing constraints, table-copy needs, and rasterization gaps are implemented or explicitly recorded without introducing FreeType/CoreText/WebCanvas FFI | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
 | P17.D | todo | `font/Collection.zig`, `font/CodepointResolver.zig`, `font/DeferredFace.zig`, `font/discovery.zig` | embedded/in-memory collection, resolver, deferred-face policy | P17.C | none | `[W]` | collection priority, style fallback, presentation fallback, codepoint override, and sprite fallback behavior land for non-system-discovery inputs; system discovery remains a deferred adapter | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
 | P17.E | todo | `font/SharedGrid.zig`, `font/SharedGridSet.zig`, `font/shape.zig`, `font/shaper/*` | shared font grid, run segmentation, shaper cache, harfbuzz adapter | P17.D | none | `[W]` | Ghostty run segmentation, cursor/selection boundaries, grapheme font matching, cache keys, and harfbuzz shaping adapter land against the workspace `harfbuzz.mbt` dependency | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font-shaper)` |

@@ -880,23 +880,136 @@ P17.B.11 implementation audit:
   `moon -C tools run gen_octants` and `moon fmt`.
 - `font/pkg.generated.mbti` did not change. `tools/gen_octants/pkg.generated.mbti`
   is an empty generated interface for the tooling main package.
-- Remaining P17.B work is now limited to z2d/Wuffs-dependent rasterizer and
-  PNG-golden-diff adapter decisions for paths, curves, lines, triangles, arcs,
-  circles, and related mixed draw ranges.
+- P17.B closeout: the user approved closing the pure sprite substrate here and
+  deferring the remaining z2d/Wuffs-dependent work to an explicit adapter
+  track. Paths, curves, lines, triangles, arcs, circles, mixed draw ranges, and
+  PNG golden-diff infrastructure are no longer considered blocking P17.B work.
+- No code changed for the closeout itself; it records the already-green P17.B
+  implementation state and unblocks P17.C explorer work.
 
 ### P17.C face contract without rasterizer FFI
 
-Scope:
+Explorer status:
 
-- backend-independent `face.zig` options and constraints
-- in-memory/embedded face contract if feasible through harfbuzz.mbt
-- explicit adapter notes for glyph rasterization gaps
+- P17.C mapping is recorded, but implementation has not started. Any
+  implementation that changes public face APIs, adds the harfbuzz workspace
+  member, or reshapes the existing `FontVariation`/`FontVariationId` surface
+  still needs a design checkpoint and approval before editing code.
 
-Acceptance notes:
+Upstream source map:
 
-- Do not introduce FreeType/CoreText/WebCanvas FFI.
-- If pixel glyph rendering is unavailable, record the exact missing capability
-  and keep downstream tasks limited to paths that do not require it.
+- Primary source: `upstream/ghostty/src/font/face.zig`.
+- Backend files reviewed only to define the deferral boundary:
+  `face/freetype.zig`, `face/coretext.zig`, and `face/web_canvas.zig`.
+- Related generated data: `font/nerd_font_attributes.zig` supplies
+  `RenderOptions.Constraint` fixtures used by the upstream `face.zig`
+  constraint tests; porting that table is separate from the first pure
+  constraint math slice unless explicitly approved.
+
+Pure symbols to translate line-by-line:
+
+- `default_dpi`: upstream is `72` on macOS and `96` elsewhere. MoonBit target
+  support for an equivalent platform conditional must be confirmed before
+  implementation; otherwise this must be recorded as an explicit adapter
+  instead of silently hardcoding one value.
+- `Options`: only `size: DesiredSize` is backend-independent. The
+  `freetype_load_flags` field is tied to the deferred FreeType backend and
+  should not be faked in the pure slice.
+- `DesiredSize`: `points`, `xdpi`, `ydpi`, and `pixels() = points * ydpi / 72`.
+- `Variation` and `Variation.Id`: P17.A already added
+  `FontVariation`/`FontVariationId` with the same `a/b/c/d` and `id/value`
+  storage shape. P17.C must either reuse that surface as an approved naming
+  adapter or introduce upstream-named aliases/structs through an explicit API
+  diff; it must not duplicate two independent variation models.
+- `GlyphSize`: `width`, `height`, `x`, and `y` as `Double` field carriers.
+- `RenderOptions`: `grid_metrics`, `cell_width`, `constraint`,
+  `constraint_width`, `thicken`, and `thicken_strength`. `thicken` and
+  `thicken_strength` can be pure carriers, but their rendering effect is
+  backend-specific and remains inert until a rasterizing backend exists.
+- `RenderOptions.Constraint` and nested `Size`, `Align`, and `Height` enums,
+  including `doesAnything`, `constrain`, `constrainInner`, `scale_factors`,
+  `aligned_y`, and `aligned_x`. These are the main pure P17.C executable
+  surface and should be covered by translated upstream constraint tests.
+
+Harfbuzz.mbt capability map:
+
+- The approved dependency remains the sibling checkout at `../../harfbuzz.mbt`;
+  current `moon.work` does not include it yet. P17.C implementation must first
+  validate and record the workspace-member change rather than vendoring
+  harfbuzz.
+- `moonbit-community/harfbuzz/blob` provides `Blob::from_bytes`,
+  `Blob::from_bytes_copy`, `Blob::as_view`, and `Blob::to_bytes`, which can
+  back in-memory table bytes.
+- `moonbit-community/harfbuzz/face` provides `Face::from_bytes`,
+  `Face::get_upem`, `Face::get_glyph_count`, `Face::reference_table`,
+  `Face::table_tags`, `Face::collect_unicodes`, and
+  `Face::collect_nominal_glyph_mapping`. This can cover embedded/in-memory
+  face table access and codepoint mapping, not platform font loading.
+- `moonbit-community/harfbuzz/font` provides `Font::from_bytes`,
+  `Font::new`, `Font::glyph_for_codepoint`, `Font::glyph_bounds`,
+  `Font::glyph_h_advance`, `Font::set_ppem`, `Font::set_scale`,
+  `Font::set_variations`, and `Font::draw_glyph_or_fail`.
+- `moonbit-community/harfbuzz/ot/var` provides `AxisCoord` and variation table
+  helpers that can bridge Ghostty variation IDs to harfbuzz axis coordinates
+  after the naming decision above.
+- `moonbit-community/harfbuzz/draw` can record glyph outlines, but it does not
+  provide Ghostty's target pixel rasterization, atlas upload, subpixel/color
+  glyph decode, or PNG golden-diff path by itself.
+
+Deferred backend and rasterization boundary:
+
+- Do not introduce FreeType, CoreText, WebCanvas, fontconfig, Windows
+  discovery, Wuffs, z2d, GPU, or browser/native UI FFI in P17.C.
+- The upstream `Face` backend switch cannot be translated as a real concrete
+  face type until at least one font backend exists. A pure in-memory/embedded
+  adapter may expose only the methods proven against harfbuzz.mbt, and the
+  missing backend methods must remain recorded.
+- Deferred backend methods include file/system initialization, native font
+  naming, backend `setSize`, synthetic bold/italic mutation, colored glyph
+  state, presentation filtering, grapheme glyph index behavior, and all pixel
+  `renderGlyph` paths.
+- `copyTable` is feasible for in-memory faces through harfbuzz table blobs, but
+  FreeType/CoreText table access remains backend-specific.
+- `renderGlyph` is not feasible in the pure P17.C slice: harfbuzz can expose
+  glyph indices, metrics, bounds, and outlines, but Ghostty still needs a
+  z2d-style path/line/curve/triangle rasterizer plus image/color glyph decode
+  before it can produce atlas pixels equivalent to upstream.
+
+Proposed MoonBit target files for a future P17.C implementation:
+
+- `font/face.mbt`: upstream-shaped pure face options, glyph sizing, render
+  options, constraint math, and any approved in-memory face adapter.
+- `font/face_test.mbt` and possibly `font/face_wbtest.mbt`: translated
+  `Variation.Id`, `DesiredSize::pixels`, and constraint tests.
+- `font/descriptor.mbt`: touched only if the approved API diff renames or
+  aliases the existing variation types.
+- `font/moon.pkg`, `moon.work`, and `font/pkg.generated.mbti`: touched only if
+  the implementation adds the harfbuzz dependency or public face surface.
+
+Open decisions before implementation:
+
+- Whether to keep `FontVariation`/`FontVariationId` as the approved MoonBit
+  names for upstream `face.Variation`, or add upstream-named aliases/structs
+  and update downstream users.
+- Whether P17.C should include the large generated
+  `nerd_font_attributes.zig` constraint table now, or first port only the
+  pure `Constraint` math with local fixtures copied from `face.zig`.
+- How to represent upstream `default_dpi` if MoonBit cannot express the same
+  target-OS conditional in ordinary package code.
+- Whether a harfbuzz-backed in-memory face adapter belongs in P17.C, or should
+  wait until P17.D collection/resolver code provides the first caller story.
+
+Validation plan for the future implementation:
+
+- If only pure value/constraint code changes: root `moon check`, targeted
+  `moon test font`, full `moon test`, `moon coverage analyze` with touched-file
+  caret review, `moon fmt`, `moon info`, and `.mbti` review.
+- If the harfbuzz workspace member is added: validate `moon.work` membership,
+  `font/moon.pkg` imports, root `moon check`, and any harfbuzz-backed tests
+  against the sibling checkout requirement.
+- P17.C cannot be marked implementation-complete until any touched executable
+  face code has coverage findings reviewed and every missing backend capability
+  is recorded as an adapter instead of hidden behind a fake full `Face`.
 
 ### P17.D collection, resolver, and discovery policy
 
@@ -1590,6 +1703,12 @@ Implementation reviews must include:
   `moon fmt`;
   `moon -C tools info`;
   `moon info`.
+- P17.B closeout and P17.C explorer mapping passed by docs review against
+  upstream `font/face.zig`, `font/face/freetype.zig`,
+  `font/face/coretext.zig`, `font/face/web_canvas.zig`, and the sibling
+  `harfbuzz.mbt` generated interfaces. No MoonBit source or generated
+  interface files changed, so no MoonBit validation commands were required for
+  this docs-only step.
 
 ## Public API visibility findings
 
@@ -1684,6 +1803,15 @@ P17.B.11 does not intentionally extend `font/pkg.generated.mbti`:
   interface; the generator parse suberror remains private. It is not part of
   the public `font` API.
 - No parser/terminal public API churn.
+
+P17.B closeout and P17.C explorer mapping do not intentionally extend any
+generated interface:
+
+- Docs-only state and mapping update. No MoonBit source, `moon.work`,
+  `font/moon.pkg`, or `.mbti` files are changed.
+- Public face APIs, harfbuzz workspace membership, and variation naming remain
+  future implementation decisions that need an explicit design checkpoint
+  before code changes.
 
 For implementation tasks:
 
