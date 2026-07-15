@@ -1182,3 +1182,51 @@ test "sprite face renders rect only special sprites" {
     0xFF,
   )
 }
+
+///|
+test "full height cursor sprites respect cursor height metric" {
+  let face = SpriteFace::new(sprite_face_test_metrics())
+  let atlas = Atlas::new(128U, Grayscale)
+
+  face.metrics.cursor_height = 12U
+  for
+    cp in [
+      Sprite::cursor_bar().codepoint(),
+      Sprite::cursor_rect().codepoint(),
+      Sprite::cursor_hollow_rect().codepoint(),
+    ] {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    assert_eq(glyph.height, 12U)
+    assert_eq(glyph.offset_y, 14)
+  }
+
+  face.metrics.cursor_height = 16U
+  for
+    cp in [
+      Sprite::cursor_bar().codepoint(),
+      Sprite::cursor_rect().codepoint(),
+      Sprite::cursor_hollow_rect().codepoint(),
+    ] {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    assert_eq(glyph.height, 16U)
+    assert_eq(glyph.offset_y, 16)
+  }
+
+  face.metrics.cursor_height = 20U
+  for
+    cp in [
+      Sprite::cursor_bar().codepoint(),
+      Sprite::cursor_rect().codepoint(),
+      Sprite::cursor_hollow_rect().codepoint(),
+    ] {
+    let glyph = face.render_glyph(atlas, cp, None) catch {
+      AtlasFull => fail("unexpected atlas full")
+    }
+    assert_eq(glyph.height, 20U)
+    assert_eq(glyph.offset_y, 18)
+  }
+}

@@ -70,7 +70,10 @@ fn SpriteFace::render_glyph(
     0U | 1U => metrics.cell_width
     width => metrics.cell_width * width
   }
-  let height = metrics.cell_height
+  let height = match cp {
+    0x110007 | 0x110008 | 0x110009 => metrics.cursor_height
+    _ => metrics.cell_height
+  }
   let padding_x = width / 4U
   let padding_y = height / 4U
   let canvas = SpriteCanvas::new(width, height, padding_x, padding_y)
@@ -88,7 +91,8 @@ fn SpriteFace::render_glyph(
     offset_x: canvas.clip_left.reinterpret_as_int() -
     padding_x.reinterpret_as_int(),
     offset_y: (region.height + canvas.clip_bottom).reinterpret_as_int() -
-    padding_y.reinterpret_as_int(),
+    padding_y.reinterpret_as_int() +
+    (metrics.cell_height.reinterpret_as_int() - height.reinterpret_as_int()) / 2,
     atlas_x: region.x,
     atlas_y: region.y,
   }

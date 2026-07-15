@@ -1370,6 +1370,50 @@ P17.A PR #55 review and CI follow-up checkpoint:
   `examples/tmux/main.mbt`; they do not fail the CI gate and remain outside this
   checkpoint.
 
+P17.B PR #55 cursor-height review follow-up checkpoint:
+
+- Status: Validated on 2026-07-15.
+- Outcome: address the current Codex review by making the full-height cursor
+  sprites honor `Metrics.cursor_height` and remain vertically centered within
+  the cell.
+- Upstream mapping: backport the later Ghostty fixes from
+  `src/font/sprite/Face.zig::renderGlyph`: implementation commit
+  `dac341cad56f` and regression-test commit `e8f3f6c438ac`. The repository's
+  pinned upstream commit `6246c288` predates these fixes, so this approved
+  follow-up intentionally tracks those named newer upstream commits without
+  moving the submodule pointer.
+- Allowed surfaces: `font/sprite_face.mbt`,
+  `font/sprite_face_wbtest.mbt`, and this plan. Generated interfaces may be
+  regenerated and audited but must not change.
+- Accepted behavior: use `metrics.cursor_height` as the render/canvas height
+  for `cursor_rect`, `cursor_hollow_rect`, and `cursor_bar`; keep
+  `metrics.cell_height` for every other sprite; and add half the signed
+  cell-height difference to `Glyph.offset_y` using truncation toward zero so
+  shorter and taller cursors remain centered.
+- API/interface diff: none. `SpriteFace` and all affected draw routines remain
+  package-private. No wire contract, persistence format, security policy,
+  third-party dependency, or submodule-pointer change is allowed.
+- Test contract: for an 8x16 cell, assert that all three full-height cursor
+  sprites produce `(height, offset_y)` values `(12, 14)`, `(16, 16)`, and
+  `(20, 18)` when `cursor_height` is respectively 12, 16, and 20.
+- Rollback: revert the single follow-up implementation commit; no data or
+  external-state migration is required.
+- Next implementation step: no source work remains in this follow-up; commit
+  and push the validated slice to PR #55, then collect remote CI/review
+  evidence without replying to or resolving the review thread.
+- Validation plan: `moon check --target all`, `moon test font`,
+  `moon test --target all`, `moon coverage analyze` plus targeted caret review
+  for `font/sprite_face.mbt`, `moon fmt`, `moon info`, and final confirmation
+  that `font/pkg.generated.mbti` is unchanged.
+- Validation result: `moon check --target all` passed with only the two
+  pre-existing `ambiguous_braces` warnings; `moon test font` passed 91 tests;
+  `moon test --target all` passed 660 wasm, 660 wasm-gc, 682 JS, and 660 native
+  tests; font coverage reported 1594/1600 points and targeted caret review found
+  no uncovered point in `font/sprite_face.mbt`; `moon fmt` and
+  `moon fmt --check` passed; `moon info` left
+  `font/pkg.generated.mbti` unchanged. Independent review reported no
+  findings.
+
 P17.B.1:
 
 - Dependency boundary review: no sprite canvas, rasterizer, Wuffs, GPU, or
