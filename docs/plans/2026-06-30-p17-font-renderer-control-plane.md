@@ -1325,6 +1325,41 @@ P17.A faithful repair checkpoint:
   caret coverage for touched `font/*.mbt` files, `moon fmt`, `moon info`, and
   `.mbti` review for intentionally public mutable field surface.
 
+P17.A PR #55 review and CI follow-up checkpoint:
+
+- Status: Approved on 2026-07-15; implementation and validation pending.
+- Outcome: close the unresolved Codex review by making
+  `Descriptor.variations` immutable after construction, and restore the PR CI
+  format gate under MoonBit `0.1.20260713` without changing runtime behavior.
+- Upstream mapping: `font/discovery.zig` defines
+  `Descriptor.variations: []const Variation` and deep-copies that slice in
+  `Descriptor.clone`; `font/face.zig` defines the immutable `Variation`
+  `id/value` carrier.
+- Allowed surfaces: `font/descriptor.mbt`, `font/font_test.mbt`,
+  `font/pkg.generated.mbti`, this plan, the executable-package `moon.pkg`
+  files under `bench/*`, `examples/rabbita_asciinema/main`, `examples/tmux`,
+  and `tools/gen_octants`.
+- Public API diff: change `Descriptor.variations` from
+  `Array[FontVariation]` to `ReadOnlyArray[FontVariation]`; change the
+  `Descriptor::new` optional variations input from `Array[FontVariation]` to
+  `ArrayView[FontVariation]`; copy that input into an owning read-only array.
+  No other public symbol changes.
+- Generated-interface diff: `font/pkg.generated.mbti` should contain only the
+  two corresponding type substitutions. No wire contract, persistence format,
+  security policy, or third-party dependency changes are allowed.
+- CI compatibility slice: accept the current formatter's mechanical
+  `options("is-main": true)` to `pkgtype(kind: "executable")` migration in the
+  15 approved `moon.pkg` files. Preserve `examples/tmux` native-stub options.
+- Rollback: revert the checkpoint, package-config migration, and descriptor
+  fix commits independently; no data or external state migration is required.
+- Next implementation step: commit this checkpoint, migrate executable package
+  declarations, then implement the descriptor copy/read-only boundary and its
+  source-array/`CodepointMap` regression coverage.
+- Validation plan: `moon check --target all`, `moon test font`,
+  `moon test --target all`, `moon coverage analyze` with targeted
+  `font/descriptor.mbt` review, `moon fmt`, `moon info`, clean-tree verification,
+  and review of the final public interface diff.
+
 P17.B.1:
 
 - Dependency boundary review: no sprite canvas, rasterizer, Wuffs, GPU, or
