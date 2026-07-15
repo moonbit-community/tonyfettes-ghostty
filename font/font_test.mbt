@@ -257,3 +257,23 @@ test "codepoint map lookup priority and hash" {
     fail("codepoint map hash should include all entries")
   }
 }
+
+///|
+test "codepoint map owns immutable descriptor variations" {
+  let variation = FontVariation::{
+    id: { a: b'w', b: b'g', c: b'h', d: b't' },
+    value: 700.5,
+  }
+  let variations = [variation]
+  let map = CodepointMap::new()
+  map.add({ range: (1U, 1U), descriptor: Descriptor::new(variations~) })
+  let original_hash = map.hashcode()
+
+  variations[0] = { id: { a: b's', b: b'l', c: b'n', d: b't' }, value: -5.0 }
+  variations.push(variation)
+
+  guard map.get(1U) is Some(stored) else { fail("expected stored descriptor") }
+  assert_eq(stored.variations.length(), 1)
+  assert_eq(stored.variations[0], variation)
+  assert_eq(map.hashcode(), original_hash)
+}

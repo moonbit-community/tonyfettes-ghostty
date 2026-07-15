@@ -73,10 +73,10 @@ pub(all) struct Descriptor {
   bold : Bool
   italic : Bool
   monospace : Bool
-  variations : Array[FontVariation]
+  variations : ReadOnlyArray[FontVariation]
 } derive(Eq, @debug.Debug)
 pub fn Descriptor::hashcode(Self) -> UInt
-pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Float, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : Array[FontVariation]) -> Self
+pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Float, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : ArrayView[FontVariation]) -> Self
 
 pub(all) struct FaceMetrics {
   px_per_em : Double

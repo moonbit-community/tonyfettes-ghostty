@@ -1327,7 +1327,7 @@ P17.A faithful repair checkpoint:
 
 P17.A PR #55 review and CI follow-up checkpoint:
 
-- Status: Approved on 2026-07-15; implementation and validation pending.
+- Status: Validated on 2026-07-15.
 - Outcome: close the unresolved Codex review by making
   `Descriptor.variations` immutable after construction, and restore the PR CI
   format gate under MoonBit `0.1.20260713` without changing runtime behavior.
@@ -1359,6 +1359,16 @@ P17.A PR #55 review and CI follow-up checkpoint:
   `moon test --target all`, `moon coverage analyze` with targeted
   `font/descriptor.mbt` review, `moon fmt`, `moon info`, clean-tree verification,
   and review of the final public interface diff.
+- Validation result: `moon check --target all` passed; `moon test font` passed
+  90 tests; `moon test --target all` passed 659 wasm, 659 wasm-gc, 681 js,
+  and 659 native tests; font coverage reported 1589/1595 points and targeted
+  caret review found no uncovered points in `font/descriptor.mbt`; root and
+  `tools/gen_octants` formatting/info checks passed. The generated interface
+  contains only the approved `ReadOnlyArray` field and `ArrayView` constructor
+  substitutions. The current toolchain still reports pre-existing
+  `ambiguous_braces` warnings in `terminal/cimap/cimap_bench_test.mbt` and
+  `examples/tmux/main.mbt`; they do not fail the CI gate and remain outside this
+  checkpoint.
 
 P17.B.1:
 

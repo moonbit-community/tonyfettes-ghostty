@@ -36,7 +36,7 @@ pub(all) struct Descriptor {
   bold : Bool
   italic : Bool
   monospace : Bool
-  variations : Array[FontVariation]
+  variations : ReadOnlyArray[FontVariation]
 } derive(Eq, Debug)
 
 ///|
@@ -48,7 +48,7 @@ pub fn Descriptor::new(
   bold? : Bool = false,
   italic? : Bool = false,
   monospace? : Bool = false,
-  variations? : Array[FontVariation] = [],
+  variations? : ArrayView[FontVariation] = [],
 ) -> Descriptor {
   {
     family,
@@ -58,7 +58,7 @@ pub fn Descriptor::new(
     bold,
     italic,
     monospace,
-    variations: clone_variations(variations),
+    variations: ReadOnlyArray::from_array(variations),
   }
 }
 
@@ -102,13 +102,4 @@ fn hash_optional_string(hasher : Hasher, value : String?) -> Unit {
     }
     None => hasher.combine_bool(false)
   }
-}
-
-///|
-fn clone_variations(source : Array[FontVariation]) -> Array[FontVariation] {
-  let result : Array[FontVariation] = []
-  for variation in source {
-    result.push(variation)
-  }
-  result
 }
