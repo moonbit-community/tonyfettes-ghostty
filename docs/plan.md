@@ -740,6 +740,59 @@ xterm.js.
 - Completed P16 plan and audit lives in:
   [2026-05-03-p16-rabbita-asciinema-player.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-05-03-p16-rabbita-asciinema-player.md)
 
+### Phase 17: Font and Headless Renderer Control Plane
+
+Gate: `[S/P]` after Phase 14
+Status: `todo`
+
+This phase extends the translation scope beyond the parser and
+`src/terminal/c` semantic surface into upstream `src/font/*` and
+`src/renderer/*`, but only for the pure-MoonBit and headless slices that can
+land green without C FFI, platform UI, or GPU bindings.
+
+Out of scope until explicitly planned as adapters:
+
+- FreeType, CoreText, and WebCanvas font face/rasterization backends
+- fontconfig, CoreText, and Windows system font discovery
+- WebGL, OpenGL, and Metal renderer backends
+- Wuffs PNG/JPEG decode and pixel swizzling
+- oniguruma-backed renderer link regex matching
+
+`moonbit-community/harfbuzz` should be consumed from the sibling checkout at
+`../../harfbuzz.mbt` relative to this repository root as a workspace member,
+not vendored into this repository. Implementation must first validate the
+workspace-member setup and record the local checkout requirement.
+
+P17.B.9 completed the remaining pure `symbols_for_legacy_computing.zig` ranges
+that use the current canvas/block/box helpers. P17.B.10 realigned sprite face
+dispatch to a package-private `get_draw_fn(cp)` lookup that mirrors upstream
+`getDrawFn(cp) orelse return glyph`, superseding the earlier direct-dispatch
+adapter. P17.B.11 copied upstream
+`octants.txt`, added a MoonBit tools generator using `moonbitlang/async/fs` and
+`moonbitlang/x/path`, generated the octant mask table, and translated
+`draw1CD00_1CDE5`; generator parse failures now use a private typed suberror
+with `raise` instead of `abort`. The user approved closing P17.B with the
+remaining z2d/Wuffs-dependent rasterizer work deferred to an explicit adapter
+track: paths, lines, triangles, arcs, circles, curves, and PNG golden diffs are
+not part of the pure sprite substrate completion. P17.C explorer mapping is now
+recorded in the P17 control-plane plan and implementation remains pending.
+
+| ID | status | upstream | moonbit target | depends on | parallel with | subagent | acceptance | validation | audit | commit scope |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P17.0 | done | `src/font/*`, `src/renderer/*` contracts | font/renderer inventory, package map, dependency policy | P14.C | none | main | scope, package boundaries, harfbuzz workspace-member policy, deferred FFI adapters, and phase split are recorded before implementation starts | doc review | `[R]` main | `docs(font-renderer)` |
+| P17.A | done | `font/Glyph.zig`, `font/Metrics.zig`, `font/CodepointMap.zig`, OpenType table users | pure font values, metrics, codepoint map, and table-adapter surface | P17.0 | P17.B | `[W]` | pure data and metrics behavior lands with translated tests; OpenType table access prefers `moonbit-community/harfbuzz/sfnt` instead of duplicate parsers where the API covers the need | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
+| P17.B | done | `font/Atlas.zig`, `font/sprite.zig`, `font/sprite/*` | atlas and sprite-font pure rendering substrate | P17.0 | P17.A | `[W]` | atlas packing/grow/write behavior, sprite canvas, `get_draw_fn` sprite face lookup dispatch, and pure draw routines landed with translated tests and no platform font dependency; z2d/Wuffs-dependent path/curve/line/triangle/arc/circle and PNG golden-diff work is explicitly deferred to an adapter track | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
+| P17.C | todo | `font/face.zig`, backend-independent face contracts | in-memory/embedded face contract and deferred backend adapter notes | P17.A, P17.B | none | `[E]` then `[W]` | backend-independent face options, glyph sizing constraints, table-copy needs, and rasterization gaps are implemented or explicitly recorded without introducing FreeType/CoreText/WebCanvas FFI | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
+| P17.D | todo | `font/Collection.zig`, `font/CodepointResolver.zig`, `font/DeferredFace.zig`, `font/discovery.zig` | embedded/in-memory collection, resolver, deferred-face policy | P17.C | none | `[W]` | collection priority, style fallback, presentation fallback, codepoint override, and sprite fallback behavior land for non-system-discovery inputs; system discovery remains a deferred adapter | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font)` |
+| P17.E | todo | `font/SharedGrid.zig`, `font/SharedGridSet.zig`, `font/shape.zig`, `font/shaper/*` | shared font grid, run segmentation, shaper cache, harfbuzz adapter | P17.D | none | `[W]` | Ghostty run segmentation, cursor/selection boundaries, grapheme font matching, cache keys, and harfbuzz shaping adapter land against the workspace `harfbuzz.mbt` dependency | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(font-shaper)` |
+| P17.F | todo | `renderer/size.zig`, `renderer/cursor.zig`, `renderer/State.zig`, `renderer/row.zig`, `renderer/cell.zig`, `renderer/message.zig` | headless renderer value/state helpers | P17.0, P17.A | P17.E | `[W]` | renderer size math, cursor style selection, preedit range, row background-extension heuristics, cell content classification, and message/value contracts land without GPU or event-loop dependencies | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(renderer)` |
+| P17.G | todo | `renderer/image.zig`, renderer side of kitty image placement | headless image and placement command snapshots | P17.F, P13.C2 | none | `[W]` | terminal kitty graphics storage can be projected into renderer image/placement snapshots without Wuffs decode or GPU upload; decode/upload remain deferred adapters | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(renderer)` |
+
+#### Phase 17 outputs
+
+- P17.0 control-plane plan lives in:
+  [2026-06-30-p17-font-renderer-control-plane.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-06-30-p17-font-renderer-control-plane.md)
+
 ## Definition of done
 
 The translated terminal surface is ready for review when:
