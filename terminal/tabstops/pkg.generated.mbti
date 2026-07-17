@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/tabstops"
+package "tonyfettes/ghostty-terminal/tabstops"
 
 import {
   "moonbitlang/core/debug",

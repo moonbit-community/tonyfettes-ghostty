@@ -8,12 +8,12 @@ import {
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
-  "tonyfettes/ghostty/terminal",
-  "tonyfettes/ghostty/terminal/size_report",
-  "tonyfettes/ghostty/terminal/color",
-  "tonyfettes/ghostty/terminal/page",
-  "tonyfettes/ghostty/terminal/sgr",
-  "tonyfettes/ghostty/terminal/style",
+  "tonyfettes/ghostty-terminal" @terminal,
+  "tonyfettes/ghostty-terminal/size_report",
+  "tonyfettes/ghostty-terminal/color",
+  "tonyfettes/ghostty-terminal/page",
+  "tonyfettes/ghostty-terminal/sgr",
+  "tonyfettes/ghostty-terminal/style",
 }
 
 supported_targets = "js"

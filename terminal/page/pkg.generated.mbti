@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/page"
+package "tonyfettes/ghostty-terminal/page"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/terminal/style",
+  "tonyfettes/ghostty-terminal/style",
 }
 
 // Values

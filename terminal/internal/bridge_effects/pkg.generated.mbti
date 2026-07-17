@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/internal/bridge_effects"
+package "tonyfettes/ghostty-terminal/internal/bridge_effects"
 
 import {
-  "tonyfettes/ghostty/terminal/device",
-  "tonyfettes/ghostty/terminal/size_report",
+  "tonyfettes/ghostty-terminal/device",
+  "tonyfettes/ghostty-terminal/size_report",
 }
 
 // Values

@@ -1,10 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/key_encoder"
+package "tonyfettes/ghostty-terminal/key_encoder"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/terminal/input",
-  "tonyfettes/ghostty/terminal/stream",
+  "tonyfettes/ghostty-terminal/input",
+  "tonyfettes/ghostty-terminal/stream",
 }
 
 // Values

@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/parser"
+package "tonyfettes/ghostty-terminal/parser"
 
 import {
-  "tonyfettes/ghostty/terminal/osc",
-  "tonyfettes/ghostty/terminal/seplist",
+  "tonyfettes/ghostty-terminal/osc",
+  "tonyfettes/ghostty-terminal/seplist",
 }
 
 // Values

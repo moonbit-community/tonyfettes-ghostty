@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/size_report"
+package "tonyfettes/ghostty-terminal/size_report"
 
 import {
   "moonbitlang/core/debug",

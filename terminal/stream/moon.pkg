@@ -1,19 +1,19 @@
 import {
-  "tonyfettes/ghostty/terminal/ansi",
-  "tonyfettes/ghostty/terminal/charsets",
-  "tonyfettes/ghostty/terminal/csi",
-  "tonyfettes/ghostty/terminal/device",
-  "tonyfettes/ghostty/terminal/input",
-  "tonyfettes/ghostty/terminal/mode",
-  "tonyfettes/ghostty/terminal/osc",
-  "tonyfettes/ghostty/terminal/parser",
-  "tonyfettes/ghostty/terminal/seplist",
-  "tonyfettes/ghostty/terminal/sgr",
-  "tonyfettes/ghostty/terminal/utf8_decoder",
+  "tonyfettes/ghostty-terminal/ansi",
+  "tonyfettes/ghostty-terminal/charsets",
+  "tonyfettes/ghostty-terminal/csi",
+  "tonyfettes/ghostty-terminal/device",
+  "tonyfettes/ghostty-terminal/input",
+  "tonyfettes/ghostty-terminal/mode",
+  "tonyfettes/ghostty-terminal/osc",
+  "tonyfettes/ghostty-terminal/parser",
+  "tonyfettes/ghostty-terminal/seplist",
+  "tonyfettes/ghostty-terminal/sgr",
+  "tonyfettes/ghostty-terminal/utf8_decoder",
 }
 
 import {
-  "tonyfettes/ghostty/terminal/color",
-  "tonyfettes/ghostty/terminal/mode",
-  "tonyfettes/ghostty/terminal/osc",
+  "tonyfettes/ghostty-terminal/color",
+  "tonyfettes/ghostty-terminal/mode",
+  "tonyfettes/ghostty-terminal/osc",
 } for "test"

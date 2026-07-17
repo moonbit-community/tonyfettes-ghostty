@@ -1,5 +1,7 @@
 members = [
-  ".",
+  "./terminal",
+  "./font",
+  "./renderer",
   "./examples",
   "./bench",
 ]

@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/cursor"
+package "tonyfettes/ghostty-terminal/cursor"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/terminal/ansi",
+  "tonyfettes/ghostty-terminal/ansi",
 }
 
 // Values

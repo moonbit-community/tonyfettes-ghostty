@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/osc"
+package "tonyfettes/ghostty-terminal/osc"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/terminal/color",
+  "tonyfettes/ghostty-terminal/color",
 }
 
 // Values

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/hyperlink"
+package "tonyfettes/ghostty-terminal/hyperlink"
 
 import {
   "moonbitlang/core/debug",

@@ -1,12 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/grid"
+package "tonyfettes/ghostty-terminal/grid"
 
 import {
-  "tonyfettes/ghostty/terminal/ansi",
-  "tonyfettes/ghostty/terminal/cursor",
-  "tonyfettes/ghostty/terminal/hyperlink",
-  "tonyfettes/ghostty/terminal/page",
-  "tonyfettes/ghostty/terminal/style",
+  "tonyfettes/ghostty-terminal/ansi",
+  "tonyfettes/ghostty-terminal/cursor",
+  "tonyfettes/ghostty-terminal/hyperlink",
+  "tonyfettes/ghostty-terminal/page",
+  "tonyfettes/ghostty-terminal/style",
 }
 
 // Values

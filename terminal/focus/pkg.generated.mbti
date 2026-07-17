@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/focus"
+package "tonyfettes/ghostty-terminal/focus"
 
 import {
   "moonbitlang/core/debug",

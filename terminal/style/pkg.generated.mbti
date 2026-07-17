@@ -1,10 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/ghostty/terminal/style"
+package "tonyfettes/ghostty-terminal/style"
 
 import {
   "moonbitlang/core/debug",
-  "tonyfettes/ghostty/terminal/color",
-  "tonyfettes/ghostty/terminal/sgr",
+  "tonyfettes/ghostty-terminal/color",
+  "tonyfettes/ghostty-terminal/sgr",
 }
 
 // Values
