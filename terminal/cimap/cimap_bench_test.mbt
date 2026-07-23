@@ -82,7 +82,7 @@ fn linear_scan_lookup(entries : Array[(String, Int)], view : BytesView) -> Int? 
 test (b : @bench.T) {
   let entries = bench_dataset()
   let cimap = CiStrMap::from_entries(ReadOnlyArray::from_iter(entries.iter()))
-  let std_map : Map[Bytes, Int] = {}
+  let std_map : Map[Bytes, Int] = Map([])
   for entry in entries {
     std_map[lower_bytes_string(entry.0)] = entry.1
   }
