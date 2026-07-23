@@ -455,7 +455,7 @@ async fn spawn_server(paths : DiscoveryPaths) -> Int {
     create_mode=OpenOrCreate,
     permission=0o600,
   )
-  let extra_env : Map[String, String] = {}
+  let extra_env : Map[String, String] = Map([])
   extra_env[server_mode_env] = paths.dir
   @process.spawn_orphan(
     current_executable(),
