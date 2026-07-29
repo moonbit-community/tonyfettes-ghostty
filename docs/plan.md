@@ -322,6 +322,7 @@ Status: `done`
 | P4.C | done | `osc.zig` core + high-frequency subparsers | bounded OSC high-frequency parser sub-slices + tests | P4.0 | P4.A, P4.B, P4.D, P4.E | `[W]` | each `P4.C*` sub-slice lands green, and the lane closes only after the translated high-frequency OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.D | done | remaining OSC subparsers | bounded long-tail OSC parser sub-slices + tests | P4.0, P4.C | P4.A, P4.B, P4.E | `[W]` | each `P4.D*` sub-slice lands green, and the lane closes only after the translated long-tail OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.E | done | APC-facing helpers | APC support modules + tests | P4.0 | P4.A, P4.B, P4.C, P4.D | `[W]` | helpers compile and match parser-facing expectations with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.E.1 | done | `apc.zig` `Handler.state`, `State`, `feed` | private `ApcState` value enum + long public-boundary APC benchmark | P4.E, P13.C1 | none | `[W]` | lifecycle stays identical, generated native layout is inline, and three-run baseline/variant results are audited | `moon check --target all && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `perf(apc)` |
 
 Phase 4 gate:
 
@@ -334,6 +335,8 @@ Phase 4 gate:
 
 - Phase 4 decoder boundary notes and worker write sets live in:
   [2026-04-19-p4-semantic-decoder-contracts.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-semantic-decoder-contracts.md)
+- APC state value-enum follow-up plan and measurement audit live in:
+  [2026-07-29-apc-state-valtype.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-29-apc-state-valtype.md)
 - Completed Phase 4 task audits live in:
   [2026-04-19-p4-a-sgr.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-a-sgr.md),
   [2026-04-19-p4-b-dcs.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-b-dcs.md),

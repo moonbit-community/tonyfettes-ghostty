@@ -72,6 +72,12 @@ test "bench query_storm" (it : @bench.T) {
 }
 
 ///|
+test "bench kitty_apc_long" (it : @bench.T) {
+  let w = kitty_apc_long()
+  it.bench(fn() { it.keep(w.process()) })
+}
+
+///|
 test "bench mixed_realistic" (it : @bench.T) {
   let w = mixed_realistic()
   it.bench(fn() { it.keep(w.process()) })
