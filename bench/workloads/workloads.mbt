@@ -211,6 +211,20 @@ pub fn query_storm() -> Workload {
 }
 
 ///|
+/// One complete long Kitty graphics APC query. The 65,536-byte base64 body
+/// decodes to exactly one 128x128 RGB image, so every body byte passes through
+/// the public StreamTerminal APC lifecycle before the command is completed.
+pub fn kitty_apc_long() -> Workload {
+  let buf = Buffer(size_hint=65536)
+  buf.write_bytes(b"\x1b_Ga=q,t=d,f=24,q=2,i=7,s=128,v=128;")
+  for _ in 0..<16384 {
+    buf.write_bytes(b"AAAA")
+  }
+  buf.write_bytes(b"\x1b\\")
+  { name: "kitty_apc_long", payload: buf.contents(), default_iters: 500 }
+}
+
+///|
 /// A realistic blend of the above.
 pub fn mixed_realistic() -> Workload {
   let buf = Buffer(size_hint=256)

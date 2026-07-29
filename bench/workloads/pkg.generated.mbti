@@ -12,6 +12,8 @@ pub fn color_storm() -> Workload
 
 pub fn colored_log() -> Workload
 
+pub fn kitty_apc_long() -> Workload
+
 pub fn mixed_realistic() -> Workload
 
 pub fn osc_titles() -> Workload
