@@ -482,11 +482,13 @@ Status: `done`
 | P7.3 | done | hot path behavior | perf notes and focused checks | P7.2 | none | `[W]` | parser hot paths are measured and deviations documented without breaking green status | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `docs/perf` |
 | P7.3.1 | done | `Page.rows`, `Screen.cursorScrollAboveRotate` | pooled-row refill ARC cleanup + benchmark audit | P7.3 | none | main | pooled rows reuse one immutable packed blank cell without changing erase behavior, storage, or public APIs; paired scroll benchmarks and generated native C verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `perf(grid)` |
 | P7.3.2 | done | `Page.rows`, `Screen.cursorScrollAbove`, `Screen.cursorScrollAboveRotate` | persistent active-grid ownership + private circular row origin | P7.3.1 | none | main | full-screen row relocation changes the private origin instead of blitting reference arrays; logical row order survives wrap, grid reacquisition, resize/reflow, reset, scrollback, pins, and primary/alternate switching; paired benchmarks and generated native C verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(grid)` |
+| P7.3.3 | done | `Terminal.index`, `Screen.cursorScrollAbove` | bridge index temporaries + full-screen logical-row access ARC cleanup | P7.3.2 | none | main | generated native C removes avoidable bridge receiver retains, polymorphic enum equality, and repeated logical-row accessor calls without changing storage, behavior, or public APIs; paired benchmarks and a fresh profile verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(terminal)` |
 
 Phase 7 gate:
 
 - P7.0, P7.1, P7.2, P7.3, and P7.3.1 are `done`
 - P7.3.2 is `done`
+- P7.3.3 is `done`
 
 #### Phase 7 outputs
 
@@ -498,6 +500,7 @@ Phase 7 gate:
   [2026-04-21-p7-3-hot-path-perf-notes.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-3-hot-path-perf-notes.md)
   [2026-07-30-grid-local-arc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-30-grid-local-arc.md)
   [2026-07-30-grid-row-ring.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-30-grid-row-ring.md)
+  [2026-07-30-bridge-index-row-arc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-30-bridge-index-row-arc.md)
 - Phase 7 completed the parser-stack foundation; `P8.0` is the next planned
   task.
 

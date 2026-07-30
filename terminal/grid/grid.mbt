@@ -312,28 +312,34 @@ fn ScreenGridState::set_blank_row(
   row_idx : Int,
   style : @style.CellStyle,
 ) -> Unit {
-  let cells = match self.cell_pool.pop() {
-    Some(cells) => {
-      // A blank cell is an immutable packed value, so compute it once before
-      // refilling the pooled buffer. Colored erase still interns the same
-      // background-only style, but now does so once per row rather than once
-      // per cell.
-      let cell = blank_cell(style, self.style_table)
-      for index in 0..<cells.length() {
-        cells[index] = cell
-      }
-      cells
+  let cells = if self.cell_pool.length() > 0 {
+    // The length check proves the unchecked pop is valid and avoids allocating
+    // and dropping an `Option[FixedArray[PageCellState]]` for every pooled
+    // blank row on the native backend.
+    let cells = self.cell_pool.unsafe_pop()
+    // A blank cell is an immutable packed value, so compute it once before
+    // refilling the pooled buffer. Colored erase still interns the same
+    // background-only style, but now does so once per row rather than once
+    // per cell.
+    let cell = blank_cell(style, self.style_table)
+    for index in 0..<cells.length() {
+      cells[index] = cell
     }
-    None => make_blank_row_cells(self.cols.to_int(), style, self.style_table)
+    cells
+  } else {
+    make_blank_row_cells(self.cols.to_int(), style, self.style_table)
   }
   // A blank row carries no hyperlinks; replacing the three logical components
-  // together keeps their physical slot paired across origin wrap.
-  self.replace_row(
-    row_idx,
-    @page.PageRowState::new().with_styled(blank_row_is_styled(style)),
-    cells,
-    None,
-  )
+  // together keeps their physical slot paired across origin wrap. Map once and
+  // store directly: `replace_row` remains public for PageList rebuilds, but an
+  // extra call here showed up on every full-screen linefeed.
+  let physical = self.physical_row(row_idx)
+  let desc = @page.PageRowState::new().with_styled(blank_row_is_styled(style))
+  // Compute the packed value before the indexed write so the descriptor array
+  // is not retained across the cross-package `with_styled` call.
+  self.descs[physical] = desc
+  self.cells[physical] = cells
+  self.link_ids[physical] = None
 }
 
 ///|
@@ -1145,13 +1151,21 @@ fn ScreenGridState::shift_full_width_down(
     // Survivors are the rows above the scrolled-off block: `[start_y, bottom -
     // count]`. Detaching each from the row that used to precede it breaks any
     // wrap link and orphans a trailing SpacerHead, so clean both before moving.
+    let last = self.cols.to_int() - 1
     let mut src = bottom - count
     while src >= start_y {
-      self.clean_trailing_spacer_head(src, style)
-      self.set_row_state(
-        src,
-        self.row_state(src).with_wrap(false).with_wrap_continuation(false),
-      )
+      // Map once for the trailing-cell check and descriptor update. Load the
+      // packed cell value before `wide()` so no row-buffer reference is live
+      // across that cross-package call.
+      let physical = self.physical_row(src)
+      let trailing = self.cells[physical][last]
+      if trailing.wide() is SpacerHead {
+        self.clear_row_range(src, last, last + 1, style, false)
+      }
+      let desc = self.descs[physical]
+        .with_wrap(false)
+        .with_wrap_continuation(false)
+      self.descs[physical] = desc
       src -= 1
     }
   }
@@ -1182,7 +1196,9 @@ fn ScreenGridState::shift_full_width_down(
   // Every row's contents moved, so the whole region is dirty.
   let mut dirty_idx = start_y
   while dirty_idx <= bottom {
-    self.set_row_state(dirty_idx, self.row_state(dirty_idx).with_dirty(true))
+    let physical = self.physical_row(dirty_idx)
+    let desc = self.descs[physical].with_dirty(true)
+    self.descs[physical] = desc
     dirty_idx += 1
   }
 }
@@ -1246,13 +1262,21 @@ fn ScreenGridState::shift_full_width_up(
     // bottom]`. Clean each before the move — the move detaches it from the row
     // that used to follow it, so any wrap relationship is gone and a trailing
     // SpacerHead (a wide char deferred across the old wrap boundary) is orphaned.
+    let last = self.cols.to_int() - 1
     let mut src = start_y + count
     while src <= bottom {
-      self.clean_trailing_spacer_head(src, style)
-      self.set_row_state(
-        src,
-        self.row_state(src).with_wrap(false).with_wrap_continuation(false),
-      )
+      // Map once for the trailing-cell check and descriptor update. Loading the
+      // packed cell first keeps the row-buffer reference out of the call
+      // liveness window.
+      let physical = self.physical_row(src)
+      let trailing = self.cells[physical][last]
+      if trailing.wide() is SpacerHead {
+        self.clear_row_range(src, last, last + 1, style, false)
+      }
+      let desc = self.descs[physical]
+        .with_wrap(false)
+        .with_wrap_continuation(false)
+      self.descs[physical] = desc
       src += 1
     }
   }
@@ -1283,24 +1307,10 @@ fn ScreenGridState::shift_full_width_up(
   // Every row's contents moved, so the whole region is dirty.
   let mut dirty_idx = start_y
   while dirty_idx <= bottom {
-    self.set_row_state(dirty_idx, self.row_state(dirty_idx).with_dirty(true))
+    let physical = self.physical_row(dirty_idx)
+    let desc = self.descs[physical].with_dirty(true)
+    self.descs[physical] = desc
     dirty_idx += 1
-  }
-}
-
-///|
-/// Clear a lone trailing SpacerHead at the last column. A SpacerHead there marks
-/// a wide char that did not fit and was deferred to the next (wrapped) row; once
-/// this row's wrap link is broken the fragment is meaningless, so blank it.
-fn ScreenGridState::clean_trailing_spacer_head(
-  self : ScreenGridState,
-  row_idx : Int,
-  style : @style.CellStyle,
-) -> Unit {
-  let last = self.cols.to_int() - 1
-  if self.row_cells(row_idx)[last].wide() == SpacerHead {
-    // clear_row_range recomputes the row flags, so no separate rescan is needed.
-    self.clear_row_range(row_idx, last, last + 1, style, false)
   }
 }
 
