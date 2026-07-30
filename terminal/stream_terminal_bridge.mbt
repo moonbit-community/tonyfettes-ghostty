@@ -1378,20 +1378,30 @@ fn StreamTerminalBridgeState::linefeed(
 
 ///|
 fn StreamTerminalBridgeState::index(self : StreamTerminalBridgeState) -> Unit {
-  self.cursor.set_pending_wrap(false)
-  if self.cursor_outside_scroll_region() {
-    if self.cursor.y().to_int() < self.grid.rows.to_int() - 1 {
-      self.cursor.y = self.cursor.y() + 1
+  // `TerminalCursorState` is already shared mutable state, so write the field
+  // directly. Calling the one-store setter here retains and releases the cursor
+  // receiver once for every linefeed on the native backend.
+  self.cursor.pending_wrap = false
+  // Keep the region coordinates as scalars across the decision tree. Besides
+  // matching upstream `Terminal.index`, this avoids reloading them through two
+  // index-only predicate methods before the scroll call.
+  let y = self.cursor.y.to_int()
+  let x = self.cursor.x.to_int()
+  let top = self.cursor.top_margin.to_int()
+  let bottom = self.cursor.bottom_margin.to_int()
+  let left = self.cursor.left_margin.to_int()
+  let right = self.cursor.right_margin.to_int()
+  if y < top || y > bottom || x < left || x > right {
+    if y < self.grid.rows.to_int() - 1 {
+      self.cursor.y = (y + 1).to_uint16()
     }
   } else {
-    if self.active_screen == Primary &&
-      self.cursor.y() == self.cursor.bottom_margin() &&
-      self.primary_top_scroll_region_captures_scrollback() {
-      self.scrollback.capture_top_scroll_region_up(
-        self.grid,
-        self.cursor.bottom_margin().to_int(),
-        1,
-      )
+    if self.active_screen is Primary &&
+      y == bottom &&
+      top == 0 &&
+      left == 0 &&
+      right == self.grid.cols.to_int() - 1 {
+      self.scrollback.capture_top_scroll_region_up(self.grid, bottom, 1)
     }
     self.grid.index(self.cursor, self.current_style)
   }
@@ -1399,10 +1409,13 @@ fn StreamTerminalBridgeState::index(self : StreamTerminalBridgeState) -> Unit {
 }
 
 ///|
+/// Whether an explicit scroll-up operation can transfer its top rows into the
+/// primary screen's scrollback. `index` keeps the same conditions in its scalar
+/// decision tree; CSI scroll-up also uses this domain predicate.
 fn StreamTerminalBridgeState::primary_top_scroll_region_captures_scrollback(
   self : StreamTerminalBridgeState,
 ) -> Bool {
-  self.active_screen == Primary &&
+  self.active_screen is Primary &&
   self.cursor.top_margin() == 0 &&
   self.cursor.left_margin() == 0 &&
   self.cursor.right_margin() == self.grid.cols - 1
@@ -1543,7 +1556,9 @@ fn StreamTerminalBridgeState::sync_current_row_prompt(
 fn StreamTerminalBridgeState::apply_semantic_after_newline(
   self : StreamTerminalBridgeState,
 ) -> Unit {
-  if self.semantic.cursor_content() == Output {
+  // A tag pattern lowers to a scalar test; derived enum equality is an
+  // out-of-line polymorphic call on this per-linefeed path.
+  if self.semantic.cursor_content() is Output {
     return
   }
 
@@ -1554,16 +1569,6 @@ fn StreamTerminalBridgeState::apply_semantic_after_newline(
 
   self.semantic.set_row_prompt(PromptContinuation)
   self.grid.set_row_semantic_prompt(self.cursor.y(), PromptContinuation)
-}
-
-///|
-fn StreamTerminalBridgeState::cursor_outside_scroll_region(
-  self : StreamTerminalBridgeState,
-) -> Bool {
-  self.cursor.y().to_int() < self.cursor.top_margin().to_int() ||
-  self.cursor.y().to_int() > self.cursor.bottom_margin().to_int() ||
-  self.cursor.x().to_int() < self.cursor.left_margin().to_int() ||
-  self.cursor.x().to_int() > self.cursor.right_margin().to_int()
 }
 
 ///|

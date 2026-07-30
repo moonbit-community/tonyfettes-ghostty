@@ -1025,6 +1025,30 @@ test "screen grid/full-width scroll down moves survivors and blanks the top" {
 }
 
 ///|
+test "screen grid/full-width scrolls clear orphaned trailing spacer heads" {
+  let style = @style.CellStyle::new()
+  let down = ScreenGridState::new(3, 4)
+  fill_ascii(down, 0, [b'A', b'B', b'C', b'D'])
+  fill_ascii(down, 1, [b'E', b'F', b'G', b'H'])
+  down.write_cell(1, 3, 0U, SpacerHead, style, false, Output, None)
+  down.shift_region_down(0, 2, 0, 3, 1, style)
+  guard expect_cell(down, 2, 0).codepoint() == b'E'.to_uint() &&
+    expect_cell(down, 2, 3).is_empty() else {
+    fail("expected scroll down to clear a detached trailing spacer head")
+  }
+
+  let up = ScreenGridState::new(3, 4)
+  fill_ascii(up, 1, [b'E', b'F', b'G', b'H'])
+  fill_ascii(up, 2, [b'I', b'J', b'K', b'L'])
+  up.write_cell(1, 3, 0U, SpacerHead, style, false, Output, None)
+  up.shift_region_up(0, 2, 0, 3, 1, style)
+  guard expect_cell(up, 0, 0).codepoint() == b'E'.to_uint() &&
+    expect_cell(up, 0, 3).is_empty() else {
+    fail("expected scroll up to clear a detached trailing spacer head")
+  }
+}
+
+///|
 test "screen grid/circular origin wraps and partial-height moves stay logical" {
   let grid = ScreenGridState::new(3, 2)
   fill_ascii(grid, 0, [b'A', b'a'])
