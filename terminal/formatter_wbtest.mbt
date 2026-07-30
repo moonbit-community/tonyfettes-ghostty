@@ -50,6 +50,7 @@ test "formatter helpers/cover guard branches and ordering helpers" {
   state.grid = {
     rows: 24,
     cols: 0,
+    base: 0,
     descs: [],
     cells: [],
     link_ids: [],
@@ -382,6 +383,7 @@ test "formatter helpers/cover explicit empty format guard" {
   state.grid = {
     rows: 0,
     cols: 0,
+    base: 0,
     descs: [],
     cells: [],
     link_ids: [],
