@@ -69,6 +69,11 @@ struct PageList {
   mut rows : @size.CellCountInt
   mut cols : @size.CellCountInt
   mut active_node : PageListNode
+  // The active page's persistent logical view. It shares `active_node`'s
+  // parallel arrays and owns the private circular row origin; returning this
+  // same object from `active_grid` preserves that origin and the recycled-cell
+  // pool across callers.
+  mut grid : @grid.ScreenGridState
   mut history : @deque.Deque[PageListRow]
   mut viewport : PageListViewport
   mut tracked_pins : Array[PageListPin]
@@ -150,19 +155,33 @@ pub fn PageList::new(
   max_rows : Int,
 ) -> PageList {
   let active_node = PageListNode::new(PageListPage::new(rows, cols))
+  let style_table = @style.StyleTable::new()
+  let hyperlink_table = @hyperlink.HyperlinkTable::new()
+  let grapheme_table = @page.GraphemeTable::new()
+  let grid = @grid.ScreenGridState::from_shared_storage(
+    active_node.page.rows,
+    active_node.page.cols,
+    active_node.page.descs,
+    active_node.page.cells,
+    active_node.page.link_ids,
+    style_table,
+    hyperlink_table,
+    grapheme_table,
+  )
   let state = {
     max_rows,
     rows: active_node.page.rows,
     cols: active_node.page.cols,
     active_node,
+    grid,
     history: @deque.Deque::from_array(([] : Array[PageListRow])),
     viewport: Active,
     tracked_pins: [],
     viewport_pin: None,
     viewport_pin_row_offset: None,
-    style_table: @style.StyleTable::new(),
-    hyperlink_table: @hyperlink.HyperlinkTable::new(),
-    grapheme_table: @page.GraphemeTable::new(),
+    style_table,
+    hyperlink_table,
+    grapheme_table,
   }
   state.viewport_pin = Some(state.track_pin(active_node, 0, 0))
   state
@@ -170,19 +189,10 @@ pub fn PageList::new(
 
 ///|
 pub fn PageList::active_grid(self : PageList) -> @grid.ScreenGridState {
-  // Shares the active page's `descs`/`cells` arrays by reference, so grid
-  // mutations (writes, scroll moves) are seen by the page and vice versa.
-  {
-    rows: self.active_node.page.rows,
-    cols: self.cols,
-    descs: self.active_node.page.descs,
-    cells: self.active_node.page.cells,
-    link_ids: self.active_node.page.link_ids,
-    cell_pool: [],
-    style_table: self.style_table,
-    hyperlink_table: self.hyperlink_table,
-    grapheme_table: self.grapheme_table,
-  }
+  // Return the same object, not a fresh base-zero view over the physical
+  // arrays. Its private origin and recycled-cell pool are part of active-page
+  // ownership and must survive reacquisition.
+  self.grid
 }
 
 ///|
@@ -223,7 +233,7 @@ pub fn PageList::row(
 ) -> @page.PageRowState? {
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(History(index)) => Some(self.history[index].row)
-    Some(Screen(index)) => Some(grid.descs[index])
+    Some(Screen(index)) => Some(grid.row_state(index))
     None => None
   }
 }
@@ -242,7 +252,7 @@ pub fn PageList::cell(
 
   match self.visible_row_source(grid.rows.to_int(), row.to_int()) {
     Some(History(index)) => Some(self.history[index].cells[col_idx])
-    Some(Screen(index)) => Some(grid.cells[index][col_idx])
+    Some(Screen(index)) => Some(grid.row_cells(index)[col_idx])
     None => None
   }
 }
@@ -255,7 +265,7 @@ pub fn PageList::screen_row(
 ) -> @page.PageRowState? {
   match self.screen_row_source(grid, row.to_int()) {
     Some(History(index)) => Some(self.history[index].row)
-    Some(Screen(index)) => Some(grid.descs[index])
+    Some(Screen(index)) => Some(grid.row_state(index))
     None => None
   }
 }
@@ -274,7 +284,7 @@ pub fn PageList::screen_cell(
 
   match self.screen_row_source(grid, row.to_int()) {
     Some(History(index)) => Some(self.history[index].cells[col_idx])
-    Some(Screen(index)) => Some(grid.cells[index][col_idx])
+    Some(Screen(index)) => Some(grid.row_cells(index)[col_idx])
     None => None
   }
 }
@@ -307,7 +317,7 @@ fn PageList::link_id_at_source(
       }
     }
     Screen(index) =>
-      if grid.cells[index][col_idx].has_hyperlink() {
+      if grid.row_cells(index)[col_idx].has_hyperlink() {
         grid.link_id_at(index, col_idx)
       } else {
         @hyperlink.no_hyperlink_id
@@ -476,12 +486,23 @@ pub fn PageList::full_reset(
   // We mint *new* tables rather than clearing in place on purpose: the swap flips
   // their identity, which `RenderState` keys on (`physical_equal`) to force a
   // repaint after the reset — an in-place clear that reused the same low ids for
-  // new content would otherwise read as unchanged. The grid still holds the old
-  // table refs it copied at construction, so `clear_active_screen` rebuilds it
-  // from the page to pick these up.
+  // new content would otherwise read as unchanged.
   self.style_table = @style.StyleTable::new()
   self.hyperlink_table = @hyperlink.HyperlinkTable::new()
   self.grapheme_table = @page.GraphemeTable::new()
+  // The caller blanked and normalized the old grid before entering this method.
+  // Install one persistent replacement over those same active-page arrays so
+  // future `active_grid()` calls observe the fresh table identities.
+  self.grid = @grid.ScreenGridState::from_shared_storage(
+    self.active_node.page.rows,
+    self.cols,
+    self.active_node.page.descs,
+    self.active_node.page.cells,
+    self.active_node.page.link_ids,
+    self.style_table,
+    self.hyperlink_table,
+    self.grapheme_table,
+  )
 }
 
 ///|
@@ -755,8 +776,8 @@ fn PageList::count_wrap_continuations_left_up(
     Some(Screen(index)) => {
       let mut wrapped = 0
       for row_idx in 0..<=index {
-        if row_idx < grid.descs.length() &&
-          grid.descs[row_idx].wrap_continuation() {
+        if row_idx < grid.rows.to_int() &&
+          grid.row_state(row_idx).wrap_continuation() {
           wrapped += 1
         }
       }
@@ -1197,6 +1218,7 @@ fn PageList::resize_without_reflow(
     link_ids: resized_grid.link_ids,
   })
   self.active_node = active_node
+  self.grid = resized_grid
   self.rows = resized_grid.rows
   self.cols = resized_grid.cols
   for row_idx in 0..<grid_rows.length() {
@@ -1348,6 +1370,7 @@ fn PageList::resize_cols(
     link_ids: resized_grid.link_ids,
   })
   self.active_node = active_node
+  self.grid = resized_grid
   self.rows = resized_grid.rows
   self.cols = resized_grid.cols
   for row_idx in 0..<grid_rows.length() {
@@ -1715,7 +1738,7 @@ pub fn PageList::cell_at_point(
 
   match self.row_source_for_point(grid, point) {
     Some(History(index)) => Some(self.history[index].cells[col_idx])
-    Some(Screen(index)) => Some(grid.cells[index][col_idx])
+    Some(Screen(index)) => Some(grid.row_cells(index)[col_idx])
     None => None
   }
 }
@@ -1931,16 +1954,18 @@ fn snapshot_scrollback_row(
     width,
     @page.PageCellState::new(),
   )
+  let source_cells = grid.row_cells(row_idx)
   for col_idx in 0..<width {
-    cells[col_idx] = grid.cells[row_idx][col_idx]
+    cells[col_idx] = source_cells[col_idx]
   }
+  let desc = grid.row_state(row_idx)
   make_pinned_row(
-    grid.descs[row_idx],
+    desc,
     cells,
-    grid.link_ids[row_idx],
+    grid.row_link_ids(row_idx),
     grid.cols,
-    grid.descs[row_idx].wrap(),
-    grid.descs[row_idx].wrap_continuation(),
+    desc.wrap(),
+    desc.wrap_continuation(),
     false,
   )
 }
@@ -1950,20 +1975,21 @@ fn snapshot_scrollback_row(
 /// by reference instead of deep-copying them (unlike `snapshot_scrollback_row`).
 ///
 /// Safe only because every caller (`capture_top_scroll_region_up`) is
-/// immediately followed by the grid shift that overwrites `grid` row `row_idx`
-/// with the row below — capture is guarded to top_margin==0 full-width and
-/// harvests exactly the `count` top rows that the shift then vacates, so once
-/// this returns nothing in the active grid aliases these cells. Render snapshots
-/// deep-copy and pins track by node identity, so neither aliases them either.
+/// immediately followed by the grid shift that rotates the harvested physical
+/// slots to the logical bottom and replaces them with blank row buffers. Capture
+/// is guarded to top_margin==0 full-width and harvests exactly the `count` top
+/// rows that the shift then vacates, so once that shift completes nothing in the
+/// active grid aliases these cells. Render snapshots deep-copy and pins track by
+/// node identity, so neither aliases them either.
 fn harvest_scrollback_row(
   grid : @grid.ScreenGridState,
   row_idx : Int,
 ) -> PageListRow {
-  let desc = grid.descs[row_idx]
+  let desc = grid.row_state(row_idx)
   make_pinned_row_owned(
     desc,
-    grid.cells[row_idx],
-    grid.link_ids[row_idx],
+    grid.row_cells(row_idx),
+    grid.row_link_ids(row_idx),
     grid.cols,
     desc.wrap(),
     desc.wrap_continuation(),
@@ -2233,13 +2259,18 @@ fn screen_grid_from_rows(
   )
   let row_count = min_int(rows.to_int(), pinned_rows.length())
   for row_idx in 0..<row_count {
-    grid.descs[row_idx] = pinned_rows[row_idx].row
+    let cells = grid.row_cells(row_idx)
     for col_idx in 0..<cols.to_int() {
-      grid.cells[row_idx][col_idx] = pinned_rows[row_idx].cells[col_idx]
+      cells[col_idx] = pinned_rows[row_idx].cells[col_idx]
     }
     // Carry the row's hyperlink ids by reference; the pinned row owns a fresh
     // width-matched array (or `None`), so the grid can take it directly.
-    grid.link_ids[row_idx] = pinned_rows[row_idx].link_ids
+    grid.replace_row(
+      row_idx,
+      pinned_rows[row_idx].row,
+      cells,
+      pinned_rows[row_idx].link_ids,
+    )
   }
   grid
 }

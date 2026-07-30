@@ -30,7 +30,7 @@ pub(all) enum ScreenEraseLineMode {
   Complete
 }
 
-pub(all) struct ScreenGridState {
+pub struct ScreenGridState {
   rows : UInt16
   cols : UInt16
   descs : FixedArray[@page.PageRowState]
@@ -40,6 +40,7 @@ pub(all) struct ScreenGridState {
   style_table : @style.StyleTable
   hyperlink_table : @hyperlink.HyperlinkTable
   grapheme_table : @page.GraphemeTable
+  // private fields
 }
 pub fn ScreenGridState::append_grapheme(Self, @cursor.TerminalCursorState, UInt) -> Unit
 pub fn ScreenGridState::decaln(Self, @style.CellStyle) -> Unit
@@ -48,6 +49,7 @@ pub fn ScreenGridState::delete_lines(Self, @cursor.TerminalCursorState, @style.C
 pub fn ScreenGridState::erase_chars(Self, @cursor.TerminalCursorState, @style.CellStyle, @ansi.ProtectedMode, UInt16) -> Unit
 pub fn ScreenGridState::erase_display(Self, @cursor.TerminalCursorState, @style.CellStyle, ScreenEraseDisplayMode, @ansi.ProtectedMode, Bool) -> Unit
 pub fn ScreenGridState::erase_line(Self, @cursor.TerminalCursorState, @style.CellStyle, ScreenEraseLineMode, @ansi.ProtectedMode, Bool) -> Unit
+pub fn ScreenGridState::from_shared_storage(UInt16, UInt16, FixedArray[@page.PageRowState], FixedArray[FixedArray[@page.PageCellState]], FixedArray[FixedArray[@hyperlink.HyperlinkId]?], @style.StyleTable, @hyperlink.HyperlinkTable, @page.GraphemeTable) -> Self
 pub fn ScreenGridState::full_reset(Self) -> Unit
 pub fn ScreenGridState::index(Self, @cursor.TerminalCursorState, @style.CellStyle) -> Unit
 pub fn ScreenGridState::insert_blanks(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
@@ -59,7 +61,11 @@ pub fn ScreenGridState::print(Self, @cursor.TerminalCursorState, UInt, Int, @sty
 pub fn ScreenGridState::print_repeat(Self, @cursor.TerminalCursorState, UInt, Int, @style.CellStyle, Bool, @page.SemanticContent, @page.RowSemanticPrompt, @hyperlink.CellHyperlink?, Bool, Bool, UInt16) -> Unit
 pub fn ScreenGridState::recompute_row_flags(Self, Int) -> Unit
 pub fn ScreenGridState::recycle_row_cells(Self, FixedArray[@page.PageCellState]) -> Unit
+pub fn ScreenGridState::replace_row(Self, Int, @page.PageRowState, FixedArray[@page.PageCellState], FixedArray[@hyperlink.HyperlinkId]?) -> Unit
 pub fn ScreenGridState::row(Self, UInt16) -> @page.PageRowState?
+pub fn ScreenGridState::row_cells(Self, Int) -> FixedArray[@page.PageCellState]
+pub fn ScreenGridState::row_link_ids(Self, Int) -> FixedArray[@hyperlink.HyperlinkId]?
+pub fn ScreenGridState::row_state(Self, Int) -> @page.PageRowState
 pub fn ScreenGridState::scroll_down(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
 pub fn ScreenGridState::scroll_up(Self, @cursor.TerminalCursorState, @style.CellStyle, UInt16) -> Unit
 pub fn ScreenGridState::set_row_semantic_prompt(Self, UInt16, @page.RowSemanticPrompt) -> Unit

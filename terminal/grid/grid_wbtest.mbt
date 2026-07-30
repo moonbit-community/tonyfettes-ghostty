@@ -15,7 +15,7 @@ fn ScreenGridState::cell_style(
   row : Int,
   col : Int,
 ) -> @style.CellStyle {
-  self.style_table.get(self.cells[row][col].style_id())
+  self.style_table.get(self.row_cells(row)[col].style_id())
 }
 
 ///|
@@ -28,7 +28,7 @@ fn ScreenGridState::cell_hyperlink(
   row : Int,
   col : Int,
 ) -> @hyperlink.CellHyperlink? {
-  if self.cells[row][col].has_hyperlink() {
+  if self.row_cells(row)[col].has_hyperlink() {
     self.hyperlink_table.get(self.link_id_at(row, col))
   } else {
     None
@@ -49,7 +49,7 @@ fn ScreenGridState::cell(
     col_idx >= self.cols.to_int() {
     None
   } else {
-    Some(self.cells[row_idx][col_idx])
+    Some(self.row_cells(row_idx)[col_idx])
   }
 }
 
@@ -71,7 +71,7 @@ fn set_test_cell(
   col : Int,
   cell : @page.PageCellState,
 ) -> Unit {
-  grid.cells[row][col] = cell
+  grid.row_cells(row)[col] = cell
 }
 
 ///|
@@ -393,8 +393,8 @@ test "screen grid/insert delete and erase chars preserve backgrounds and protect
   }
 
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D', b'E'])
-  grid.descs[0] = grid.descs[0].with_wrap(true)
-  grid.descs[1] = grid.descs[1].with_wrap_continuation(true)
+  grid.set_row_state(0, grid.row_state(0).with_wrap(true))
+  grid.set_row_state(1, grid.row_state(1).with_wrap_continuation(true))
   cursor.x = 1
   grid.delete_chars(cursor, @style.CellStyle::new(), 2)
   guard expect_cell(grid, 0, 0).codepoint() == b'A'.to_uint() &&
@@ -553,7 +553,7 @@ test "screen grid/char editing edge branches and helper math" {
 
   let wrap_grid = ScreenGridState::new(1, 4)
   let wrap_cursor = @cursor.TerminalCursorState::new(1, 4)
-  wrap_grid.descs[0] = wrap_grid.descs[0].with_wrap(true)
+  wrap_grid.set_row_state(0, wrap_grid.row_state(0).with_wrap(true))
   wrap_grid.write_cell(
     0,
     3,
@@ -668,7 +668,10 @@ test "screen grid/erase line and display modes" {
   let complete_cursor = @cursor.TerminalCursorState::new(2, 3)
   fill_ascii(complete_grid, 0, [b'A', b'B', b'C'])
   fill_ascii(complete_grid, 1, [b'D', b'E', b'F'])
-  complete_grid.descs[1] = complete_grid.descs[1].with_semantic_prompt(Prompt)
+  complete_grid.set_row_state(
+    1,
+    complete_grid.row_state(1).with_semantic_prompt(Prompt),
+  )
   complete_grid.erase_display(
     complete_cursor,
     @style.CellStyle::new(),
@@ -818,7 +821,7 @@ test "screen grid/line shifts scroll and helper boundaries" {
     Output,
     None,
   )
-  boundary_grid.descs[0] = boundary_grid.descs[0].with_wrap(true)
+  boundary_grid.set_row_state(0, boundary_grid.row_state(0).with_wrap(true))
   boundary_grid.split_cell_boundary(0, 4, style)
   guard boundary_grid.cell_style(0, 3).bg_color().palette_index() == Some(6) else {
     fail("expected split boundary at row end to clear spacer head")
@@ -844,7 +847,10 @@ test "screen grid/line shifts scroll and helper boundaries" {
     Output,
     None,
   )
-  boundary_grid.descs[1] = boundary_grid.descs[1].with_wrap_continuation(true)
+  boundary_grid.set_row_state(
+    1,
+    boundary_grid.row_state(1).with_wrap_continuation(true),
+  )
   boundary_grid.split_cell_boundary(1, 0, style)
   guard boundary_grid.cell_style(0, 3).bg_color().palette_index() == Some(6) else {
     fail("expected split boundary at row start to clear previous spacer head")
@@ -981,7 +987,7 @@ test "screen grid/shift helpers partial regions and split early return" {
     fail("expected index at bottom margin to scroll up")
   }
 
-  bottom_grid.descs[1] = bottom_grid.descs[1].with_wrap(false)
+  bottom_grid.set_row_state(1, bottom_grid.row_state(1).with_wrap(false))
   bottom_grid.split_cell_boundary(1, 3, @style.CellStyle::new())
   guard expect_cell(bottom_grid, 1, 0).is_empty() else {
     fail(
@@ -992,9 +998,9 @@ test "screen grid/shift helpers partial regions and split early return" {
 
 ///|
 test "screen grid/full-width scroll down moves survivors and blanks the top" {
-  // Exercises the full-width fast path of shift_region_down: a single line-array
-  // blit, top `count` rows blanked, survivors slid down by `count`. Distinct
-  // from the partial-width region-copy path tested above.
+  // Exercises the full-screen circular-origin path: top `count` rows are
+  // blanked and survivors move down without blitting the parallel row arrays.
+  // Distinct from the partial-width region-copy path tested above.
   let grid = ScreenGridState::new(3, 4)
   fill_ascii(grid, 0, [b'A', b'B', b'C', b'D'])
   fill_ascii(grid, 1, [b'E', b'F', b'G', b'H'])
@@ -1015,6 +1021,50 @@ test "screen grid/full-width scroll down moves survivors and blanks the top" {
     expect_cell(grid, 1, 0).is_empty() &&
     expect_cell(grid, 2, 0).is_empty() else {
     fail("expected a full-height scroll down to blank every row")
+  }
+}
+
+///|
+test "screen grid/circular origin wraps and partial-height moves stay logical" {
+  let grid = ScreenGridState::new(3, 2)
+  fill_ascii(grid, 0, [b'A', b'a'])
+  fill_ascii(grid, 1, [b'B', b'b'])
+  fill_ascii(grid, 2, [b'C', b'c'])
+
+  // Three full-screen moves wrap the physical origin back to zero while the
+  // logical contents continue to move in screen order.
+  grid.shift_region_up(0, 2, 0, 1, 1, @style.CellStyle::new())
+  fill_ascii(grid, 2, [b'D', b'd'])
+  grid.shift_region_up(0, 2, 0, 1, 1, @style.CellStyle::new())
+  fill_ascii(grid, 2, [b'E', b'e'])
+  grid.shift_region_up(0, 2, 0, 1, 1, @style.CellStyle::new())
+  guard grid.row_origin == 0 &&
+    expect_cell(grid, 0, 0).codepoint() == b'D'.to_uint() &&
+    expect_cell(grid, 1, 0).codepoint() == b'E'.to_uint() &&
+    expect_cell(grid, 2, 0).is_empty() else {
+    fail("expected full-screen origin wrap to preserve logical row order")
+  }
+
+  // A multi-row downward move wraps in the other direction.
+  grid.shift_region_down(0, 2, 0, 1, 2, @style.CellStyle::new())
+  guard grid.row_origin == 1 &&
+    expect_cell(grid, 0, 0).is_empty() &&
+    expect_cell(grid, 1, 0).is_empty() &&
+    expect_cell(grid, 2, 0).codepoint() == b'D'.to_uint() else {
+    fail("expected multi-row scroll down to wrap the origin backward")
+  }
+
+  // With a non-zero origin, a partial-height full-width move must leave the
+  // first logical row untouched instead of rotating the whole screen.
+  fill_ascii(grid, 0, [b'P', b'p'])
+  fill_ascii(grid, 1, [b'Q', b'q'])
+  fill_ascii(grid, 2, [b'R', b'r'])
+  grid.shift_region_up(1, 2, 0, 1, 1, @style.CellStyle::new())
+  guard grid.row_origin == 1 &&
+    expect_cell(grid, 0, 0).codepoint() == b'P'.to_uint() &&
+    expect_cell(grid, 1, 0).codepoint() == b'R'.to_uint() &&
+    expect_cell(grid, 2, 0).is_empty() else {
+    fail("expected partial-height move to use logical rows at wrapped origin")
   }
 }
 
