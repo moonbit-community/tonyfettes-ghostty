@@ -205,10 +205,13 @@ fn ScreenGridState::set_blank_row(
 ) -> Unit {
   let cells = match self.cell_pool.pop() {
     Some(cells) => {
-      // Reuse the pooled array buffer, refilling every slot with a fresh blank
-      // cell value (cells are immutable, so we replace rather than reset).
+      // A blank cell is an immutable packed value, so compute it once before
+      // refilling the pooled buffer. Colored erase still interns the same
+      // background-only style, but now does so once per row rather than once
+      // per cell.
+      let cell = blank_cell(style, self.style_table)
       for index in 0..<cells.length() {
-        cells[index] = blank_cell(style, self.style_table)
+        cells[index] = cell
       }
       cells
     }

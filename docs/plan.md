@@ -480,10 +480,11 @@ Status: `done`
 | P7.1 | done | VT-facing entry surface | MoonBit byte-slice API + tests | P7.0 | none | main | public parser-facing API exists, is documented, and stays green | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(api)` |
 | P7.2 | done | upstream tests/fixtures | differential fixtures and parity suites | P7.1 | none | `[W]` | direct and end-to-end parity checks pass for the agreed corpus | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `test(parity)` |
 | P7.3 | done | hot path behavior | perf notes and focused checks | P7.2 | none | `[W]` | parser hot paths are measured and deviations documented without breaking green status | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `docs/perf` |
+| P7.3.1 | done | `Page.rows`, `Screen.cursorScrollAboveRotate` | pooled-row refill ARC cleanup + benchmark audit | P7.3 | none | main | pooled rows reuse one immutable packed blank cell without changing erase behavior, storage, or public APIs; paired scroll benchmarks and generated native C verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `perf(grid)` |
 
 Phase 7 gate:
 
-- P7.0, P7.1, P7.2, and P7.3 are `done`
+- P7.0, P7.1, P7.2, P7.3, and P7.3.1 are `done`
 
 #### Phase 7 outputs
 
@@ -493,6 +494,7 @@ Phase 7 gate:
   [2026-04-21-p7-1-stream-terminal-facade.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-1-stream-terminal-facade.md)
   [2026-04-21-p7-2-facade-parity-suite.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-2-facade-parity-suite.md)
   [2026-04-21-p7-3-hot-path-perf-notes.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-3-hot-path-perf-notes.md)
+  [2026-07-30-grid-local-arc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-30-grid-local-arc.md)
 - Phase 7 completed the parser-stack foundation; `P8.0` is the next planned
   task.
 
