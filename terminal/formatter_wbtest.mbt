@@ -47,17 +47,16 @@ test "formatter helpers/cover guard branches and ordering helpers" {
     rectangle: false,
   }
 
-  state.grid = {
-    rows: 24,
-    cols: 0,
-    descs: [],
-    cells: [],
-    link_ids: [],
-    cell_pool: [],
-    style_table: @style.StyleTable::new(),
-    hyperlink_table: @hyperlink.HyperlinkTable::new(),
-    grapheme_table: @page.GraphemeTable::new(),
-  }
+  state.grid = @grid.ScreenGridState::from_shared_storage(
+    24,
+    0,
+    [],
+    [],
+    [],
+    @style.StyleTable::new(),
+    @hyperlink.HyperlinkTable::new(),
+    @page.GraphemeTable::new(),
+  )
   guard formatter_selection_bounds(formatter, state, 1U) is None else {
     fail("expected zero-column guard to reject formatting")
   }
@@ -119,7 +118,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   }
   state.grid = @grid.ScreenGridState::new(2, 2)
   state.scrollback = @pagelist.PageList::new(2, 2, 0)
-  state.grid.cells[1][1] = state.grid.cells[1][1].with_wide(SpacerHead)
+  state.grid.row_cells(1)[1] = state.grid.row_cells(1)[1].with_wide(SpacerHead)
   let spacer_head_bounds : FormatterSelectionBounds = {
     start: @point.Coordinate::new(1, 1U),
     end_: @point.Coordinate::new(1, 1U),
@@ -379,17 +378,16 @@ test "formatter helpers/cover terminal extra fallbacks and no-op branches" {
 test "formatter helpers/cover explicit empty format guard" {
   let terminal = StreamTerminal::new()
   let state = terminal.bridge()
-  state.grid = {
-    rows: 0,
-    cols: 0,
-    descs: [],
-    cells: [],
-    link_ids: [],
-    cell_pool: [],
-    style_table: @style.StyleTable::new(),
-    hyperlink_table: @hyperlink.HyperlinkTable::new(),
-    grapheme_table: @page.GraphemeTable::new(),
-  }
+  state.grid = @grid.ScreenGridState::from_shared_storage(
+    0,
+    0,
+    [],
+    [],
+    [],
+    @style.StyleTable::new(),
+    @hyperlink.HyperlinkTable::new(),
+    @page.GraphemeTable::new(),
+  )
   state.scrollback = @pagelist.PageList::new(0, 0, 0)
   let formatter = plain_formatter(terminal)
   guard formatter.format() == b"" else {

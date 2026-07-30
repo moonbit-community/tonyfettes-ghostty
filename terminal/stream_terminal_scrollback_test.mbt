@@ -1,8 +1,8 @@
 // Black-box scrollback behaviour tests, driving StreamTerminal through escape
 // sequences and reading back the buffer via the public snapshot API. These
-// guard the deque-based history and the row-object grid (a scroll moves whole
-// line objects, so aliasing/ordering bugs would surface here) independently of
-// the internal representation.
+// guard the deque-based history and circular active-grid row order (a scroll
+// hands row buffers to history while their physical slots are reused, so
+// aliasing/ordering bugs would surface here) independently of renderer state.
 //
 // screen_cell_snapshot reads the current VIEWPORT (rows 0..height-1):
 // scroll_viewport_top() exposes the oldest rows (top of history),
@@ -45,9 +45,9 @@ test "scrollback/active screen edits do not corrupt history" {
   let term = sized_terminal(10, 3)
   term.next_slice(b"A\r\nB\r\nC\r\nD\r\nE\r\nF")
   // Overwrite the whole active screen in place; history must be untouched.
-  // This is the regression guard for the row-object scroll: a moved line
-  // transiently aliases its source slot, so a stale alias would let a screen
-  // edit leak into scrollback.
+  // This is the regression guard for circular-row reuse: a harvested line stays
+  // in history while its former physical slot becomes a new active blank row,
+  // so a stale alias would let a screen edit leak into scrollback.
   term.next_slice(b"\x1b[H1\r\n2\r\n3")
   term.scroll_viewport_top()
   assert_eq(view_cp0(term, 0), b'A'.to_uint())
@@ -137,8 +137,8 @@ test "scrollback/reflow on resize preserves history content" {
   let term = sized_terminal(10, 3)
   term.next_slice(b"A\r\nB\r\nC\r\nD\r\nE")
   assert_eq(term.scrollback_rows(), 2U)
-  // Narrowing the columns rebuilds the buffer through reflow (screen_grid_from_rows
-  // + the row-object pages); short single-char rows must survive intact.
+  // Narrowing the columns rebuilds the buffer through reflow
+  // (`screen_grid_from_rows`); short single-char rows must survive intact.
   ignore(term.resize(8, 3, 8U, 16U))
   term.scroll_viewport_top()
   assert_eq(view_cp0(term, 0), b'A'.to_uint())
@@ -146,5 +146,51 @@ test "scrollback/reflow on resize preserves history content" {
   assert_eq(view_cp0(term, 2), b'C'.to_uint())
   term.scroll_viewport_bottom()
   assert_eq(view_cp0(term, 2), b'E'.to_uint())
+  term.deinit()
+}
+
+///|
+test "scrollback/wrapped origin survives row resize then column reflow" {
+  let term = sized_terminal(6, 3)
+  term.next_slice(b"A\r\nB\r\nC\r\nD")
+  // The line feed before D rotates the three-row active grid once. Growing only
+  // rows pulls A back from history without column reflow.
+  ignore(term.resize(6, 4, 8U, 16U))
+  term.scroll_viewport_bottom()
+  assert_eq(view_cp0(term, 0), b'A'.to_uint())
+  assert_eq(view_cp0(term, 1), b'B'.to_uint())
+  assert_eq(view_cp0(term, 2), b'C'.to_uint())
+  assert_eq(view_cp0(term, 3), b'D'.to_uint())
+
+  // A column change rebuilds the grid through reflow; it must consume the same
+  // logical order even though the source grid had a non-zero origin.
+  ignore(term.resize(4, 4, 8U, 16U))
+  term.scroll_viewport_bottom()
+  assert_eq(view_cp0(term, 0), b'A'.to_uint())
+  assert_eq(view_cp0(term, 1), b'B'.to_uint())
+  assert_eq(view_cp0(term, 2), b'C'.to_uint())
+  assert_eq(view_cp0(term, 3), b'D'.to_uint())
+  term.deinit()
+}
+
+///|
+test "scrollback/primary and alternate keep independent wrapped origins" {
+  let term = sized_terminal(6, 3)
+  term.next_slice(b"A\r\nB\r\nC\r\nD")
+
+  // Mode 47 switches without clearing, so the alternate grid can wrap
+  // independently and remain inspectable after returning to primary.
+  term.next_slice(b"\x1b[?47h\x1b[H")
+  term.next_slice(b"X\r\nY\r\nZ\r\nW")
+  term.next_slice(b"\x1b[?47l")
+  assert_eq(view_cp0(term, 0), b'B'.to_uint())
+  assert_eq(view_cp0(term, 1), b'C'.to_uint())
+  assert_eq(view_cp0(term, 2), b'D'.to_uint())
+
+  term.next_slice(b"\x1b[?47h")
+  assert_eq(view_cp0(term, 0), b'Y'.to_uint())
+  assert_eq(view_cp0(term, 1), b'Z'.to_uint())
+  assert_eq(view_cp0(term, 2), b'W'.to_uint())
+  term.next_slice(b"\x1b[?47l")
   term.deinit()
 }

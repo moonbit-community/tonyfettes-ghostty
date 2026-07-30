@@ -2294,12 +2294,10 @@ fn StreamTerminalBridgeState::clear_active_screen(
   self.kitty_graphics.full_reset(self.scrollback)
   self.grid.full_reset()
   self.scrollback.full_reset(self.grid.rows)
-  // `full_reset` minted fresh intern tables on the now-blank scrollback to reclaim
-  // the 16-bit id space. The active grid still holds the *old* table refs it copied
-  // when it was built, so rebuild it from the page: prints must intern into — and
-  // RenderState must resolve against — the same fresh tables. `active_grid` shares
-  // the page's (now blank) desc/cell/link arrays by reference, so no content is
-  // lost, and writing it back keeps the active screen storage consistent.
+  // `full_reset` minted fresh intern tables and installed one persistent grid
+  // over the now-blank active-page arrays. Reacquire that object so prints and
+  // RenderState use the same fresh table identities; the old grid was normalized
+  // before replacement, so no row-order state is lost.
   self.grid = self.scrollback.active_grid()
   self.store_active_screen()
   // Wiping the screen also wipes the per-row OSC 133 markers, so the active

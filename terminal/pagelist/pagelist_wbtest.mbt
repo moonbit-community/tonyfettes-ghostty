@@ -78,6 +78,79 @@ test "terminal screen state/scrollback snapshots and viewport movement" {
 }
 
 ///|
+test "terminal screen state/reacquired grid keeps origin and reset replaces it" {
+  let scrollback = PageList::new(3, 3, 3)
+  let grid = scrollback.active_grid()
+  let mut style = @style.CellStyle::new()
+  style = style.apply_attribute(Bold)
+  let hyperlink = @hyperlink.CellHyperlink::explicit(
+    "https://example.com/origin", "origin",
+  )
+  grid.write_cell(
+    0,
+    0,
+    b'A'.to_uint(),
+    Narrow,
+    style,
+    false,
+    Prompt,
+    Some(hyperlink),
+  )
+  grid.recompute_row_flags(0)
+  let grapheme_cursor = @cursor.TerminalCursorState::new(3, 3)
+  grapheme_cursor.x = 1
+  grid.append_grapheme(grapheme_cursor, 0x301U)
+  fill_terminal_screen_row(grid, 1, [b'B'], @style.CellStyle::new(), None)
+  fill_terminal_screen_row(grid, 2, [b'C'], @style.CellStyle::new(), None)
+  let history_pin = scrollback
+    .pin(grid, Active(@point.Coordinate::new(0, 0U)))
+    .unwrap()
+  let survivor_pin = scrollback
+    .pin(grid, Active(@point.Coordinate::new(0, 2U)))
+    .unwrap()
+
+  scrollback.capture_top_scroll_region_up(grid, 2, 1)
+  let scroll_cursor = @cursor.TerminalCursorState::new(3, 3)
+  grid.scroll_up(scroll_cursor, @style.CellStyle::new(), 1)
+  let reacquired = scrollback.active_grid()
+  guard physical_equal(grid, reacquired) &&
+    reacquired.row_cells(0)[0].codepoint() == b'B'.to_uint() &&
+    reacquired.row_cells(1)[0].codepoint() == b'C'.to_uint() &&
+    reacquired.row_cells(2)[0].is_empty() else {
+    fail("expected active_grid to preserve the wrapped logical grid object")
+  }
+  guard scrollback.point_from_pin(reacquired, history_pin, History) ==
+    Some(@point.Coordinate::new(0, 0U)) &&
+    scrollback.point_from_pin(reacquired, survivor_pin, Active) ==
+    Some(@point.Coordinate::new(0, 1U)) else {
+    fail("expected wrapped scroll to preserve history and active pin positions")
+  }
+
+  scrollback.scroll_top()
+  let history_row = scrollback.row(reacquired, 0).unwrap()
+  let history_cell = scrollback.cell(reacquired, 0, 0).unwrap()
+  guard history_row.styled() &&
+    history_row.grapheme() &&
+    history_row.hyperlink() &&
+    history_cell.has_grapheme() &&
+    reacquired.style_table.get(history_cell.style_id()).bold() &&
+    scrollback.cell_hyperlink(reacquired, 0, 0) == Some(hyperlink) else {
+    fail("expected wrapped scrollback capture to preserve row metadata")
+  }
+
+  let old_style_table = reacquired.style_table
+  reacquired.full_reset()
+  scrollback.full_reset(reacquired.rows)
+  let reset_grid = scrollback.active_grid()
+  guard !physical_equal(reacquired, reset_grid) &&
+    physical_equal(reset_grid, scrollback.active_grid()) &&
+    !physical_equal(old_style_table, reset_grid.style_table) &&
+    reset_grid.row_cells(0)[0].is_empty() else {
+    fail("expected reset to install one persistent grid with fresh tables")
+  }
+}
+
+///|
 test "terminal screen state/viewport top survives future scrollback" {
   let grid = @grid.ScreenGridState::new(2, 3)
   fill_terminal_screen_row(
