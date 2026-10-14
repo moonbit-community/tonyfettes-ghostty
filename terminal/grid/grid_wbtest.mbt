@@ -1250,6 +1250,84 @@ test "screen grid/print cell clears prior wide and spacer forms" {
 }
 
 ///|
+test "screen grid/print overwrite rescans lost row metadata" {
+  let grid = ScreenGridState::new(1, 3)
+  let cursor = @cursor.TerminalCursorState::new(1, 3)
+  let plain = @style.CellStyle::new()
+  let bold = plain.apply_attribute(Bold)
+  let link = @hyperlink.CellHyperlink::implicit("https://example.com", 1)
+
+  // Removing one contributor must retain the flag from another cell; removing
+  // the final contributor must clear it. Exercise each rescan trigger alone.
+  grid.print_cell(cursor, b'A'.to_uint(), Narrow, bold, false, Output, None)
+  cursor.x = 1
+  grid.print_cell(cursor, b'B'.to_uint(), Narrow, bold, false, Output, None)
+  cursor.x = 0
+  grid.print_cell(cursor, b'C'.to_uint(), Narrow, plain, false, Output, None)
+  guard expect_row(grid, 0).styled() else {
+    fail("expected the other styled cell to keep the row styled")
+  }
+  cursor.x = 1
+  grid.print_cell(cursor, b'D'.to_uint(), Narrow, plain, false, Output, None)
+  guard !expect_row(grid, 0).styled() else {
+    fail("expected overwriting the last styled cell to clear the row flag")
+  }
+
+  cursor.x = 0
+  grid.print_cell(
+    cursor,
+    b'E'.to_uint(),
+    Narrow,
+    plain,
+    false,
+    Output,
+    Some(link),
+  )
+  cursor.x = 1
+  grid.print_cell(
+    cursor,
+    b'F'.to_uint(),
+    Narrow,
+    plain,
+    false,
+    Output,
+    Some(link),
+  )
+  cursor.x = 0
+  grid.print_cell(cursor, b'G'.to_uint(), Narrow, plain, false, Output, None)
+  guard expect_row(grid, 0).hyperlink() &&
+    grid.cell_hyperlink(0, 0) == None &&
+    grid.cell_hyperlink(0, 1) == Some(link) else {
+    fail("expected the other linked cell to retain the row link flag")
+  }
+  cursor.x = 1
+  grid.print_cell(cursor, b'H'.to_uint(), Narrow, plain, false, Output, None)
+  guard !expect_row(grid, 0).hyperlink() else {
+    fail("expected overwriting the final link to clear the row flag")
+  }
+
+  // The preceding two plain cells become independent grapheme contributors.
+  cursor.x = 1
+  grid.append_grapheme(cursor, 0x301U)
+  cursor.x = 2
+  grid.append_grapheme(cursor, 0x301U)
+  cursor.x = 0
+  grid.print_cell(cursor, b'I'.to_uint(), Narrow, plain, false, Output, None)
+  guard expect_row(grid, 0).grapheme() &&
+    !expect_cell(grid, 0, 0).has_grapheme() &&
+    expect_cell(grid, 0, 1).has_grapheme() else {
+    fail("expected the other grapheme cell to keep the row flag")
+  }
+  cursor.x = 1
+  grid.print_cell(cursor, b'J'.to_uint(), Narrow, plain, false, Output, None)
+  guard !expect_row(grid, 0).grapheme() && expect_row(grid, 0).dirty() else {
+    fail(
+      "expected the final grapheme overwrite to clear its flag and stay dirty",
+    )
+  }
+}
+
+///|
 test "screen grid/decaln and full reset" {
   let grid = ScreenGridState::new(2, 3)
   let mut fill_style = @style.CellStyle::new()
