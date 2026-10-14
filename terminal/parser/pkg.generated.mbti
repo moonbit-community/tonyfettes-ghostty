@@ -54,6 +54,7 @@ pub fn Parser::enter_escape(Self) -> Unit
 pub fn Parser::is_ground(Self) -> Bool
 pub fn Parser::new() -> Self
 pub fn Parser::next(Self, Byte) -> ActionList
+pub fn Parser::next_stream(Self, Byte) -> ActionList
 pub fn Parser::reset_ground(Self) -> Unit
 
 // Type aliases

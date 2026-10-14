@@ -566,3 +566,189 @@ test "parser/apc start put and end ordering" {
   }
   guard parser.state == Ground else { fail("expected ground after APC end") }
 }
+
+///|
+test "parser/stream adapter matches generic dispatch and recovery" {
+  let inputs : Array[Bytes] = [
+    b"\x1b[m\x1b[0m", b"\x1b[1;2:3::4;m\x1b[5;6H", b"\x1b[:1m\x1b[1:2H\x1b[3m", b"\x1b[65535;65536;999999999999999999999999m\x1b[0m",
+    b"\x1b[?2026$p\x1b[1 2m\x1b[>1m\x1b[0m", b"\x1b[1:2$\x1b\x1b[3m\x1b[0m", b"\x1b]0;title\x07\x1b]2;other\x1b\\\x1b[0m",
+    b"\x1bP1;2+qabc\x1b\\\x1b[0m", b"\x1b_apc\x1b\\\x1b[0m", b"\x1b[1:2\x18\x9b3m\x1b[0m",
+    b"\x1b[1:2\x1a\x1b[3m\x1b[0m",
+  ]
+  for count in [23, 24, 25] {
+    for trailing in [false, true] {
+      let buf = Buffer()
+      buf.write_bytes(b"\x1b[")
+      for index in 0..<count {
+        buf.write_byte(b'1')
+        if index + 1 < count || trailing {
+          buf.write_byte(b';')
+        }
+      }
+      buf.write_bytes(b"999:;m\x1b[31m")
+      inputs.push(buf.contents())
+    }
+  }
+  // Exercise the expanded fallback's empty, nonempty, and overflow DCS
+  // hook branches, plus OSC termination without a valid command.
+  for count in [0, 23, 24, 25] {
+    let buf = Buffer()
+    buf.write_bytes(b"\x1bP")
+    for index in 0..<count {
+      if index > 0 {
+        buf.write_byte(b';')
+      }
+      buf.write_byte(b'1')
+    }
+    buf.write_bytes(b"qbody\x1b\\\x1b[0m")
+    inputs.push(buf.contents())
+  }
+  inputs.push(b"\x1b]not-a-command\x07\x1b[0m")
+  inputs.push(b"\x1b]0;\x1b\\\x1b[0m")
+  let long_digits = Buffer()
+  long_digits.write_bytes(b"\x1b[")
+  for _ in 0..<300 {
+    long_digits.write_byte(b'9')
+  }
+  long_digits.write_bytes(b"m\x1b[0m")
+  inputs.push(long_digits.contents())
+  // Reach each state by real input so embedded OSC state and CSI/DCS
+  // accumulators are valid, then exercise every possible following byte.
+  let seeds : Array[(ParserState, Bytes)] = [
+    (Ground, b""),
+    (Escape, b"\x1b"),
+    (EscapeIntermediate, b"\x1b("),
+    (CsiEntry, b"\x1b["),
+    (CsiIntermediate, b"\x1b[1$"),
+    (CsiParam, b"\x1b[1;2"),
+    (CsiIgnore, b"\x1b[:"),
+    (DcsEntry, b"\x1bP"),
+    (DcsParam, b"\x1bP1;2"),
+    (DcsIntermediate, b"\x1bP1;2+"),
+    (DcsPassthrough, b"\x1bP1;2+qbody"),
+    (DcsIgnore, b"\x1bP:"),
+    (OscString, b"\x1b]0;active title"),
+    (SosPmApcString, b"\x1b_apc body"),
+  ]
+  for (expected_state, prefix) in seeds {
+    let probe = Parser::new()
+    for byte in prefix {
+      ignore(probe.next(byte))
+    }
+    assert_eq(probe.state.ordinal(), expected_state.ordinal())
+    for value in 0..<256 {
+      let buf = Buffer()
+      buf.write_bytes(prefix)
+      buf.write_byte(value.to_byte())
+      buf.write_bytes(b"2m\x1b[0m")
+      inputs.push(buf.contents())
+    }
+  }
+  for input in inputs {
+    let snapshots : Array[Array[String]] = []
+    for fast in [false, true] {
+      let parser = Parser::new()
+      let events : Array[String] = []
+      for byte in input {
+        let was_csi_param = parser.state is CsiParam
+        let actions = if fast {
+          parser.next_stream(byte)
+        } else {
+          parser.next(byte)
+        }
+        // Materialize text immediately: never retain borrowed dispatch views
+        // across another parser step, even for the comparison oracle.
+        for action in [actions.exit(), actions.transition(), actions.entry()] {
+          let event = match action {
+            None => "none"
+            Some(Print(c)) => "print:\{c}"
+            Some(Execute(c)) =>
+              if was_csi_param && c >= 0x10 && c <= 0x1F {
+                "none"
+              } else {
+                "execute:\{c}"
+              }
+            Some(CsiDispatch(csi)) =>
+              "csi:\{Repr(csi.intermediates.to_owned())}:\{Repr(csi.params.to_owned())}:\{Repr(csi.params_sep)}:\{csi.final_byte}"
+            Some(EscDispatch(esc)) =>
+              "esc:\{Repr(esc.intermediates.to_owned())}:\{esc.final_byte}"
+            Some(OscDispatch(command)) => "osc:\{Repr(command)}"
+            Some(DcsHook(dcs)) =>
+              "dcs:\{Repr(dcs.intermediates.to_owned())}:\{Repr(dcs.params.to_owned())}:\{dcs.final_byte}"
+            Some(DcsPut(c)) => "dcs-put:\{c}"
+            Some(DcsUnhook) => "dcs-unhook"
+            Some(ApcStart) => "apc-start"
+            Some(ApcPut(c)) => "apc-put:\{c}"
+            Some(ApcEnd) => "apc-end"
+          }
+          events.push(event)
+        }
+        events.push("state:\{parser.state.ordinal()}")
+      }
+      snapshots.push(events)
+    }
+    assert_eq(snapshots[0], snapshots[1])
+  }
+}
+
+///|
+test "parser/stream adapter limits controls and escape clearing" {
+  for count in [23, 24, 25] {
+    let parser = Parser::new()
+    for byte in b"\x1b[" {
+      expect_no_actions(parser.next_stream(byte))
+    }
+    for index in 0..<count {
+      if index > 0 {
+        expect_no_actions(parser.next_stream(b';'))
+      }
+      expect_no_actions(parser.next_stream(b'1'))
+    }
+    let actions = parser.next_stream(b'm')
+    if count <= MaxParams {
+      guard actions.transition() is Some(CsiDispatch(csi)) else {
+        fail("expected dispatch at parameter capacity")
+      }
+      assert_eq(csi.params.length(), count)
+    } else {
+      expect_no_actions(actions)
+    }
+  }
+  for control in 0..<32 {
+    if control == 0x1B {
+      continue
+    }
+    let parser = Parser::new()
+    for byte in b"\x1b[1" {
+      expect_no_actions(parser.next_stream(byte))
+    }
+    let actions = parser.next_stream(control.to_byte())
+    if control <= 0x0F {
+      guard actions.transition() is Some(Execute(c)) else {
+        fail("expected executed low C0")
+      }
+      assert_eq(c.to_int(), control)
+    } else {
+      expect_no_actions(actions)
+    }
+    assert_eq(parser.is_ground(), control == 0x18 || control == 0x1A)
+  }
+  let parser = Parser::new()
+  for byte in b"\x1b[?12:34$\x1b" {
+    ignore(parser.next_stream(byte))
+  }
+  expect_no_actions(parser.next_stream(b'['))
+  assert_eq(parser.params.length(), 0)
+  assert_eq(parser.intermediates.length(), 0)
+  assert_eq(parser.params_sep.count(), 0)
+  assert_eq(parser.param_acc, 0)
+  assert_eq(parser.param_acc_idx, 0)
+  for byte in b"65536" {
+    expect_no_actions(parser.next_stream(byte))
+  }
+  let result = parser.next_stream(b'm')
+  guard result.transition() is Some(CsiDispatch(csi)) else {
+    fail("expected saturated CSI")
+  }
+  assert_eq(csi.params.to_owned(), [65535])
+}

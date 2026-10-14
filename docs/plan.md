@@ -511,6 +511,7 @@ Status: `done`
 | P7.3.4 | done | `Terminal.print`, `Terminal.printCell`, `Screen.cursorMarkDirty`, `page.Cell`, `page.Row` | print helper fusion and packed row-flag inlining | P7.3.3 | none | `[W]` | repeatable paired release gains with preserved print ordering, storage, public API and coverage; see `docs/plans/2026-10-14-print-path-inline.md` | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(grid)` |
 | P7.3.5 | done | `Terminal.index`, `Screen.cursorScrollAbove`, `Screen.cursorScrollAboveRotate`, `Screen.cursorDownScroll`, `page.Row` | full-width up/down survivor cleanup and dirty-pass fusion | P7.3.4 | none | `[W]` | preserve existing wrap/SpacerHead cleanup, dirty survivors and blanks, partial-region isolation and row ownership; paired performance and touched-line coverage reviewed | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(grid)` |
 | P7.3.6 | done | `Terminal.print`, `Terminal.printCell`, existing style interning adapter | bounded print hot-path experiment audit (no implementation retained) | P7.3.5 | none | `[W]` | reject ineffective codegen and persistent colored regression; all candidate edits restored; raw paired data and rejected candidates recorded in `docs/plans/2026-10-14-post-profile-print-experiments.md` | `moon check --target all`, release C/ASM inspection, four paired benchmark rounds, `git diff --check` | `[R]` main | `docs(perf)` |
+| P7.3.7 | done | `stream.nextNonUtf8`, `Parser.next` | user-approved opaque `Parser.next_stream` CSI compatibility adapter + stream call | P7.3.6 | none | `[W]` | generic parser unchanged; CSI fast paths + faithful inline fallback; paired SGR/query/TUI gains, accepted +1.27% APC cost, full gates and native touched-line coverage reviewed; see `docs/plans/2026-10-14-csi-fast-path.md` | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(parser)` |
 
 Phase 7 gate:
 
@@ -524,6 +525,10 @@ Phase 7 gate:
 
 - P7.3.6 is `done` as an investigation; all three bounded candidates were
   rejected and no implementation retained. See [post-profile-print-experiments](plans/2026-10-14-post-profile-print-experiments.md).
+
+- P7.3.7 is `done`; approved CSI adapter and upstream inline behavior are
+  validated, with the measured APC tradeoff recorded in
+  [2026-10-14-csi-fast-path.md](plans/2026-10-14-csi-fast-path.md).
 
 #### Phase 7 outputs
 

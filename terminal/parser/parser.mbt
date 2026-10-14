@@ -14,7 +14,8 @@ const MaxParamValue : UInt16 = 65535
 /// Dispatch payload borrowing the parser's reused accumulators. Like upstream
 /// (`Parser.zig`: `self.intermediates[0..idx]`, `self.params[0..idx]`), the
 /// `intermediates` / `params` views alias the parser's `Array` buffers and are
-/// only valid for the synchronous dispatch window — the next `Parser::next`
+/// only valid for the synchronous dispatch window — the next `Parser::next`,
+/// `Parser::next_stream`, or `Parser::enter_escape`
 /// rewinds and overwrites those buffers via `clear()`. Consumers must read them
 /// during dispatch and copy (not store) anything that must outlive it.
 pub(all) struct Csi {
@@ -94,7 +95,7 @@ pub fn ActionList::entry(self : ActionList) -> Action? {
 ///|
 /// Abstract (no `pub`): the type name crosses the package boundary but its
 /// mutable transition state stays opaque. The stream layer drives the parser
-/// only through `new`/`next`/`is_ground`/`enter_escape`/`reset_ground`/`deinit`,
+/// only through its behavioral methods (including `next_stream`),
 /// so the state-machine invariants enforced by `next()`/`clear()` cannot be
 /// bypassed by assigning fields from another package.
 struct Parser {
@@ -146,6 +147,151 @@ pub fn Parser::enter_escape(self : Parser) -> Unit {
 /// to rewind the parser without rebuilding it.
 pub fn Parser::reset_ground(self : Parser) -> Unit {
   self.state = Ground
+}
+
+///|
+/// Stream-specific ESC/CSI fast paths from upstream `stream.nextNonUtf8`.
+/// This preserves typed stream events, not every generic raw parser action:
+/// CsiParam ignores unhandled C0 controls and cancels CAN/SUB without Execute.
+/// Dispatch borrowed payloads synchronously before the next parser operation.
+pub fn Parser::next_stream(self : Parser, c : Byte) -> ActionList {
+  if self.state is Escape && c == b'[' {
+    // Entering Escape already cleared all accumulators.
+    self.state = CsiEntry
+    return { exit: None, transition: None, entry: None, }
+  }
+  if self.state is CsiParam {
+    if c <= 0x0F {
+      return { exit: None, transition: Some(Execute(c)), entry: None, }
+    }
+    if (c >= 0x10 && c <= 0x17) ||
+      c == 0x19 ||
+      (c >= 0x1C && c <= 0x1F) ||
+      c == 0x7F {
+      return { exit: None, transition: None, entry: None, }
+    }
+    if c == 0x18 || c == 0x1A {
+      self.state = Ground
+      return { exit: None, transition: None, entry: None, }
+    }
+    if c >= b'0' && c <= b'9' {
+      if self.params.length() < MaxParams {
+        self.param_acc = saturating_param_append(self.param_acc, c)
+        self.param_acc_idx = self.param_acc_idx | 1
+      }
+      return { exit: None, transition: None, entry: None, }
+    }
+    if c == b':' || c == b';' {
+      if self.params.length() < MaxParams {
+        if c == b':' {
+          self.params_sep = self.params_sep.set(self.params.length())
+        }
+        self.params.push(self.param_acc)
+        self.param_acc = 0
+        self.param_acc_idx = 0
+      }
+      return { exit: None, transition: None, entry: None, }
+    }
+  }
+  // Upstream nextNonUtf8 always-inlines Parser.next here. Expand that exact
+  // body because the native inline hint leaves an extra fallback call/frame.
+  // Keep this orchestration synchronized with next. Transition-table lookup,
+  // collect/parameter/OSC helpers and clear remain shared; all reachable
+  // states are checked differentially.
+  let effect = transition_for(c, self.state)
+  let next_state = effect.state
+  let action = effect.action
+
+  let exit_action : Action? = if self.state == next_state {
+    None
+  } else {
+    match self.state {
+      OscString =>
+        match self.osc_parser.end(Some(c)) {
+          Some(command) => Some(OscDispatch(command))
+          None => None
+        }
+      DcsPassthrough => Some(DcsUnhook)
+      SosPmApcString => Some(ApcEnd)
+      _ => None
+    }
+  }
+
+  // Upstream doAction is also inline; keep this match synchronized with do_action.
+  let transition_action : Action? = match action {
+    None | Ignore => None
+    Print => Some(Print(c.to_uint()))
+    Execute => Some(Execute(c))
+    Collect => {
+      self.collect(c)
+      None
+    }
+    Param => self.consume_param(c)
+    OscPut => {
+      self.osc_parser.next(c)
+      None
+    }
+    CsiDispatch =>
+      if self.params.length() >= MaxParams {
+        None
+      } else {
+        if self.param_acc_idx > 0 {
+          self.params.push(self.param_acc)
+        }
+
+        if c != b'm' && self.params_sep.count() > 0 {
+          None
+        } else {
+          Some(
+            CsiDispatch({
+              intermediates: self.intermediates,
+              params: self.params,
+              params_sep: self.params_sep,
+              final_byte: c,
+            }),
+          )
+        }
+      }
+    EscDispatch =>
+      Some(EscDispatch({ intermediates: self.intermediates, final_byte: c, }))
+    Put => Some(DcsPut(c))
+    ApcPut => Some(ApcPut(c))
+  }
+
+  let entry_action : Action? = if self.state == next_state {
+    None
+  } else {
+    match next_state {
+      Escape | DcsEntry | CsiEntry => {
+        self.clear()
+        None
+      }
+      OscString => {
+        self.osc_parser.reset()
+        None
+      }
+      DcsPassthrough =>
+        if self.params.length() >= MaxParams {
+          None
+        } else {
+          if self.param_acc_idx > 0 {
+            self.params.push(self.param_acc)
+          }
+          Some(
+            DcsHook({
+              intermediates: self.intermediates,
+              params: self.params,
+              final_byte: c,
+            }),
+          )
+        }
+      SosPmApcString => Some(ApcStart)
+      _ => None
+    }
+  }
+
+  self.state = next_state
+  { exit: exit_action, transition: transition_action, entry: entry_action, }
 }
 
 ///|

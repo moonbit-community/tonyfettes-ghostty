@@ -399,7 +399,7 @@ fn[H : StreamHandler] Stream::next_non_utf8(
   self : Stream[H],
   byte : Byte,
 ) -> Unit {
-  let actions = self.parser.next(byte)
+  let actions = self.parser.next_stream(byte)
   // Skip the dispatch call entirely for the (common) None slots: a single
   // `next` step usually emits one action or none, so guarding here avoids 2-3
   // empty `dispatch_action` calls per byte on the hot string-accumulation path
