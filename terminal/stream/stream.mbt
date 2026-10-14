@@ -404,13 +404,18 @@ fn[H : StreamHandler] Stream::next_non_utf8(
   // `next` step usually emits one action or none, so guarding here avoids 2-3
   // empty `dispatch_action` calls per byte on the hot string-accumulation path
   // (OSC/DCS body bytes produce an all-None `ActionList`).
-  if actions.exit() is Some(action) {
+  // End the ActionList lifetime before dispatch so its slots transfer without
+  // extra retains/releases while later slots are still being read.
+  let exit_action = actions.exit()
+  let transition_action = actions.transition()
+  let entry_action = actions.entry()
+  if exit_action is Some(action) {
     self.dispatch_action(action)
   }
-  if actions.transition() is Some(action) {
+  if transition_action is Some(action) {
     self.dispatch_action(action)
   }
-  if actions.entry() is Some(action) {
+  if entry_action is Some(action) {
     self.dispatch_action(action)
   }
 }
