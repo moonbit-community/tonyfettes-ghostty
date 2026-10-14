@@ -510,6 +510,7 @@ Status: `done`
 | P7.3.3 | done | `Terminal.index`, `Screen.cursorScrollAbove` | bridge index temporaries + full-screen logical-row access ARC cleanup | P7.3.2 | none | main | generated native C removes avoidable bridge receiver retains, polymorphic enum equality, and repeated logical-row accessor calls without changing storage, behavior, or public APIs; paired benchmarks and a fresh profile verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(terminal)` |
 | P7.3.4 | done | `Terminal.print`, `Terminal.printCell`, `Screen.cursorMarkDirty`, `page.Cell`, `page.Row` | print helper fusion and packed row-flag inlining | P7.3.3 | none | `[W]` | repeatable paired release gains with preserved print ordering, storage, public API and coverage; see `docs/plans/2026-10-14-print-path-inline.md` | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(grid)` |
 | P7.3.5 | done | `Terminal.index`, `Screen.cursorScrollAbove`, `Screen.cursorScrollAboveRotate`, `Screen.cursorDownScroll`, `page.Row` | full-width up/down survivor cleanup and dirty-pass fusion | P7.3.4 | none | `[W]` | preserve existing wrap/SpacerHead cleanup, dirty survivors and blanks, partial-region isolation and row ownership; paired performance and touched-line coverage reviewed | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(grid)` |
+| P7.3.6 | done | `Terminal.print`, `Terminal.printCell`, existing style interning adapter | bounded print hot-path experiment audit (no implementation retained) | P7.3.5 | none | `[W]` | reject ineffective codegen and persistent colored regression; all candidate edits restored; raw paired data and rejected candidates recorded in `docs/plans/2026-10-14-post-profile-print-experiments.md` | `moon check --target all`, release C/ASM inspection, four paired benchmark rounds, `git diff --check` | `[R]` main | `docs(perf)` |
 
 Phase 7 gate:
 
@@ -520,6 +521,9 @@ Phase 7 gate:
   coverage are recorded in [2026-10-14-print-path-inline.md](plans/2026-10-14-print-path-inline.md)
 - P7.3.5 is `done`; scroll pass fusion, paired performance, and dirty/metadata
   coverage are recorded in [2026-10-14-scroll-loop-fusion.md](plans/2026-10-14-scroll-loop-fusion.md)
+
+- P7.3.6 is `done` as an investigation; all three bounded candidates were
+  rejected and no implementation retained. See [post-profile-print-experiments](plans/2026-10-14-post-profile-print-experiments.md).
 
 #### Phase 7 outputs
 
