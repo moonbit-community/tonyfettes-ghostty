@@ -1,4 +1,9 @@
 ///|
+/// Mirrors upstream `apc.State`, which is stored inline in `Handler` and
+/// switched in place for every APC byte. `KittyGraphicsParser` remains a
+/// managed reference payload; `#valtype` removes only the outer state box and
+/// leaves the start/feed/end lifecycle and parser ownership unchanged.
+#valtype
 priv enum ApcState {
   Inactive
   Ignore

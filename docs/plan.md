@@ -201,6 +201,7 @@ formatter output, generated interfaces, and package exclusions.
 
 - Plan and validation audit:
   [2026-10-14-m1-toolchain-maintenance.md](plans/2026-10-14-m1-toolchain-maintenance.md)
+- Main synchronization audit: [2026-10-14-m1-main-sync.md](plans/2026-10-14-m1-main-sync.md); retained incoming APC/grid/index optimizations and revalidated 666 tests per Wasm/Wasm-GC/Native target and 688 on JS.
 - Gate: `moon check --target all --deny-warn`, `moon test --target all`,
   coverage review of touched code, `moon fmt --check`, and `moon info` API
   review, plus the standalone native `tools` module checks.
@@ -342,6 +343,7 @@ Status: `done`
 | P4.C | done | `osc.zig` core + high-frequency subparsers | bounded OSC high-frequency parser sub-slices + tests | P4.0 | P4.A, P4.B, P4.D, P4.E | `[W]` | each `P4.C*` sub-slice lands green, and the lane closes only after the translated high-frequency OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.D | done | remaining OSC subparsers | bounded long-tail OSC parser sub-slices + tests | P4.0, P4.C | P4.A, P4.B, P4.E | `[W]` | each `P4.D*` sub-slice lands green, and the lane closes only after the translated long-tail OSC parser surface is implemented and audited | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
 | P4.E | done | APC-facing helpers | APC support modules + tests | P4.0 | P4.A, P4.B, P4.C, P4.D | `[W]` | helpers compile and match parser-facing expectations with tests | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `feat(parser-protocols)` |
+| P4.E.1 | done | `apc.zig` `Handler.state`, `State`, `feed` | private `ApcState` value enum + long public-boundary APC benchmark | P4.E, P13.C1 | none | `[W]` | lifecycle stays identical, generated native layout is inline, and three-run baseline/variant results are audited | `moon check --target all && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `perf(apc)` |
 
 Phase 4 gate:
 
@@ -354,6 +356,8 @@ Phase 4 gate:
 
 - Phase 4 decoder boundary notes and worker write sets live in:
   [2026-04-19-p4-semantic-decoder-contracts.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-semantic-decoder-contracts.md)
+- APC state value-enum follow-up plan and measurement audit live in:
+  [2026-07-29-apc-state-valtype.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-29-apc-state-valtype.md)
 - Completed Phase 4 task audits live in:
   [2026-04-19-p4-a-sgr.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-a-sgr.md),
   [2026-04-19-p4-b-dcs.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-19-p4-b-dcs.md),
@@ -497,10 +501,15 @@ Status: `done`
 | P7.1 | done | VT-facing entry surface | MoonBit byte-slice API + tests | P7.0 | none | main | public parser-facing API exists, is documented, and stays green | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main | `feat(api)` |
 | P7.2 | done | upstream tests/fixtures | differential fixtures and parity suites | P7.1 | none | `[W]` | direct and end-to-end parity checks pass for the agreed corpus | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `test(parity)` |
 | P7.3 | done | hot path behavior | perf notes and focused checks | P7.2 | none | `[W]` | parser hot paths are measured and deviations documented without breaking green status | `moon check && moon test && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `docs/perf` |
+| P7.3.1 | done | `Page.rows`, `Screen.cursorScrollAboveRotate` | pooled-row refill ARC cleanup + benchmark audit | P7.3 | none | main | pooled rows reuse one immutable packed blank cell without changing erase behavior, storage, or public APIs; paired scroll benchmarks and generated native C verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main or reviewer subagent | `perf(grid)` |
+| P7.3.2 | done | `Page.rows`, `Screen.cursorScrollAbove`, `Screen.cursorScrollAboveRotate` | persistent active-grid ownership + private circular row origin | P7.3.1 | none | main | full-screen row relocation changes the private origin instead of blitting reference arrays; logical row order survives wrap, grid reacquisition, resize/reflow, reset, scrollback, pins, and primary/alternate switching; paired benchmarks and generated native C verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(grid)` |
+| P7.3.3 | done | `Terminal.index`, `Screen.cursorScrollAbove` | bridge index temporaries + full-screen logical-row access ARC cleanup | P7.3.2 | none | main | generated native C removes avoidable bridge receiver retains, polymorphic enum equality, and repeated logical-row accessor calls without changing storage, behavior, or public APIs; paired benchmarks and a fresh profile verify the result | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(terminal)` |
 
 Phase 7 gate:
 
-- P7.0, P7.1, P7.2, and P7.3 are `done`
+- P7.0, P7.1, P7.2, P7.3, and P7.3.1 are `done`
+- P7.3.2 is `done`
+- P7.3.3 is `done`
 
 #### Phase 7 outputs
 
@@ -510,6 +519,9 @@ Phase 7 gate:
   [2026-04-21-p7-1-stream-terminal-facade.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-1-stream-terminal-facade.md)
   [2026-04-21-p7-2-facade-parity-suite.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-2-facade-parity-suite.md)
   [2026-04-21-p7-3-hot-path-perf-notes.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-04-21-p7-3-hot-path-perf-notes.md)
+  [2026-07-30-grid-local-arc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-30-grid-local-arc.md)
+  [2026-07-30-grid-row-ring.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-30-grid-row-ring.md)
+  [2026-07-30-bridge-index-row-arc.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-07-30-bridge-index-row-arc.md)
 - Phase 7 completed the parser-stack foundation; `P8.0` is the next planned
   task.
 

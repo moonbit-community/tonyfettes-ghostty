@@ -33,4 +33,4 @@ benchmarked code.
 
 Available workloads: `plain_lines`, `wrapped_blob`, `scroll_storm`,
 `scroll_full`, `colored_log`, `tui_redraw`, `cjk_text`, `osc_titles`,
-`mixed_realistic`, `sgr_storm`, `query_storm`.
+`mixed_realistic`, `sgr_storm`, `query_storm`, `kitty_apc_long`.
