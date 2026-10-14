@@ -165,5 +165,6 @@ pub fn StreamAction::equal(Self, Self) -> Bool
 pub(open) trait StreamHandler {
   fn vt(Self, StreamAction) -> Unit
   fn print(Self, UInt) -> Unit
+  fn set_attribute(Self, @sgr.SgrAttribute) -> Unit = _
   fn deinit(Self) -> Unit
 }

@@ -2368,3 +2368,33 @@ fn fill_ascii(
     )
   }
 }
+
+///|
+test "stream terminal bridge/typed SGR matches explicit apply on both screens" {
+  let direct = StreamTerminalBridgeState::new()
+  let events = StreamTerminalBridgeState::new()
+  let stream = @stream.Stream::new(StreamTerminalHandler::{ bridge: direct, })
+  for
+    bytes in [
+      b"\x1B[mA", b"\x1B[1;3;4:3;38;5;7mB", b"\x1B[48:2::1:2:3mC", b"\x1B[999mD",
+      b"\x1B[0mE", b"\x1B[?1049h\x1B[58:2::4:5:6;4:5mF", b"\x1B[?1049lG",
+    ] {
+    stream.next_slice(bytes)
+    guard apply_stream_bytes(events, bytes) else {
+      fail("expected explicit bridge apply to keep returning true")
+    }
+    guard direct.current_style_snapshot() == events.current_style_snapshot() &&
+      direct.cursor_x() == events.cursor_x() &&
+      direct.cursor_y() == events.cursor_y() else {
+      fail("expected matching current style and cursor after each sequence")
+    }
+    for col in 0..<8 {
+      guard expect_bridge_cell(direct, 0, col.to_uint16()) ==
+        expect_bridge_cell(events, 0, col.to_uint16()) &&
+        expect_bridge_cell_style(direct, 0, col.to_uint16()) ==
+        expect_bridge_cell_style(events, 0, col.to_uint16()) else {
+        fail("expected matching printed cells and resolved styles")
+      }
+    }
+  }
+}

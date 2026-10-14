@@ -175,7 +175,16 @@ pub(open) trait StreamHandler {
   // `StreamPrint` box per character (the generic `vt` path boxes; this does
   // not). Mirrors upstream's comptime-specialized `vt(.print, …)`.
   fn print(Self, UInt32) -> Unit
+  /// Consume an SGR attribute in stream order. The default forwards exactly
+  /// one StreamSetAttribute event to vt; overrides replace that delivery.
+  /// Unknown attributes own their parameter snapshots and may be retained.
+  fn set_attribute(Self, @sgr.SgrAttribute) -> Unit = _
   fn deinit(Self) -> Unit
+}
+
+///|
+impl StreamHandler with fn set_attribute(self, attribute) {
+  Self::vt(self, StreamSetAttribute(attribute))
 }
 
 ///|
@@ -404,13 +413,18 @@ fn[H : StreamHandler] Stream::next_non_utf8(
   // `next` step usually emits one action or none, so guarding here avoids 2-3
   // empty `dispatch_action` calls per byte on the hot string-accumulation path
   // (OSC/DCS body bytes produce an all-None `ActionList`).
-  if actions.exit() is Some(action) {
+  // End the ActionList lifetime before dispatch so its slots transfer without
+  // extra retains/releases while later slots are still being read.
+  let exit_action = actions.exit()
+  let transition_action = actions.transition()
+  let entry_action = actions.entry()
+  if exit_action is Some(action) {
     self.dispatch_action(action)
   }
-  if actions.transition() is Some(action) {
+  if transition_action is Some(action) {
     self.dispatch_action(action)
   }
-  if actions.entry() is Some(action) {
+  if entry_action is Some(action) {
     self.dispatch_action(action)
   }
 }
@@ -464,7 +478,7 @@ fn[H : StreamHandler] Stream::emit_sgr(
 ) -> Unit {
   self.sgr_parser.set_view(params, params_sep)
   while self.sgr_parser.next() is Some(attribute) {
-    self.emit(StreamSetAttribute(attribute))
+    H::set_attribute(self.handler, attribute)
   }
 }
 
