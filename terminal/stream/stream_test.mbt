@@ -1092,3 +1092,96 @@ test "stream/csi fast paths preserve events at every chunk split" {
     }
   }
 }
+
+///|
+struct TypedSgrRecorder {
+  actions : Array[@stream.StreamAction]
+  vt_actions : Array[@stream.StreamAction]
+}
+
+///|
+impl StreamHandler for TypedSgrRecorder with fn vt(self, action) {
+  self.vt_actions.push(action)
+  self.actions.push(action)
+}
+
+///|
+impl StreamHandler for TypedSgrRecorder with fn print(self, codepoint) {
+  self.actions.push(StreamPrint(codepoint))
+}
+
+///|
+impl StreamHandler for TypedSgrRecorder with fn set_attribute(self, attribute) {
+  self.actions.push(StreamSetAttribute(attribute))
+}
+
+///|
+impl StreamHandler for TypedSgrRecorder with fn deinit(_self) {
+  ()
+}
+
+///|
+test "stream/typed SGR override preserves default event ordering" {
+  let (default_stream, default_actions, _) = new_stream()
+  let typed_actions : Array[@stream.StreamAction] = []
+  let vt_actions : Array[@stream.StreamAction] = []
+  let typed_stream = @stream.Stream::new(TypedSgrRecorder::{
+    actions: typed_actions,
+    vt_actions,
+  })
+  let bytes = b"\x1B[m\x1B[1;3;4:3;38;5;7;48:2::1:2:3mX\r"
+  default_stream.next_slice(bytes)
+  typed_stream.next_slice(bytes)
+  let expected : Array[@stream.StreamAction] = [
+    StreamSetAttribute(Unset),
+    StreamSetAttribute(Bold),
+    StreamSetAttribute(Italic),
+    StreamSetAttribute(Underline(Curly)),
+    StreamSetAttribute(Color256Fg(7)),
+    StreamSetAttribute(DirectColorBg(@color.RGB::new(1, 2, 3))),
+    StreamPrint(b'X'.to_uint()),
+    StreamCarriageReturn,
+  ]
+  guard default_actions == expected && typed_actions == expected else {
+    fail("expected ordered attributes and adjacent print/control events")
+  }
+  for suffix in [b"\x1B[38;2m", b"\x1B[0m"] {
+    default_stream.next_slice(suffix)
+    typed_stream.next_slice(suffix)
+    guard default_actions == typed_actions else {
+      fail("expected truncated and reset SGR to preserve default events")
+    }
+  }
+  guard vt_actions == [StreamCarriageReturn] else {
+    fail("typed SGR override must bypass vt attribute deliveries")
+  }
+  default_stream.deinit()
+  typed_stream.deinit()
+}
+
+///|
+test "stream/default and typed SGR handlers retain owned unknown slices" {
+  let (default_stream, default_actions, _) = new_stream()
+  let typed_actions : Array[@stream.StreamAction] = []
+  let typed_stream = @stream.Stream::new(TypedSgrRecorder::{
+    actions: typed_actions,
+    vt_actions: [],
+  })
+  default_stream.next_slice(b"\x1B[1;999;4m")
+  typed_stream.next_slice(b"\x1B[1;999;4m")
+  guard default_actions[1] is StreamSetAttribute(Unknown(default_unknown)) &&
+    typed_actions[1] is StreamSetAttribute(Unknown(typed_unknown)) else {
+    fail("expected both handlers to retain an unknown attribute")
+  }
+  default_stream.next_slice(b"\x1B[38;5;12;0m")
+  typed_stream.next_slice(b"\x1B[38;5;12;0m")
+  guard default_unknown.full == [1, 999, 4] &&
+    default_unknown.partial == [999, 4] &&
+    typed_unknown.full == [1, 999, 4] &&
+    typed_unknown.partial == [999, 4] else {
+    fail("later CSI must not overwrite retained full or partial params")
+  }
+  guard default_actions == typed_actions else {
+    fail("expected equal retained and subsequent attribute sequences")
+  }
+}

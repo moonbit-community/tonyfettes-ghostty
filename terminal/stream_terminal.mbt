@@ -20,6 +20,14 @@ impl @stream.StreamHandler for StreamTerminalHandler with fn print(
 }
 
 ///|
+impl @stream.StreamHandler for StreamTerminalHandler with fn set_attribute(
+  self,
+  attribute,
+) {
+  self.bridge.set_attribute(attribute)
+}
+
+///|
 impl @stream.StreamHandler for StreamTerminalHandler with fn deinit(_self) {
   ()
 }

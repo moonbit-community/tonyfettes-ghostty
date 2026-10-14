@@ -175,7 +175,16 @@ pub(open) trait StreamHandler {
   // `StreamPrint` box per character (the generic `vt` path boxes; this does
   // not). Mirrors upstream's comptime-specialized `vt(.print, …)`.
   fn print(Self, UInt32) -> Unit
+  /// Consume an SGR attribute in stream order. The default forwards exactly
+  /// one StreamSetAttribute event to vt; overrides replace that delivery.
+  /// Unknown attributes own their parameter snapshots and may be retained.
+  fn set_attribute(Self, @sgr.SgrAttribute) -> Unit = _
   fn deinit(Self) -> Unit
+}
+
+///|
+impl StreamHandler with fn set_attribute(self, attribute) {
+  Self::vt(self, StreamSetAttribute(attribute))
 }
 
 ///|
@@ -469,7 +478,7 @@ fn[H : StreamHandler] Stream::emit_sgr(
 ) -> Unit {
   self.sgr_parser.set_view(params, params_sep)
   while self.sgr_parser.next() is Some(attribute) {
-    self.emit(StreamSetAttribute(attribute))
+    H::set_attribute(self.handler, attribute)
   }
 }
 

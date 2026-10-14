@@ -763,6 +763,14 @@ fn StreamTerminalBridgeState::scroll_viewport_delta(
 }
 
 ///|
+fn StreamTerminalBridgeState::set_attribute(
+  self : StreamTerminalBridgeState,
+  attribute : @sgr.SgrAttribute,
+) -> Unit {
+  self.current_style = self.current_style.apply_attribute(attribute)
+}
+
+///|
 fn StreamTerminalBridgeState::apply(
   self : StreamTerminalBridgeState,
   action : @stream.StreamAction,
@@ -945,7 +953,7 @@ fn StreamTerminalBridgeState::apply(
       true
     }
     StreamSetAttribute(attribute) => {
-      self.current_style = self.current_style.apply_attribute(attribute)
+      self.set_attribute(attribute)
       true
     }
     StreamTabSet => {
