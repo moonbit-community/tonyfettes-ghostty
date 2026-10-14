@@ -305,8 +305,9 @@ pub fn ScreenGridState::recycle_row_cells(
 ///|
 /// Fill row `row_idx`'s slot with a blank full-width line for a scroll, writing
 /// the `descs[row_idx]`/`cells[row_idx]` slots directly — no intermediate row
-/// object or tuple is allocated. Reuses a recycled cell array (resetting every
-/// cell in place) when one is pooled, otherwise allocates a fresh one. Always a
+/// object or tuple is allocated. The new blank row is marked dirty.
+/// Reuses a recycled cell array (resetting every cell in place) when one is
+/// pooled, otherwise allocates a fresh one. Always a
 /// *distinct* cell buffer from any active row — the moved rows above may
 /// transiently alias their source slot, and a distinct buffer breaks that alias
 /// instead of clearing a shared line in place.
@@ -337,7 +338,9 @@ fn ScreenGridState::set_blank_row(
   // store directly: `replace_row` remains public for PageList rebuilds, but an
   // extra call here showed up on every full-screen linefeed.
   let physical = self.physical_row(row_idx)
-  let desc = @page.PageRowState::new().with_styled(blank_row_is_styled(style))
+  let desc = @page.PageRowState::new()
+    .with_styled(blank_row_is_styled(style))
+    .with_dirty(true)
   // Compute the packed value before the indexed write so the descriptor array
   // is not retained across the cross-package `with_styled` call.
   self.descs[physical] = desc
@@ -1137,6 +1140,7 @@ fn ScreenGridState::shift_full_width_down(
       let desc = self.descs[physical]
         .with_wrap(false)
         .with_wrap_continuation(false)
+        .with_dirty(true)
       self.descs[physical] = desc
       src -= 1
     }
@@ -1159,19 +1163,11 @@ fn ScreenGridState::shift_full_width_down(
       src -= 1
     }
   }
-  // Fresh blank rows scroll in at the top (reusing pooled cell arrays).
+  // Fresh dirty blank rows scroll in at the top (reusing pooled cell arrays).
   let mut row_idx = start_y
   while row_idx < start_y + count {
     self.set_blank_row(row_idx, style)
     row_idx += 1
-  }
-  // Every row's contents moved, so the whole region is dirty.
-  let mut dirty_idx = start_y
-  while dirty_idx <= bottom {
-    let physical = self.physical_row(dirty_idx)
-    let desc = self.descs[physical].with_dirty(true)
-    self.descs[physical] = desc
-    dirty_idx += 1
   }
 }
 
@@ -1217,7 +1213,7 @@ fn ScreenGridState::shift_region_up(
 /// blank rows fill the bottom.
 ///
 /// A whole-screen move advances the private origin, so the three reference
-/// arrays are not blitted. The per-row survivor cleanup and dirty pass remain;
+/// arrays are not blitted. Survivor cleanup also marks each moved row dirty;
 /// only row relocation becomes constant time. A partial-height full-width move
 /// copies the affected logical rows because rotating the whole screen would
 /// disturb rows outside the region.
@@ -1248,6 +1244,7 @@ fn ScreenGridState::shift_full_width_up(
       let desc = self.descs[physical]
         .with_wrap(false)
         .with_wrap_continuation(false)
+        .with_dirty(true)
       self.descs[physical] = desc
       src += 1
     }
@@ -1270,19 +1267,11 @@ fn ScreenGridState::shift_full_width_up(
       src += 1
     }
   }
-  // Fresh blank rows scroll in at the bottom (reusing pooled cell arrays).
+  // Fresh dirty blank rows scroll in at the bottom (reusing pooled cell arrays).
   let mut row_idx = bottom - count + 1
   while row_idx <= bottom {
     self.set_blank_row(row_idx, style)
     row_idx += 1
-  }
-  // Every row's contents moved, so the whole region is dirty.
-  let mut dirty_idx = start_y
-  while dirty_idx <= bottom {
-    let physical = self.physical_row(dirty_idx)
-    let desc = self.descs[physical].with_dirty(true)
-    self.descs[physical] = desc
-    dirty_idx += 1
   }
 }
 

@@ -1049,6 +1049,110 @@ test "screen grid/full-width scrolls clear orphaned trailing spacer heads" {
 }
 
 ///|
+test "screen grid/full-width scroll dirty flags follow moved and blank rows" {
+  let plain = @style.CellStyle::new()
+  let bold = plain.apply_attribute(Bold)
+  let erase = plain.apply_attribute(Color256Bg(4))
+  let link = @hyperlink.CellHyperlink::implicit("https://example.com", 1)
+  for up in [false, true] {
+    for partial in [false, true] {
+      let top = if partial { 1 } else { 0 }
+      let bottom = if partial { 3 } else { 4 }
+      for count in [1, 2, bottom - top + 1] {
+        for origin in [0, 4] {
+          let grid = ScreenGridState::new(5, 4)
+          let cursor = @cursor.TerminalCursorState::new(5, 4)
+          grid.row_origin = origin
+          for row in 0..<5 {
+            cursor.y = row.to_uint16()
+            cursor.x = 0
+            grid.print_cell(
+              cursor,
+              b'A'.to_uint() + row.reinterpret_as_uint(),
+              Narrow,
+              bold,
+              false,
+              Prompt,
+              Some(link),
+            )
+            cursor.x = 1
+            grid.append_grapheme(cursor, 0x301U)
+            grid.write_cell(row, 3, 0U, SpacerHead, plain, false, Output, None)
+            grid.set_row_state(
+              row,
+              grid
+              .row_state(row)
+              .with_wrap(true)
+              .with_wrap_continuation(true)
+              .with_semantic_prompt(Prompt)
+              .with_dirty(false),
+            )
+          }
+          // Exercise both pooled and newly allocated blank buffers for count>1.
+          grid.recycle_row_cells(make_row_cells(4))
+          if up {
+            grid.shift_region_up(top, bottom, 0, 3, count, erase)
+          } else {
+            grid.shift_region_down(top, bottom, 0, 3, count, erase)
+          }
+          for row in 0..<5 {
+            let desc = expect_row(grid, row.to_uint16())
+            let cell = expect_cell(grid, row.to_uint16(), 0)
+            let trailing = expect_cell(grid, row.to_uint16(), 3)
+            let outside = row < top || row > bottom
+            if outside {
+              guard !desc.dirty() &&
+                desc.wrap() &&
+                desc.wrap_continuation() &&
+                desc.styled() &&
+                desc.hyperlink() &&
+                desc.grapheme() &&
+                desc.semantic_prompt() == Prompt &&
+                cell.codepoint() == b'A'.to_uint() + row.reinterpret_as_uint() &&
+                trailing.wide() == SpacerHead &&
+                grid.cell_hyperlink(row, 0) == Some(link) else {
+                fail("expected rows outside the region to remain unchanged")
+              }
+              continue
+            }
+            guard desc.dirty() && !desc.wrap() && !desc.wrap_continuation() else {
+              fail("expected every moved or blank row dirty with wraps cleared")
+            }
+            let source = if up { row + count } else { row - count }
+            if source >= top && source <= bottom {
+              guard cell.codepoint() ==
+                b'A'.to_uint() + source.reinterpret_as_uint() &&
+                cell.has_grapheme() &&
+                desc.grapheme() &&
+                desc.styled() &&
+                desc.hyperlink() &&
+                desc.semantic_prompt() == Prompt &&
+                grid.cell_hyperlink(row, 0) == Some(link) &&
+                trailing.is_empty() else {
+                fail(
+                  "expected moved rows to retain metadata after spacer cleanup",
+                )
+              }
+            } else {
+              guard cell.is_empty() &&
+                trailing.is_empty() &&
+                desc.styled() &&
+                !desc.grapheme() &&
+                !desc.hyperlink() &&
+                desc.semantic_prompt() == None &&
+                grid.cell_hyperlink(row, 0) == None &&
+                grid.cell_style(row, 0).bg_color().palette_index() == Some(4) else {
+                fail("expected dirty colored blanks without displaced metadata")
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
 test "screen grid/circular origin wraps and partial-height moves stay logical" {
   let grid = ScreenGridState::new(3, 2)
   fill_ascii(grid, 0, [b'A', b'a'])
