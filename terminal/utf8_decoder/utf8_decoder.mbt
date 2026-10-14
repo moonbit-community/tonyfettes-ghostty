@@ -33,13 +33,13 @@ const RejectState : Byte = 12
 /// out-of-range value assigned from outside would make `next()` read past it.
 /// Callers use `new`/`next`/`is_accept_state` only, so keep the storage sealed.
 struct Utf8Decoder {
-  mut accumulator : UInt
+  mut accumulator : UInt32
   mut state : Byte
 } derive(Eq, Debug)
 
 ///|
 pub fn Utf8Decoder::new() -> Utf8Decoder {
-  { accumulator: 0, state: AcceptState }
+  { accumulator: 0, state: AcceptState, }
 }
 
 ///|
@@ -58,7 +58,7 @@ pub fn Utf8Decoder::is_accept_state(self : Utf8Decoder) -> Bool {
 /// which was a per-byte heap allocation on the text hot path.
 #valtype
 pub struct Utf8Decoded {
-  value : UInt?
+  value : UInt32?
   consumed : Bool
 }
 
@@ -78,12 +78,25 @@ pub fn Utf8Decoder::next(self : Utf8Decoder, byte : Byte) -> Utf8Decoded {
   if self.state == AcceptState {
     let result = self.accumulator
     self.accumulator = 0
-    { value: Some(result), consumed: true }
+    { value: Some(result), consumed: true, }
   } else if self.state == RejectState {
     self.accumulator = 0
     self.state = AcceptState
-    { value: Some(0xFFFD), consumed: initial_state == AcceptState }
+    { value: Some(0xFFFD), consumed: initial_state == AcceptState, }
   } else {
-    { value: None, consumed: true }
+    { value: None, consumed: true, }
   }
 }
+
+///|
+pub extend Utf8Decoder with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Utf8Decoder with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Utf8Decoder with @debug.Debug::{to_repr}

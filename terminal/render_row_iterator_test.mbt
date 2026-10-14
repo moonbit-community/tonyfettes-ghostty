@@ -1,6 +1,6 @@
 ///|
 test "render row iterator/empty state is inert" {
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   let rows = state.row_iterator()
   let cells_none = match rows.cells() {
     None => true
@@ -19,12 +19,12 @@ test "render row iterator/empty state is inert" {
 
 ///|
 test "render row iterator/update tracks partial dirty rows" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before row iterator dirty test")
   }
 
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   state.update(terminal)
 
   let clear = state.row_iterator()
@@ -69,14 +69,14 @@ test "render row iterator/update tracks partial dirty rows" {
 
 ///|
 test "render row cells/select and next resolve style and content colors" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(3, 1, 0U, 0U) == Success else {
     fail("expected resize before row cell color test")
   }
 
   terminal.next_slice(b"\x1B[31mR\x1B[44mB\x1B[48;5;4m\x1B[K")
 
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   state.update(terminal)
 
   let rows = state.row_iterator()
@@ -131,14 +131,14 @@ test "render row cells/select and next resolve style and content colors" {
 
 ///|
 test "render row cells/resolve direct rgb colors" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(5, 1, 0U, 0U) == Success else {
     fail("expected resize before rgb color test")
   }
 
   terminal.next_slice(b"\x1B[38;2;1;2;3mX\x1B[48;2;4;5;6m\x1B[K")
 
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   state.update(terminal)
 
   let rows = state.row_iterator()
@@ -165,7 +165,7 @@ test "render row cells/resolve direct rgb colors" {
 
 ///|
 test "render state/viewport movement without cursor change still forces full" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before viewport-origin dirty test")
   }
@@ -173,7 +173,7 @@ test "render state/viewport movement without cursor change still forces full" {
   terminal.next_slice(b"hello\x1BD\x1BD\x1BD")
   terminal.scroll_viewport_top()
 
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   state.update(terminal)
   state.set_dirty(False)
 
@@ -194,11 +194,11 @@ test "render state/viewport movement without cursor change still forces full" {
 
 ///|
 test "render row iterator/resolves a cell hyperlink from the snapshot alone" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   // 'A' carries an OSC 8 link; 'B' (printed after the close) does not.
   terminal.next_slice(b"\x1B]8;;https://example.com\x07A\x1B]8;;\x07B")
 
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   state.update(terminal)
 
   let rows = state.row_iterator()

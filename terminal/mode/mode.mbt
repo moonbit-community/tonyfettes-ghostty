@@ -71,7 +71,9 @@ pub fn ModeTag::ansi(self : ModeTag) -> Bool {
 
 ///|
 pub fn mode_tag(value : UInt16, ansi : Bool) -> ModeTag {
-  { raw: (value & ModeTagValueMask) | (if ansi { ModeTagAnsiMask } else { 0 }) }
+  {
+    raw: (value & ModeTagValueMask) | (if ansi { ModeTagAnsiMask } else { 0 }),
+  }
 }
 
 ///|
@@ -184,7 +186,7 @@ pub fn mode_from_int(value : UInt16, ansi : Bool) -> Mode? {
 struct ModePacked(UInt64) derive(Eq, Debug)
 
 ///|
-fn mode_bit_index(mode : Mode) -> Int {
+fn mode_bit_index(mode : Mode) -> Int32 {
   match mode {
     DisableKeyboard => 0
     Insert => 1
@@ -283,12 +285,12 @@ struct ModeState {
 
 ///|
 pub fn ModeState::new() -> ModeState {
-  { values: ModePacked::default(), saved: ModePacked::empty() }
+  { values: ModePacked::default(), saved: ModePacked::empty(), }
 }
 
 ///|
 pub fn ModeState::set(self : ModeState, mode : Mode, value : Bool) -> ModeState {
-  { ..self, values: self.values.set(mode, value) }
+  { ..self, values: self.values.set(mode, value), }
 }
 
 ///|
@@ -298,7 +300,7 @@ pub fn ModeState::get(self : ModeState, mode : Mode) -> Bool {
 
 ///|
 pub fn ModeState::save(self : ModeState, mode : Mode) -> ModeState {
-  { ..self, saved: self.saved.set(mode, self.values.get(mode)) }
+  { ..self, saved: self.saved.set(mode, self.values.get(mode)), }
 }
 
 ///|
@@ -319,7 +321,7 @@ pub(all) enum ReportState {
 } derive(Eq, Debug)
 
 ///|
-pub fn ReportState::code(self : ReportState) -> Int {
+pub fn ReportState::code(self : ReportState) -> Int32 {
   match self {
     NotRecognized => 0
     Set => 1
@@ -336,7 +338,7 @@ struct Report {
 } derive(Eq, Debug)
 
 ///|
-let report_max_size : Int = b"\x1B[?32767;4$y".length()
+let report_max_size : Int32 = b"\x1B[?32767;4$y".length()
 
 ///|
 pub fn Report::tag(self : Report) -> ModeTag {
@@ -365,7 +367,85 @@ pub fn Report::encode(self : Report) -> Bytes {
 ///|
 pub fn ModeState::get_report(self : ModeState, tag : ModeTag) -> Report {
   match mode_from_int(tag.value(), tag.ansi()) {
-    Some(mode) => { tag, state: if self.get(mode) { Set } else { Reset } }
-    None => { tag, state: NotRecognized }
+    Some(mode) => { tag, state: if self.get(mode) { Set } else { Reset }, }
+    None => { tag, state: NotRecognized, }
   }
 }
+
+///|
+pub extend Mode with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Mode with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Mode with @debug.Debug::{to_repr}
+
+///|
+pub extend ModeTag with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModeTag with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModeTag with @debug.Debug::{to_repr}
+
+///|
+pub extend ModePacked with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModePacked with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModePacked with @debug.Debug::{to_repr}
+
+///|
+pub extend ModeState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModeState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModeState with @debug.Debug::{to_repr}
+
+///|
+pub extend ReportState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ReportState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ReportState with @debug.Debug::{to_repr}
+
+///|
+pub extend Report with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Report with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Report with @debug.Debug::{to_repr}

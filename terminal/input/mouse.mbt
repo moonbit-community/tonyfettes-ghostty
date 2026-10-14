@@ -128,3 +128,42 @@ pub fn MouseShape::from_string(value : String) -> MouseShape? {
   }
   None
 }
+
+///|
+pub extend MouseEvent with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEvent with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEvent with @debug.Debug::{to_repr}
+
+///|
+pub extend MouseFormat with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseFormat with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseFormat with @debug.Debug::{to_repr}
+
+///|
+pub extend MouseShape with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseShape with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseShape with @debug.Debug::{to_repr}

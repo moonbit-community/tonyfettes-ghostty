@@ -137,3 +137,29 @@ fn ScreenSemanticState::set_prompt_kind(
     Continuation | Secondary => PromptContinuation
   }
 }
+
+///|
+pub extend SemanticClickMode with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticClickMode with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticClickMode with @debug.Debug::{to_repr}
+
+///|
+pub extend ScreenSemanticState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ScreenSemanticState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ScreenSemanticState with @debug.Debug::{to_repr}

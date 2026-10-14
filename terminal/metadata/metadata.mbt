@@ -7,7 +7,7 @@ struct TerminalMetadataState {
 
 ///|
 pub fn TerminalMetadataState::new() -> TerminalMetadataState {
-  { title: None, pwd: None, shell_redraws_prompt: Enabled }
+  { title: None, pwd: None, shell_redraws_prompt: Enabled, }
 }
 
 ///|
@@ -65,3 +65,16 @@ pub fn TerminalMetadataState::full_reset(self : TerminalMetadataState) -> Unit {
   self.pwd = None
   self.shell_redraws_prompt = Enabled
 }
+
+///|
+pub extend TerminalMetadataState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalMetadataState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalMetadataState with @debug.Debug::{to_repr}

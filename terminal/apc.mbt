@@ -28,7 +28,7 @@ priv struct ApcHandler {
 
 ///|
 fn ApcHandler::new() -> ApcHandler {
-  { state: Inactive }
+  { state: Inactive, }
 }
 
 ///|
@@ -43,7 +43,7 @@ fn ApcHandler::feed(self : ApcHandler, byte : Byte) -> Unit {
     Ignore => ()
     Identify =>
       if byte == b'G' {
-        self.state = Kitty({ bytes: [] })
+        self.state = Kitty({ bytes: [], })
       } else {
         self.state = Ignore
       }

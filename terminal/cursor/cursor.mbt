@@ -250,7 +250,7 @@ fn nonzero_dimension(value : @size.CellCountInt) -> @size.CellCountInt {
 }
 
 ///|
-fn one_indexed_request(value : @size.CellCountInt) -> Int {
+fn one_indexed_request(value : @size.CellCountInt) -> Int32 {
   if value == 0 {
     1
   } else {
@@ -262,7 +262,7 @@ fn one_indexed_request(value : @size.CellCountInt) -> Int {
 fn clamped_bottom_margin(
   request : @size.CellCountInt,
   limit : @size.CellCountInt,
-) -> Int {
+) -> Int32 {
   if request == 0 || request > limit {
     limit.to_int()
   } else {
@@ -272,9 +272,9 @@ fn clamped_bottom_margin(
 
 ///|
 fn bounded_one_indexed_position(
-  value : Int,
-  offset : Int,
-  limit : Int,
+  value : Int32,
+  offset : Int32,
+  limit : Int32,
 ) -> @size.CellCountInt {
   let adjusted = value + offset
   let bounded = if adjusted > limit { limit } else { adjusted }
@@ -292,3 +292,29 @@ fn min_cursor_coordinate(
     value
   }
 }
+
+///|
+pub extend CursorVisualStyle with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CursorVisualStyle with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CursorVisualStyle with @debug.Debug::{to_repr}
+
+///|
+pub extend TerminalCursorState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalCursorState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalCursorState with @debug.Debug::{to_repr}

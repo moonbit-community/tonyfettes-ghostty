@@ -42,6 +42,7 @@ pub fn terminal_system_set_log((SystemLogLevel, Bytes, Bytes) -> Unit) -> Unit
 
 // Types and methods
 type BuildInfo derive(Eq, @debug.Debug)
+pub fn BuildInfo::equal(Self, Self) -> Bool
 pub fn BuildInfo::kitty_graphics(Self) -> Bool
 pub fn BuildInfo::optimize(Self) -> OptimizeMode
 pub fn BuildInfo::simd(Self) -> Bool
@@ -51,6 +52,7 @@ pub fn BuildInfo::version_string(Self) -> String
 
 type BuildVersion derive(Eq, @debug.Debug)
 pub fn BuildVersion::build(Self) -> String?
+pub fn BuildVersion::equal(Self, Self) -> Bool
 pub fn BuildVersion::major(Self) -> UInt
 pub fn BuildVersion::minor(Self) -> UInt
 pub fn BuildVersion::patch(Self) -> UInt
@@ -62,6 +64,7 @@ pub(all) enum Format {
   Vt
   Html
 } derive(Eq, @debug.Debug)
+pub fn Format::equal(Self, Self) -> Bool
 
 type Formatter
 pub fn Formatter::format(Self) -> Bytes
@@ -72,12 +75,14 @@ pub fn FormatterOptions::new(Format, unwrap? : Bool, trim? : Bool, selection? : 
 
 type FormatterScreenExtra derive(Eq, @debug.Debug)
 pub fn FormatterScreenExtra::all() -> Self
+pub fn FormatterScreenExtra::equal(Self, Self) -> Bool
 pub fn FormatterScreenExtra::new(cursor? : Bool, style? : Bool, hyperlink? : Bool, protection? : Bool, kitty_keyboard? : Bool, charsets? : Bool) -> Self
 pub fn FormatterScreenExtra::none() -> Self
 pub fn FormatterScreenExtra::styles() -> Self
 
 type FormatterTerminalExtra derive(Eq, @debug.Debug)
 pub fn FormatterTerminalExtra::all() -> Self
+pub fn FormatterTerminalExtra::equal(Self, Self) -> Bool
 pub fn FormatterTerminalExtra::new(palette? : Bool, modes? : Bool, scrolling_region? : Bool, tabstops? : Bool, pwd? : Bool, keyboard? : Bool, screen? : FormatterScreenExtra) -> Self
 pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
@@ -94,16 +99,19 @@ pub(all) enum KittyGraphicsCompression {
   None
   ZlibDeflate
 } derive(Eq, @debug.Debug)
+pub fn KittyGraphicsCompression::equal(Self, Self) -> Bool
 
 pub(all) enum KittyGraphicsFormat {
   Rgb
   Rgba
   Png
 } derive(Eq, @debug.Debug)
+pub fn KittyGraphicsFormat::equal(Self, Self) -> Bool
 
 type KittyImage derive(Eq, @debug.Debug)
 pub fn KittyImage::compression(Self) -> KittyGraphicsCompression
 pub fn KittyImage::data(Self) -> Bytes
+pub fn KittyImage::equal(Self, Self) -> Bool
 pub fn KittyImage::format(Self) -> KittyGraphicsFormat
 pub fn KittyImage::height(Self) -> UInt
 pub fn KittyImage::id(Self) -> UInt
@@ -112,6 +120,7 @@ pub fn KittyImage::width(Self) -> UInt
 
 type KittyKeyboardState derive(Eq, @debug.Debug)
 pub fn KittyKeyboardState::current(Self) -> @stream.KittyKeyboardFlags
+pub fn KittyKeyboardState::equal(Self, Self) -> Bool
 pub fn KittyKeyboardState::new() -> Self
 pub fn KittyKeyboardState::pop(Self, UInt16) -> Unit
 pub fn KittyKeyboardState::push(Self, @stream.KittyKeyboardFlags) -> Unit
@@ -143,6 +152,7 @@ pub fn KittyPlacement::z(Self) -> Int
 
 type KittyPlacementGridSize derive(Eq, @debug.Debug)
 pub fn KittyPlacementGridSize::cols(Self) -> UInt
+pub fn KittyPlacementGridSize::equal(Self, Self) -> Bool
 pub fn KittyPlacementGridSize::rows(Self) -> UInt
 
 type KittyPlacementIterator
@@ -154,18 +164,22 @@ pub(all) enum KittyPlacementLayer {
   BelowText
   AboveText
 } derive(Eq, @debug.Debug)
+pub fn KittyPlacementLayer::equal(Self, Self) -> Bool
 
 type KittyPlacementPixelSize derive(Eq, @debug.Debug)
+pub fn KittyPlacementPixelSize::equal(Self, Self) -> Bool
 pub fn KittyPlacementPixelSize::height(Self) -> UInt
 pub fn KittyPlacementPixelSize::width(Self) -> UInt
 
 type KittyPlacementRenderInfo derive(Eq, @debug.Debug)
+pub fn KittyPlacementRenderInfo::equal(Self, Self) -> Bool
 pub fn KittyPlacementRenderInfo::grid_size(Self) -> KittyPlacementGridSize
 pub fn KittyPlacementRenderInfo::pixel_size(Self) -> KittyPlacementPixelSize
 pub fn KittyPlacementRenderInfo::source_rect(Self) -> KittyPlacementSourceRect
 pub fn KittyPlacementRenderInfo::viewport_position(Self) -> KittyPlacementViewportPosition?
 
 type KittyPlacementSourceRect derive(Eq, @debug.Debug)
+pub fn KittyPlacementSourceRect::equal(Self, Self) -> Bool
 pub fn KittyPlacementSourceRect::height(Self) -> UInt
 pub fn KittyPlacementSourceRect::width(Self) -> UInt
 pub fn KittyPlacementSourceRect::x(Self) -> UInt
@@ -173,6 +187,7 @@ pub fn KittyPlacementSourceRect::y(Self) -> UInt
 
 type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
 pub fn KittyPlacementViewportPosition::col(Self) -> Int
+pub fn KittyPlacementViewportPosition::equal(Self, Self) -> Bool
 pub fn KittyPlacementViewportPosition::row(Self) -> Int
 
 pub(all) enum OptimizeMode {
@@ -181,12 +196,14 @@ pub(all) enum OptimizeMode {
   ReleaseSmall
   ReleaseFast
 } derive(Eq, @debug.Debug)
+pub fn OptimizeMode::equal(Self, Self) -> Bool
 
 pub(all) enum RenderDirty {
   False
   Partial
   Full
 } derive(Eq)
+pub fn RenderDirty::equal(Self, Self) -> Bool
 
 type RenderRowCells
 pub fn RenderRowCells::background_color(Self) -> @color.RGB?
@@ -310,6 +327,7 @@ pub fn StreamTerminal::width_px(Self) -> UInt
 
 type SystemImage derive(Eq, @debug.Debug)
 pub fn SystemImage::data(Self) -> Bytes
+pub fn SystemImage::equal(Self, Self) -> Bool
 pub fn SystemImage::height(Self) -> UInt
 pub fn SystemImage::new(UInt, UInt, Bytes) -> Self
 pub fn SystemImage::width(Self) -> UInt
@@ -320,9 +338,11 @@ pub(all) enum SystemLogLevel {
   Info
   Debug
 } derive(Eq, @debug.Debug)
+pub fn SystemLogLevel::equal(Self, Self) -> Bool
 
 type TerminalInputFlags derive(Eq, @debug.Debug)
 pub fn TerminalInputFlags::apply_modify_key_format(Self, @ansi.ModifyKeyFormat) -> Unit
+pub fn TerminalInputFlags::equal(Self, Self) -> Bool
 pub fn TerminalInputFlags::full_reset(Self) -> Unit
 pub fn TerminalInputFlags::modify_other_keys_2(Self) -> Bool
 pub fn TerminalInputFlags::mouse_shift_capture(Self) -> Bool?
@@ -330,6 +350,7 @@ pub fn TerminalInputFlags::new() -> Self
 pub fn TerminalInputFlags::set_mouse_shift_capture(Self, Bool) -> Unit
 
 type TerminalSurfaceTypeInfo derive(Eq, @debug.Debug)
+pub fn TerminalSurfaceTypeInfo::equal(Self, Self) -> Bool
 pub fn TerminalSurfaceTypeInfo::mapping(Self) -> TerminalSurfaceTypeMapping
 pub fn TerminalSurfaceTypeInfo::moonbit_surface(Self) -> String
 pub fn TerminalSurfaceTypeInfo::note(Self) -> String?
@@ -340,9 +361,9 @@ pub(all) enum TerminalSurfaceTypeMapping {
   Native
   Absorbed
 } derive(Eq, @debug.Debug)
+pub fn TerminalSurfaceTypeMapping::equal(Self, Self) -> Bool
 
 // Type aliases
 pub using @selection {type Selection}
 
 // Traits
-

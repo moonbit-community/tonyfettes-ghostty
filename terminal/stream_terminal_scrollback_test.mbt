@@ -10,14 +10,14 @@
 
 ///|
 /// Codepoint at column 0 of viewport row `row`.
-fn view_cp0(term : StreamTerminal, row : Int) -> UInt {
+fn view_cp0(term : @terminal.StreamTerminal, row : Int32) -> UInt32 {
   term.screen_cell_snapshot(row.to_uint16(), 0).unwrap().codepoint()
 }
 
 ///|
 /// A fresh terminal sized to cols x rows.
-fn sized_terminal(cols : Int, rows : Int) -> StreamTerminal {
-  let term = StreamTerminal::new()
+fn sized_terminal(cols : Int32, rows : Int32) -> @terminal.StreamTerminal {
+  let term = @terminal.StreamTerminal::new()
   ignore(term.resize(cols.to_uint16(), rows.to_uint16(), 8U, 16U))
   term
 }

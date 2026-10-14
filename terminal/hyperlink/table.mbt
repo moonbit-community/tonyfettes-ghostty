@@ -7,17 +7,17 @@
 struct CellHyperlink {
   uri : String
   explicit_id : String?
-  implicit_id : Int?
+  implicit_id : Int32?
 } derive(Eq, Debug, Hash)
 
 ///|
 pub fn CellHyperlink::explicit(uri : String, id : String) -> CellHyperlink {
-  { uri, explicit_id: Some(id), implicit_id: None }
+  { uri, explicit_id: Some(id), implicit_id: None, }
 }
 
 ///|
-pub fn CellHyperlink::implicit(uri : String, id : Int) -> CellHyperlink {
-  { uri, explicit_id: None, implicit_id: Some(id) }
+pub fn CellHyperlink::implicit(uri : String, id : Int32) -> CellHyperlink {
+  { uri, explicit_id: None, implicit_id: Some(id), }
 }
 
 ///|
@@ -31,7 +31,7 @@ pub fn CellHyperlink::explicit_id(self : CellHyperlink) -> String? {
 }
 
 ///|
-pub fn CellHyperlink::implicit_id(self : CellHyperlink) -> Int? {
+pub fn CellHyperlink::implicit_id(self : CellHyperlink) -> Int32? {
   self.implicit_id
 }
 
@@ -73,7 +73,7 @@ pub struct HyperlinkTable {
 
 ///|
 pub fn HyperlinkTable::new() -> HyperlinkTable {
-  { list: [], index: Map([]), last_link: None, last_id: no_hyperlink_id }
+  { list: [], index: Map([]), last_link: None, last_id: no_hyperlink_id, }
 }
 
 ///|
@@ -123,3 +123,35 @@ pub fn HyperlinkTable::get(
     Some(self.list[id.0.to_int() - 1])
   }
 }
+
+///|
+pub extend CellHyperlink with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CellHyperlink with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CellHyperlink with @debug.Debug::{to_repr}
+
+///|
+pub extend CellHyperlink with Hash::{hash, hash_combine}
+
+///|
+pub extend HyperlinkId with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend HyperlinkId with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend HyperlinkId with @debug.Debug::{to_repr}
+
+///|
+pub extend HyperlinkId with Hash::{hash, hash_combine}

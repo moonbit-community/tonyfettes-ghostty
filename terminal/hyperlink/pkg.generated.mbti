@@ -12,13 +12,19 @@ pub let no_hyperlink_id : HyperlinkId
 
 // Types and methods
 type CellHyperlink derive(Eq, Hash, @debug.Debug)
+pub fn CellHyperlink::equal(Self, Self) -> Bool
 pub fn CellHyperlink::explicit(String, String) -> Self
 pub fn CellHyperlink::explicit_id(Self) -> String?
+pub fn CellHyperlink::hash(Self) -> Int
+pub fn CellHyperlink::hash_combine(Self, Hasher) -> Unit
 pub fn CellHyperlink::implicit(String, Int) -> Self
 pub fn CellHyperlink::implicit_id(Self) -> Int?
 pub fn CellHyperlink::uri(Self) -> String
 
 type HyperlinkId derive(Eq, Hash, @debug.Debug)
+pub fn HyperlinkId::equal(Self, Self) -> Bool
+pub fn HyperlinkId::hash(Self) -> Int
+pub fn HyperlinkId::hash_combine(Self, Hasher) -> Unit
 pub fn HyperlinkId::is_none(Self) -> Bool
 
 pub struct HyperlinkTable {
@@ -31,4 +37,3 @@ pub fn HyperlinkTable::new() -> Self
 // Type aliases
 
 // Traits
-

@@ -1,6 +1,6 @@
 ///|
 pub(all) struct CodepointMapEntry {
-  range : (UInt, UInt)
+  range : (UInt32, UInt32)
   descriptor : Descriptor
 } derive(Eq, Debug)
 
@@ -12,7 +12,7 @@ pub(all) struct CodepointMap {
 
 ///|
 pub fn CodepointMap::new() -> CodepointMap {
-  { list: [] }
+  { list: [], }
 }
 
 ///|
@@ -20,12 +20,15 @@ pub fn CodepointMap::add(
   self : CodepointMap,
   entry : CodepointMapEntry,
 ) -> Unit {
-  guard entry.range.0 <= entry.range.1
+  guard! entry.range.0 <= entry.range.1
   self.list.push(entry)
 }
 
 ///|
-pub fn CodepointMap::get(self : CodepointMap, codepoint : UInt) -> Descriptor? {
+pub fn CodepointMap::get(
+  self : CodepointMap,
+  codepoint : UInt32,
+) -> Descriptor? {
   let len = self.list.length()
   for forward_i in 0..<len {
     let index = len - forward_i - 1
@@ -38,7 +41,7 @@ pub fn CodepointMap::get(self : CodepointMap, codepoint : UInt) -> Descriptor? {
 }
 
 ///|
-pub fn CodepointMap::hashcode(self : CodepointMap) -> UInt {
+pub fn CodepointMap::hashcode(self : CodepointMap) -> UInt32 {
   let hasher = Hasher(seed=0)
   hasher.combine_int(self.list.length())
   for entry in self.list {
@@ -48,3 +51,29 @@ pub fn CodepointMap::hashcode(self : CodepointMap) -> UInt {
   }
   hasher.finalize().reinterpret_as_uint()
 }
+
+///|
+pub extend CodepointMapEntry with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CodepointMapEntry with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CodepointMapEntry with @debug.Debug::{to_repr}
+
+///|
+pub extend CodepointMap with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CodepointMap with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CodepointMap with @debug.Debug::{to_repr}

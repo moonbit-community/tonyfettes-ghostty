@@ -34,7 +34,7 @@ pub(all) enum ScreenEraseDisplayMode {
 // value grid is the follow-on `#valtype @page.PageCellState` change.)
 
 ///|
-pub fn make_row_cells(cols : Int) -> FixedArray[@page.PageCellState] {
+pub fn make_row_cells(cols : Int32) -> FixedArray[@page.PageCellState] {
   // Allocate the row's cells in one shot. `FixedArray::make` fills every slot
   // with a copy of the (immutable value) blank cell — a single allocation,
   // versus a `push` loop that reallocs and ref-blits the growing buffer
@@ -87,7 +87,7 @@ pub struct ScreenGridState {
   // Physical slot for logical row zero. Keeping this on the persistent grid
   // object makes a full-screen row relocation a scalar update; all three
   // parallel arrays map through the same value and therefore stay paired.
-  priv mut row_origin : Int
+  priv mut row_origin : Int32
 }
 
 ///|
@@ -169,7 +169,10 @@ pub fn ScreenGridState::from_shared_storage(
 /// bounded by grid operations, so one subtraction is enough and avoids `%` on
 /// every row access.
 #inline
-fn ScreenGridState::physical_row(self : ScreenGridState, row_idx : Int) -> Int {
+fn ScreenGridState::physical_row(
+  self : ScreenGridState,
+  row_idx : Int32,
+) -> Int32 {
   let physical = self.row_origin + row_idx
   if physical >= self.rows.to_int() {
     physical - self.rows.to_int()
@@ -183,7 +186,7 @@ fn ScreenGridState::physical_row(self : ScreenGridState, row_idx : Int) -> Int {
 #inline
 pub fn ScreenGridState::row_state(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
 ) -> @page.PageRowState {
   self.descs[self.physical_row(row_idx)]
 }
@@ -193,7 +196,7 @@ pub fn ScreenGridState::row_state(
 #inline
 fn ScreenGridState::set_row_state(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
   desc : @page.PageRowState,
 ) -> Unit {
   self.descs[self.physical_row(row_idx)] = desc
@@ -204,7 +207,7 @@ fn ScreenGridState::set_row_state(
 #inline
 pub fn ScreenGridState::row_cells(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
 ) -> FixedArray[@page.PageCellState] {
   self.cells[self.physical_row(row_idx)]
 }
@@ -214,7 +217,7 @@ pub fn ScreenGridState::row_cells(
 #inline
 pub fn ScreenGridState::row_link_ids(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
 ) -> FixedArray[@hyperlink.HyperlinkId]? {
   self.link_ids[self.physical_row(row_idx)]
 }
@@ -224,7 +227,7 @@ pub fn ScreenGridState::row_link_ids(
 #inline
 fn ScreenGridState::set_row_link_ids(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
   link_ids : FixedArray[@hyperlink.HyperlinkId]?,
 ) -> Unit {
   self.link_ids[self.physical_row(row_idx)] = link_ids
@@ -236,7 +239,7 @@ fn ScreenGridState::set_row_link_ids(
 /// reflowed rows.
 pub fn ScreenGridState::replace_row(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
   desc : @page.PageRowState,
   cells : FixedArray[@page.PageCellState],
   link_ids : FixedArray[@hyperlink.HyperlinkId]?,
@@ -255,8 +258,8 @@ pub fn ScreenGridState::replace_row(
 /// dead slot is harmless.
 pub fn ScreenGridState::link_id_at(
   self : ScreenGridState,
-  row_idx : Int,
-  col_idx : Int,
+  row_idx : Int32,
+  col_idx : Int32,
 ) -> @hyperlink.HyperlinkId {
   match self.row_link_ids(row_idx) {
     Some(row) => row[col_idx]
@@ -270,8 +273,8 @@ pub fn ScreenGridState::link_id_at(
 /// the cell's `has_hyperlink()` presence bit.
 fn ScreenGridState::set_link_id(
   self : ScreenGridState,
-  row_idx : Int,
-  col_idx : Int,
+  row_idx : Int32,
+  col_idx : Int32,
   id : @hyperlink.HyperlinkId,
 ) -> Unit {
   let row = match self.row_link_ids(row_idx) {
@@ -309,7 +312,7 @@ pub fn ScreenGridState::recycle_row_cells(
 /// instead of clearing a shared line in place.
 fn ScreenGridState::set_blank_row(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let cells = if self.cell_pool.length() > 0 {
@@ -374,8 +377,8 @@ pub fn ScreenGridState::set_row_semantic_prompt(
 pub fn ScreenGridState::print(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
-  codepoint : UInt,
-  width : Int,
+  codepoint : UInt32,
+  width : Int32,
   style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : @page.SemanticContent,
@@ -499,8 +502,8 @@ pub fn ScreenGridState::print(
 pub fn ScreenGridState::print_repeat(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
-  codepoint : UInt,
-  width : Int,
+  codepoint : UInt32,
+  width : Int32,
   style : @style.CellStyle,
   protected_flag : Bool,
   semantic_content : @page.SemanticContent,
@@ -527,7 +530,7 @@ pub fn ScreenGridState::print_repeat(
 pub fn ScreenGridState::append_grapheme(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
-  codepoint : UInt,
+  codepoint : UInt32,
 ) -> Unit {
   let row_idx = cursor.y.to_int()
   if row_idx < 0 || row_idx >= self.descs.length() {
@@ -915,7 +918,7 @@ pub fn ScreenGridState::full_reset(self : ScreenGridState) -> Unit {
 fn ScreenGridState::print_cell(
   self : ScreenGridState,
   cursor : @cursor.TerminalCursorState,
-  codepoint : UInt,
+  codepoint : UInt32,
   wide : @page.PageCellWide,
   style : @style.CellStyle,
   protected_flag : Bool,
@@ -981,10 +984,10 @@ fn ScreenGridState::print_cell(
 /// and tests, which maintain row flags differently (or in bulk).
 fn ScreenGridState::write_cell_and_update_row_flags(
   self : ScreenGridState,
-  row_idx : Int,
-  physical_row : Int,
-  col_idx : Int,
-  codepoint : UInt,
+  row_idx : Int32,
+  physical_row : Int32,
+  col_idx : Int32,
+  codepoint : UInt32,
   wide : @page.PageCellWide,
   style : @style.CellStyle,
   protected_flag : Bool,
@@ -1085,11 +1088,11 @@ pub fn ScreenGridState::index(
 ///|
 fn ScreenGridState::shift_region_down(
   self : ScreenGridState,
-  start_y : Int,
-  bottom : Int,
-  left : Int,
-  right : Int,
-  count_req : Int,
+  start_y : Int32,
+  bottom : Int32,
+  left : Int32,
+  right : Int32,
+  count_req : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let rem = bottom - start_y + 1
@@ -1123,8 +1126,8 @@ fn ScreenGridState::shift_region_down(
 /// shifts; whole-screen shifts rotate `row_origin` instead.
 fn ScreenGridState::move_row(
   self : ScreenGridState,
-  dst_row : Int,
-  src_row : Int,
+  dst_row : Int32,
+  src_row : Int32,
 ) -> Unit {
   let src = self.physical_row(src_row)
   let dst = self.physical_row(dst_row)
@@ -1141,9 +1144,9 @@ fn ScreenGridState::move_row(
 /// path never harvests into history, so survivor rows can be cleaned in place.
 fn ScreenGridState::shift_full_width_down(
   self : ScreenGridState,
-  start_y : Int,
-  bottom : Int,
-  count : Int,
+  start_y : Int32,
+  bottom : Int32,
+  count : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let move_len = bottom - start_y + 1 - count
@@ -1206,11 +1209,11 @@ fn ScreenGridState::shift_full_width_down(
 ///|
 fn ScreenGridState::shift_region_up(
   self : ScreenGridState,
-  start_y : Int,
-  bottom : Int,
-  left : Int,
-  right : Int,
-  count_req : Int,
+  start_y : Int32,
+  bottom : Int32,
+  left : Int32,
+  right : Int32,
+  count_req : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let rem = bottom - start_y + 1
@@ -1251,9 +1254,9 @@ fn ScreenGridState::shift_region_up(
 /// disturb rows outside the region.
 fn ScreenGridState::shift_full_width_up(
   self : ScreenGridState,
-  start_y : Int,
-  bottom : Int,
-  count : Int,
+  start_y : Int32,
+  bottom : Int32,
+  count : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let move_len = bottom - start_y + 1 - count
@@ -1317,9 +1320,9 @@ fn ScreenGridState::shift_full_width_up(
 ///|
 fn ScreenGridState::row_will_be_shifted(
   self : ScreenGridState,
-  row_idx : Int,
-  left : Int,
-  right : Int,
+  row_idx : Int32,
+  left : Int32,
+  right : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let mut changed = false
@@ -1358,8 +1361,8 @@ fn ScreenGridState::row_will_be_shifted(
 ///|
 fn ScreenGridState::split_cell_boundary(
   self : ScreenGridState,
-  row_idx : Int,
-  x : Int,
+  row_idx : Int32,
+  x : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let row_cells = self.row_cells(row_idx)
@@ -1440,7 +1443,7 @@ fn ScreenGridState::cursor_mark_dirty(
 ///|
 fn ScreenGridState::apply_row_prompt(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
   row_prompt : @page.RowSemanticPrompt,
 ) -> Unit {
   if row_prompt != None {
@@ -1454,8 +1457,8 @@ fn ScreenGridState::apply_row_prompt(
 ///|
 fn ScreenGridState::clear_rows(
   self : ScreenGridState,
-  start_row : Int,
-  end_row : Int,
+  start_row : Int32,
+  end_row : Int32,
   style : @style.CellStyle,
   respect_protected : Bool,
 ) -> Unit {
@@ -1469,7 +1472,7 @@ fn ScreenGridState::clear_rows(
 ///|
 fn ScreenGridState::clear_full_row(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
   style : @style.CellStyle,
   respect_protected : Bool,
 ) -> Unit {
@@ -1497,9 +1500,9 @@ fn ScreenGridState::clear_full_row(
 ///|
 fn ScreenGridState::clear_row_range(
   self : ScreenGridState,
-  row_idx : Int,
-  start_col : Int,
-  end_col : Int,
+  row_idx : Int32,
+  start_col : Int32,
+  end_col : Int32,
   style : @style.CellStyle,
   respect_protected : Bool,
 ) -> Unit {
@@ -1519,10 +1522,10 @@ fn ScreenGridState::clear_row_range(
 ///|
 fn ScreenGridState::copy_row_region(
   self : ScreenGridState,
-  src_row : Int,
-  dst_row : Int,
-  left : Int,
-  right : Int,
+  src_row : Int32,
+  dst_row : Int32,
+  left : Int32,
+  right : Int32,
 ) -> Unit {
   let src_cells = self.row_cells(src_row)
   let dst_cells = self.row_cells(dst_row)
@@ -1558,7 +1561,7 @@ fn ScreenGridState::copy_row_region(
 ///|
 fn ScreenGridState::clear_prev_row_spacer_head(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
   style : @style.CellStyle,
 ) -> Unit {
   let prev_row = row_idx - 1
@@ -1572,9 +1575,9 @@ fn ScreenGridState::clear_prev_row_spacer_head(
 ///|
 pub fn ScreenGridState::write_cell(
   self : ScreenGridState,
-  row_idx : Int,
-  col_idx : Int,
-  codepoint : UInt,
+  row_idx : Int32,
+  col_idx : Int32,
+  codepoint : UInt32,
   wide : @page.PageCellWide,
   style : @style.CellStyle,
   protected_flag : Bool,
@@ -1626,9 +1629,9 @@ pub fn ScreenGridState::write_cell(
 /// lives in the row's side array, so it is moved alongside when the row has one.
 fn ScreenGridState::move_cell_in_row(
   self : ScreenGridState,
-  row_idx : Int,
-  dst_col : Int,
-  src_col : Int,
+  row_idx : Int32,
+  dst_col : Int32,
+  src_col : Int32,
 ) -> Unit {
   let row_cells = self.row_cells(row_idx)
   row_cells[dst_col] = row_cells[src_col]
@@ -1640,7 +1643,7 @@ fn ScreenGridState::move_cell_in_row(
 ///|
 pub fn ScreenGridState::recompute_row_flags(
   self : ScreenGridState,
-  row_idx : Int,
+  row_idx : Int32,
 ) -> Unit {
   let row_cells = self.row_cells(row_idx)
   let mut grapheme = false
@@ -1681,7 +1684,7 @@ pub fn screen_dimension(value : @size.CellCountInt) -> @size.CellCountInt {
 }
 
 ///|
-fn repeat_count(count_req : UInt16) -> Int {
+fn repeat_count(count_req : UInt16) -> Int32 {
   let value = count_req.to_int()
   if value <= 0 {
     1
@@ -1691,7 +1694,7 @@ fn repeat_count(count_req : UInt16) -> Int {
 }
 
 ///|
-fn min_int(a : Int, b : Int) -> Int {
+fn min_int(a : Int32, b : Int32) -> Int32 {
   if a < b {
     a
   } else {
@@ -1700,7 +1703,7 @@ fn min_int(a : Int, b : Int) -> Int {
 }
 
 ///|
-fn max_int(a : Int, b : Int) -> Int {
+fn max_int(a : Int32, b : Int32) -> Int32 {
   if a > b {
     a
   } else {
@@ -1709,7 +1712,7 @@ fn max_int(a : Int, b : Int) -> Int {
 }
 
 ///|
-fn clamp_int(value : Int, min_ : Int, max_ : Int) -> Int {
+fn clamp_int(value : Int32, min_ : Int32, max_ : Int32) -> Int32 {
   if value < min_ {
     min_
   } else if value > max_ {
@@ -1757,7 +1760,7 @@ fn blank_row_is_styled(style : @style.CellStyle) -> Bool {
 /// above may transiently alias their source slot, and a fresh buffer breaks that
 /// alias instead of clearing a shared line in place.
 fn make_blank_row_cells(
-  cols : Int,
+  cols : Int32,
   style : @style.CellStyle,
   style_table : @style.StyleTable,
 ) -> FixedArray[@page.PageCellState] {

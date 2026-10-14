@@ -16,36 +16,36 @@ pub(all) enum PageCellWide {
 /// the three-state semantic-prompt tag. Mutation is value-style: the `with_*`
 /// builders return a new descriptor, so callers reassign the `lines[i].desc`
 /// slot rather than mutating in place.
-struct PageRowState(Int) derive(Eq, Debug)
+struct PageRowState(Int32) derive(Eq, Debug)
 
 ///|
-const RowWrapBit : Int = 0x01
+const RowWrapBit : Int32 = 0x01
 
 ///|
-const RowWrapContinuationBit : Int = 0x02
+const RowWrapContinuationBit : Int32 = 0x02
 
 ///|
-const RowGraphemeBit : Int = 0x04
+const RowGraphemeBit : Int32 = 0x04
 
 ///|
-const RowStyledBit : Int = 0x08
+const RowStyledBit : Int32 = 0x08
 
 ///|
-const RowHyperlinkBit : Int = 0x10
+const RowHyperlinkBit : Int32 = 0x10
 
 ///|
-const RowKittyPlaceholderBit : Int = 0x20
+const RowKittyPlaceholderBit : Int32 = 0x20
 
 ///|
-const RowDirtyBit : Int = 0x40
+const RowDirtyBit : Int32 = 0x40
 
 ///|
 // Semantic-prompt tag lives in bits 7-8; the flag bits are everything below it,
 // so clearing the tag is `& RowFlagMask`.
-const RowSemanticShift : Int = 7
+const RowSemanticShift : Int32 = 7
 
 ///|
-const RowFlagMask : Int = 0x7F
+const RowFlagMask : Int32 = 0x7F
 
 ///|
 pub fn PageRowState::new() -> PageRowState {
@@ -55,7 +55,7 @@ pub fn PageRowState::new() -> PageRowState {
 ///|
 fn PageRowState::with_bit(
   self : PageRowState,
-  mask : Int,
+  mask : Int32,
   value : Bool,
 ) -> PageRowState {
   if value {
@@ -219,7 +219,7 @@ pub fn PageRowState::equals_ignoring_dirty(
 // character — terminals discard a printed NUL — so it is the conventional
 // "empty cell" sentinel (upstream Ghostty uses it the same way). Kept as a named
 // scalar rather than `UInt?` so the cell stays allocation-free and value-typed.
-const EmptyCodepoint : UInt = 0
+const EmptyCodepoint : UInt32 = 0
 
 ///|
 // `wide` (2 bits), `protected` (1 bit), `hyperlink_present` (1 bit), and
@@ -235,19 +235,19 @@ const EmptyCodepoint : UInt = 0
 //             `HyperlinkId` lives in a per-row side array, not in the cell — see
 //             `ScreenGridState.link_ids`)
 //   bit 4-5 : semantic_content  (Output=0 Input=1 Prompt=2)
-struct PageCellFlags(Int) derive(Eq, Debug)
+struct PageCellFlags(Int32) derive(Eq, Debug)
 
 ///|
-const CellWideMask : Int = 0x03
+const CellWideMask : Int32 = 0x03
 
 ///|
-const CellProtectedBit : Int = 0x04
+const CellProtectedBit : Int32 = 0x04
 
 ///|
-const CellHyperlinkBit : Int = 0x08
+const CellHyperlinkBit : Int32 = 0x08
 
 ///|
-const CellSemanticShift : Int = 4
+const CellSemanticShift : Int32 = 4
 
 ///|
 fn PageCellFlags::pack(
@@ -357,17 +357,17 @@ struct PageCellState(UInt64) derive(Eq, Debug)
 const CellCodepointMask : UInt64 = 0x1F_FFFF
 
 ///|
-const CellStyleShift : Int = 21
+const CellStyleShift : Int32 = 21
 
 ///|
-const CellGraphemeShift : Int = 37
+const CellGraphemeShift : Int32 = 37
 
 ///|
 // Shared 16-bit mask for the style and grapheme id fields.
 const CellIdMask : UInt64 = 0xFFFF
 
 ///|
-const CellFlagsShift : Int = 53
+const CellFlagsShift : Int32 = 53
 
 ///|
 const CellFlagsMask : UInt64 = 0x3F
@@ -376,7 +376,7 @@ const CellFlagsMask : UInt64 = 0x3F
 // Pack the four fields into the `u64` cell. The single point where a cell is
 // minted from components — `new` and `write_cell` route through here.
 fn PageCellState::pack(
-  codepoint : UInt,
+  codepoint : UInt32,
   grapheme_id : GraphemeId,
   style_id : @style.StyleId,
   flags : PageCellFlags,
@@ -396,7 +396,7 @@ fn PageCellState::pack(
 fn PageCellState::with_field(
   self : PageCellState,
   mask : UInt64,
-  shift : Int,
+  shift : Int32,
   value : UInt64,
 ) -> PageCellState {
   let clear = (mask << shift) ^ 0xFFFF_FFFF_FFFF_FFFF
@@ -427,13 +427,13 @@ fn PageCellState::with_flags(
 // is `new(style=...)` too; the `with_*` builders remain for transforming an
 // *existing* cell.
 pub fn PageCellState::new(
-  codepoint? : UInt = EmptyCodepoint,
-  grapheme? : Bool = false,
-  style_id? : @style.StyleId = @style.default_style_id,
-  wide? : PageCellWide = Narrow,
-  protected_flag? : Bool = false,
-  hyperlink_present? : Bool = false,
-  semantic_content? : SemanticContent = Output,
+  codepoint~ : UInt32 = EmptyCodepoint,
+  grapheme~ : Bool = false,
+  style_id~ : @style.StyleId = @style.default_style_id,
+  wide~ : PageCellWide = Narrow,
+  protected_flag~ : Bool = false,
+  hyperlink_present~ : Bool = false,
+  semantic_content~ : SemanticContent = Output,
 ) -> PageCellState {
   PageCellState::pack(
     codepoint,
@@ -452,14 +452,14 @@ pub fn PageCellState::new(
 }
 
 ///|
-pub fn PageCellState::init(codepoint : UInt) -> PageCellState {
+pub fn PageCellState::init(codepoint : UInt32) -> PageCellState {
   PageCellState::new(codepoint~)
 }
 
 ///|
 pub fn PageCellState::with_codepoint(
   self : PageCellState,
-  codepoint : UInt,
+  codepoint : UInt32,
   grapheme : Bool,
 ) -> PageCellState {
   // `grapheme` marks the start of a cluster; the combining marks arrive later
@@ -472,7 +472,7 @@ pub fn PageCellState::with_codepoint(
 }
 
 ///|
-pub fn PageCellState::codepoint(self : PageCellState) -> UInt {
+pub fn PageCellState::codepoint(self : PageCellState) -> UInt32 {
   (self.0 & CellCodepointMask).to_uint()
 }
 
@@ -574,7 +574,7 @@ pub fn PageCellState::has_text(self : PageCellState) -> Bool {
 }
 
 ///|
-pub fn PageCellState::grid_width(self : PageCellState) -> Int {
+pub fn PageCellState::grid_width(self : PageCellState) -> Int32 {
   match self.flags().wide() {
     Narrow | SpacerHead | SpacerTail => 1
     Wide => 2
@@ -616,3 +616,55 @@ pub fn PageCellState::with_grapheme_id(
 ) -> PageCellState {
   self.with_field(CellIdMask, CellGraphemeShift, value.0.to_uint64())
 }
+
+///|
+pub extend PageCellWide with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellWide with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellWide with @debug.Debug::{to_repr}
+
+///|
+pub extend PageRowState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageRowState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageRowState with @debug.Debug::{to_repr}
+
+///|
+pub extend PageCellFlags with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellFlags with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellFlags with @debug.Debug::{to_repr}
+
+///|
+pub extend PageCellState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellState with @debug.Debug::{to_repr}

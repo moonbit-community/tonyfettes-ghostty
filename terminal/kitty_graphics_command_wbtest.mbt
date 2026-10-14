@@ -9,7 +9,7 @@ fn kitty_graphics_bytes_array(bytes : Bytes) -> Array[Byte] {
 
 ///|
 fn kitty_graphics_pair(key : Byte, value : Bytes) -> KittyGraphicsPair {
-  { key, value: kitty_graphics_bytes_array(value) }
+  { key, value: kitty_graphics_bytes_array(value), }
 }
 
 ///|
@@ -54,7 +54,7 @@ test "kitty graphics command/response and access helpers" {
     data: b"",
   }
   let transmit_display : KittyGraphicsCommand = {
-    control: TransmitAndDisplay({ transmission, display }),
+    control: TransmitAndDisplay({ transmission, display, }),
     quiet: No,
     data: b"",
   }

@@ -40,7 +40,7 @@ struct MouseInputEvent {
 
 ///|
 pub fn MousePosition::new(x : Float, y : Float) -> MousePosition {
-  { x, y }
+  { x, y, }
 }
 
 ///|
@@ -119,3 +119,55 @@ pub fn MouseInputEvent::set_position(
 ) -> Unit {
   self.position = value
 }
+
+///|
+pub extend MouseAction with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseAction with @debug.Debug::{to_repr}
+
+///|
+pub extend MouseButton with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseButton with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseButton with @debug.Debug::{to_repr}
+
+///|
+pub extend MousePosition with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MousePosition with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MousePosition with @debug.Debug::{to_repr}
+
+///|
+pub extend MouseInputEvent with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseInputEvent with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseInputEvent with @debug.Debug::{to_repr}

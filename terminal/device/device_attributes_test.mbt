@@ -1,33 +1,46 @@
 ///|
 test "device attributes/primary encodes defaults and features" {
-  assert_eq(PrimaryDeviceAttributes::default().encode(), b"\x1B[?62;22c")
   assert_eq(
-    PrimaryDeviceAttributes::new(Vt220, [AnsiColor, Clipboard]).encode(),
+    @device.PrimaryDeviceAttributes::default().encode(),
+    b"\x1B[?62;22c",
+  )
+  assert_eq(
+    @device.PrimaryDeviceAttributes::new(Vt220, [AnsiColor, Clipboard]).encode(),
     b"\x1B[?62;22;52c",
   )
   assert_eq(
-    PrimaryDeviceAttributes::new(Vt420, [Columns132, SelectiveErase, AnsiColor]).encode(),
+    @device.PrimaryDeviceAttributes::new(Vt420, [
+      Columns132,
+      SelectiveErase,
+      AnsiColor,
+    ]).encode(),
     b"\x1B[?64;1;6;22c",
   )
-  assert_eq(PrimaryDeviceAttributes::new(Vt100, []).encode(), b"\x1B[?1c")
+  assert_eq(
+    @device.PrimaryDeviceAttributes::new(Vt100, []).encode(),
+    b"\x1B[?1c",
+  )
 }
 
 ///|
 test "device attributes/secondary and tertiary encodings" {
-  assert_eq(SecondaryDeviceAttributes::default().encode(), b"\x1B[>1;0;0c")
   assert_eq(
-    TertiaryDeviceAttributes::default().encode(),
+    @device.SecondaryDeviceAttributes::default().encode(),
+    b"\x1B[>1;0;0c",
+  )
+  assert_eq(
+    @device.TertiaryDeviceAttributes::default().encode(),
     b"\x1BP!|00000000\x1B\\",
   )
   assert_eq(
-    TertiaryDeviceAttributes::new(0xAABBCCDD).encode(),
+    @device.TertiaryDeviceAttributes::new(0xAABBCCDD).encode(),
     b"\x1BP!|AABBCCDD\x1B\\",
   )
 }
 
 ///|
 test "device attributes/container encode dispatches by request" {
-  let attributes = DeviceAttributes::default()
+  let attributes = @device.DeviceAttributes::default()
   assert_eq(attributes.encode(Primary), b"\x1B[?62;22c")
   assert_eq(attributes.encode(Secondary), b"\x1B[>1;0;0c")
   assert_eq(attributes.encode(Tertiary), b"\x1BP!|00000000\x1B\\")
@@ -35,7 +48,7 @@ test "device attributes/container encode dispatches by request" {
 
 ///|
 test "device attributes/constructors and accessors" {
-  let primary = PrimaryDeviceAttributes::new(Vt220, [AnsiColor])
+  let primary = @device.PrimaryDeviceAttributes::new(Vt220, [AnsiColor])
   guard primary.conformance_level() == Vt220 else {
     fail("expected primary conformance level")
   }
@@ -43,17 +56,19 @@ test "device attributes/constructors and accessors" {
     fail("expected primary features")
   }
 
-  let secondary = SecondaryDeviceAttributes::new(Vt220, 7, 8)
+  let secondary = @device.SecondaryDeviceAttributes::new(Vt220, 7, 8)
   guard secondary.device_type() == Vt220 else {
     fail("expected secondary device type")
   }
   assert_eq(secondary.firmware_version(), 7)
   assert_eq(secondary.rom_cartridge(), 8)
 
-  let tertiary = TertiaryDeviceAttributes::new(9U)
+  let tertiary = @device.TertiaryDeviceAttributes::new(9U)
   assert_eq(tertiary.unit_id(), 9U)
 
-  let device_attributes = DeviceAttributes::new(primary, secondary, tertiary)
+  let device_attributes = @device.DeviceAttributes::new(
+    primary, secondary, tertiary,
+  )
   guard device_attributes.primary() == primary else {
     fail("expected primary passthrough")
   }
@@ -67,7 +82,7 @@ test "device attributes/constructors and accessors" {
 
 ///|
 test "device attributes/code helpers cover shared aliases" {
-  let conformance : Array[(ConformanceLevel, UInt16)] = [
+  let conformance : Array[(@device.ConformanceLevel, UInt16)] = [
     (Vt100, 1),
     (Vt132, 4),
     (Vt102, 6),
@@ -86,7 +101,7 @@ test "device attributes/code helpers cover shared aliases" {
     assert_eq(entry.0.code(), entry.1)
   }
 
-  let features : Array[(PrimaryDeviceAttributeFeature, UInt16)] = [
+  let features : Array[(@device.PrimaryDeviceAttributeFeature, UInt16)] = [
     (Columns132, 1),
     (Printer, 2),
     (Regis, 3),
@@ -108,7 +123,7 @@ test "device attributes/code helpers cover shared aliases" {
     assert_eq(entry.0.code(), entry.1)
   }
 
-  let device_types : Array[(DeviceType, UInt16)] = [
+  let device_types : Array[(@device.DeviceType, UInt16)] = [
     (Vt100, 0),
     (Vt220, 1),
     (Vt240, 2),

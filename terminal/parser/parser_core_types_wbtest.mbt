@@ -1,5 +1,5 @@
 ///|
-fn TransitionAction::ordinal(self : TransitionAction) -> Int {
+fn TransitionAction::ordinal(self : TransitionAction) -> Int32 {
   match self {
     None => 0
     Ignore => 1
@@ -17,7 +17,7 @@ fn TransitionAction::ordinal(self : TransitionAction) -> Int {
 
 ///|
 test "parser core types/parser state roundtrip and count" {
-  let states : Array[(ParserState, Int)] = [
+  let states : Array[(ParserState, Int32)] = [
     (Ground, 0),
     (Escape, 1),
     (EscapeIntermediate, 2),
@@ -45,7 +45,7 @@ test "parser core types/parser state roundtrip and count" {
 
 ///|
 test "parser core types/transition action roundtrip" {
-  let actions : Array[(TransitionAction, Int)] = [
+  let actions : Array[(TransitionAction, Int32)] = [
     (None, 0),
     (Ignore, 1),
     (Print, 2),

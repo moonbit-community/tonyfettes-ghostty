@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/debug",
   "tonyfettes/ghostty/terminal/color",
   "tonyfettes/ghostty/terminal/result_code",
   "tonyfettes/ghostty/terminal/seplist",

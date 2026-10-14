@@ -1,21 +1,21 @@
 ///|
 test "mouse input event/defaults and setters roundtrip" {
-  let event = MouseInputEvent::new()
+  let event = @input.MouseInputEvent::new()
   guard event.action() == Press else {
     fail("mouse events should default to press")
   }
   guard event.button() == None else {
     fail("mouse events should start without a button")
   }
-  guard event.mods() == KeyMods::new() else {
+  guard event.mods() == @input.KeyMods::new() else {
     fail("mouse events should start with empty modifiers")
   }
-  guard event.position() == MousePosition::new(0.0F, 0.0F) else {
+  guard event.position() == @input.MousePosition::new(0.0F, 0.0F) else {
     fail("mouse events should start at the origin")
   }
 
-  let mods = KeyMods::new().with_shift(true).with_ctrl(true)
-  let position = MousePosition::new(12.5F, -4.0F)
+  let mods = @input.KeyMods::new().with_shift(true).with_ctrl(true)
+  let position = @input.MousePosition::new(12.5F, -4.0F)
   event.set_action(Motion)
   event.set_button(Left)
   event.set_mods(mods)
@@ -36,7 +36,7 @@ test "mouse input event/defaults and setters roundtrip" {
 
 ///|
 test "mouse position/exposes float coordinates" {
-  let position = MousePosition::new(3.25F, 9.5F)
+  let position = @input.MousePosition::new(3.25F, 9.5F)
   assert_eq(position.x(), 3.25F)
   assert_eq(position.y(), 9.5F)
 }

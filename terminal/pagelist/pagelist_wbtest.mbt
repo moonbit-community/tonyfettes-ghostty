@@ -1,7 +1,7 @@
 ///|
 fn fill_terminal_screen_row(
   grid : @grid.ScreenGridState,
-  row : Int,
+  row : Int32,
   chars : Array[Byte],
   style : @style.CellStyle,
   hyperlink : @hyperlink.CellHyperlink?,

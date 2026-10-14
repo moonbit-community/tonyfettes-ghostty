@@ -37,4 +37,3 @@ pub fn playground_state_json(Int) -> String
 // Type aliases
 
 // Traits
-

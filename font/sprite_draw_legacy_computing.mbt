@@ -42,10 +42,10 @@ fn legacy_eighths() -> ReadOnlyArray[SpriteDrawFraction] {
 
 ///|
 fn draw1fb00_1fb3b(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)
@@ -78,10 +78,10 @@ fn draw1fb00_1fb3b(
 
 ///|
 fn draw1fb70_1fb75(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)
@@ -97,10 +97,10 @@ fn draw1fb70_1fb75(
 
 ///|
 fn draw1fb76_1fb7b(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)
@@ -116,10 +116,10 @@ fn draw1fb76_1fb7b(
 
 ///|
 fn draw1fb7c_1fb97(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   match cp {
@@ -354,10 +354,10 @@ fn draw1fb7c_1fb97(
 
 ///|
 fn draw1fbaf(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -378,10 +378,10 @@ fn draw1fbaf(
 
 ///|
 fn draw1fbce(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -393,10 +393,10 @@ fn draw1fbce(
 
 ///|
 fn draw1fbcf(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -408,10 +408,10 @@ fn draw1fbcf(
 
 ///|
 fn draw1fbe0_1fbef(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)
@@ -458,7 +458,7 @@ fn draw1fbe0_1fbef(
 fn checkerboard_fill(
   metrics : Metrics,
   canvas : SpriteCanvas,
-  parity : Int,
+  parity : Int32,
 ) -> Unit {
   let float_width = metrics.cell_width.to_double()
   let float_height = metrics.cell_height.to_double()

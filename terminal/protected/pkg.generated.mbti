@@ -13,6 +13,7 @@ import {
 // Types and methods
 type ScreenProtectedState derive(Eq, @debug.Debug)
 pub fn ScreenProtectedState::cursor_protected(Self) -> Bool
+pub fn ScreenProtectedState::equal(Self, Self) -> Bool
 pub fn ScreenProtectedState::mode(Self) -> @ansi.ProtectedMode
 pub fn ScreenProtectedState::new() -> Self
 pub fn ScreenProtectedState::reset(Self) -> Unit
@@ -22,4 +23,3 @@ pub fn ScreenProtectedState::set_cursor_protected(Self, Bool) -> Unit
 // Type aliases
 
 // Traits
-

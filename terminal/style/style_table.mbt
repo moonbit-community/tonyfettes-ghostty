@@ -60,7 +60,7 @@ pub fn StyleTable::new() -> StyleTable {
   let default = CellStyle::new()
   let index : Map[CellStyle, StyleId] = Map([])
   index[default] = default_style_id
-  { list: [default], index, last_style: default, last_id: default_style_id }
+  { list: [default], index, last_style: default, last_id: default_style_id, }
 }
 
 ///|
@@ -113,6 +113,22 @@ pub fn StyleTable::get(self : StyleTable, id : StyleId) -> CellStyle {
 ///|
 /// Number of distinct styles interned so far (including the default). Exposed for
 /// tests and capacity diagnostics.
-pub fn StyleTable::len(self : StyleTable) -> Int {
+pub fn StyleTable::len(self : StyleTable) -> Int32 {
   self.list.length()
 }
+
+///|
+pub extend StyleId with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StyleId with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StyleId with @debug.Debug::{to_repr}
+
+///|
+pub extend StyleId with Hash::{hash, hash_combine}

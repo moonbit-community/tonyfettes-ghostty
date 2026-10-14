@@ -15,6 +15,9 @@ pub let no_grapheme_id : GraphemeId
 
 // Types and methods
 type GraphemeId derive(Eq, Hash, @debug.Debug)
+pub fn GraphemeId::equal(Self, Self) -> Bool
+pub fn GraphemeId::hash(Self) -> Int
+pub fn GraphemeId::hash_combine(Self, Hasher) -> Unit
 
 pub struct GraphemeTable {
   // private fields
@@ -24,9 +27,11 @@ pub fn GraphemeTable::get(Self, GraphemeId) -> ReadOnlyArray[UInt]
 pub fn GraphemeTable::new() -> Self
 
 type PageCellFlags derive(Eq, @debug.Debug)
+pub fn PageCellFlags::equal(Self, Self) -> Bool
 
 type PageCellState derive(Eq, @debug.Debug)
 pub fn PageCellState::codepoint(Self) -> UInt
+pub fn PageCellState::equal(Self, Self) -> Bool
 pub fn PageCellState::grapheme_id(Self) -> GraphemeId
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
@@ -54,9 +59,11 @@ pub(all) enum PageCellWide {
   SpacerTail
   SpacerHead
 } derive(Eq, @debug.Debug)
+pub fn PageCellWide::equal(Self, Self) -> Bool
 
 type PageRowState derive(Eq, @debug.Debug)
 pub fn PageRowState::dirty(Self) -> Bool
+pub fn PageRowState::equal(Self, Self) -> Bool
 pub fn PageRowState::equals_ignoring_dirty(Self, Self) -> Bool
 pub fn PageRowState::grapheme(Self) -> Bool
 pub fn PageRowState::hyperlink(Self) -> Bool
@@ -82,14 +89,15 @@ pub(all) enum RowSemanticPrompt {
   Prompt
   PromptContinuation
 } derive(Eq, @debug.Debug)
+pub fn RowSemanticPrompt::equal(Self, Self) -> Bool
 
 pub(all) enum SemanticContent {
   Output
   Input
   Prompt
 } derive(Eq, @debug.Debug)
+pub fn SemanticContent::equal(Self, Self) -> Bool
 
 // Type aliases
 
 // Traits
-

@@ -1,17 +1,17 @@
 ///|
-const BackspaceCodepoint : UInt = 127U
+const BackspaceCodepoint : UInt32 = 127U
 
 ///|
-const EnterCodepoint : UInt = 13U
+const EnterCodepoint : UInt32 = 13U
 
 ///|
-const EscapeCodepoint : UInt = 27U
+const EscapeCodepoint : UInt32 = 27U
 
 ///|
-const TabCodepoint : UInt = 9U
+const TabCodepoint : UInt32 = 9U
 
 ///|
-let function_key_modifiers : ReadOnlyArray[(@input.KeyMods, Int)] = [
+let function_key_modifiers : ReadOnlyArray[(@input.KeyMods, Int32)] = [
   (@input.KeyMods::new().with_shift(true), 2),
   (@input.KeyMods::new().with_alt(true), 3),
   (@input.KeyMods::new().with_shift(true).with_alt(true), 4),
@@ -37,7 +37,7 @@ let function_key_modifiers : ReadOnlyArray[(@input.KeyMods, Int)] = [
 ]
 
 ///|
-fn function_key_modifier_code(mods : @input.KeyMods) -> Int? {
+fn function_key_modifier_code(mods : @input.KeyMods) -> Int32? {
   let binding = mods.binding()
   for entry in function_key_modifiers {
     if entry.0 == binding {
@@ -168,7 +168,7 @@ fn cursor_key(
 }
 
 ///|
-fn csi_tilde_key(binding : @input.KeyMods, number : Int) -> Bytes? {
+fn csi_tilde_key(binding : @input.KeyMods, number : Int32) -> Bytes? {
   match function_key_modifier_code(binding) {
     Some(code) => Some(csi_tilde_with_code(number, code))
     None => if binding.empty() { Some(csi_tilde_plain(number)) } else { None }
@@ -318,7 +318,7 @@ fn ss3_plain(final_byte : Byte) -> Bytes {
 }
 
 ///|
-fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
+fn csi_1_with_code(code : Int32, final_byte : Byte) -> Bytes {
   let buffer = Buffer(size_hint=8)
   buffer.write_bytes(b"\x1B[1;")
   @ascii.write_uint_ascii(buffer, code.to_uint64())
@@ -327,7 +327,7 @@ fn csi_1_with_code(code : Int, final_byte : Byte) -> Bytes {
 }
 
 ///|
-fn csi_tilde_plain(number : Int) -> Bytes {
+fn csi_tilde_plain(number : Int32) -> Bytes {
   let buffer = Buffer(size_hint=6)
   buffer.write_bytes(b"\x1B[")
   @ascii.write_uint_ascii(buffer, number.to_uint64())
@@ -336,7 +336,7 @@ fn csi_tilde_plain(number : Int) -> Bytes {
 }
 
 ///|
-fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
+fn csi_tilde_with_code(number : Int32, code : Int32) -> Bytes {
   let buffer = Buffer(size_hint=10)
   buffer.write_bytes(b"\x1B[")
   @ascii.write_uint_ascii(buffer, number.to_uint64())
@@ -347,7 +347,7 @@ fn csi_tilde_with_code(number : Int, code : Int) -> Bytes {
 }
 
 ///|
-fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
+fn keypad_with_code(code : Int32, suffix : Byte) -> Bytes {
   let buffer = Buffer(size_hint=7)
   buffer.write_bytes(b"\x1BO")
   @ascii.write_uint_ascii(buffer, code.to_uint64())
@@ -356,7 +356,7 @@ fn keypad_with_code(code : Int, suffix : Byte) -> Bytes {
 }
 
 ///|
-fn modify_other_keys_sequence(code : Int, codepoint : UInt) -> Bytes {
+fn modify_other_keys_sequence(code : Int32, codepoint : UInt32) -> Bytes {
   let buffer = Buffer(size_hint=16)
   buffer.write_bytes(b"\x1B[27;")
   @ascii.write_uint_ascii(buffer, code.to_uint64())

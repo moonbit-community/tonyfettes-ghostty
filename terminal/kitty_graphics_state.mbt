@@ -1,8 +1,8 @@
 ///|
-const KittyGraphicsMaxDimension : UInt = 10_000U
+const KittyGraphicsMaxDimension : UInt32 = 10_000U
 
 ///|
-const KittyGraphicsNextImageIdStart : UInt = 2147483647U
+const KittyGraphicsNextImageIdStart : UInt32 = 2147483647U
 
 ///|
 priv enum KittyGraphicsValidationError {
@@ -34,10 +34,10 @@ priv enum KittyGraphicsPlacementLocation {
 
 ///|
 priv struct KittyGraphicsImage {
-  mut id : UInt
-  number : UInt
-  width : UInt
-  height : UInt
+  mut id : UInt32
+  number : UInt32
+  width : UInt32
+  height : UInt32
   format : KittyImageFormat
   compression : KittyImageCompression
   data : Bytes
@@ -90,39 +90,39 @@ fn KittyGraphicsLoadingImage::append(
 
 ///|
 priv struct KittyGraphicsPlacement {
-  image_id : UInt
-  placement_id : UInt
+  image_id : UInt32
+  placement_id : UInt32
   external : Bool
   location : KittyGraphicsPlacementLocation
-  x_offset : UInt
-  y_offset : UInt
-  source_x : UInt
-  source_y : UInt
-  source_width : UInt
-  source_height : UInt
-  columns : UInt
-  rows : UInt
-  z : Int
+  x_offset : UInt32
+  y_offset : UInt32
+  source_x : UInt32
+  source_y : UInt32
+  source_width : UInt32
+  source_height : UInt32
+  columns : UInt32
+  rows : UInt32
+  z : Int32
 }
 
 ///|
 priv struct KittyGraphicsSourceRect {
-  x : UInt
-  y : UInt
-  width : UInt
-  height : UInt
+  x : UInt32
+  y : UInt32
+  width : UInt32
+  height : UInt32
 }
 
 ///|
 priv struct KittyGraphicsPixelSize {
-  width : UInt
-  height : UInt
+  width : UInt32
+  height : UInt32
 }
 
 ///|
 priv struct KittyGraphicsGridSize {
-  cols : UInt
-  rows : UInt
+  cols : UInt32
+  rows : UInt32
 }
 
 ///|
@@ -167,7 +167,7 @@ fn KittyGraphicsPlacement::source_rect(
     },
     image.height - y,
   )
-  { x, y, width, height }
+  { x, y, width, height, }
 }
 
 ///|
@@ -176,12 +176,12 @@ fn KittyGraphicsPlacement::pixel_size(
   image : KittyGraphicsImage,
   terminal_cols : @size.CellCountInt,
   terminal_rows : @size.CellCountInt,
-  width_px : UInt,
-  height_px : UInt,
+  width_px : UInt32,
+  height_px : UInt32,
 ) -> KittyGraphicsPixelSize {
   let source = self.source_rect(image)
   if self.columns == 0U && self.rows == 0U {
-    return { width: source.width, height: source.height }
+    return { width: source.width, height: source.height, }
   }
 
   let cell_width = if terminal_cols.to_uint() == 0U {
@@ -196,24 +196,27 @@ fn KittyGraphicsPlacement::pixel_size(
   }
 
   if self.columns > 0U && self.rows > 0U {
-    return { width: cell_width * self.columns, height: cell_height * self.rows }
+    return {
+      width: cell_width * self.columns,
+      height: cell_height * self.rows,
+    }
   }
 
   if source.width == 0U || source.height == 0U {
-    return { width: 0U, height: 0U }
+    return { width: 0U, height: 0U, }
   }
 
   if self.columns > 0U {
     let width = cell_width * self.columns
     let aspect = source.height.to_double() / source.width.to_double()
     let height = (width.to_double() * aspect).round().to_uint()
-    return { width, height }
+    return { width, height, }
   }
 
   let height = cell_height * self.rows
   let aspect = source.width.to_double() / source.height.to_double()
   let width = (height.to_double() * aspect).round().to_uint()
-  { width, height }
+  { width, height, }
 }
 
 ///|
@@ -222,11 +225,11 @@ fn KittyGraphicsPlacement::grid_size(
   image : KittyGraphicsImage,
   terminal_cols : @size.CellCountInt,
   terminal_rows : @size.CellCountInt,
-  width_px : UInt,
-  height_px : UInt,
+  width_px : UInt32,
+  height_px : UInt32,
 ) -> KittyGraphicsGridSize {
   if self.columns > 0U && self.rows > 0U {
-    return { cols: self.columns, rows: self.rows }
+    return { cols: self.columns, rows: self.rows, }
   }
 
   let pixel_size = self.pixel_size(
@@ -253,14 +256,14 @@ fn KittyGraphicsPlacement::grid_size(
   } else {
     div_ceil_uint(pixel_size.height + self.y_offset, cell_height)
   }
-  { cols, rows }
+  { cols, rows, }
 }
 
 ///|
 priv struct KittyGraphicsState {
   mut _dirty : Bool
-  mut next_image_id : UInt
-  mut next_internal_placement_id : UInt
+  mut next_image_id : UInt32
+  mut next_internal_placement_id : UInt32
   mut next_transmit_seq : UInt64
   mut images : Array[KittyGraphicsImage]
   mut placements : Array[KittyGraphicsPlacement]
@@ -304,7 +307,7 @@ fn KittyGraphicsState::placements(
 ///|
 fn KittyGraphicsState::image_by_id(
   self : KittyGraphicsState,
-  image_id : UInt,
+  image_id : UInt32,
 ) -> KittyGraphicsImage? {
   let mut index = 0
   while index < self.images.length() {
@@ -319,7 +322,7 @@ fn KittyGraphicsState::image_by_id(
 ///|
 fn KittyGraphicsState::image_by_number(
   self : KittyGraphicsState,
-  image_number : UInt,
+  image_number : UInt32,
 ) -> KittyGraphicsImage? {
   let mut newest : KittyGraphicsImage? = None
   for image in self.images {
@@ -337,7 +340,7 @@ fn KittyGraphicsState::image_by_number(
 }
 
 ///|
-fn KittyGraphicsState::allocate_image_id(self : KittyGraphicsState) -> UInt {
+fn KittyGraphicsState::allocate_image_id(self : KittyGraphicsState) -> UInt32 {
   let id = self.next_image_id
   self.next_image_id += 1U
   id
@@ -372,8 +375,8 @@ fn KittyGraphicsState::add_image(
 fn KittyGraphicsState::add_placement(
   self : KittyGraphicsState,
   scrollback : @pagelist.PageList,
-  image_id : UInt,
-  requested_id : UInt,
+  image_id : UInt32,
+  requested_id : UInt32,
   location : KittyGraphicsPlacementLocation,
   display : KittyImageDisplay,
 ) -> KittyGraphicsPlacement {
@@ -440,8 +443,8 @@ fn KittyGraphicsState::delete_all(
 fn KittyGraphicsState::delete_by_id(
   self : KittyGraphicsState,
   scrollback : @pagelist.PageList,
-  image_id : UInt,
-  placement_id : UInt,
+  image_id : UInt32,
+  placement_id : UInt32,
   delete_unused : Bool,
 ) -> Unit {
   let mut removed = false
@@ -474,8 +477,8 @@ fn KittyGraphicsState::delete_by_id(
 fn KittyGraphicsState::delete_newest(
   self : KittyGraphicsState,
   scrollback : @pagelist.PageList,
-  image_number : UInt,
-  placement_id : UInt,
+  image_number : UInt32,
+  placement_id : UInt32,
   delete_unused : Bool,
 ) -> Unit {
   match self.image_by_number(image_number) {
@@ -499,7 +502,7 @@ fn KittyGraphicsState::clear_placements(
 ///|
 fn KittyGraphicsState::delete_image_if_unused(
   self : KittyGraphicsState,
-  image_id : UInt,
+  image_id : UInt32,
 ) -> Unit {
   for placement in self.placements {
     if placement.image_id == image_id {
@@ -605,7 +608,7 @@ fn clone_kitty_graphics_byte_array(source : Array[Byte]) -> Array[Byte] {
 }
 
 ///|
-fn div_ceil_uint(value : UInt, divisor : UInt) -> UInt {
+fn div_ceil_uint(value : UInt32, divisor : UInt32) -> UInt32 {
   if divisor == 0U {
     return 0U
   }
@@ -613,7 +616,7 @@ fn div_ceil_uint(value : UInt, divisor : UInt) -> UInt {
 }
 
 ///|
-fn kitty_graphics_min_uint(left : UInt, right : UInt) -> UInt {
+fn kitty_graphics_min_uint(left : UInt32, right : UInt32) -> UInt32 {
   if left <= right {
     left
   } else {

@@ -20,7 +20,7 @@ fn cell_codepoint(
   term : StreamTerminal,
   row : @size.CellCountInt,
   col : @size.CellCountInt,
-) -> UInt {
+) -> UInt32 {
   term.screen_cell_snapshot(row, col).unwrap().codepoint()
 }
 

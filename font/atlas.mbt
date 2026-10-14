@@ -16,9 +16,9 @@ pub fn AtlasFormat::depth(self : AtlasFormat) -> Byte {
 
 ///|
 pub(all) struct AtlasNode {
-  mut x : UInt
-  mut y : UInt
-  mut width : UInt
+  mut x : UInt32
+  mut y : UInt32
+  mut width : UInt32
 } derive(Eq, Debug)
 
 ///|
@@ -28,24 +28,24 @@ pub suberror AtlasError {
 
 ///|
 pub(all) struct AtlasRegion {
-  mut x : UInt
-  mut y : UInt
-  width : UInt
-  height : UInt
+  mut x : UInt32
+  mut y : UInt32
+  width : UInt32
+  height : UInt32
 } derive(Eq, Debug)
 
 ///|
 pub(all) struct Atlas {
   mut data : Array[Byte]
-  mut size : UInt
+  mut size : UInt32
   mut nodes : Array[AtlasNode]
   mut format : AtlasFormat
-  mut modified : UInt
-  mut resized : UInt
+  mut modified : UInt32
+  mut resized : UInt32
 } derive(Eq, Debug)
 
 ///|
-pub fn Atlas::new(size : UInt, format : AtlasFormat) -> Atlas {
+pub fn Atlas::new(size : UInt32, format : AtlasFormat) -> Atlas {
   let depth = format.depth().to_uint()
   let result = {
     data: Array::make((size * size * depth).reinterpret_as_int(), b'\x00'),
@@ -62,10 +62,10 @@ pub fn Atlas::new(size : UInt, format : AtlasFormat) -> Atlas {
 ///|
 pub fn Atlas::reserve(
   self : Atlas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
 ) -> AtlasRegion raise AtlasError {
-  let region : AtlasRegion = { x: 0U, y: 0U, width, height }
+  let region : AtlasRegion = { x: 0U, y: 0U, width, height, }
   if width == 0U && height == 0U {
     return region
   }
@@ -96,7 +96,7 @@ pub fn Atlas::reserve(
     raise AtlasFull
   }
   let best_idx = chosen
-  self.nodes.insert(best_idx, { x: region.x, y: region.y + height, width })
+  self.nodes.insert(best_idx, { x: region.x, y: region.y + height, width, })
   let i = best_idx + 1
   while i < self.nodes.length() {
     let node = self.nodes[i]
@@ -117,7 +117,12 @@ pub fn Atlas::reserve(
 }
 
 ///|
-fn Atlas::fit(self : Atlas, idx : Int, width : UInt, height : UInt) -> UInt? {
+fn Atlas::fit(
+  self : Atlas,
+  idx : Int32,
+  width : UInt32,
+  height : UInt32,
+) -> UInt32? {
   let node = self.nodes[idx]
   if node.x + width > self.size - 1U {
     return None
@@ -179,9 +184,9 @@ pub fn Atlas::set_from_larger(
   self : Atlas,
   reg : AtlasRegion,
   src : ArrayView[Byte],
-  src_width : UInt,
-  src_x : UInt,
-  src_y : UInt,
+  src_width : UInt32,
+  src_x : UInt32,
+  src_y : UInt32,
 ) -> Unit {
   self.assert_region(reg)
   let depth = self.format.depth().to_uint()
@@ -198,7 +203,7 @@ pub fn Atlas::set_from_larger(
 }
 
 ///|
-pub fn Atlas::grow(self : Atlas, size_new : UInt) -> Unit {
+pub fn Atlas::grow(self : Atlas, size_new : UInt32) -> Unit {
   guard size_new >= self.size else { abort("Atlas cannot shrink") }
   if size_new == self.size {
     return
@@ -213,10 +218,10 @@ pub fn Atlas::grow(self : Atlas, size_new : UInt) -> Unit {
   self.data = data_new
   self.size = size_new
   self.set(
-    { x: 0U, y: 1U, width: size_old, height: size_old - 2U },
-    data_old.view(start=(size_old * depth).reinterpret_as_int()),
+    { x: 0U, y: 1U, width: size_old, height: size_old - 2U, },
+    data_old.exact_view(start=(size_old * depth).reinterpret_as_int()),
   )
-  self.nodes.push({ x: size_old - 1U, y: 1U, width: size_new - size_old })
+  self.nodes.push({ x: size_old - 1U, y: 1U, width: size_new - size_old, })
   self.modified += 1U
   self.resized += 1U
 }
@@ -226,11 +231,11 @@ pub fn Atlas::clear(self : Atlas) -> Unit {
   self.modified += 1U
   self.data.fill(b'\x00')
   self.nodes.clear()
-  self.nodes.push({ x: 1U, y: 1U, width: self.size - 2U })
+  self.nodes.push({ x: 1U, y: 1U, width: self.size - 2U, })
 }
 
 ///|
-fn saturating_sub_uint(left : UInt, right : UInt) -> UInt {
+fn saturating_sub_uint(left : UInt32, right : UInt32) -> UInt32 {
   if left > right {
     left - right
   } else {
@@ -248,3 +253,68 @@ fn Atlas::assert_region(self : Atlas, reg : AtlasRegion) -> Unit {
     abort("Atlas region out of bounds")
   }
 }
+
+///|
+pub extend AtlasFormat with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasFormat with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasFormat with @debug.Debug::{to_repr}
+
+///|
+pub extend AtlasNode with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasNode with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasNode with @debug.Debug::{to_repr}
+
+///|
+pub extend AtlasError with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasError with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasError with @debug.Debug::{to_repr}
+
+///|
+pub extend AtlasRegion with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasRegion with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasRegion with @debug.Debug::{to_repr}
+
+///|
+pub extend Atlas with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Atlas with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Atlas with @debug.Debug::{to_repr}

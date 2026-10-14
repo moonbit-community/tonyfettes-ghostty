@@ -11,6 +11,7 @@ import {
 
 // Types and methods
 type TerminalTabstopsState derive(Eq, @debug.Debug)
+pub fn TerminalTabstopsState::equal(Self, Self) -> Bool
 pub fn TerminalTabstopsState::get(Self, UInt16) -> Bool
 pub fn TerminalTabstopsState::new(UInt16) -> Self
 pub fn TerminalTabstopsState::reset(Self, UInt16) -> Unit
@@ -20,4 +21,3 @@ pub fn TerminalTabstopsState::unset(Self, UInt16) -> Unit
 // Type aliases
 
 // Traits
-

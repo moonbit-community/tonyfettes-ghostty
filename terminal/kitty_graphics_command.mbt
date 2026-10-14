@@ -13,7 +13,7 @@ priv enum KittyImageFormat {
 } derive(Eq)
 
 ///|
-fn KittyImageFormat::bytes_per_pixel(self : KittyImageFormat) -> UInt {
+fn KittyImageFormat::bytes_per_pixel(self : KittyImageFormat) -> UInt32 {
   match self {
     Rgb => 3U
     Rgba => 4U
@@ -39,13 +39,13 @@ priv enum KittyImageCompression {
 priv struct KittyImageTransmission {
   mut format : KittyImageFormat
   mut medium : KittyImageMedium
-  mut width : UInt
-  mut height : UInt
-  mut size : UInt
-  mut offset : UInt
-  mut image_id : UInt
-  mut image_number : UInt
-  mut placement_id : UInt
+  mut width : UInt32
+  mut height : UInt32
+  mut size : UInt32
+  mut offset : UInt32
+  mut image_id : UInt32
+  mut image_number : UInt32
+  mut placement_id : UInt32
   mut compression : KittyImageCompression
   mut more_chunks : Bool
 }
@@ -75,24 +75,24 @@ priv enum KittyImageCursorMovement {
 
 ///|
 priv struct KittyImageDisplay {
-  mut image_id : UInt
-  mut image_number : UInt
-  mut placement_id : UInt
-  mut x : UInt
-  mut y : UInt
-  mut width : UInt
-  mut height : UInt
-  mut x_offset : UInt
-  mut y_offset : UInt
-  mut columns : UInt
-  mut rows : UInt
+  mut image_id : UInt32
+  mut image_number : UInt32
+  mut placement_id : UInt32
+  mut x : UInt32
+  mut y : UInt32
+  mut width : UInt32
+  mut height : UInt32
+  mut x_offset : UInt32
+  mut y_offset : UInt32
+  mut columns : UInt32
+  mut rows : UInt32
   mut cursor_movement : KittyImageCursorMovement
   mut virtual_placement : Bool
-  mut parent_id : UInt
-  mut parent_placement_id : UInt
-  mut horizontal_offset : Int
-  mut vertical_offset : Int
-  mut z : Int
+  mut parent_id : UInt32
+  mut parent_placement_id : UInt32
+  mut horizontal_offset : Int32
+  mut vertical_offset : Int32
+  mut z : Int32
 }
 
 ///|
@@ -122,55 +122,55 @@ fn KittyImageDisplay::new() -> KittyImageDisplay {
 ///|
 priv struct KittyGraphicsDeleteById {
   delete : Bool
-  image_id : UInt
-  placement_id : UInt
+  image_id : UInt32
+  placement_id : UInt32
 }
 
 ///|
 priv struct KittyGraphicsDeleteByNumber {
   delete : Bool
-  image_number : UInt
-  placement_id : UInt
+  image_number : UInt32
+  placement_id : UInt32
 }
 
 ///|
 priv struct KittyGraphicsDeleteIntersectCell {
   delete : Bool
-  x : UInt
-  y : UInt
+  x : UInt32
+  y : UInt32
 }
 
 ///|
 priv struct KittyGraphicsDeleteIntersectCellZ {
   delete : Bool
-  x : UInt
-  y : UInt
-  z : Int
+  x : UInt32
+  y : UInt32
+  z : Int32
 }
 
 ///|
 priv struct KittyGraphicsDeleteRange {
   delete : Bool
-  first : UInt
-  last : UInt
+  first : UInt32
+  last : UInt32
 }
 
 ///|
 priv struct KittyGraphicsDeleteColumn {
   delete : Bool
-  x : UInt
+  x : UInt32
 }
 
 ///|
 priv struct KittyGraphicsDeleteRow {
   delete : Bool
-  y : UInt
+  y : UInt32
 }
 
 ///|
 priv struct KittyGraphicsDeleteZ {
   delete : Bool
-  z : Int
+  z : Int32
 }
 
 ///|
@@ -213,20 +213,20 @@ priv struct KittyGraphicsCommand {
 
 ///|
 priv struct KittyGraphicsResponse {
-  mut id : UInt
-  image_number : UInt
-  placement_id : UInt
+  mut id : UInt32
+  image_number : UInt32
+  placement_id : UInt32
   mut message : Bytes
 }
 
 ///|
 fn KittyGraphicsResponse::new(
-  id? : UInt = 0U,
-  image_number? : UInt = 0U,
-  placement_id? : UInt = 0U,
-  message? : Bytes = b"OK",
+  id~ : UInt32 = 0U,
+  image_number~ : UInt32 = 0U,
+  placement_id~ : UInt32 = 0U,
+  message~ : Bytes = b"OK",
 ) -> KittyGraphicsResponse {
-  { id, image_number, placement_id, message }
+  { id, image_number, placement_id, message, }
 }
 
 ///|
@@ -378,7 +378,7 @@ fn parse_kitty_graphics_command_bytes(
     Some(value) => value
     None => return None
   }
-  Some({ control, quiet, data: payload })
+  Some({ control, quiet, data: payload, })
 }
 
 ///|
@@ -417,12 +417,12 @@ fn set_kitty_graphics_pair(
   let mut index = 0
   while index < pairs.length() {
     if pairs[index].key == key {
-      pairs[index] = { key, value }
+      pairs[index] = { key, value, }
       return
     }
     index += 1
   }
-  pairs.push({ key, value })
+  pairs.push({ key, value, })
 }
 
 ///|
@@ -448,7 +448,8 @@ fn build_kitty_graphics_control(
       match parse_kitty_graphics_transmission(pairs) {
         Some(transmission) =>
           match parse_kitty_graphics_display(pairs) {
-            Some(display) => Some(TransmitAndDisplay({ transmission, display }))
+            Some(display) =>
+              Some(TransmitAndDisplay({ transmission, display, }))
             None => None
           }
         None => None
@@ -752,7 +753,7 @@ fn parse_kitty_graphics_delete(
       if first > last {
         return None
       }
-      Some(Range({ delete: selector == b'R', first, last }))
+      Some(Range({ delete: selector == b'R', first, last, }))
     }
     b'x' =>
       Some(
@@ -809,7 +810,7 @@ fn kitty_graphics_option_byte(value : Byte?, fallback : Byte) -> Byte {
 }
 
 ///|
-fn kitty_graphics_option_u32(value : UInt?, fallback : UInt) -> UInt {
+fn kitty_graphics_option_u32(value : UInt32?, fallback : UInt32) -> UInt32 {
   match value {
     Some(found) => found
     None => fallback
@@ -817,7 +818,7 @@ fn kitty_graphics_option_u32(value : UInt?, fallback : UInt) -> UInt {
 }
 
 ///|
-fn kitty_graphics_option_int(value : Int?, fallback : Int) -> Int {
+fn kitty_graphics_option_int(value : Int32?, fallback : Int32) -> Int32 {
   match value {
     Some(found) => found
     None => fallback
@@ -843,7 +844,7 @@ fn kitty_graphics_pair_value(
 fn kitty_graphics_pair_u32(
   pairs : Array[KittyGraphicsPair],
   key : Byte,
-) -> UInt? {
+) -> UInt32? {
   match kitty_graphics_pair_value(pairs, key) {
     Some(value) => @ascii.parse_kitty_graphics_u32(value)
     None => None
@@ -854,7 +855,7 @@ fn kitty_graphics_pair_u32(
 fn kitty_graphics_pair_i32(
   pairs : Array[KittyGraphicsPair],
   key : Byte,
-) -> Int? {
+) -> Int32? {
   match kitty_graphics_pair_value(pairs, key) {
     Some(value) => @ascii.parse_kitty_graphics_i32(value)
     None => None
@@ -892,7 +893,7 @@ fn decode_kitty_graphics_base64(data : Array[Byte]) -> Bytes? {
   }
 
   let decoded : Array[Byte] = []
-  let mut quartet : Array[Int] = []
+  let mut quartet : Array[Int32] = []
   let mut saw_padding = false
 
   for byte in data {
@@ -947,8 +948,8 @@ fn decode_kitty_graphics_base64(data : Array[Byte]) -> Bytes? {
 ///|
 fn decode_kitty_graphics_base64_quartet(
   decoded : Array[Byte],
-  quartet : Array[Int],
-) -> Int? {
+  quartet : Array[Int32],
+) -> Int32? {
   let a = quartet[0]
   let b = quartet[1]
   let c = quartet[2]
@@ -981,7 +982,7 @@ fn decode_kitty_graphics_base64_quartet(
 }
 
 ///|
-fn kitty_graphics_base64_value(byte : Byte) -> Int? {
+fn kitty_graphics_base64_value(byte : Byte) -> Int32? {
   if byte >= b'A' && byte <= b'Z' {
     return Some(byte.to_int() - b'A'.to_int())
   }

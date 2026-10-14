@@ -190,18 +190,21 @@ pub(all) enum Key {
   Paste
 } derive(Eq, @debug.Debug)
 pub fn Key::codepoint(Self) -> UInt?
+pub fn Key::equal(Self, Self) -> Bool
 
 pub(all) enum KeyAction {
   Release
   Press
   Repeat
 } derive(Eq, @debug.Debug)
+pub fn KeyAction::equal(Self, Self) -> Bool
 
 type KeyEvent derive(Eq, @debug.Debug)
 pub fn KeyEvent::action(Self) -> KeyAction
 pub fn KeyEvent::composing(Self) -> Bool
 pub fn KeyEvent::consumed_mods(Self) -> KeyMods
 pub fn KeyEvent::effective_mods(Self) -> KeyMods
+pub fn KeyEvent::equal(Self, Self) -> Bool
 pub fn KeyEvent::key(Self) -> Key
 pub fn KeyEvent::mods(Self) -> KeyMods
 pub fn KeyEvent::new() -> Self
@@ -219,6 +222,7 @@ pub(all) enum KeyModSide {
   Left
   Right
 } derive(Eq, @debug.Debug)
+pub fn KeyModSide::equal(Self, Self) -> Bool
 
 pub(all) struct KeyMods(UInt16) derive(Eq, @debug.Debug)
 pub fn KeyMods::alt(Self) -> Bool
@@ -228,6 +232,7 @@ pub fn KeyMods::caps_lock(Self) -> Bool
 pub fn KeyMods::ctrl(Self) -> Bool
 pub fn KeyMods::ctrl_side(Self) -> KeyModSide
 pub fn KeyMods::empty(Self) -> Bool
+pub fn KeyMods::equal(Self, Self) -> Bool
 pub fn KeyMods::new() -> Self
 pub fn KeyMods::num_lock(Self) -> Bool
 pub fn KeyMods::shift(Self) -> Bool
@@ -252,6 +257,7 @@ pub(all) enum MouseAction {
   Release
   Motion
 } derive(Eq, @debug.Debug)
+pub fn MouseAction::equal(Self, Self) -> Bool
 
 pub(all) enum MouseButton {
   Unknown
@@ -267,6 +273,7 @@ pub(all) enum MouseButton {
   Ten
   Eleven
 } derive(Eq, @debug.Debug)
+pub fn MouseButton::equal(Self, Self) -> Bool
 
 pub(all) enum MouseEvent {
   None
@@ -275,6 +282,7 @@ pub(all) enum MouseEvent {
   Button
   Any
 } derive(Eq, @debug.Debug)
+pub fn MouseEvent::equal(Self, Self) -> Bool
 
 pub(all) enum MouseFormat {
   X10
@@ -283,11 +291,13 @@ pub(all) enum MouseFormat {
   Urxvt
   SgrPixels
 } derive(Eq, @debug.Debug)
+pub fn MouseFormat::equal(Self, Self) -> Bool
 
 type MouseInputEvent derive(Eq, @debug.Debug)
 pub fn MouseInputEvent::action(Self) -> MouseAction
 pub fn MouseInputEvent::button(Self) -> MouseButton?
 pub fn MouseInputEvent::clear_button(Self) -> Unit
+pub fn MouseInputEvent::equal(Self, Self) -> Bool
 pub fn MouseInputEvent::mods(Self) -> KeyMods
 pub fn MouseInputEvent::new() -> Self
 pub fn MouseInputEvent::position(Self) -> MousePosition
@@ -300,6 +310,7 @@ pub(all) struct MousePosition {
   x : Float
   y : Float
 } derive(Eq, @debug.Debug)
+pub fn MousePosition::equal(Self, Self) -> Bool
 pub fn MousePosition::new(Float, Float) -> Self
 pub fn MousePosition::x(Self) -> Float
 pub fn MousePosition::y(Self) -> Float
@@ -340,9 +351,9 @@ pub(all) enum MouseShape {
   ZoomIn
   ZoomOut
 } derive(Eq, @debug.Debug)
+pub fn MouseShape::equal(Self, Self) -> Bool
 pub fn MouseShape::from_string(String) -> Self?
 
 // Type aliases
 
 // Traits
-

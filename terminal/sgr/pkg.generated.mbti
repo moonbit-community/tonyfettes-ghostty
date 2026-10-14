@@ -46,6 +46,7 @@ pub(all) enum SgrAttribute {
   Color256Bg(Byte)
   Color256Fg(Byte)
 } derive(Eq, @debug.Debug)
+pub fn SgrAttribute::equal(Self, Self) -> Bool
 
 type SgrParser derive(@debug.Debug)
 pub fn SgrParser::from_params(ArrayView[UInt16], @seplist.SepList) -> Self
@@ -63,13 +64,14 @@ pub(all) enum SgrUnderline {
   Dotted
   Dashed
 } derive(Eq, @debug.Debug)
+pub fn SgrUnderline::equal(Self, Self) -> Bool
 
 pub(all) struct SgrUnknown {
   full : ReadOnlyArray[UInt16]
   partial : ArrayView[UInt16]
 } derive(Eq, @debug.Debug)
+pub fn SgrUnknown::equal(Self, Self) -> Bool
 
 // Type aliases
 
 // Traits
-

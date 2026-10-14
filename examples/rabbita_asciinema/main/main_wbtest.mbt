@@ -4,7 +4,7 @@ priv suberror FileLoadTestError {
 } derive(Debug)
 
 ///|
-fn noop_dispatch() -> @cmd.Dispatch[Msg] {
+fn noop_dispatch() -> @cmd.Emit[Msg] {
   _msg => @cmd.none
 }
 
@@ -17,11 +17,11 @@ fn small_cast() -> Cast {
     rows: 2,
     duration_ms: 150,
     events: [
-      { delay_ms: 10, kind: Output, data: "A" },
-      { delay_ms: 20, kind: Marker, data: "m1" },
-      { delay_ms: 30, kind: Resize, data: "8x3" },
-      { delay_ms: 40, kind: Exit, data: "7" },
-      { delay_ms: 50, kind: Resize, data: "bad" },
+      { delay_ms: 10, kind: Output, data: "A", },
+      { delay_ms: 20, kind: Marker, data: "m1", },
+      { delay_ms: 30, kind: Resize, data: "8x3", },
+      { delay_ms: 40, kind: Exit, data: "7", },
+      { delay_ms: 50, kind: Resize, data: "bad", },
     ],
   }
 }
@@ -59,7 +59,7 @@ test "player helpers handle themes timing and resize parsing" {
     fail("expected invalid resize number")
   }
   let terminal = GhosttyTerminal::new(cols=2, rows=1)
-  apply_event(terminal, { delay_ms: 0, kind: Unknown("z"), data: "" })
+  apply_event(terminal, { delay_ms: 0, kind: Unknown("z"), data: "", })
   terminal.deinit()
   assert_eq(format_time(1234), "1.2s")
 }
@@ -68,7 +68,7 @@ test "player helpers handle themes timing and resize parsing" {
 test "player can load casts jump through timeline and apply metadata events" {
   let dispatch = noop_dispatch()
   let model = initial_model()
-  let file = { file_name: "loaded.cast", source: sample_cast() }
+  let file = { file_name: "loaded.cast", source: sample_cast(), }
   let (_cmd, loaded) = load_cast(dispatch, model, file)
   guard loaded.player.playing else { fail("expected autostart after load") }
   guard loaded.player.file_name == Some("loaded.cast") else {
@@ -171,7 +171,7 @@ test "player update handles playback control and status branches" {
   assert_eq(selected.player.cursor, light.player.cursor)
   let (_cmd, loaded_file) = update(
     dispatch,
-    CastFileLoaded(Ok({ file_name: "via-update.cast", source: sample_cast() })),
+    CastFileLoaded(Ok({ file_name: "via-update.cast", source: sample_cast(), })),
     selected,
   )
   guard loaded_file.player.file_name == Some("via-update.cast") else {
@@ -230,7 +230,7 @@ test "player view renders controls metadata and errors" {
     fail("expected marker metadata")
   }
   let quiet_meta = cast_meta(
-    { ..model.player, last_marker: None, exit_status: None },
+    { ..model.player, last_marker: None, exit_status: None, },
     model.terminal,
   )
   guard !quiet_meta.contains("marker:") && !quiet_meta.contains("exit:") else {
@@ -246,13 +246,13 @@ test "player view renders controls metadata and errors" {
     html.contains("error-line") else {
     fail("expected player controls and error")
   }
-  let empty = { ..model.player, cast: { ..model.player.cast, events: [] } }
+  let empty = { ..model.player, cast: { ..model.player.cast, events: [], }, }
   assert_eq(progress_percent(empty), 0)
   ignore(play_pause_button(dispatch, empty))
   ignore(upload_button(dispatch))
   ignore(theme_button(dispatch, Light))
   ignore(speed_button(dispatch, 4))
-  ignore(error_view({ ..empty, last_error: None }))
+  ignore(error_view({ ..empty, last_error: None, }))
   model.terminal.deinit()
 }
 

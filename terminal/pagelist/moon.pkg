@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/debug",
   "moonbitlang/core/deque",
   "tonyfettes/ghostty/terminal/charsets",
   "tonyfettes/ghostty/terminal/cursor",

@@ -1,20 +1,20 @@
 ///|
-const DefaultCellWidthPx : UInt = 10U
+const DefaultCellWidthPx : UInt32 = 10U
 
 ///|
-const DefaultCellHeightPx : UInt = 20U
+const DefaultCellHeightPx : UInt32 = 20U
 
 ///|
-const MinColumns : Int = 1
+const MinColumns : Int32 = 1
 
 ///|
-const MaxColumns : Int = 240
+const MaxColumns : Int32 = 240
 
 ///|
-const MinRows : Int = 1
+const MinRows : Int32 = 1
 
 ///|
-const MaxRows : Int = 120
+const MaxRows : Int32 = 120
 
 ///|
 const DefaultBackground : String = "#101418"
@@ -24,14 +24,14 @@ const DefaultForeground : String = "#dce4ea"
 
 ///|
 priv struct TerminalLog {
-  mut bell_count : Int
-  mut title_change_count : Int
+  mut bell_count : Int32
+  mut title_change_count : Int32
   pty : @buffer.Buffer
 }
 
 ///|
 fn TerminalLog::new() -> TerminalLog {
-  { bell_count: 0, title_change_count: 0, pty: Buffer() }
+  { bell_count: 0, title_change_count: 0, pty: Buffer(), }
 }
 
 ///|
@@ -72,10 +72,10 @@ priv struct GhosttyTerminal {
 
 ///|
 fn GhosttyTerminal::new(
-  cols? : Int = 80,
-  rows? : Int = 24,
-  background? : String = DefaultBackground,
-  foreground? : String = DefaultForeground,
+  cols~ : Int32 = 80,
+  rows~ : Int32 = 24,
+  background~ : String = DefaultBackground,
+  foreground~ : String = DefaultForeground,
 ) -> GhosttyTerminal {
   let log = TerminalLog::new()
   let terminal = @terminal.StreamTerminal::new(
@@ -105,7 +105,7 @@ fn GhosttyTerminal::new(
   )
   let render = @terminal.RenderState::new()
   render.update(terminal)
-  { terminal, render, log, background, foreground }
+  { terminal, render, log, background, foreground, }
 }
 
 ///|
@@ -122,8 +122,8 @@ fn GhosttyTerminal::refresh(self : GhosttyTerminal) -> Unit {
 ///|
 fn GhosttyTerminal::reset(
   self : GhosttyTerminal,
-  cols~ : Int,
-  rows~ : Int,
+  cols~ : Int32,
+  rows~ : Int32,
 ) -> Unit {
   self.terminal.reset()
   self.log.clear()
@@ -141,8 +141,8 @@ fn GhosttyTerminal::reset(
 ///|
 fn GhosttyTerminal::resize(
   self : GhosttyTerminal,
-  cols~ : Int,
-  rows~ : Int,
+  cols~ : Int32,
+  rows~ : Int32,
 ) -> Unit {
   ignore(
     self.terminal.resize(
@@ -177,12 +177,12 @@ fn GhosttyTerminal::title(self : GhosttyTerminal) -> String? {
 }
 
 ///|
-fn GhosttyTerminal::bell_count(self : GhosttyTerminal) -> Int {
+fn GhosttyTerminal::bell_count(self : GhosttyTerminal) -> Int32 {
   self.log.bell_count
 }
 
 ///|
-fn GhosttyTerminal::title_change_count(self : GhosttyTerminal) -> Int {
+fn GhosttyTerminal::title_change_count(self : GhosttyTerminal) -> Int32 {
   self.log.title_change_count
 }
 
@@ -192,22 +192,22 @@ fn GhosttyTerminal::pty_text(self : GhosttyTerminal) -> String {
 }
 
 ///|
-fn GhosttyTerminal::rows(self : GhosttyTerminal) -> Int {
+fn GhosttyTerminal::rows(self : GhosttyTerminal) -> Int32 {
   self.terminal.rows().to_int()
 }
 
 ///|
-fn GhosttyTerminal::cols(self : GhosttyTerminal) -> Int {
+fn GhosttyTerminal::cols(self : GhosttyTerminal) -> Int32 {
   self.terminal.columns().to_int()
 }
 
 ///|
-fn GhosttyTerminal::cursor_x(self : GhosttyTerminal) -> Int {
+fn GhosttyTerminal::cursor_x(self : GhosttyTerminal) -> Int32 {
   self.terminal.cursor_x().to_int()
 }
 
 ///|
-fn GhosttyTerminal::cursor_y(self : GhosttyTerminal) -> Int {
+fn GhosttyTerminal::cursor_y(self : GhosttyTerminal) -> Int32 {
   self.terminal.cursor_y().to_int()
 }
 
@@ -238,7 +238,7 @@ fn GhosttyTerminal::plain_viewport(self : GhosttyTerminal) -> String {
 ///|
 fn GhosttyTerminal::view(
   self : GhosttyTerminal,
-  class? : String = "terminal-host",
+  class~ : String = "terminal-host",
 ) -> @html.Html {
   self.refresh()
   let row_nodes : Array[@html.Html] = []
@@ -275,8 +275,8 @@ fn GhosttyTerminal::view(
 ///|
 fn GhosttyTerminal::cell_view(
   self : GhosttyTerminal,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
   palette : Array[@color.RGB],
 ) -> @html.Html {
   let cell = self.terminal.screen_cell_snapshot(
@@ -312,8 +312,8 @@ fn GhosttyTerminal::cell_view(
 ///|
 fn GhosttyTerminal::cell_text(
   self : GhosttyTerminal,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
   cell : @page.PageCellState,
 ) -> String {
   match cell.wide() {
@@ -340,8 +340,8 @@ fn GhosttyTerminal::cell_text(
 ///|
 fn GhosttyTerminal::cell_style(
   self : GhosttyTerminal,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
   palette : Array[@color.RGB],
 ) -> Array[String] {
   let styles : Array[String] = []
@@ -390,8 +390,8 @@ fn GhosttyTerminal::cell_style(
 ///|
 fn GhosttyTerminal::is_cursor_cell(
   self : GhosttyTerminal,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
 ) -> Bool {
   self.terminal.cursor_visible() &&
   row == self.terminal.cursor_y().to_int() &&
@@ -399,7 +399,7 @@ fn GhosttyTerminal::is_cursor_cell(
 }
 
 ///|
-fn codepoints_to_string(codepoints : Array[UInt]) -> String {
+fn codepoints_to_string(codepoints : Array[UInt32]) -> String {
   let out = Buffer()
   for codepoint in codepoints {
     if codepoint == 0U {
@@ -461,11 +461,11 @@ fn text_decoration(style : @style.CellStyle) -> String? {
 }
 
 ///|
-fn clamp_columns(cols : Int) -> UInt16 {
+fn clamp_columns(cols : Int32) -> UInt16 {
   cols.clamp(min=MinColumns, max=MaxColumns).to_uint16()
 }
 
 ///|
-fn clamp_rows(rows : Int) -> UInt16 {
+fn clamp_rows(rows : Int32) -> UInt16 {
   rows.clamp(min=MinRows, max=MaxRows).to_uint16()
 }

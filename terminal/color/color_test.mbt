@@ -1,34 +1,35 @@
 ///|
 test "color/name defaults and codes" {
-  assert_eq(Name::Black.code(), 0)
-  assert_eq(Name::BrightWhite.code(), 15)
-  guard Name::Red.default_rgb() == RGB::new(0xCC, 0x66, 0x66) else {
+  assert_eq(@color.Name::Black.code(), 0)
+  assert_eq(@color.Name::BrightWhite.code(), 15)
+  guard @color.Name::Red.default_rgb() == @color.RGB::new(0xCC, 0x66, 0x66) else {
     fail("unexpected red default")
   }
-  guard Name::BrightBlue.default_rgb() == RGB::new(0x7A, 0xA6, 0xDA) else {
+  guard @color.Name::BrightBlue.default_rgb() ==
+    @color.RGB::new(0x7A, 0xA6, 0xDA) else {
     fail("unexpected bright blue default")
   }
 }
 
 ///|
 test "color/all named colors roundtrip through default palette data" {
-  let names : Array[(Name, Byte, RGB)] = [
-    (Black, 0, RGB::new(0x1D, 0x1F, 0x21)),
-    (Red, 1, RGB::new(0xCC, 0x66, 0x66)),
-    (Green, 2, RGB::new(0xB5, 0xBD, 0x68)),
-    (Yellow, 3, RGB::new(0xF0, 0xC6, 0x74)),
-    (Blue, 4, RGB::new(0x81, 0xA2, 0xBE)),
-    (Magenta, 5, RGB::new(0xB2, 0x94, 0xBB)),
-    (Cyan, 6, RGB::new(0x8A, 0xBE, 0xB7)),
-    (White, 7, RGB::new(0xC5, 0xC8, 0xC6)),
-    (BrightBlack, 8, RGB::new(0x66, 0x66, 0x66)),
-    (BrightRed, 9, RGB::new(0xD5, 0x4E, 0x53)),
-    (BrightGreen, 10, RGB::new(0xB9, 0xCA, 0x4A)),
-    (BrightYellow, 11, RGB::new(0xE7, 0xC5, 0x47)),
-    (BrightBlue, 12, RGB::new(0x7A, 0xA6, 0xDA)),
-    (BrightMagenta, 13, RGB::new(0xC3, 0x97, 0xD8)),
-    (BrightCyan, 14, RGB::new(0x70, 0xC0, 0xB1)),
-    (BrightWhite, 15, RGB::new(0xEA, 0xEA, 0xEA)),
+  let names : Array[(@color.Name, Byte, @color.RGB)] = [
+    (Black, 0, @color.RGB::new(0x1D, 0x1F, 0x21)),
+    (Red, 1, @color.RGB::new(0xCC, 0x66, 0x66)),
+    (Green, 2, @color.RGB::new(0xB5, 0xBD, 0x68)),
+    (Yellow, 3, @color.RGB::new(0xF0, 0xC6, 0x74)),
+    (Blue, 4, @color.RGB::new(0x81, 0xA2, 0xBE)),
+    (Magenta, 5, @color.RGB::new(0xB2, 0x94, 0xBB)),
+    (Cyan, 6, @color.RGB::new(0x8A, 0xBE, 0xB7)),
+    (White, 7, @color.RGB::new(0xC5, 0xC8, 0xC6)),
+    (BrightBlack, 8, @color.RGB::new(0x66, 0x66, 0x66)),
+    (BrightRed, 9, @color.RGB::new(0xD5, 0x4E, 0x53)),
+    (BrightGreen, 10, @color.RGB::new(0xB9, 0xCA, 0x4A)),
+    (BrightYellow, 11, @color.RGB::new(0xE7, 0xC5, 0x47)),
+    (BrightBlue, 12, @color.RGB::new(0x7A, 0xA6, 0xDA)),
+    (BrightMagenta, 13, @color.RGB::new(0xC3, 0x97, 0xD8)),
+    (BrightCyan, 14, @color.RGB::new(0x70, 0xC0, 0xB1)),
+    (BrightWhite, 15, @color.RGB::new(0xEA, 0xEA, 0xEA)),
   ]
 
   for entry in names {
@@ -41,33 +42,33 @@ test "color/all named colors roundtrip through default palette data" {
 
 ///|
 test "color/special osc4" {
-  assert_eq(Special::Bold.osc4(), 256)
-  assert_eq(Special::Underline.osc4(), 257)
-  assert_eq(Special::Blink.osc4(), 258)
-  assert_eq(Special::Reverse.osc4(), 259)
-  assert_eq(Special::Italic.osc4(), 260)
+  assert_eq(@color.Special::Bold.osc4(), 256)
+  assert_eq(@color.Special::Underline.osc4(), 257)
+  assert_eq(@color.Special::Blink.osc4(), 258)
+  assert_eq(@color.Special::Reverse.osc4(), 259)
+  assert_eq(@color.Special::Italic.osc4(), 260)
 }
 
 ///|
 test "color/dynamic next" {
-  assert_eq(Dynamic::Foreground.code(), 10)
-  guard Dynamic::Foreground.next() == Some(Background) else {
+  assert_eq(@color.Dynamic::Foreground.code(), 10)
+  guard @color.Dynamic::Foreground.next() == Some(Background) else {
     fail("unexpected foreground successor")
   }
-  guard Dynamic::Cursor.next() == Some(PointerForeground) else {
+  guard @color.Dynamic::Cursor.next() == Some(PointerForeground) else {
     fail("unexpected cursor successor")
   }
-  guard Dynamic::TektronixCursor.next() == Some(HighlightForeground) else {
+  guard @color.Dynamic::TektronixCursor.next() == Some(HighlightForeground) else {
     fail("unexpected tektronix cursor successor")
   }
-  guard Dynamic::HighlightForeground.next() == None else {
+  guard @color.Dynamic::HighlightForeground.next() == None else {
     fail("highlight foreground should end the sequence")
   }
 }
 
 ///|
 test "color/dynamic codes cover every osc dynamic slot" {
-  let entries : Array[(Dynamic, UInt16)] = [
+  let entries : Array[(@color.Dynamic, UInt16)] = [
     (Foreground, 10),
     (Background, 11),
     (Cursor, 12),
@@ -86,22 +87,22 @@ test "color/dynamic codes cover every osc dynamic slot" {
 
 ///|
 test "color/rgb parse accepts hash rgb rgbi and x11 names" {
-  let cases : Array[(Bytes, RGB)] = [
-    (b"rgbi:1.0/0/0", RGB::new(255, 0, 0)),
-    (b"rgb:7f/a0a0/0", RGB::new(127, 160, 0)),
-    (b"rgb:f/ff/fff", RGB::new(255, 255, 255)),
-    (b"#ffffff", RGB::new(255, 255, 255)),
-    (b"#fff", RGB::new(255, 255, 255)),
-    (b"#fffffffff", RGB::new(255, 255, 255)),
-    (b"#ffffffffffff", RGB::new(255, 255, 255)),
-    (b"#ff0010", RGB::new(255, 0, 16)),
-    (b"LawnGreen", RGB::new(124, 252, 0)),
-    (b"medium spring green", RGB::new(0, 250, 154)),
-    (b" Forest Green ", RGB::new(34, 139, 34)),
+  let cases : Array[(Bytes, @color.RGB)] = [
+    (b"rgbi:1.0/0/0", @color.RGB::new(255, 0, 0)),
+    (b"rgb:7f/a0a0/0", @color.RGB::new(127, 160, 0)),
+    (b"rgb:f/ff/fff", @color.RGB::new(255, 255, 255)),
+    (b"#ffffff", @color.RGB::new(255, 255, 255)),
+    (b"#fff", @color.RGB::new(255, 255, 255)),
+    (b"#fffffffff", @color.RGB::new(255, 255, 255)),
+    (b"#ffffffffffff", @color.RGB::new(255, 255, 255)),
+    (b"#ff0010", @color.RGB::new(255, 0, 16)),
+    (b"LawnGreen", @color.RGB::new(124, 252, 0)),
+    (b"medium spring green", @color.RGB::new(0, 250, 154)),
+    (b" Forest Green ", @color.RGB::new(34, 139, 34)),
   ]
 
   for entry in cases {
-    guard RGB::parse(entry.0) == entry.1 else {
+    guard @color.RGB::parse(entry.0) == entry.1 else {
       fail("unexpected parse result for \{entry.0}")
     }
   }
@@ -109,7 +110,7 @@ test "color/rgb parse accepts hash rgb rgbi and x11 names" {
 
 ///|
 test "color/rgb constructor and accessors" {
-  let rgb = RGB::new(1, 2, 3)
+  let rgb = @color.RGB::new(1, 2, 3)
   assert_eq(rgb.r(), 1)
   assert_eq(rgb.g(), 2)
   assert_eq(rgb.b(), 3)
@@ -124,7 +125,9 @@ test "color/rgb parse rejects invalid formats" {
   ]
 
   for value in invalid {
-    let result : Result[RGB, ColorParseError] = try RGB::parse(value) catch {
+    let result : Result[@color.RGB, @color.ColorParseError] = try
+      @color.RGB::parse(value)
+    catch {
       err => Err(err)
     } noraise {
       color => Ok(color)
@@ -137,17 +140,17 @@ test "color/rgb parse rejects invalid formats" {
 
 ///|
 test "color/rgb parse handles public width and intensity edge cases" {
-  let valid : Array[(Bytes, RGB)] = [
-    (b"#ABC", RGB::new(0xAA, 0xBB, 0xCC)),
-    (b"#800800800", RGB::new(0x7F, 0x7F, 0x7F)),
-    (b"#800080008000", RGB::new(0x7F, 0x7F, 0x7F)),
-    (b"rgbi:1/0/0", RGB::new(0xFF, 0, 0)),
-    (b"rgbi:0.5/0/0", RGB::new(0x7F, 0, 0)),
-    (b"rgbi:.5/0/0", RGB::new(0x7F, 0, 0)),
-    (b"rgbi:1./0/0", RGB::new(0xFF, 0, 0)),
+  let valid : Array[(Bytes, @color.RGB)] = [
+    (b"#ABC", @color.RGB::new(0xAA, 0xBB, 0xCC)),
+    (b"#800800800", @color.RGB::new(0x7F, 0x7F, 0x7F)),
+    (b"#800080008000", @color.RGB::new(0x7F, 0x7F, 0x7F)),
+    (b"rgbi:1/0/0", @color.RGB::new(0xFF, 0, 0)),
+    (b"rgbi:0.5/0/0", @color.RGB::new(0x7F, 0, 0)),
+    (b"rgbi:.5/0/0", @color.RGB::new(0x7F, 0, 0)),
+    (b"rgbi:1./0/0", @color.RGB::new(0xFF, 0, 0)),
   ]
   for entry in valid {
-    guard RGB::parse(entry.0) == entry.1 else {
+    guard @color.RGB::parse(entry.0) == entry.1 else {
       fail("unexpected public parse result for \{entry.0}")
     }
   }
@@ -160,7 +163,9 @@ test "color/rgb parse rejects malformed public edge cases" {
     b"rgb:1/2/3/",
   ]
   for value in invalid {
-    let result : Result[RGB, ColorParseError] = try RGB::parse(value) catch {
+    let result : Result[@color.RGB, @color.ColorParseError] = try
+      @color.RGB::parse(value)
+    catch {
       err => Err(err)
     } noraise {
       color => Ok(color)
@@ -173,59 +178,59 @@ test "color/rgb parse rejects malformed public edge cases" {
 
 ///|
 test "color/default palette covers named cube and grayscale entries" {
-  let palette = default_palette()
-  guard palette[0] == Name::Black.default_rgb() else {
+  let palette = @color.default_palette()
+  guard palette[0] == @color.Name::Black.default_rgb() else {
     fail("expected named palette entry")
   }
-  guard palette[15] == Name::BrightWhite.default_rgb() else {
+  guard palette[15] == @color.Name::BrightWhite.default_rgb() else {
     fail("expected bright named palette entry")
   }
-  guard palette[16] == RGB::new(0, 0, 0) else {
+  guard palette[16] == @color.RGB::new(0, 0, 0) else {
     fail("expected color cube start")
   }
-  guard palette[21] == RGB::new(0, 0, 255) else {
+  guard palette[21] == @color.RGB::new(0, 0, 255) else {
     fail("expected color cube blue edge")
   }
-  guard palette[231] == RGB::new(255, 255, 255) else {
+  guard palette[231] == @color.RGB::new(255, 255, 255) else {
     fail("expected color cube end")
   }
-  guard palette[232] == RGB::new(8, 8, 8) else {
+  guard palette[232] == @color.RGB::new(8, 8, 8) else {
     fail("expected grayscale ramp start")
   }
-  guard palette[255] == RGB::new(238, 238, 238) else {
+  guard palette[255] == @color.RGB::new(238, 238, 238) else {
     fail("expected grayscale ramp end")
   }
 }
 
 ///|
 test "color/dynamic rgb unset set and reset" {
-  let unset = DynamicRGB::unset()
+  let unset = @color.DynamicRGB::unset()
   guard unset.get() == None else {
     fail("expected unset dynamic rgb to have no value")
   }
 
-  let value = DynamicRGB::init(RGB::new(1, 2, 3))
-  guard value.get() == Some(RGB::new(1, 2, 3)) else {
+  let value = @color.DynamicRGB::init(@color.RGB::new(1, 2, 3))
+  guard value.get() == Some(@color.RGB::new(1, 2, 3)) else {
     fail("expected default dynamic rgb value")
   }
 
-  value.set(RGB::new(4, 5, 6))
-  guard value.get() == Some(RGB::new(4, 5, 6)) else {
+  value.set(@color.RGB::new(4, 5, 6))
+  guard value.get() == Some(@color.RGB::new(4, 5, 6)) else {
     fail("expected override dynamic rgb value")
   }
 
   value.reset()
-  guard value.get() == Some(RGB::new(1, 2, 3)) else {
+  guard value.get() == Some(@color.RGB::new(1, 2, 3)) else {
     fail("expected reset dynamic rgb value")
   }
 }
 
 ///|
 test "color/dynamic palette set reset and reset_all" {
-  let palette = DynamicPalette::new()
+  let palette = @color.DynamicPalette::new()
   let default_zero = palette.color(0)
 
-  let color = RGB::new(255, 0, 0)
+  let color = @color.RGB::new(255, 0, 0)
   palette.set(0, color)
   guard palette.color(0) == color else {
     fail("expected palette override color")
@@ -237,28 +242,28 @@ test "color/dynamic palette set reset and reset_all" {
   }
 
   palette.set(0, color)
-  palette.set(5, RGB::new(0, 255, 0))
+  palette.set(5, @color.RGB::new(0, 255, 0))
   palette.reset_all()
   guard palette.color(0) == default_zero else {
     fail("expected reset_all to restore index 0")
   }
-  guard palette.color(5) == Name::Magenta.default_rgb() else {
+  guard palette.color(5) == @color.Name::Magenta.default_rgb() else {
     fail("expected reset_all to restore index 5")
   }
 }
 
 ///|
 test "color/dynamic palette change_default preserves overrides" {
-  let palette = DynamicPalette::new()
-  let custom = RGB::new(255, 0, 0)
+  let palette = @color.DynamicPalette::new()
+  let custom = @color.RGB::new(255, 0, 0)
   palette.set(5, custom)
 
-  let defaults = default_palette()
-  defaults[0] = RGB::new(100, 100, 100)
-  defaults[5] = RGB::new(50, 50, 50)
+  let defaults = @color.default_palette()
+  defaults[0] = @color.RGB::new(100, 100, 100)
+  defaults[5] = @color.RGB::new(50, 50, 50)
   palette.change_default(defaults)
 
-  guard palette.color(0) == RGB::new(100, 100, 100) else {
+  guard palette.color(0) == @color.RGB::new(100, 100, 100) else {
     fail("expected unchanged indexes to adopt new defaults")
   }
   guard palette.color(5) == custom else {
@@ -268,24 +273,24 @@ test "color/dynamic palette change_default preserves overrides" {
 
 ///|
 test "color/terminal colors wrap dynamic color state" {
-  let colors = TerminalColors::new()
+  let colors = @color.TerminalColors::new()
   guard colors.background() == None &&
     colors.foreground() == None &&
     colors.cursor() == None else {
     fail("expected terminal colors to start unset")
   }
-  guard colors.palette_color(1) == Name::Red.default_rgb() else {
+  guard colors.palette_color(1) == @color.Name::Red.default_rgb() else {
     fail("expected terminal colors to expose default palette")
   }
 
-  colors.set_background(RGB::new(1, 2, 3))
-  colors.set_foreground(RGB::new(4, 5, 6))
-  colors.set_cursor(RGB::new(7, 8, 9))
-  colors.set_palette_color(1, RGB::new(9, 9, 9))
-  guard colors.background() == Some(RGB::new(1, 2, 3)) &&
-    colors.foreground() == Some(RGB::new(4, 5, 6)) &&
-    colors.cursor() == Some(RGB::new(7, 8, 9)) &&
-    colors.palette_color(1) == RGB::new(9, 9, 9) else {
+  colors.set_background(@color.RGB::new(1, 2, 3))
+  colors.set_foreground(@color.RGB::new(4, 5, 6))
+  colors.set_cursor(@color.RGB::new(7, 8, 9))
+  colors.set_palette_color(1, @color.RGB::new(9, 9, 9))
+  guard colors.background() == Some(@color.RGB::new(1, 2, 3)) &&
+    colors.foreground() == Some(@color.RGB::new(4, 5, 6)) &&
+    colors.cursor() == Some(@color.RGB::new(7, 8, 9)) &&
+    colors.palette_color(1) == @color.RGB::new(9, 9, 9) else {
     fail("expected terminal colors mutations to stick")
   }
 
@@ -296,23 +301,23 @@ test "color/terminal colors wrap dynamic color state" {
   guard colors.background() == None &&
     colors.foreground() == None &&
     colors.cursor() == None &&
-    colors.palette_color(1) == Name::Red.default_rgb() else {
+    colors.palette_color(1) == @color.Name::Red.default_rgb() else {
     fail("expected terminal colors resets to restore defaults")
   }
 
-  let defaults = default_palette()
-  defaults[2] = RGB::new(33, 44, 55)
+  let defaults = @color.default_palette()
+  defaults[2] = @color.RGB::new(33, 44, 55)
   colors.change_default_palette(defaults)
-  guard colors.palette_color(2) == RGB::new(33, 44, 55) else {
+  guard colors.palette_color(2) == @color.RGB::new(33, 44, 55) else {
     fail("expected terminal colors default palette update")
   }
 
-  colors.set_palette_color(3, RGB::new(66, 77, 88))
+  colors.set_palette_color(3, @color.RGB::new(66, 77, 88))
   colors.reset_palette()
-  guard colors.palette_color(2) == RGB::new(33, 44, 55) else {
+  guard colors.palette_color(2) == @color.RGB::new(33, 44, 55) else {
     fail("expected reset_palette to keep changed defaults")
   }
-  guard colors.palette_color(3) == Name::Yellow.default_rgb() else {
+  guard colors.palette_color(3) == @color.Name::Yellow.default_rgb() else {
     fail("expected reset_palette to clear palette overrides")
   }
 }

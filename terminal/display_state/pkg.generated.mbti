@@ -13,6 +13,7 @@ import {
 
 // Types and methods
 type TerminalDisplayState derive(Eq, @debug.Debug)
+pub fn TerminalDisplayState::equal(Self, Self) -> Bool
 pub fn TerminalDisplayState::full_reset(Self) -> Unit
 pub fn TerminalDisplayState::mouse_shape(Self) -> @input.MouseShape
 pub fn TerminalDisplayState::new() -> Self
@@ -23,4 +24,3 @@ pub fn TerminalDisplayState::status_display(Self) -> @ansi.StatusDisplay
 // Type aliases
 
 // Traits
-

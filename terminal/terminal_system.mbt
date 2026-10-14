@@ -1,5 +1,5 @@
 ///|
-const SystemLogChunkBytes : Int = 2048
+const SystemLogChunkBytes : Int32 = 2048
 
 ///|
 pub(all) enum SystemLogLevel {
@@ -11,8 +11,8 @@ pub(all) enum SystemLogLevel {
 
 ///|
 struct SystemImage {
-  width : UInt
-  height : UInt
+  width : UInt32
+  height : UInt32
   data : Bytes
 } derive(Eq, Debug)
 
@@ -28,20 +28,20 @@ let current_terminal_system : TerminalSystemState = TerminalSystemState::new()
 
 ///|
 pub fn SystemImage::new(
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   data : Bytes,
 ) -> SystemImage {
-  { width, height, data }
+  { width, height, data, }
 }
 
 ///|
-pub fn SystemImage::width(self : SystemImage) -> UInt {
+pub fn SystemImage::width(self : SystemImage) -> UInt32 {
   self.width
 }
 
 ///|
-pub fn SystemImage::height(self : SystemImage) -> UInt {
+pub fn SystemImage::height(self : SystemImage) -> UInt32 {
   self.height
 }
 
@@ -163,3 +163,29 @@ fn terminal_system_no_log(
 ) -> Unit {
   ()
 }
+
+///|
+pub extend SystemLogLevel with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SystemLogLevel with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SystemLogLevel with @debug.Debug::{to_repr}
+
+///|
+pub extend SystemImage with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SystemImage with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SystemImage with @debug.Debug::{to_repr}

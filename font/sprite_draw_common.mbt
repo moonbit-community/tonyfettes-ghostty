@@ -33,7 +33,10 @@ priv enum SpriteDrawThickness {
 }
 
 ///|
-fn SpriteDrawThickness::height(self : SpriteDrawThickness, base : UInt) -> UInt {
+fn SpriteDrawThickness::height(
+  self : SpriteDrawThickness,
+  base : UInt32,
+) -> UInt32 {
   match self {
     ThicknessLight => base
     ThicknessHeavy => base * 2U
@@ -43,10 +46,10 @@ fn SpriteDrawThickness::height(self : SpriteDrawThickness, base : UInt) -> UInt 
 ///|
 fn vline(
   canvas : SpriteCanvas,
-  y1 : Int,
-  y2 : Int,
-  x : Int,
-  thickness_px : UInt,
+  y1 : Int32,
+  y2 : Int32,
+  x : Int32,
+  thickness_px : UInt32,
 ) -> Unit {
   canvas.box(
     x,
@@ -60,10 +63,10 @@ fn vline(
 ///|
 fn hline(
   canvas : SpriteCanvas,
-  x1 : Int,
-  x2 : Int,
-  y : Int,
-  thickness_px : UInt,
+  x1 : Int32,
+  x2 : Int32,
+  y : Int32,
+  thickness_px : UInt32,
 ) -> Unit {
   canvas.box(
     x1,
@@ -128,22 +131,22 @@ priv struct SpriteDrawAlignment {
 
 ///|
 fn sprite_draw_alignment_upper() -> SpriteDrawAlignment {
-  { horizontal: Center, vertical: Top }
+  { horizontal: Center, vertical: Top, }
 }
 
 ///|
 fn sprite_draw_alignment_lower() -> SpriteDrawAlignment {
-  { horizontal: Center, vertical: Bottom }
+  { horizontal: Center, vertical: Bottom, }
 }
 
 ///|
 fn sprite_draw_alignment_left() -> SpriteDrawAlignment {
-  { horizontal: Left, vertical: Middle }
+  { horizontal: Left, vertical: Middle, }
 }
 
 ///|
 fn sprite_draw_alignment_right() -> SpriteDrawAlignment {
-  { horizontal: Right, vertical: Middle }
+  { horizontal: Right, vertical: Middle, }
 }
 
 ///|
@@ -171,13 +174,13 @@ priv enum SpriteDrawFraction {
 }
 
 ///|
-fn SpriteDrawFraction::min(self : SpriteDrawFraction, size : UInt) -> Int {
+fn SpriteDrawFraction::min(self : SpriteDrawFraction, size : UInt32) -> Int32 {
   let s = size.to_double()
   (s - @math.round((1.0 - self.fraction()) * s)).to_int()
 }
 
 ///|
-fn SpriteDrawFraction::max(self : SpriteDrawFraction, size : UInt) -> Int {
+fn SpriteDrawFraction::max(self : SpriteDrawFraction, size : UInt32) -> Int32 {
   @math.round(self.fraction() * size.to_double()).to_int()
 }
 

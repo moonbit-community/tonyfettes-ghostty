@@ -1,13 +1,13 @@
 ///|
 struct StreamTerminalEffectsRecorder {
   writes : Array[Bytes]
-  mut bell_count : Int
-  mut title_changed_count : Int
+  mut bell_count : Int32
+  mut title_changed_count : Int32
 }
 
 ///|
 fn StreamTerminalEffectsRecorder::new() -> StreamTerminalEffectsRecorder {
-  { writes: [], bell_count: 0, title_changed_count: 0 }
+  { writes: [], bell_count: 0, title_changed_count: 0, }
 }
 
 ///|
@@ -35,7 +35,7 @@ fn StreamTerminalEffectsRecorder::title_changed(
 ///|
 fn expect_stream_write(
   recorder : StreamTerminalEffectsRecorder,
-  index : Int,
+  index : Int32,
   expected : Bytes,
 ) -> Unit raise {
   guard recorder.writes[index] == expected else {
@@ -45,7 +45,7 @@ fn expect_stream_write(
 
 ///|
 fn expect_terminal_cell(
-  terminal : StreamTerminal,
+  terminal : @terminal.StreamTerminal,
   row : @size.CellCountInt,
   col : @size.CellCountInt,
 ) -> @page.PageCellState {
@@ -54,7 +54,7 @@ fn expect_terminal_cell(
 
 ///|
 fn expect_row_text(
-  terminal : StreamTerminal,
+  terminal : @terminal.StreamTerminal,
   row : @size.CellCountInt,
   expected : Bytes,
 ) -> Unit raise {
@@ -68,7 +68,7 @@ fn expect_row_text(
 
 ///|
 test "stream terminal/applies bytes across split escape writes" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   guard terminal.title() == None &&
     terminal.cursor_x() == 0 &&
@@ -105,7 +105,7 @@ test "stream terminal/routes query replies and callbacks" {
     @device.SecondaryDeviceAttributes::new(Vt420, 100, 7),
     @device.TertiaryDeviceAttributes::new(9U),
   )
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     bell=fn() { recorder.bell() },
     color_scheme=fn() { Some(Light) },
@@ -144,7 +144,7 @@ test "stream terminal/routes query replies and callbacks" {
 ///|
 test "stream terminal/uses readonly fallbacks and palette dirtiness" {
   let recorder = StreamTerminalEffectsRecorder::new()
-  let terminal = StreamTerminal::new(write_pty=fn(data) {
+  let terminal = @terminal.StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
   })
 
@@ -173,7 +173,7 @@ test "stream terminal/uses readonly fallbacks and palette dirtiness" {
 ///|
 test "stream terminal/default secondary and tertiary device attributes" {
   let recorder = StreamTerminalEffectsRecorder::new()
-  let terminal = StreamTerminal::new(write_pty=fn(data) {
+  let terminal = @terminal.StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
   })
 
@@ -194,7 +194,7 @@ test "stream terminal/default secondary and tertiary device attributes" {
 ///|
 test "stream terminal/resize updates dimensions and reports size" {
   let recorder = StreamTerminalEffectsRecorder::new()
-  let terminal = StreamTerminal::new(write_pty=fn(data) {
+  let terminal = @terminal.StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
   })
 
@@ -223,7 +223,7 @@ test "stream terminal/resize updates dimensions and reports size" {
 
 ///|
 test "stream terminal/resize rejects zero dimensions and saturates pixels" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   guard terminal.resize(0, 24, 9U, 18U) == InvalidValue &&
     terminal.resize(80, 0, 9U, 18U) == InvalidValue else {
@@ -241,7 +241,7 @@ test "stream terminal/resize rejects zero dimensions and saturates pixels" {
 
 ///|
 test "stream terminal/scrollback viewport tracks active screen rows" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before scrollback viewport test")
@@ -275,7 +275,7 @@ test "stream terminal/scrollback viewport tracks active screen rows" {
 
 ///|
 test "stream terminal/semantic_prompt_row_range returns None without OSC 133" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   // No semantic sequences sent — range should be None for any row.
   guard terminal.semantic_prompt_row_range(0) == None &&
@@ -288,7 +288,7 @@ test "stream terminal/semantic_prompt_row_range returns None without OSC 133" {
 
 ///|
 test "stream terminal/combining codepoints accumulate as grapheme extras" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   // 'e' (U+0065) followed by combining acute accent (U+0301) → é
   // The accent (U+0301) is zero-width and should be combined onto 'e'.
@@ -323,7 +323,7 @@ test "stream terminal/combining codepoints accumulate as grapheme extras" {
 
 ///|
 test "stream terminal/semantic_prompt_row_range covers prompt and output zones" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   guard terminal.resize(80, 5, 0U, 0U) == Success else {
     fail("expected resize success")
@@ -358,7 +358,7 @@ test "stream terminal/semantic_prompt_row_range covers prompt and output zones" 
 
 ///|
 test "stream terminal/mode 2027 still combines zero-width codepoints" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   // With grapheme cluster mode (2027) enabled, a zero-width combining mark must
   // still attach to its base cell — upstream Ghostty appends it in the 2027
@@ -386,7 +386,7 @@ test "stream terminal/mode 2027 still combines zero-width codepoints" {
 
 ///|
 test "stream terminal/semantic_prompt_row_range spans prompt continuation rows" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   // 3 rows: row 0 = Prompt, row 1 = PromptContinuation, row 2 = output (None).
   guard terminal.resize(80, 3, 0U, 0U) == Success else {
@@ -416,7 +416,7 @@ test "stream terminal/semantic_prompt_row_range spans prompt continuation rows" 
 
 ///|
 test "stream terminal/semantic_prompt_row_range is screen-local" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 5, 0U, 0U) == Success else {
     fail("expected resize success")
   }
@@ -453,7 +453,7 @@ test "stream terminal/semantic_prompt_row_range is screen-local" {
 
 ///|
 test "stream terminal/clearing alternate screen resets its semantic state" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 5, 0U, 0U) == Success else {
     fail("expected resize success")
   }
@@ -484,7 +484,7 @@ test "stream terminal/clearing alternate screen resets its semantic state" {
 
 ///|
 test "stream terminal/copied default cell is not reported as styled" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   // Plain default text followed by a bold cell.
   terminal.next_slice(b"A\x1B[1mB\x1B[0m")
@@ -504,8 +504,8 @@ test "stream terminal/copied default cell is not reported as styled" {
 
 ///|
 test "stream terminal/grapheme_codepoints visible through row iterator" {
-  let terminal = StreamTerminal::new()
-  let render = RenderState::new()
+  let terminal = @terminal.StreamTerminal::new()
+  let render = @terminal.RenderState::new()
 
   // Write 'n' + combining tilde (U+0303) → ñ
   terminal.next_slice(@utf8.encode("n\u{0303}"))
@@ -527,7 +527,7 @@ test "stream terminal/grapheme_codepoints visible through row iterator" {
 
 ///|
 test "stream terminal/emoji skin-tone modifier combines onto base emoji" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   // 👍 (U+1F44D, wide) + 🏽 (U+1F3FD, skin-tone modifier). wcwidth reports the
   // modifier as wide, but it must extend the base emoji's grapheme cluster, not
@@ -552,7 +552,7 @@ test "stream terminal/emoji skin-tone modifier combines onto base emoji" {
 
 ///|
 test "stream terminal/emoji variation selector does not widen a narrow base" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   // ❤ (U+2764, narrow) + VS16 (U+FE0F, emoji presentation) + X. VS16 would make
   // the cluster render width-2, but we do not re-width an already-placed narrow

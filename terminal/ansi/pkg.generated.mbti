@@ -37,6 +37,7 @@ pub(all) enum C0 {
   Si
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
+pub fn C0::equal(Self, Self) -> Bool
 
 pub(all) enum CursorStyle {
   Default
@@ -47,6 +48,7 @@ pub(all) enum CursorStyle {
   BlinkingBar
   SteadyBar
 } derive(Eq, @debug.Debug)
+pub fn CursorStyle::equal(Self, Self) -> Bool
 pub fn CursorStyle::ordinal(Self) -> Int
 
 pub(all) enum ModifyKeyFormat {
@@ -57,6 +59,7 @@ pub(all) enum ModifyKeyFormat {
   OtherKeysNumericExcept
   OtherKeysNumeric
 } derive(Eq, @debug.Debug)
+pub fn ModifyKeyFormat::equal(Self, Self) -> Bool
 pub fn ModifyKeyFormat::ordinal(Self) -> Int
 
 pub(all) enum ProtectedMode {
@@ -64,6 +67,7 @@ pub(all) enum ProtectedMode {
   Iso
   Dec
 } derive(Eq, @debug.Debug)
+pub fn ProtectedMode::equal(Self, Self) -> Bool
 
 pub(all) enum RenditionAspect {
   Default
@@ -72,11 +76,13 @@ pub(all) enum RenditionAspect {
   DefaultBg
 } derive(Eq, @debug.Debug)
 pub fn RenditionAspect::code(Self) -> UInt16
+pub fn RenditionAspect::equal(Self, Self) -> Bool
 
 pub(all) enum StatusDisplay {
   Main
   StatusLine
 } derive(Eq, @debug.Debug)
+pub fn StatusDisplay::equal(Self, Self) -> Bool
 pub fn StatusDisplay::ordinal(Self) -> Int
 
 pub(all) enum StatusLineType {
@@ -85,8 +91,8 @@ pub(all) enum StatusLineType {
   HostWritable
 } derive(Eq, @debug.Debug)
 pub fn StatusLineType::code(Self) -> UInt16
+pub fn StatusLineType::equal(Self, Self) -> Bool
 
 // Type aliases
 
 // Traits
-

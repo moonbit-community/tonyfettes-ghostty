@@ -4,10 +4,10 @@ version = "0.1.0"
 
 import {
   "tonyfettes/ghostty@0.4.0",
-  "moonbit-community/rabbita@0.12.1",
-  "moonbit-community/pty@0.2.0",
-  "moonbitlang/async@0.19.1",
-  "moonbit-community/tty@0.2.4",
+  "moonbit-community/rabbita@0.12.4",
+  "moonbit-community/pty@0.2.3",
+  "moonbitlang/async@0.22.4",
+  "moonbit-community/tty@0.5.0",
 }
 
-warnings = "+unnecessary_annotation+unnecessary_view_op+prefer_readonly_array+prefer_fixed_array+ambiguous_range_direction+deprecated_for_in_method+unqualified_local_using+lexmatch_longest_match"
+warnings = "+unnecessary_annotation+unnecessary_view_op+prefer_readonly_array+prefer_fixed_array+ambiguous_range_direction+deprecated_for_in_method+unqualified_local_using"

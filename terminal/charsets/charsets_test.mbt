@@ -1,20 +1,20 @@
 ///|
 test "charsets/non utf8 tables have length 256" {
-  assert_eq(table(Ascii).length(), 256)
-  assert_eq(table(British).length(), 256)
-  assert_eq(table(DecSpecial).length(), 256)
+  assert_eq(@charsets.table(Ascii).length(), 256)
+  assert_eq(@charsets.table(British).length(), 256)
+  assert_eq(@charsets.table(DecSpecial).length(), 256)
 }
 
 ///|
 test "charsets/british remaps hash to pound" {
-  assert_eq(table(Ascii)[0x23], 0x23)
-  assert_eq(table(British)[0x23], 0x00A3)
-  assert_eq(table(British)[0x24], 0x24)
+  assert_eq(@charsets.table(Ascii)[0x23], 0x23)
+  assert_eq(@charsets.table(British)[0x23], 0x00A3)
+  assert_eq(@charsets.table(British)[0x24], 0x24)
 }
 
 ///|
 test "charsets/dec special mappings preserve line drawing entries" {
-  let table_ = table(DecSpecial)
+  let table_ = @charsets.table(DecSpecial)
   assert_eq(table_[0x60], 0x25C6)
   assert_eq(table_[0x61], 0x2592)
   assert_eq(table_[0x62], 0x2409)
@@ -50,15 +50,17 @@ test "charsets/dec special mappings preserve line drawing entries" {
 
 ///|
 test "charsets/slot enums are comparable" {
-  guard Slots::G0 == G0 else { fail("expected g0 equality") }
-  guard Slots::G0 != G1 else { fail("expected distinct slots") }
-  ignore(Slots::G2)
-  ignore(Slots::G3)
-  guard ActiveSlot::Gl == Gl else { fail("expected gl equality") }
-  guard ActiveSlot::Gl != Gr else { fail("expected distinct active slots") }
+  guard @charsets.Slots::G0 == G0 else { fail("expected g0 equality") }
+  guard @charsets.Slots::G0 != G1 else { fail("expected distinct slots") }
+  ignore(@charsets.Slots::G2)
+  ignore(@charsets.Slots::G3)
+  guard @charsets.ActiveSlot::Gl == Gl else { fail("expected gl equality") }
+  guard @charsets.ActiveSlot::Gl != Gr else {
+    fail("expected distinct active slots")
+  }
 }
 
 ///|
 test "panic charsets/utf8 table aborts" {
-  ignore(table(Utf8))
+  ignore(@charsets.table(Utf8))
 }

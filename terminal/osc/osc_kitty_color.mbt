@@ -27,7 +27,7 @@ pub fn KittyColorSet::new(
   key : KittyColorKind,
   color : @color.RGB,
 ) -> KittyColorSet {
-  { key, color }
+  { key, color, }
 }
 
 ///|
@@ -66,7 +66,7 @@ pub fn KittyColorOsc::terminator(self : KittyColorOsc) -> Terminator {
 }
 
 ///|
-const KittyColorRequestLimit : Int = 528
+const KittyColorRequestLimit : Int32 = 528
 
 ///|
 fn parse_kitty_color_command(
@@ -95,15 +95,15 @@ fn parse_kitty_color_command(
   }
 
   Some(
-    KittyColorProtocol({ requests, terminator: terminator_init(terminator_ch) }),
+    KittyColorProtocol({ requests, terminator: terminator_init(terminator_ch), }),
   )
 }
 
 ///|
 fn kitty_color_append_request(
   buffer : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
   requests : Array[KittyColorRequest],
 ) -> Unit {
   let key_end = match @ascii.find_byte(buffer, start, end_, b'=') {
@@ -148,8 +148,8 @@ fn kitty_color_append_request(
 ///|
 fn kitty_color_kind_from_bytes(
   buffer : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
 ) -> KittyColorKind? {
   if @ascii.slice_equals_ascii(buffer, start, end_, "foreground") {
     return Some(KittySpecial(KittyForeground))
@@ -190,7 +190,11 @@ fn kitty_color_kind_from_bytes(
 }
 
 ///|
-fn trim_ascii_spaces(buffer : BytesView, start : Int, end_ : Int) -> (Int, Int) {
+fn trim_ascii_spaces(
+  buffer : BytesView,
+  start : Int32,
+  end_ : Int32,
+) -> (Int32, Int32) {
   let mut trimmed_start = start
   let mut trimmed_end = end_
   while trimmed_start < trimmed_end && buffer[trimmed_start] == b' ' {
@@ -201,3 +205,68 @@ fn trim_ascii_spaces(buffer : BytesView, start : Int, end_ : Int) -> (Int, Int) 
   }
   (trimmed_start, trimmed_end)
 }
+
+///|
+pub extend KittyColorSpecial with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorSpecial with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorSpecial with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyColorKind with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorKind with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorKind with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyColorSet with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorSet with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorSet with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyColorRequest with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorRequest with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorRequest with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyColorOsc with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorOsc with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorOsc with @debug.Debug::{to_repr}

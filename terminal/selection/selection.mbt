@@ -11,7 +11,7 @@ pub fn Selection::new(
   end_ : @pagelist.Pin,
   rectangle : Bool,
 ) -> Selection {
-  { start, end: end_, rectangle }
+  { start, end: end_, rectangle, }
 }
 
 ///|

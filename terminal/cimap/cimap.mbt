@@ -9,7 +9,7 @@ struct CiStrMap[V] {
   // `None` marks an empty slot; capacity is a power of two and always strictly
   // larger than the entry count, so a missing key always reaches a `None`.
   slots : FixedArray[(String, V)?]
-  mask : Int
+  mask : Int32
 }
 
 ///|
@@ -31,7 +31,7 @@ pub fn[V] CiStrMap::from_entries(
     }
     slots[idx] = Some(entry)
   }
-  { slots, mask }
+  { slots, mask, }
 }
 
 ///|
@@ -71,7 +71,7 @@ pub fn[V] CiStrMap::get_view(self : CiStrMap[V], key : BytesView) -> V? {
 
 ///|
 /// ASCII lowercase a single code unit; non-letters pass through.
-fn ascii_lower(code : Int) -> Int {
+fn ascii_lower(code : Int32) -> Int32 {
   if code >= 0x41 && code <= 0x5A {
     code + 0x20
   } else {
@@ -83,7 +83,7 @@ fn ascii_lower(code : Int) -> Int {
 /// Reduce a hash to a slot index. The hash is unsigned; `&` with the (positive)
 /// power-of-two mask keeps it in `[0, cap)`, and the result fits a non-negative
 /// `Int`.
-fn slot_index(hash : UInt, mask : Int) -> Int {
+fn slot_index(hash : UInt32, mask : Int32) -> Int32 {
   (hash & mask.reinterpret_as_uint()).reinterpret_as_int()
 }
 
@@ -93,7 +93,7 @@ fn slot_index(hash : UInt, mask : Int) -> Int {
 /// signed `Int` overflow, which is UB on native/sanitized builds. `fnv1a_string`
 /// must agree byte-for-byte with `fnv1a_view` on ASCII so a `String` and an
 /// equal `BytesView` collide.
-fn fnv1a_string(key : String) -> UInt {
+fn fnv1a_string(key : String) -> UInt32 {
   let mut hash = 0x811c9dc5U
   for i in 0..<key.length() {
     hash = (hash ^ ascii_lower(key[i].to_int()).reinterpret_as_uint()) *
@@ -103,7 +103,7 @@ fn fnv1a_string(key : String) -> UInt {
 }
 
 ///|
-fn fnv1a_view(key : BytesView) -> UInt {
+fn fnv1a_view(key : BytesView) -> UInt32 {
   let mut hash = 0x811c9dc5U
   for byte in key {
     hash = (hash ^ ascii_lower(byte.to_int()).reinterpret_as_uint()) *

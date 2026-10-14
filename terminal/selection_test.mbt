@@ -1,6 +1,6 @@
 ///|
 test "selection/preserves endpoints and rectangle flag" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(8, 4, 0U, 0U) == Success else {
     fail("expected resize before selection endpoint test")
   }
@@ -8,7 +8,7 @@ test "selection/preserves endpoints and rectangle flag" {
 
   let start = terminal.pin(Active(@point.Coordinate::new(1, 0U))).unwrap()
   let end_ = terminal.pin(Active(@point.Coordinate::new(2, 1U))).unwrap()
-  let selection = Selection::new(start, end_, true)
+  let selection = @terminal.Selection::new(start, end_, true)
 
   guard terminal.point_from_pin(selection.start(), Active) ==
     Some(@point.Coordinate::new(1, 0U)) else {
@@ -27,7 +27,7 @@ test "selection/preserves endpoints and rectangle flag" {
 
 ///|
 test "selection/untrack invalidates public pin handle" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   terminal.next_slice(b"abc")
 
   let pin = terminal.pin(Active(@point.Coordinate::new(1, 0U))).unwrap()
@@ -41,7 +41,7 @@ test "selection/untrack invalidates public pin handle" {
 
 ///|
 test "selection/pin handles keep their screen owner across alt screen" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(4, 2, 0U, 0U) == Success else {
     fail("expected resize before screen-owned pin test")
   }
@@ -84,7 +84,7 @@ test "selection/pin handles keep their screen owner across alt screen" {
 
 ///|
 test "selection/supports non-rectangular selections" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   let selection = terminal
     .selection(
       Active(@point.Coordinate::new(0, 0U)),
@@ -101,7 +101,7 @@ test "selection/supports non-rectangular selections" {
 
 ///|
 test "selection/rejects points outside the page list" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   let missing = terminal.selection(
     Active(@point.Coordinate::new(0, 1000U)),
     Active(@point.Coordinate::new(0, 0U)),

@@ -6,4 +6,4 @@ import {
   "tonyfettes/ghostty@0.4.0",
 }
 
-warnings = "+unnecessary_annotation+unnecessary_view_op+prefer_readonly_array+prefer_fixed_array+ambiguous_range_direction+deprecated_for_in_method+unqualified_local_using+lexmatch_longest_match"
+warnings = "+unnecessary_annotation+unnecessary_view_op+prefer_readonly_array+prefer_fixed_array+ambiguous_range_direction+deprecated_for_in_method+unqualified_local_using"

@@ -1,6 +1,6 @@
 ///|
 test "screen hyperlink state/defaults" {
-  let state = ScreenHyperlinkState::new()
+  let state = @hyperlink_state.ScreenHyperlinkState::new()
   guard !state.active() else {
     fail("expected hyperlink state to start inactive")
   }
@@ -14,7 +14,7 @@ test "screen hyperlink state/defaults" {
 
 ///|
 test "screen hyperlink state/explicit hyperlink does not consume implicit ids" {
-  let state = ScreenHyperlinkState::new()
+  let state = @hyperlink_state.ScreenHyperlinkState::new()
   state.start("https://example.com", Some("foo"))
 
   guard state.active() else {
@@ -30,7 +30,7 @@ test "screen hyperlink state/explicit hyperlink does not consume implicit ids" {
 
 ///|
 test "screen hyperlink state/implicit hyperlink increments ids and end clears current state" {
-  let state = ScreenHyperlinkState::new()
+  let state = @hyperlink_state.ScreenHyperlinkState::new()
   state.start("https://one.example.com", None)
 
   guard state.uri() == Some("https://one.example.com") &&
@@ -59,7 +59,7 @@ test "screen hyperlink state/implicit hyperlink increments ids and end clears cu
 
 ///|
 test "screen hyperlink state/full reset clears current state and implicit counter" {
-  let state = ScreenHyperlinkState::new()
+  let state = @hyperlink_state.ScreenHyperlinkState::new()
   state.start("https://one.example.com", None)
   state.start("https://two.example.com", Some("bar"))
   state.full_reset()

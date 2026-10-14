@@ -17,7 +17,7 @@ fn expect_parse_error(source : String) -> String raise {
 ///|
 fn expect_event(
   event : CastEvent,
-  delay_ms : Int,
+  delay_ms : Int32,
   kind : String,
   data : String,
 ) -> Unit raise {

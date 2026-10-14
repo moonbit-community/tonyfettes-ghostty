@@ -20,14 +20,14 @@ struct StreamTerminalBridgeEffects {
 
 ///|
 pub fn StreamTerminalBridgeEffects::new(
-  write_pty? : (Bytes) -> Unit = fn(_data) { () },
-  bell? : () -> Unit = fn() { () },
-  color_scheme? : () -> @device.ColorScheme? = fn() { None },
-  device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
-  enquiry? : () -> Bytes = fn() { b"" },
-  size? : () -> @size_report.Size? = fn() { None },
-  title_changed? : () -> Unit = fn() { () },
-  xtversion? : () -> String = fn() { "" },
+  write_pty~ : (Bytes) -> Unit = fn(_data) { () },
+  bell~ : () -> Unit = fn() { () },
+  color_scheme~ : () -> @device.ColorScheme? = fn() { None },
+  device_attributes~ : () -> @device.DeviceAttributes? = fn() { None },
+  enquiry~ : () -> Bytes = fn() { b"" },
+  size~ : () -> @size_report.Size? = fn() { None },
+  title_changed~ : () -> Unit = fn() { () },
+  xtversion~ : () -> String = fn() { "" },
 ) -> StreamTerminalBridgeEffects {
   {
     write_pty_fn: write_pty,

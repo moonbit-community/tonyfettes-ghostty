@@ -12,9 +12,12 @@ import {
   "tonyfettes/ghostty/terminal/size_report",
   "tonyfettes/ghostty/terminal/color",
   "tonyfettes/ghostty/terminal/page",
-  "tonyfettes/ghostty/terminal/sgr",
   "tonyfettes/ghostty/terminal/style",
 }
+
+import {
+  "tonyfettes/ghostty/terminal/sgr",
+} for "wbtest"
 
 supported_targets = "js"
 

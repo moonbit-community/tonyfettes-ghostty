@@ -8,7 +8,7 @@ test "surface registry/covers upstream type list in order" {
     "GhosttyRenderStateColors", "GhosttySizeReportSize", "GhosttyString", "GhosttyStyle",
     "GhosttyStyleColor", "GhosttyTerminalOptions", "GhosttyTerminalScrollbar", "GhosttyTerminalScrollViewport",
   ]
-  let entries = terminal_surface_types()
+  let entries = @terminal.terminal_surface_types()
   guard entries.length() == expected.length() else {
     fail("expected \{expected.length()} surface type entries")
   }
@@ -21,7 +21,7 @@ test "surface registry/covers upstream type list in order" {
 
 ///|
 test "surface registry/returns direct mappings" {
-  let style = terminal_surface_type("GhosttyStyle").unwrap()
+  let style = @terminal.terminal_surface_type("GhosttyStyle").unwrap()
   guard style.mapping() == Direct else {
     fail("expected GhosttyStyle to stay a direct mapping")
   }
@@ -32,7 +32,7 @@ test "surface registry/returns direct mappings" {
     fail("expected direct mappings to avoid extra notes")
   }
 
-  let selection = terminal_surface_type("GhosttySelection").unwrap()
+  let selection = @terminal.terminal_surface_type("GhosttySelection").unwrap()
   guard selection.mapping() == Direct else {
     fail("expected GhosttySelection to stay direct")
   }
@@ -40,7 +40,7 @@ test "surface registry/returns direct mappings" {
     fail("expected selection to use pin-backed carrier")
   }
 
-  let pin = terminal_surface_type("GhosttyGridRef").unwrap()
+  let pin = @terminal.terminal_surface_type("GhosttyGridRef").unwrap()
   guard pin.mapping() == Direct && pin.moonbit_surface() == "Pin" else {
     fail("expected GhosttyGridRef to map to Pin")
   }
@@ -48,7 +48,7 @@ test "surface registry/returns direct mappings" {
 
 ///|
 test "surface registry/marks native and absorbed replacements" {
-  let string_info = terminal_surface_type("GhosttyString").unwrap()
+  let string_info = @terminal.terminal_surface_type("GhosttyString").unwrap()
   guard string_info.mapping() == Native else {
     fail("expected GhosttyString to be replaced by native MoonBit types")
   }
@@ -59,7 +59,7 @@ test "surface registry/marks native and absorbed replacements" {
     fail("expected GhosttyString to explain the native replacement")
   }
 
-  let terminal_opts = terminal_surface_type("GhosttyTerminalOptions").unwrap()
+  let terminal_opts = @terminal.terminal_surface_type("GhosttyTerminalOptions").unwrap()
   guard terminal_opts.mapping() == Absorbed else {
     fail("expected GhosttyTerminalOptions to be absorbed into StreamTerminal")
   }
@@ -73,7 +73,7 @@ test "surface registry/marks native and absorbed replacements" {
 
 ///|
 test "surface registry/lookup rejects unknown entries" {
-  guard terminal_surface_type("GhosttyNotReal") == None else {
+  guard @terminal.terminal_surface_type("GhosttyNotReal") == None else {
     fail("expected unknown upstream names to return None")
   }
 }

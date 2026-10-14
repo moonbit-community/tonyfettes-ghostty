@@ -1,6 +1,6 @@
 ///|
-fn test_mouse_encoder_size() -> MouseEncoderSize {
-  MouseEncoderSize::new(1000U, 1000U, 1U, 1U).unwrap()
+fn test_mouse_encoder_size() -> @mouse_encoder.MouseEncoderSize {
+  @mouse_encoder.MouseEncoderSize::new(1000U, 1000U, 1U, 1U).unwrap()
 }
 
 ///|
@@ -9,7 +9,7 @@ fn make_mouse_event(
   button : @input.MouseButton?,
   x : Float,
   y : Float,
-  mods? : @input.KeyMods = @input.KeyMods::new(),
+  mods~ : @input.KeyMods = @input.KeyMods::new(),
 ) -> @input.MouseInputEvent {
   let event = @input.MouseInputEvent::new()
   event.set_action(action)
@@ -24,14 +24,14 @@ fn make_mouse_event(
 
 ///|
 test "mouse encoder size/new validates and exposes fields" {
-  guard MouseEncoderSize::new(10U, 10U, 0U, 1U) == None else {
+  guard @mouse_encoder.MouseEncoderSize::new(10U, 10U, 0U, 1U) == None else {
     fail("expected zero cell width to be rejected")
   }
-  guard MouseEncoderSize::new(10U, 10U, 1U, 0U) == None else {
+  guard @mouse_encoder.MouseEncoderSize::new(10U, 10U, 1U, 0U) == None else {
     fail("expected zero cell height to be rejected")
   }
 
-  let size = MouseEncoderSize::new(
+  let size = @mouse_encoder.MouseEncoderSize::new(
     80U,
     24U,
     8U,
@@ -55,16 +55,17 @@ test "mouse encoder size/new validates and exposes fields" {
 
 ///|
 test "mouse encoder/new and setters expose typed owner surface" {
-  let encoder = MouseEncoder::new()
+  let encoder = @mouse_encoder.MouseEncoder::new()
   guard encoder.event() == None &&
     encoder.format() == X10 &&
-    encoder.size() == MouseEncoderSize::new(1U, 1U, 1U, 1U).unwrap() &&
+    encoder.size() ==
+    @mouse_encoder.MouseEncoderSize::new(1U, 1U, 1U, 1U).unwrap() &&
     !encoder.any_button_pressed() &&
     !encoder.track_last_cell() else {
     fail("expected default mouse encoder state")
   }
 
-  let size = MouseEncoderSize::new(80U, 24U, 8U, 16U).unwrap()
+  let size = @mouse_encoder.MouseEncoderSize::new(80U, 24U, 8U, 16U).unwrap()
   encoder.set_event(Any)
   encoder.set_format(Sgr)
   encoder.set_size(size)
@@ -87,8 +88,8 @@ test "mouse encoder/new and setters expose typed owner surface" {
 
 ///|
 test "mouse encoder/sync updates mode and format only" {
-  let encoder = MouseEncoder::new()
-  let size = MouseEncoderSize::new(800U, 600U, 10U, 20U).unwrap()
+  let encoder = @mouse_encoder.MouseEncoder::new()
+  let size = @mouse_encoder.MouseEncoderSize::new(800U, 600U, 10U, 20U).unwrap()
   encoder.set_size(size)
   encoder.set_event(Any)
   encoder.set_format(Sgr)
@@ -110,13 +111,13 @@ test "mouse encoder/none x10 and normal mode reporting follow upstream rules" {
   let left_release = make_mouse_event(Release, Some(Left), 0.0F, 0.0F)
   let left_motion = make_mouse_event(Motion, Some(Left), 0.0F, 0.0F)
 
-  let none_encoder = MouseEncoder::new()
+  let none_encoder = @mouse_encoder.MouseEncoder::new()
   none_encoder.set_size(test_mouse_encoder_size())
   guard none_encoder.encode(left_press) == b"" else {
     fail("expected none mode to stay silent")
   }
 
-  let x10 = MouseEncoder::new()
+  let x10 = @mouse_encoder.MouseEncoder::new()
   x10.set_event(X10)
   x10.set_format(X10)
   x10.set_size(test_mouse_encoder_size())
@@ -128,7 +129,7 @@ test "mouse encoder/none x10 and normal mode reporting follow upstream rules" {
     fail("expected x10 filtering rules")
   }
 
-  let normal = MouseEncoder::new()
+  let normal = @mouse_encoder.MouseEncoder::new()
   normal.set_event(Normal)
   normal.set_format(Sgr)
   normal.set_size(test_mouse_encoder_size())
@@ -142,7 +143,7 @@ test "mouse encoder/none x10 and normal mode reporting follow upstream rules" {
 
 ///|
 test "mouse encoder/button and any modes handle null buttons and sgr release" {
-  let encoder = MouseEncoder::new()
+  let encoder = @mouse_encoder.MouseEncoder::new()
   encoder.set_event(Button)
   encoder.set_format(Sgr)
   encoder.set_size(test_mouse_encoder_size())
@@ -168,7 +169,7 @@ test "mouse encoder/button and any modes handle null buttons and sgr release" {
 
 ///|
 test "mouse encoder/utf8 urxvt and sgr pixels formats encode correctly" {
-  let utf8_encoder = MouseEncoder::new()
+  let utf8_encoder = @mouse_encoder.MouseEncoder::new()
   utf8_encoder.set_event(Any)
   utf8_encoder.set_format(Utf8)
   utf8_encoder.set_size(test_mouse_encoder_size())
@@ -182,7 +183,9 @@ test "mouse encoder/utf8 urxvt and sgr pixels formats encode correctly" {
   guard decoded == "\u{14D}\u{1B1}" else {
     fail("expected utf8 coordinate encoding")
   }
-  utf8_encoder.set_size(MouseEncoderSize::new(10U, 0x110100U, 1U, 1U).unwrap())
+  utf8_encoder.set_size(
+    @mouse_encoder.MouseEncoderSize::new(10U, 0x110100U, 1U, 1U).unwrap(),
+  )
   let clamped_utf8 = utf8_encoder.encode(
     make_mouse_event(Press, Some(Left), 0.0F, 1114176.0F),
   )
@@ -191,7 +194,7 @@ test "mouse encoder/utf8 urxvt and sgr pixels formats encode correctly" {
     fail("expected oversized utf8 coordinate to use replacement character")
   }
 
-  let urxvt = MouseEncoder::new()
+  let urxvt = @mouse_encoder.MouseEncoder::new()
   urxvt.set_event(Any)
   urxvt.set_format(Urxvt)
   urxvt.set_size(test_mouse_encoder_size())
@@ -208,12 +211,19 @@ test "mouse encoder/utf8 urxvt and sgr pixels formats encode correctly" {
     fail("expected urxvt release legacy button encoding")
   }
 
-  let pixels = MouseEncoder::new()
+  let pixels = @mouse_encoder.MouseEncoder::new()
   pixels.set_event(Any)
   pixels.set_format(SgrPixels)
   pixels.set_any_button_pressed(true)
   pixels.set_size(
-    MouseEncoderSize::new(100U, 100U, 10U, 10U, padding_top=2U, padding_left=1U).unwrap(),
+    @mouse_encoder.MouseEncoderSize::new(
+      100U,
+      100U,
+      10U,
+      10U,
+      padding_top=2U,
+      padding_left=1U,
+    ).unwrap(),
   )
   guard pixels.encode(make_mouse_event(Press, Some(Left), 10.0F, 20.0F)) ==
     b"\x1B[<0;9;18M" else {
@@ -231,7 +241,7 @@ test "mouse encoder/utf8 urxvt and sgr pixels formats encode correctly" {
 
 ///|
 test "mouse encoder/x10 limits wheel buttons and viewport boundary" {
-  let x10 = MouseEncoder::new()
+  let x10 = @mouse_encoder.MouseEncoder::new()
   x10.set_event(X10)
   x10.set_format(X10)
   x10.set_size(test_mouse_encoder_size())
@@ -240,10 +250,10 @@ test "mouse encoder/x10 limits wheel buttons and viewport boundary" {
     fail("expected x10 coordinate limit guard")
   }
 
-  let sgr = MouseEncoder::new()
+  let sgr = @mouse_encoder.MouseEncoder::new()
   sgr.set_event(Any)
   sgr.set_format(Sgr)
-  sgr.set_size(MouseEncoderSize::new(10U, 10U, 2U, 2U).unwrap())
+  sgr.set_size(@mouse_encoder.MouseEncoderSize::new(10U, 10U, 2U, 2U).unwrap())
   guard sgr.encode(make_mouse_event(Press, Some(Left), 10.0F, 10.0F)) ==
     b"\x1B[<0;5;5M" else {
     fail("expected viewport-boundary position to clamp into final cell")
@@ -265,11 +275,18 @@ test "mouse encoder/x10 limits wheel buttons and viewport boundary" {
     fail("expected wheel and unsupported button handling")
   }
 
-  let padded = MouseEncoder::new()
+  let padded = @mouse_encoder.MouseEncoder::new()
   padded.set_event(Any)
   padded.set_format(Sgr)
   padded.set_size(
-    MouseEncoderSize::new(2U, 2U, 4U, 4U, padding_top=4U, padding_left=4U).unwrap(),
+    @mouse_encoder.MouseEncoderSize::new(
+      2U,
+      2U,
+      4U,
+      4U,
+      padding_top=4U,
+      padding_left=4U,
+    ).unwrap(),
   )
   guard padded.encode(make_mouse_event(Press, Some(Left), 0.0F, 0.0F)) ==
     b"\x1B[<0;1;1M" else {
@@ -279,7 +296,7 @@ test "mouse encoder/x10 limits wheel buttons and viewport boundary" {
 
 ///|
 test "mouse encoder/out of viewport motion and dedupe follow state" {
-  let encoder = MouseEncoder::new()
+  let encoder = @mouse_encoder.MouseEncoder::new()
   encoder.set_event(Any)
   encoder.set_format(Sgr)
   encoder.set_size(test_mouse_encoder_size())

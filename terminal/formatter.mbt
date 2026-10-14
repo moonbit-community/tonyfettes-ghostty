@@ -17,14 +17,14 @@ struct FormatterScreenExtra {
 
 ///|
 pub fn FormatterScreenExtra::new(
-  cursor? : Bool = false,
-  style? : Bool = false,
-  hyperlink? : Bool = false,
-  protection? : Bool = false,
-  kitty_keyboard? : Bool = false,
-  charsets? : Bool = false,
+  cursor~ : Bool = false,
+  style~ : Bool = false,
+  hyperlink~ : Bool = false,
+  protection~ : Bool = false,
+  kitty_keyboard~ : Bool = false,
+  charsets~ : Bool = false,
 ) -> FormatterScreenExtra {
-  { cursor, style, hyperlink, protection, kitty_keyboard, charsets }
+  { cursor, style, hyperlink, protection, kitty_keyboard, charsets, }
 }
 
 ///|
@@ -62,15 +62,15 @@ struct FormatterTerminalExtra {
 
 ///|
 pub fn FormatterTerminalExtra::new(
-  palette? : Bool = false,
-  modes? : Bool = false,
-  scrolling_region? : Bool = false,
-  tabstops? : Bool = false,
-  pwd? : Bool = false,
-  keyboard? : Bool = false,
-  screen? : FormatterScreenExtra = FormatterScreenExtra::none(),
+  palette~ : Bool = false,
+  modes~ : Bool = false,
+  scrolling_region~ : Bool = false,
+  tabstops~ : Bool = false,
+  pwd~ : Bool = false,
+  keyboard~ : Bool = false,
+  screen~ : FormatterScreenExtra = FormatterScreenExtra::none(),
 ) -> FormatterTerminalExtra {
-  { palette, modes, scrolling_region, tabstops, pwd, keyboard, screen }
+  { palette, modes, scrolling_region, tabstops, pwd, keyboard, screen, }
 }
 
 ///|
@@ -111,12 +111,12 @@ struct FormatterOptions {
 ///|
 pub fn FormatterOptions::new(
   emit : Format,
-  unwrap? : Bool = false,
-  trim? : Bool = true,
-  selection? : Selection? = None,
-  extra? : FormatterTerminalExtra = FormatterTerminalExtra::styles(),
+  unwrap~ : Bool = false,
+  trim~ : Bool = true,
+  selection~ : Selection? = None,
+  extra~ : FormatterTerminalExtra = FormatterTerminalExtra::styles(),
 ) -> FormatterOptions {
-  { emit, unwrap, trim, selection, extra }
+  { emit, unwrap, trim, selection, extra, }
 }
 
 ///|
@@ -130,7 +130,7 @@ pub fn Formatter::new_terminal(
   terminal : StreamTerminal,
   opts : FormatterOptions,
 ) -> Formatter {
-  { terminal, opts }
+  { terminal, opts, }
 }
 
 ///|
@@ -180,7 +180,7 @@ pub fn RenderState::format_vt_framebuffer(self : RenderState) -> Bytes {
 ///|
 fn formatter_write_render_state_frame_row(
   cells : RenderRowCells,
-  columns : Int,
+  columns : Int32,
   buffer : @buffer.Buffer,
 ) -> Unit {
   let output = FormatterOutputState::new()
@@ -238,8 +238,8 @@ fn formatter_write_render_state_frame_row(
 ///|
 fn formatter_render_state_last_cell(
   cells : RenderRowCells,
-  columns : Int,
-) -> Int {
+  columns : Int32,
+) -> Int32 {
   let mut last = -1
   let mut x = 0
   while x < columns {
@@ -263,8 +263,8 @@ priv struct FormatterSelectionBounds {
 
 ///|
 priv struct FormatterRowBounds {
-  start_x : Int
-  end_x : Int
+  start_x : Int32
+  end_x : Int32
 }
 
 ///|
@@ -325,7 +325,7 @@ const NewlineHtml : Bytes = b"\n"
 fn formatter_selection_bounds(
   formatter : Formatter,
   state : StreamTerminalBridgeState,
-  total_rows : UInt,
+  total_rows : UInt32,
 ) -> FormatterSelectionBounds? {
   let cols = state.grid.cols
   if cols == 0 {
@@ -361,9 +361,9 @@ fn formatter_selection_bounds(
           rectangle: true,
         })
       } else if formatter_coord_before(end_, start) {
-        Some({ start: end_, end_: start, rectangle: false })
+        Some({ start: end_, end_: start, rectangle: false, })
       } else {
-        Some({ start, end_, rectangle: false })
+        Some({ start, end_, rectangle: false, })
       }
     }
   }
@@ -513,7 +513,7 @@ fn formatter_write_content(
 fn formatter_row_bounds(
   state : StreamTerminalBridgeState,
   bounds : FormatterSelectionBounds,
-  row : Int,
+  row : Int32,
 ) -> FormatterRowBounds? {
   let cols = state.grid.cols.to_int()
   if cols <= 0 {
@@ -560,13 +560,13 @@ fn formatter_row_bounds(
     }
   }
 
-  Some({ start_x, end_x })
+  Some({ start_x, end_x, })
 }
 
 ///|
 fn formatter_row_is_blank(
   state : StreamTerminalBridgeState,
-  row : Int,
+  row : Int32,
   bounds : FormatterRowBounds,
 ) -> Bool {
   let mut x = bounds.start_x
@@ -614,7 +614,7 @@ fn formatter_history_cell_is_blank(cell : @page.PageCellState) -> Bool {
 fn formatter_write_cell_text(
   emit : Format,
   cell : @page.PageCellState,
-  grapheme_codepoints : ReadOnlyArray[UInt],
+  grapheme_codepoints : ReadOnlyArray[UInt32],
   buffer : @buffer.Buffer,
 ) -> Unit {
   if !cell.has_text() {
@@ -635,7 +635,7 @@ fn formatter_write_cell_text(
 fn formatter_write_codepoint(
   emit : Format,
   buffer : @buffer.Buffer,
-  codepoint : UInt,
+  codepoint : UInt32,
 ) -> Unit {
   match emit {
     Plain | Vt =>
@@ -662,7 +662,7 @@ fn formatter_write_codepoint(
 }
 
 ///|
-fn formatter_write_spaces(buffer : @buffer.Buffer, count : Int) -> Unit {
+fn formatter_write_spaces(buffer : @buffer.Buffer, count : Int32) -> Unit {
   let mut remaining = count
   while remaining > 0 {
     buffer.write_byte(b' ')
@@ -674,7 +674,7 @@ fn formatter_write_spaces(buffer : @buffer.Buffer, count : Int) -> Unit {
 fn formatter_write_newlines(
   emit : Format,
   buffer : @buffer.Buffer,
-  count : Int,
+  count : Int32,
 ) -> Unit {
   let sequence = match emit {
     Plain => NewlinePlain
@@ -1037,7 +1037,7 @@ fn formatter_write_vt_style_open(
 ///|
 fn formatter_write_vt_style_color(
   buffer : @buffer.Buffer,
-  prefix : UInt,
+  prefix : UInt32,
   color : @style.StyleColor,
 ) -> Unit {
   if color.palette_index() is Some(index) {
@@ -1243,7 +1243,7 @@ fn max_cell_count(
 }
 
 ///|
-fn min_uint(lhs : UInt, rhs : UInt) -> UInt {
+fn min_uint(lhs : UInt32, rhs : UInt32) -> UInt32 {
   if lhs < rhs {
     lhs
   } else {
@@ -1252,7 +1252,7 @@ fn min_uint(lhs : UInt, rhs : UInt) -> UInt {
 }
 
 ///|
-fn formatter_max_uint(lhs : UInt, rhs : UInt) -> UInt {
+fn formatter_max_uint(lhs : UInt32, rhs : UInt32) -> UInt32 {
   if lhs > rhs {
     lhs
   } else {
@@ -1314,3 +1314,42 @@ fn write_hex_byte(buffer : @buffer.Buffer, value : Byte) -> Unit {
   buffer.write_byte(@ascii.hex_digit_upper(high))
   buffer.write_byte(@ascii.hex_digit_upper(low))
 }
+
+///|
+pub extend Format with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Format with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Format with @debug.Debug::{to_repr}
+
+///|
+pub extend FormatterScreenExtra with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FormatterScreenExtra with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FormatterScreenExtra with @debug.Debug::{to_repr}
+
+///|
+pub extend FormatterTerminalExtra with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FormatterTerminalExtra with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FormatterTerminalExtra with @debug.Debug::{to_repr}

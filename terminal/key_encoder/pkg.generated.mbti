@@ -17,6 +17,7 @@ pub fn KeyEncoder::alt_esc_prefix(Self) -> Bool
 pub fn KeyEncoder::backarrow_key_mode(Self) -> Bool
 pub fn KeyEncoder::cursor_key_application(Self) -> Bool
 pub fn KeyEncoder::encode(Self, @input.KeyEvent) -> Bytes
+pub fn KeyEncoder::equal(Self, Self) -> Bool
 pub fn KeyEncoder::host_is_macos(Self) -> Bool
 pub fn KeyEncoder::ignore_keypad_with_numlock(Self) -> Bool
 pub fn KeyEncoder::keypad_key_application(Self) -> Bool
@@ -41,8 +42,8 @@ pub(all) enum OptionAsAlt {
   Right
   True
 } derive(Eq, @debug.Debug)
+pub fn OptionAsAlt::equal(Self, Self) -> Bool
 
 // Type aliases
 
 // Traits
-

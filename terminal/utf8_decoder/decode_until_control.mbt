@@ -31,8 +31,8 @@
 /// many short calls on escape-dense input.
 #valtype
 pub struct DecodeResult {
-  consumed : Int
-  decoded : Int
+  consumed : Int32
+  decoded : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -41,7 +41,7 @@ pub struct DecodeResult {
 /// substitution for ill-formed sequences. See the file header for the contract.
 pub fn decode_utf8_until_control_seq(
   input : BytesView,
-  output : FixedArray[UInt],
+  output : FixedArray[UInt32],
 ) -> DecodeResult {
   // `off`/`count` are mutated in place rather than threaded as loop variables so
   // the loop neither breaks with a tuple nor destructures one (both would box).
@@ -55,14 +55,14 @@ pub fn decode_utf8_until_control_seq(
       // Eight printable ASCII at once. The 0x20-0x7F bound excludes ESC and all
       // C0 controls, so this arm can never swallow a control byte.
       [
-        0x20..=0x7F as a0,
-        0x20..=0x7F as a1,
-        0x20..=0x7F as a2,
-        0x20..=0x7F as a3,
-        0x20..=0x7F as a4,
-        0x20..=0x7F as a5,
-        0x20..=0x7F as a6,
-        0x20..=0x7F as a7,
+        0x20..<=0x7F as a0,
+        0x20..<=0x7F as a1,
+        0x20..<=0x7F as a2,
+        0x20..<=0x7F as a3,
+        0x20..<=0x7F as a4,
+        0x20..<=0x7F as a5,
+        0x20..<=0x7F as a6,
+        0x20..<=0x7F as a7,
         .. rest,
       ] => {
         output.unsafe_set(count, a0.to_uint())
@@ -78,14 +78,14 @@ pub fn decode_utf8_until_control_seq(
         continue rest
       }
       // A single byte < 0x80: a lone printable, or a C0 control other than ESC.
-      [0..=0x7F as b, .. rest] => {
+      [0..<=0x7F as b, .. rest] => {
         output.unsafe_set(count, b.to_uint())
         off = off + 1
         count = count + 1
         continue rest
       }
       // Complete, structurally valid 2-byte sequence.
-      [0xC2..=0xDF as b0, 0x80..=0xBF as b1, .. rest] => {
+      [0xC2..<=0xDF as b0, 0x80..<=0xBF as b1, .. rest] => {
         let cp = ((b0.to_int() & 0x1F) << 6) | (b1.to_int() & 0x3F)
         output.unsafe_set(count, cp.reinterpret_as_uint())
         off = off + 2
@@ -93,10 +93,10 @@ pub fn decode_utf8_until_control_seq(
         continue rest
       }
       // Complete, structurally valid 3-byte sequence (Table 3-7 lead/cont ranges).
-      [0xE0 as b0, 0xA0..=0xBF as b1, 0x80..=0xBF as b2, .. rest]
-      | [0xE1..=0xEC as b0, 0x80..=0xBF as b1, 0x80..=0xBF as b2, .. rest]
-      | [0xED as b0, 0x80..=0x9F as b1, 0x80..=0xBF as b2, .. rest]
-      | [0xEE..=0xEF as b0, 0x80..=0xBF as b1, 0x80..=0xBF as b2, .. rest] => {
+      [0xE0 as b0, 0xA0..<=0xBF as b1, 0x80..<=0xBF as b2, .. rest]
+      | [0xE1..<=0xEC as b0, 0x80..<=0xBF as b1, 0x80..<=0xBF as b2, .. rest]
+      | [0xED as b0, 0x80..<=0x9F as b1, 0x80..<=0xBF as b2, .. rest]
+      | [0xEE..<=0xEF as b0, 0x80..<=0xBF as b1, 0x80..<=0xBF as b2, .. rest] => {
         let cp = ((b0.to_int() & 0x0F) << 12) |
           ((b1.to_int() & 0x3F) << 6) |
           (b2.to_int() & 0x3F)
@@ -108,23 +108,23 @@ pub fn decode_utf8_until_control_seq(
       // Complete, structurally valid 4-byte sequence.
       [
         0xF0 as b0,
-        0x90..=0xBF as b1,
-        0x80..=0xBF as b2,
-        0x80..=0xBF as b3,
+        0x90..<=0xBF as b1,
+        0x80..<=0xBF as b2,
+        0x80..<=0xBF as b3,
         .. rest,
       ]
       | [
-        0xF1..=0xF3 as b0,
-        0x80..=0xBF as b1,
-        0x80..=0xBF as b2,
-        0x80..=0xBF as b3,
+        0xF1..<=0xF3 as b0,
+        0x80..<=0xBF as b1,
+        0x80..<=0xBF as b2,
+        0x80..<=0xBF as b3,
         .. rest,
       ]
       | [
         0xF4 as b0,
-        0x80..=0x8F as b1,
-        0x80..=0xBF as b2,
-        0x80..=0xBF as b3,
+        0x80..<=0x8F as b1,
+        0x80..<=0xBF as b2,
+        0x80..<=0xBF as b3,
         .. rest,
       ] => {
         let cp = ((b0.to_int() & 0x07) << 18) |
@@ -151,7 +151,7 @@ pub fn decode_utf8_until_control_seq(
       }
     }
   }
-  { consumed: off, decoded: count }
+  { consumed: off, decoded: count, }
 }
 
 ///|
@@ -160,7 +160,7 @@ pub fn decode_utf8_until_control_seq(
 /// valid but TRUNCATED multi-byte sequence (caller should stop and not consume).
 /// Otherwise returns how many bytes form the maximal subpart to replace with a
 /// single U+FFFD. `bytes` is non-empty.
-fn maximal_subpart(bytes : BytesView) -> Int {
+fn maximal_subpart(bytes : BytesView) -> Int32 {
   let b0 = bytes[0].to_int()
   // Continuation byte (80-BF) or invalid lead (C0-C1, F5-FF): a 1-byte subpart.
   if b0 < 0xC2 || b0 > 0xF4 {
@@ -184,7 +184,7 @@ fn maximal_subpart(bytes : BytesView) -> Int {
 ///|
 /// Expected total byte length of a UTF-8 sequence from its (already validated as
 /// C2-F4) lead byte.
-fn utf8_seq_len(lead : Int) -> Int {
+fn utf8_seq_len(lead : Int32) -> Int32 {
   if lead <= 0xDF {
     2
   } else if lead <= 0xEF {
@@ -199,7 +199,7 @@ fn utf8_seq_len(lead : Int) -> Int {
 /// sequence with the given lead, per Unicode Table 3-7. Only the first
 /// continuation has lead-specific ranges; all later ones are the generic
 /// 0x80-0xBF. Returns a Bool (not a range tuple) to avoid an allocation.
-fn cont_ok(lead : Int, ci : Int, cb : Int) -> Bool {
+fn cont_ok(lead : Int32, ci : Int32, cb : Int32) -> Bool {
   if ci == 0 {
     match lead {
       0xE0 => cb >= 0xA0 && cb <= 0xBF
@@ -212,3 +212,16 @@ fn cont_ok(lead : Int, ci : Int, cb : Int) -> Bool {
     cb >= 0x80 && cb <= 0xBF
   }
 }
+
+///|
+pub extend DecodeResult with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DecodeResult with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DecodeResult with @debug.Debug::{to_repr}

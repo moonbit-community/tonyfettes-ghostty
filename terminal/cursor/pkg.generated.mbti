@@ -16,6 +16,7 @@ pub(all) enum CursorVisualStyle {
   Bar
   Underline
 } derive(Eq, @debug.Debug)
+pub fn CursorVisualStyle::equal(Self, Self) -> Bool
 
 pub(all) struct TerminalCursorState {
   mut rows : UInt16
@@ -31,6 +32,7 @@ pub(all) struct TerminalCursorState {
 } derive(Eq, @debug.Debug)
 pub fn TerminalCursorState::apply_cursor_style(Self, @ansi.CursorStyle) -> Bool
 pub fn TerminalCursorState::bottom_margin(Self) -> UInt16
+pub fn TerminalCursorState::equal(Self, Self) -> Bool
 pub fn TerminalCursorState::full_reset(Self) -> Unit
 pub fn TerminalCursorState::left_margin(Self) -> UInt16
 pub fn TerminalCursorState::new(UInt16, UInt16) -> Self
@@ -49,4 +51,3 @@ pub fn TerminalCursorState::y(Self) -> UInt16
 // Type aliases
 
 // Traits
-

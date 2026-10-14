@@ -7,78 +7,78 @@
 
 ///|
 test "bench plain_lines" (it : @bench.T) {
-  let w = plain_lines()
+  let w = @workloads.plain_lines()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench wrapped_blob" (it : @bench.T) {
-  let w = wrapped_blob()
+  let w = @workloads.wrapped_blob()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench scroll_storm" (it : @bench.T) {
-  let w = scroll_storm()
+  let w = @workloads.scroll_storm()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench scroll_full" (it : @bench.T) {
-  let w = scroll_full()
+  let w = @workloads.scroll_full()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench colored_log" (it : @bench.T) {
-  let w = colored_log()
+  let w = @workloads.colored_log()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench tui_redraw" (it : @bench.T) {
-  let w = tui_redraw()
+  let w = @workloads.tui_redraw()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench cjk_text" (it : @bench.T) {
-  let w = cjk_text()
+  let w = @workloads.cjk_text()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench osc_titles" (it : @bench.T) {
-  let w = osc_titles()
+  let w = @workloads.osc_titles()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench color_storm" (it : @bench.T) {
-  let w = color_storm()
+  let w = @workloads.color_storm()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench sgr_storm" (it : @bench.T) {
-  let w = sgr_storm()
+  let w = @workloads.sgr_storm()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench query_storm" (it : @bench.T) {
-  let w = query_storm()
+  let w = @workloads.query_storm()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench kitty_apc_long" (it : @bench.T) {
-  let w = kitty_apc_long()
+  let w = @workloads.kitty_apc_long()
   it.bench(fn() { it.keep(w.process()) })
 }
 
 ///|
 test "bench mixed_realistic" (it : @bench.T) {
-  let w = mixed_realistic()
+  let w = @workloads.mixed_realistic()
   it.bench(fn() { it.keep(w.process()) })
 }

@@ -1,25 +1,25 @@
 ///|
 struct MouseEncoderSize {
-  screen_width : UInt
-  screen_height : UInt
-  cell_width : UInt
-  cell_height : UInt
-  padding_top : UInt
-  padding_bottom : UInt
-  padding_right : UInt
-  padding_left : UInt
+  screen_width : UInt32
+  screen_height : UInt32
+  cell_width : UInt32
+  cell_height : UInt32
+  padding_top : UInt32
+  padding_bottom : UInt32
+  padding_right : UInt32
+  padding_left : UInt32
 } derive(Eq, Debug)
 
 ///|
 pub fn MouseEncoderSize::new(
-  screen_width : UInt,
-  screen_height : UInt,
-  cell_width : UInt,
-  cell_height : UInt,
-  padding_top? : UInt = 0U,
-  padding_bottom? : UInt = 0U,
-  padding_right? : UInt = 0U,
-  padding_left? : UInt = 0U,
+  screen_width : UInt32,
+  screen_height : UInt32,
+  cell_width : UInt32,
+  cell_height : UInt32,
+  padding_top~ : UInt32 = 0U,
+  padding_bottom~ : UInt32 = 0U,
+  padding_right~ : UInt32 = 0U,
+  padding_left~ : UInt32 = 0U,
 ) -> MouseEncoderSize? {
   if cell_width == 0U || cell_height == 0U {
     return None
@@ -38,42 +38,42 @@ pub fn MouseEncoderSize::new(
 }
 
 ///|
-pub fn MouseEncoderSize::screen_width(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::screen_width(self : MouseEncoderSize) -> UInt32 {
   self.screen_width
 }
 
 ///|
-pub fn MouseEncoderSize::screen_height(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::screen_height(self : MouseEncoderSize) -> UInt32 {
   self.screen_height
 }
 
 ///|
-pub fn MouseEncoderSize::cell_width(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::cell_width(self : MouseEncoderSize) -> UInt32 {
   self.cell_width
 }
 
 ///|
-pub fn MouseEncoderSize::cell_height(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::cell_height(self : MouseEncoderSize) -> UInt32 {
   self.cell_height
 }
 
 ///|
-pub fn MouseEncoderSize::padding_top(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::padding_top(self : MouseEncoderSize) -> UInt32 {
   self.padding_top
 }
 
 ///|
-pub fn MouseEncoderSize::padding_bottom(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::padding_bottom(self : MouseEncoderSize) -> UInt32 {
   self.padding_bottom
 }
 
 ///|
-pub fn MouseEncoderSize::padding_right(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::padding_right(self : MouseEncoderSize) -> UInt32 {
   self.padding_right
 }
 
 ///|
-pub fn MouseEncoderSize::padding_left(self : MouseEncoderSize) -> UInt {
+pub fn MouseEncoderSize::padding_left(self : MouseEncoderSize) -> UInt32 {
   self.padding_left
 }
 
@@ -278,7 +278,7 @@ fn mouse_button_code(
   event : @input.MouseInputEvent,
   mode : @input.MouseEvent,
   format : @input.MouseFormat,
-) -> Int? {
+) -> Int32? {
   let mut code = match event.button() {
     None => 3
     Some(button) =>
@@ -320,7 +320,7 @@ fn mouse_button_code(
 }
 
 ///|
-fn encode_mouse_x10(button_code : Int, cell : @point.Coordinate) -> Bytes {
+fn encode_mouse_x10(button_code : Int32, cell : @point.Coordinate) -> Bytes {
   if cell.x().to_int() > 222 || cell.y().reinterpret_as_int() > 222 {
     return b""
   }
@@ -336,7 +336,7 @@ fn encode_mouse_x10(button_code : Int, cell : @point.Coordinate) -> Bytes {
 }
 
 ///|
-fn encode_mouse_utf8(button_code : Int, cell : @point.Coordinate) -> Bytes {
+fn encode_mouse_utf8(button_code : Int32, cell : @point.Coordinate) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[M")
   buffer.write_byte((32 + button_code).to_byte())
@@ -347,7 +347,7 @@ fn encode_mouse_utf8(button_code : Int, cell : @point.Coordinate) -> Bytes {
 
 ///|
 fn encode_mouse_sgr(
-  button_code : Int,
+  button_code : Int32,
   cell : @point.Coordinate,
   action : @input.MouseAction,
 ) -> Bytes {
@@ -366,7 +366,7 @@ fn encode_mouse_sgr(
 }
 
 ///|
-fn encode_mouse_urxvt(button_code : Int, cell : @point.Coordinate) -> Bytes {
+fn encode_mouse_urxvt(button_code : Int32, cell : @point.Coordinate) -> Bytes {
   let buffer = Buffer()
   buffer.write_bytes(b"\x1B[")
   @ascii.write_uint_ascii(buffer, (32 + button_code).to_uint64())
@@ -383,7 +383,7 @@ fn encode_mouse_urxvt(button_code : Int, cell : @point.Coordinate) -> Bytes {
 
 ///|
 fn encode_mouse_sgr_pixels(
-  button_code : Int,
+  button_code : Int32,
   pixels : MousePixelPoint,
   action : @input.MouseAction,
 ) -> Bytes {
@@ -407,7 +407,7 @@ fn mouse_action_final_byte(action : @input.MouseAction) -> Byte {
 }
 
 ///|
-fn write_codepoint_utf8(buffer : @buffer.Buffer, codepoint : Int) -> Unit {
+fn write_codepoint_utf8(buffer : @buffer.Buffer, codepoint : Int32) -> Unit {
   let scalar = if codepoint > 0x10FFFF {
     0xFFFDU.reinterpret_as_int()
   } else {
@@ -417,7 +417,7 @@ fn write_codepoint_utf8(buffer : @buffer.Buffer, codepoint : Int) -> Unit {
 }
 
 ///|
-fn write_signed_ascii(buffer : @buffer.Buffer, value : Int) -> Unit {
+fn write_signed_ascii(buffer : @buffer.Buffer, value : Int32) -> Unit {
   if value < 0 {
     buffer.write_byte(b'-')
     @ascii.write_uint_ascii(buffer, (0 - value).to_uint64())
@@ -428,8 +428,8 @@ fn write_signed_ascii(buffer : @buffer.Buffer, value : Int) -> Unit {
 
 ///|
 priv struct MousePixelPoint {
-  x : Int
-  y : Int
+  x : Int32
+  y : Int32
 }
 
 ///|
@@ -477,9 +477,9 @@ fn mouse_position_to_pixels(
 ///|
 fn clamp_mouse_cell_index(
   position : Double,
-  cell_size : UInt,
-  cells : UInt,
-) -> Int {
+  cell_size : UInt32,
+  cells : UInt32,
+) -> Int32 {
   if cells <= 1U {
     return 0
   }
@@ -497,7 +497,7 @@ fn clamp_mouse_cell_index(
 }
 
 ///|
-fn mouse_encoder_columns(size : MouseEncoderSize) -> UInt {
+fn mouse_encoder_columns(size : MouseEncoderSize) -> UInt32 {
   let content_width = saturated_sub_uint(
     size.screen_width,
     size.padding_left + size.padding_right,
@@ -506,7 +506,7 @@ fn mouse_encoder_columns(size : MouseEncoderSize) -> UInt {
 }
 
 ///|
-fn mouse_encoder_rows(size : MouseEncoderSize) -> UInt {
+fn mouse_encoder_rows(size : MouseEncoderSize) -> UInt32 {
   let content_height = saturated_sub_uint(
     size.screen_height,
     size.padding_top + size.padding_bottom,
@@ -515,7 +515,7 @@ fn mouse_encoder_rows(size : MouseEncoderSize) -> UInt {
 }
 
 ///|
-fn saturated_sub_uint(value : UInt, other : UInt) -> UInt {
+fn saturated_sub_uint(value : UInt32, other : UInt32) -> UInt32 {
   if value > other {
     value - other
   } else {
@@ -524,10 +524,36 @@ fn saturated_sub_uint(value : UInt, other : UInt) -> UInt {
 }
 
 ///|
-fn max_uint(a : UInt, b : UInt) -> UInt {
+fn max_uint(a : UInt32, b : UInt32) -> UInt32 {
   if a > b {
     a
   } else {
     b
   }
 }
+
+///|
+pub extend MouseEncoderSize with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEncoderSize with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEncoderSize with @debug.Debug::{to_repr}
+
+///|
+pub extend MouseEncoder with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEncoder with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEncoder with @debug.Debug::{to_repr}

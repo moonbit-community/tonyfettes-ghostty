@@ -19,4 +19,3 @@ pub fn SepList::set(Self, Int) -> Self
 // Type aliases
 
 // Traits
-

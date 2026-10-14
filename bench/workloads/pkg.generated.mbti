@@ -42,4 +42,3 @@ pub fn Workload::run_main(Self) -> Unit
 // Type aliases
 
 // Traits
-

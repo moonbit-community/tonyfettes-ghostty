@@ -3,7 +3,7 @@
 /// directly plus the kitty/modify-other-keys flags parsed out of an escape
 /// stream must all land on the encoder, and option-as-alt must reset.
 test "key encoder/sync_key_encoder follows upstream terminal-derived defaults" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   let encoder = @key_encoder.KeyEncoder::new()
   encoder.set_macos_option_as_alt(True)
   terminal.mode_set(CursorKeys, true)

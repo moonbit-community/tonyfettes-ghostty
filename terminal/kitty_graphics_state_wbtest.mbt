@@ -1,10 +1,10 @@
 ///|
 fn sample_kitty_image(
-  id? : UInt = 1U,
-  number? : UInt = 0U,
-  width? : UInt = 4U,
-  height? : UInt = 2U,
-  transmit_seq? : UInt64 = 0UL,
+  id~ : UInt32 = 1U,
+  number~ : UInt32 = 0U,
+  width~ : UInt32 = 4U,
+  height~ : UInt32 = 2U,
+  transmit_seq~ : UInt64 = 0UL,
 ) -> KittyGraphicsImage {
   {
     id,
@@ -47,10 +47,10 @@ fn KittyGraphicsState::images(
 
 ///|
 fn sample_display(
-  image_id? : UInt = 1U,
-  placement_id? : UInt = 0U,
-  columns? : UInt = 0U,
-  rows? : UInt = 0U,
+  image_id~ : UInt32 = 1U,
+  placement_id~ : UInt32 = 0U,
+  columns~ : UInt32 = 0U,
+  rows~ : UInt32 = 0U,
 ) -> KittyImageDisplay {
   let display = KittyImageDisplay::new()
   display.image_id = image_id

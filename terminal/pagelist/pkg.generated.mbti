@@ -72,6 +72,7 @@ type ScreenCharsetState derive(Eq, @debug.Debug)
 pub fn ScreenCharsetState::charset(Self, @charsets.Slots) -> @charsets.Charset
 pub fn ScreenCharsetState::configure(Self, @charsets.Slots, @charsets.Charset) -> Unit
 pub fn ScreenCharsetState::consume_single_shift(Self) -> @charsets.Slots?
+pub fn ScreenCharsetState::equal(Self, Self) -> Bool
 pub fn ScreenCharsetState::gl(Self) -> @charsets.Slots
 pub fn ScreenCharsetState::gr(Self) -> @charsets.Slots
 pub fn ScreenCharsetState::invoke(Self, @charsets.ActiveSlot, @charsets.Slots, Bool) -> Unit
@@ -82,6 +83,7 @@ pub fn ScreenCharsetState::single_shift(Self) -> @charsets.Slots?
 type ScreenSavedCursor derive(Eq, @debug.Debug)
 pub fn ScreenSavedCursor::charset(Self) -> ScreenCharsetState
 pub fn ScreenSavedCursor::cursor_protected(Self) -> Bool
+pub fn ScreenSavedCursor::equal(Self, Self) -> Bool
 pub fn ScreenSavedCursor::origin(Self) -> Bool
 pub fn ScreenSavedCursor::pending_wrap(Self) -> Bool
 pub fn ScreenSavedCursor::style(Self) -> @style.CellStyle
@@ -89,6 +91,7 @@ pub fn ScreenSavedCursor::x(Self) -> UInt16
 pub fn ScreenSavedCursor::y(Self) -> UInt16
 
 type ScreenSavedCursorState derive(Eq, @debug.Debug)
+pub fn ScreenSavedCursorState::equal(Self, Self) -> Bool
 pub fn ScreenSavedCursorState::has_saved(Self) -> Bool
 pub fn ScreenSavedCursorState::new() -> Self
 pub fn ScreenSavedCursorState::reset(Self) -> Unit
@@ -100,8 +103,10 @@ pub(all) enum TerminalScreen {
   Primary
   Alternate
 } derive(Eq, @debug.Debug)
+pub fn TerminalScreen::equal(Self, Self) -> Bool
 
 type TerminalScrollbar derive(Eq, @debug.Debug)
+pub fn TerminalScrollbar::equal(Self, Self) -> Bool
 pub fn TerminalScrollbar::len(Self) -> UInt
 pub fn TerminalScrollbar::new(UInt, UInt, UInt) -> Self
 pub fn TerminalScrollbar::offset(Self) -> UInt
@@ -110,4 +115,3 @@ pub fn TerminalScrollbar::total(Self) -> UInt
 // Type aliases
 
 // Traits
-

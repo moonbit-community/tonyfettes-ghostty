@@ -4,11 +4,11 @@ const CastFileInputId : String = "cast-file-input"
 ///|
 priv struct Player {
   cast : Cast
-  cursor : Int
-  elapsed_ms : Int
+  cursor : Int32
+  elapsed_ms : Int32
   playing : Bool
-  speed : Int
-  generation : Int
+  speed : Int32
+  generation : Int32
   file_name : String?
   last_error : String?
   last_marker : String?
@@ -35,7 +35,7 @@ priv enum Msg {
   CastFileLoaded(Result[LoadedFile, Error])
   PlayPause
   Scrub(String)
-  Step(Int)
+  Step(Int32)
   CycleSpeed
   ToggleTheme
 }
@@ -121,7 +121,7 @@ fn next_theme(theme : Theme) -> Theme {
 }
 
 ///|
-fn scaled_delay_ms(delay_ms : Int, speed : Int) -> Int {
+fn scaled_delay_ms(delay_ms : Int32, speed : Int32) -> Int32 {
   let safe_speed = if speed <= 0 { 1 } else { speed }
   let scaled = delay_ms / safe_speed
   if delay_ms > 0 && scaled < 12 {
@@ -132,7 +132,7 @@ fn scaled_delay_ms(delay_ms : Int, speed : Int) -> Int {
 }
 
 ///|
-fn schedule_next(dispatch : @cmd.Dispatch[Msg], player : Player) -> @cmd.Cmd {
+fn schedule_next(dispatch : @cmd.Emit[Msg], player : Player) -> @cmd.Cmd {
   match player.cast.events.get(player.cursor) {
     Some(event) =>
       @cmd.delay(
@@ -144,7 +144,7 @@ fn schedule_next(dispatch : @cmd.Dispatch[Msg], player : Player) -> @cmd.Cmd {
 }
 
 ///|
-fn parse_resize(data : String) -> (Int, Int)? {
+fn parse_resize(data : String) -> (Int32, Int32)? {
   match data.split("x").collect() {
     [cols_text, rows_text] => {
       let cols = @string.parse_int(cols_text) catch { _ => return None }
@@ -170,7 +170,7 @@ fn apply_event(terminal : GhosttyTerminal, event : CastEvent) -> Unit {
 }
 
 ///|
-fn load_selected_file(dispatch : @cmd.Dispatch[Msg]) -> @cmd.Cmd {
+fn load_selected_file(dispatch : @cmd.Emit[Msg]) -> @cmd.Cmd {
   @cmd.attempt(result => dispatch(CastFileLoaded(result)), async fn() {
     js_read_selected_file(CastFileInputId).wait() |> loaded_file_from_js
   })
@@ -183,7 +183,7 @@ fn reset_terminal(model : Model, cast : Cast) -> Unit {
 
 ///|
 fn start_player(
-  dispatch : @cmd.Dispatch[Msg],
+  dispatch : @cmd.Emit[Msg],
   model : Model,
   restart~ : Bool,
 ) -> (@cmd.Cmd, Model) {
@@ -223,7 +223,7 @@ fn pause_player(model : Model) -> Model {
 
 ///|
 fn load_cast(
-  dispatch : @cmd.Dispatch[Msg],
+  dispatch : @cmd.Emit[Msg],
   model : Model,
   file : LoadedFile,
 ) -> (@cmd.Cmd, Model) {
@@ -258,9 +258,9 @@ fn load_cast(
 
 ///|
 fn jump_to(
-  _dispatch : @cmd.Dispatch[Msg],
+  _dispatch : @cmd.Emit[Msg],
   model : Model,
-  index : Int,
+  index : Int32,
 ) -> (@cmd.Cmd, Model) {
   let target = index.clamp(min=0, max=model.player.cast.events.length())
   model.terminal.reset(cols=model.player.cast.cols, rows=model.player.cast.rows)
@@ -295,8 +295,8 @@ fn jump_to(
 
 ///|
 fn handle_step(
-  dispatch : @cmd.Dispatch[Msg],
-  generation : Int,
+  dispatch : @cmd.Emit[Msg],
+  generation : Int32,
   model : Model,
 ) -> (@cmd.Cmd, Model) {
   if generation != model.player.generation || !model.player.playing {
@@ -304,7 +304,7 @@ fn handle_step(
   }
   match model.player.cast.events.get(model.player.cursor) {
     None => {
-      let player = { ..model.player, playing: false }
+      let player = { ..model.player, playing: false, }
       (@cmd.none, { ..model, player, })
     }
     Some(event) => {
@@ -333,7 +333,7 @@ fn handle_step(
 
 ///|
 fn update(
-  dispatch : @cmd.Dispatch[Msg],
+  dispatch : @cmd.Emit[Msg],
   msg : Msg,
   model : Model,
 ) -> (@cmd.Cmd, Model) {
@@ -386,7 +386,7 @@ fn update(
 }
 
 ///|
-fn subscriptions(_dispatch : @cmd.Dispatch[Msg], _model : Model) -> @sub.Sub {
+fn subscriptions(_dispatch : @cmd.Emit[Msg], _model : Model) -> @sub.Sub {
   @sub.none
 }
 
@@ -400,10 +400,7 @@ fn play_pause_label(player : Player) -> String {
 }
 
 ///|
-fn play_pause_button(
-  dispatch : @cmd.Dispatch[Msg],
-  player : Player,
-) -> @html.Html {
+fn play_pause_button(dispatch : @cmd.Emit[Msg], player : Player) -> @html.Html {
   @html.button(
     class="player-button primary",
     title=play_pause_label(player),
@@ -413,7 +410,7 @@ fn play_pause_button(
 }
 
 ///|
-fn upload_button(dispatch : @cmd.Dispatch[Msg]) -> @html.Html {
+fn upload_button(dispatch : @cmd.Emit[Msg]) -> @html.Html {
   @html.label(
     class="player-button upload-button",
     title="Open cast file",
@@ -425,14 +422,13 @@ fn upload_button(dispatch : @cmd.Dispatch[Msg]) -> @html.Html {
         id=CastFileInputId,
         class="file-input",
         on_change=dispatch.map(_ => CastFileSelected),
-        "",
       ),
     ],
   )
 }
 
 ///|
-fn theme_button(dispatch : @cmd.Dispatch[Msg], theme : Theme) -> @html.Html {
+fn theme_button(dispatch : @cmd.Emit[Msg], theme : Theme) -> @html.Html {
   let label = match theme {
     Dark => "Dark"
     Light => "Light"
@@ -446,7 +442,7 @@ fn theme_button(dispatch : @cmd.Dispatch[Msg], theme : Theme) -> @html.Html {
 }
 
 ///|
-fn speed_button(dispatch : @cmd.Dispatch[Msg], speed : Int) -> @html.Html {
+fn speed_button(dispatch : @cmd.Emit[Msg], speed : Int32) -> @html.Html {
   @html.button(
     class="player-button",
     title="Playback speed",
@@ -456,7 +452,7 @@ fn speed_button(dispatch : @cmd.Dispatch[Msg], speed : Int) -> @html.Html {
 }
 
 ///|
-fn format_time(ms : Int) -> String {
+fn format_time(ms : Int32) -> String {
   let seconds = ms / 1000
   let tenths = ms % 1000 / 100
   "\{seconds}.\{tenths}s"
@@ -468,7 +464,7 @@ fn progress_text(player : Player) -> String {
 }
 
 ///|
-fn progress_percent(player : Player) -> Int {
+fn progress_percent(player : Player) -> Int32 {
   let total = player.cast.events.length()
   if total <= 0 {
     0
@@ -525,7 +521,7 @@ fn error_view(player : Player) -> @html.Html {
 }
 
 ///|
-fn view(dispatch : @cmd.Dispatch[Msg], model : Model) -> @html.Html {
+fn view(dispatch : @cmd.Emit[Msg], model : Model) -> @html.Html {
   let duration = model.player.cast.events.length()
   @html.main_(class="app-shell \{theme_class(model.theme)}", [
     @html.section(class="player-shell", [
@@ -552,7 +548,6 @@ fn view(dispatch : @cmd.Dispatch[Msg], model : Model) -> @html.Html {
             max=duration,
             value="\{model.player.cursor}",
             on_input=dispatch.map(value => Scrub(value)),
-            "",
           ),
           @html.div(class="control-row", [
             play_pause_button(dispatch, model.player),
@@ -572,7 +567,7 @@ fn view(dispatch : @cmd.Dispatch[Msg], model : Model) -> @html.Html {
 ///|
 #warnings("-alert_unstable")
 fn main {
-  let (dispatch, cell) = @rabbita.cell_with_dispatch(
+  let (dispatch, cell) = @rabbita.cell_with_emit(
     model=initial_model(),
     update~,
     view~,

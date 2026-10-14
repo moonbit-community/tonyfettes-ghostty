@@ -11,4 +11,3 @@ package "tonyfettes/ghostty/terminal/size"
 pub type CellCountInt = UInt16
 
 // Traits
-

@@ -19,6 +19,7 @@ pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
 pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
 pub fn ScreenSemanticState::cursor_content(Self) -> @page.SemanticContent
 pub fn ScreenSemanticState::cursor_content_clear_eol(Self) -> Bool
+pub fn ScreenSemanticState::equal(Self, Self) -> Bool
 pub fn ScreenSemanticState::full_reset(Self) -> Unit
 pub fn ScreenSemanticState::new() -> Self
 pub fn ScreenSemanticState::row_prompt(Self) -> @page.RowSemanticPrompt
@@ -32,8 +33,8 @@ pub(all) enum SemanticClickMode {
   ClickEvents
   Cl(@osc.SemanticPromptClick)
 } derive(Eq, @debug.Debug)
+pub fn SemanticClickMode::equal(Self, Self) -> Bool
 
 // Type aliases
 
 // Traits
-

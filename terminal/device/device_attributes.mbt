@@ -128,7 +128,7 @@ pub fn PrimaryDeviceAttributes::new(
   conformance_level : ConformanceLevel,
   features : ReadOnlyArray[PrimaryDeviceAttributeFeature],
 ) -> PrimaryDeviceAttributes {
-  { conformance_level, features }
+  { conformance_level, features, }
 }
 
 ///|
@@ -147,7 +147,7 @@ pub fn PrimaryDeviceAttributes::features(
 
 ///|
 pub fn PrimaryDeviceAttributes::default() -> PrimaryDeviceAttributes {
-  { conformance_level: Vt220, features: [AnsiColor] }
+  { conformance_level: Vt220, features: [AnsiColor], }
 }
 
 ///|
@@ -176,7 +176,7 @@ pub fn SecondaryDeviceAttributes::new(
   firmware_version : UInt16,
   rom_cartridge : UInt16,
 ) -> SecondaryDeviceAttributes {
-  { device_type, firmware_version, rom_cartridge }
+  { device_type, firmware_version, rom_cartridge, }
 }
 
 ///|
@@ -202,7 +202,7 @@ pub fn SecondaryDeviceAttributes::rom_cartridge(
 
 ///|
 pub fn SecondaryDeviceAttributes::default() -> SecondaryDeviceAttributes {
-  { device_type: Vt220, firmware_version: 0, rom_cartridge: 0 }
+  { device_type: Vt220, firmware_version: 0, rom_cartridge: 0, }
 }
 
 ///|
@@ -222,12 +222,12 @@ pub fn SecondaryDeviceAttributes::encode(
 
 ///|
 struct TertiaryDeviceAttributes {
-  unit_id : UInt
+  unit_id : UInt32
 } derive(Eq, Debug)
 
 ///|
 pub fn TertiaryDeviceAttributes::new(
-  unit_id : UInt,
+  unit_id : UInt32,
 ) -> TertiaryDeviceAttributes {
   { unit_id, }
 }
@@ -235,13 +235,13 @@ pub fn TertiaryDeviceAttributes::new(
 ///|
 pub fn TertiaryDeviceAttributes::unit_id(
   self : TertiaryDeviceAttributes,
-) -> UInt {
+) -> UInt32 {
   self.unit_id
 }
 
 ///|
 pub fn TertiaryDeviceAttributes::default() -> TertiaryDeviceAttributes {
-  { unit_id: 0 }
+  { unit_id: 0, }
 }
 
 ///|
@@ -268,7 +268,7 @@ pub fn DeviceAttributes::new(
   secondary : SecondaryDeviceAttributes,
   tertiary : TertiaryDeviceAttributes,
 ) -> DeviceAttributes {
-  { primary, secondary, tertiary }
+  { primary, secondary, tertiary, }
 }
 
 ///|
@@ -312,3 +312,107 @@ pub fn DeviceAttributes::encode(
     Tertiary => self.tertiary.encode()
   }
 }
+
+///|
+pub extend DeviceAttributeRequest with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceAttributeRequest with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceAttributeRequest with @debug.Debug::{to_repr}
+
+///|
+pub extend ConformanceLevel with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConformanceLevel with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConformanceLevel with @debug.Debug::{to_repr}
+
+///|
+pub extend PrimaryDeviceAttributeFeature with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PrimaryDeviceAttributeFeature with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PrimaryDeviceAttributeFeature with @debug.Debug::{to_repr}
+
+///|
+pub extend DeviceType with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceType with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceType with @debug.Debug::{to_repr}
+
+///|
+pub extend PrimaryDeviceAttributes with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PrimaryDeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PrimaryDeviceAttributes with @debug.Debug::{to_repr}
+
+///|
+pub extend SecondaryDeviceAttributes with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SecondaryDeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SecondaryDeviceAttributes with @debug.Debug::{to_repr}
+
+///|
+pub extend TertiaryDeviceAttributes with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TertiaryDeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TertiaryDeviceAttributes with @debug.Debug::{to_repr}
+
+///|
+pub extend DeviceAttributes with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceAttributes with @debug.Debug::{to_repr}

@@ -11,6 +11,7 @@ import {
 
 // Types and methods
 type Coordinate derive(Eq, @debug.Debug)
+pub fn Coordinate::equal(Self, Self) -> Bool
 pub fn Coordinate::new(UInt16, UInt) -> Self
 pub fn Coordinate::x(Self) -> UInt16
 pub fn Coordinate::y(Self) -> UInt
@@ -22,6 +23,7 @@ pub(all) enum Point {
   History(Coordinate)
 } derive(Eq, @debug.Debug)
 pub fn Point::coord(Self) -> Coordinate
+pub fn Point::equal(Self, Self) -> Bool
 
 pub(all) enum Tag {
   Active
@@ -29,8 +31,8 @@ pub(all) enum Tag {
   Screen
   History
 } derive(Eq, @debug.Debug)
+pub fn Tag::equal(Self, Self) -> Bool
 
 // Type aliases
 
 // Traits
-

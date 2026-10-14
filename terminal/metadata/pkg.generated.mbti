@@ -12,6 +12,7 @@ import {
 
 // Types and methods
 type TerminalMetadataState derive(Eq, @debug.Debug)
+pub fn TerminalMetadataState::equal(Self, Self) -> Bool
 pub fn TerminalMetadataState::full_reset(Self) -> Unit
 pub fn TerminalMetadataState::new() -> Self
 pub fn TerminalMetadataState::pwd(Self) -> String?
@@ -24,4 +25,3 @@ pub fn TerminalMetadataState::title(Self) -> String?
 // Type aliases
 
 // Traits
-

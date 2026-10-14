@@ -1,6 +1,6 @@
 ///|
 test "build_info/current snapshot matches translated module metadata" {
-  let info = build_info()
+  let info = @terminal.build_info()
   assert_eq(info.simd(), false)
   assert_eq(info.kitty_graphics(), true)
   assert_eq(info.tmux_control_mode(), false)
@@ -18,7 +18,7 @@ test "build_info/current snapshot matches translated module metadata" {
 
 ///|
 test "build_info/optimize mode stays within supported moonbit variants" {
-  let optimize = build_info().optimize()
+  let optimize = @terminal.build_info().optimize()
   guard optimize == Debug || optimize == ReleaseSafe else {
     fail("unexpected optimize mode projection")
   }
@@ -26,7 +26,7 @@ test "build_info/optimize mode stays within supported moonbit variants" {
 
 ///|
 test "build_info/current snapshot is stable across calls" {
-  guard build_info() == build_info() else {
+  guard @terminal.build_info() == @terminal.build_info() else {
     fail("expected build info snapshot to be stable")
   }
 }

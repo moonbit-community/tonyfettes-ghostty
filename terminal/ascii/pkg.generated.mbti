@@ -31,4 +31,3 @@ pub fn write_uint_ascii(@buffer.Buffer, UInt64) -> Unit
 // Type aliases
 
 // Traits
-

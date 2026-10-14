@@ -15,6 +15,7 @@ type ScreenHyperlinkState derive(Eq, @debug.Debug)
 pub fn ScreenHyperlinkState::active(Self) -> Bool
 pub fn ScreenHyperlinkState::cell_hyperlink(Self) -> @hyperlink.CellHyperlink?
 pub fn ScreenHyperlinkState::end(Self) -> Unit
+pub fn ScreenHyperlinkState::equal(Self, Self) -> Bool
 pub fn ScreenHyperlinkState::explicit_id(Self) -> String?
 pub fn ScreenHyperlinkState::full_reset(Self) -> Unit
 pub fn ScreenHyperlinkState::implicit_id(Self) -> Int?
@@ -26,4 +27,3 @@ pub fn ScreenHyperlinkState::uri(Self) -> String?
 // Type aliases
 
 // Traits
-

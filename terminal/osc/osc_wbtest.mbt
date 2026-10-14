@@ -2004,7 +2004,7 @@ test "osc/color ansi operations handle special targets queries and invalid bodie
     Some(0x07),
     Osc5,
     [
-      Set({ target: Special(Italic), color: @color.RGB::new(255, 0, 0) }),
+      Set({ target: Special(Italic), color: @color.RGB::new(255, 0, 0), }),
       Query(Special(Underline)),
     ],
     Bel,
@@ -2022,7 +2022,7 @@ test "osc/color ansi operations handle special targets queries and invalid bodie
     b"4;1;red;bogus;blue",
     Some(0x07),
     Osc4,
-    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0) })],
+    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0), })],
     Bel,
   )
 
@@ -2039,14 +2039,14 @@ test "osc/color parsers skip empty tokens like tokenizeScalar" {
     b"4;;1;red",
     Some(0x07),
     Osc4,
-    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0) })],
+    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0), })],
     Bel,
   )
   expect_color_command(
     b"4;1;;red",
     Some(0x07),
     Osc4,
-    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0) })],
+    [Set({ target: Palette(1), color: @color.RGB::new(255, 0, 0), })],
     Bel,
   )
   // Dynamic colors skip empties too (OSC 10 = foreground).
@@ -2054,7 +2054,7 @@ test "osc/color parsers skip empty tokens like tokenizeScalar" {
     b"10;;red",
     Some(0x07),
     Osc10,
-    [Set({ target: Dynamic(Foreground), color: @color.RGB::new(255, 0, 0) })],
+    [Set({ target: Dynamic(Foreground), color: @color.RGB::new(255, 0, 0), })],
     Bel,
   )
 }
@@ -2083,7 +2083,7 @@ test "osc/dynamic color get set query and truncation behave per prefix" {
     b"11;red",
     Some(0x07),
     Osc11,
-    [Set({ target: Dynamic(Background), color: @color.RGB::new(255, 0, 0) })],
+    [Set({ target: Dynamic(Background), color: @color.RGB::new(255, 0, 0), })],
     Bel,
   )
   expect_color_command(

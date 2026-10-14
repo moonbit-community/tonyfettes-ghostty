@@ -19,6 +19,7 @@ pub(all) enum ColorScheme {
   Light
   Dark
 } derive(Eq, @debug.Debug)
+pub fn ColorScheme::equal(Self, Self) -> Bool
 
 pub(all) enum ConformanceLevel {
   Vt100
@@ -36,16 +37,19 @@ pub(all) enum ConformanceLevel {
   Vt525
 } derive(Eq, @debug.Debug)
 pub fn ConformanceLevel::code(Self) -> UInt16
+pub fn ConformanceLevel::equal(Self, Self) -> Bool
 
 pub(all) enum DeviceAttributeRequest {
   Primary
   Secondary
   Tertiary
 } derive(Eq, @debug.Debug)
+pub fn DeviceAttributeRequest::equal(Self, Self) -> Bool
 
 type DeviceAttributes derive(Eq, @debug.Debug)
 pub fn DeviceAttributes::default() -> Self
 pub fn DeviceAttributes::encode(Self, DeviceAttributeRequest) -> Bytes
+pub fn DeviceAttributes::equal(Self, Self) -> Bool
 pub fn DeviceAttributes::new(PrimaryDeviceAttributes, SecondaryDeviceAttributes, TertiaryDeviceAttributes) -> Self
 pub fn DeviceAttributes::primary(Self) -> PrimaryDeviceAttributes
 pub fn DeviceAttributes::secondary(Self) -> SecondaryDeviceAttributes
@@ -56,9 +60,11 @@ pub(all) enum DeviceStatusRequest {
   CursorPosition
   ColorScheme
 } derive(Eq, @debug.Debug)
+pub fn DeviceStatusRequest::equal(Self, Self) -> Bool
 pub fn DeviceStatusRequest::tag(Self) -> DeviceStatusTag
 
 type DeviceStatusTag derive(Eq, @debug.Debug)
+pub fn DeviceStatusTag::equal(Self, Self) -> Bool
 pub fn DeviceStatusTag::question(Self) -> Bool
 pub fn DeviceStatusTag::raw(Self) -> UInt16
 pub fn DeviceStatusTag::value(Self) -> UInt16
@@ -77,6 +83,7 @@ pub(all) enum DeviceType {
   Vt525
 } derive(Eq, @debug.Debug)
 pub fn DeviceType::code(Self) -> UInt16
+pub fn DeviceType::equal(Self, Self) -> Bool
 
 pub(all) enum PrimaryDeviceAttributeFeature {
   Columns132
@@ -97,11 +104,13 @@ pub(all) enum PrimaryDeviceAttributeFeature {
   Clipboard
 } derive(Eq, @debug.Debug)
 pub fn PrimaryDeviceAttributeFeature::code(Self) -> UInt16
+pub fn PrimaryDeviceAttributeFeature::equal(Self, Self) -> Bool
 
 type PrimaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn PrimaryDeviceAttributes::conformance_level(Self) -> ConformanceLevel
 pub fn PrimaryDeviceAttributes::default() -> Self
 pub fn PrimaryDeviceAttributes::encode(Self) -> Bytes
+pub fn PrimaryDeviceAttributes::equal(Self, Self) -> Bool
 pub fn PrimaryDeviceAttributes::features(Self) -> ReadOnlyArray[PrimaryDeviceAttributeFeature]
 pub fn PrimaryDeviceAttributes::new(ConformanceLevel, ReadOnlyArray[PrimaryDeviceAttributeFeature]) -> Self
 
@@ -109,6 +118,7 @@ type SecondaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn SecondaryDeviceAttributes::default() -> Self
 pub fn SecondaryDeviceAttributes::device_type(Self) -> DeviceType
 pub fn SecondaryDeviceAttributes::encode(Self) -> Bytes
+pub fn SecondaryDeviceAttributes::equal(Self, Self) -> Bool
 pub fn SecondaryDeviceAttributes::firmware_version(Self) -> UInt16
 pub fn SecondaryDeviceAttributes::new(DeviceType, UInt16, UInt16) -> Self
 pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
@@ -116,10 +126,10 @@ pub fn SecondaryDeviceAttributes::rom_cartridge(Self) -> UInt16
 type TertiaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
+pub fn TertiaryDeviceAttributes::equal(Self, Self) -> Bool
 pub fn TertiaryDeviceAttributes::new(UInt) -> Self
 pub fn TertiaryDeviceAttributes::unit_id(Self) -> UInt
 
 // Type aliases
 
 // Traits
-

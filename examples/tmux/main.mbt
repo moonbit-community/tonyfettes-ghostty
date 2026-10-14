@@ -1,26 +1,26 @@
 ///|
-const CellWidthPx : UInt = 10U
+const CellWidthPx : UInt32 = 10U
 
 ///|
-const CellHeightPx : UInt = 20U
+const CellHeightPx : UInt32 = 20U
 
 ///|
-const EscTimeoutMs : Int = 50
+const EscTimeoutMs : Int32 = 50
 
 ///|
-const ReadBufferSize : Int = 4096
+const ReadBufferSize : Int32 = 4096
 
 ///|
-const ShellExitTimeoutMs : Int = 300
+const ShellExitTimeoutMs : Int32 = 300
 
 ///|
-const DiscoveryVersion : Int = 1
+const DiscoveryVersion : Int32 = 1
 
 ///|
 const StartingTimeoutMs : UInt64 = 5000UL
 
 ///|
-const AttachPollMs : Int = 100
+const AttachPollMs : Int32 = 100
 
 ///|
 let server_mode_env : String = "MOONBIT_MINI_TMUX_SERVER_DIR"
@@ -56,10 +56,10 @@ extern "c" fn spawn_detached_process(
   env_key : Bytes,
   env_value : Bytes,
   log_path : Bytes,
-) -> Int = "moonbit_mini_tmux_spawn_detached"
+) -> Int32 = "moonbit_mini_tmux_spawn_detached"
 
 ///|
-extern "c" fn current_process_id() -> Int = "moonbit_mini_tmux_process_id"
+extern "c" fn current_process_id() -> Int32 = "moonbit_mini_tmux_process_id"
 
 ///|
 extern "c" fn platform_bytes() -> Bytes = "moonbit_mini_tmux_platform"
@@ -80,8 +80,8 @@ priv enum DiscoveryState {
 ///|
 priv struct Discovery {
   state : DiscoveryState
-  pid : Int
-  port : Int?
+  pid : Int32
+  port : Int32?
   created_at_unix_ms : UInt64
 }
 
@@ -96,54 +96,54 @@ priv struct DiscoveryPaths {
 
 ///|
 priv struct PaneSize {
-  mut rows : Int
-  mut cols : Int
+  mut rows : Int32
+  mut cols : Int32
 }
 
 ///|
 priv struct Pane {
-  id : Int
+  id : Int32
   pty : @pty.Pty
   terminal : @terminal.StreamTerminal
   replies : @buffer.Buffer
   size : PaneSize
   mut closed : Bool
-  mut exit_code : Int?
+  mut exit_code : Int32?
 }
 
 ///|
 priv enum MuxEvent {
-  PaneOutput(Int, Bytes)
-  PaneClosed(Int, Int)
+  PaneOutput(Int32, Bytes)
+  PaneClosed(Int32, Int32)
   Message(String)
   ClientConnected(@socket.Tcp)
-  ClientLine(Int, String)
-  ClientClosed(Int)
+  ClientLine(Int32, String)
+  ClientClosed(Int32)
 }
 
 ///|
 priv struct MuxState {
   panes : Array[Pane]
-  mut active : Int
-  mut next_id : Int
+  mut active : Int32
+  mut next_id : Int32
   mut prefix : Bool
   mut done : Bool
   mut status : String
-  mut rows : Int
-  mut cols : Int
+  mut rows : Int32
+  mut cols : Int32
 }
 
 ///|
 priv struct ServerClient {
-  id : Int
+  id : Int32
   conn : @socket.Tcp
   mut attached : Bool
 }
 
 ///|
 priv struct CursorPosition {
-  row : Int
-  col : Int
+  row : Int32
+  col : Int32
 }
 
 ///|
@@ -163,9 +163,9 @@ priv enum ClientEvent {
 
 ///|
 priv enum ClientCommand {
-  AttachClient(Int, Int)
+  AttachClient(Int32, Int32)
   ClientInput(Bytes)
-  ClientResize(Int, Int)
+  ClientResize(Int32, Int32)
   ClientPrefix(Bool)
   ClientNewPane
   ClientNextPane
@@ -354,7 +354,7 @@ fn json_string_value(value : Json?) -> String? {
 }
 
 ///|
-fn json_int_value(value : Json?) -> Int? {
+fn json_int_value(value : Json?) -> Int32? {
   match value {
     Some(Number(number, ..)) => Some(number.to_int())
     _ => None
@@ -433,7 +433,7 @@ fn starting_is_fresh(discovery : Discovery) -> Bool {
 }
 
 ///|
-async fn spawn_server(paths : DiscoveryPaths) -> Int {
+async fn spawn_server(paths : DiscoveryPaths) -> Int32 {
   let detached_pid = spawn_detached_process(
     self_args_flat_bytes(),
     @utf8.encode(server_mode_env),
@@ -468,7 +468,7 @@ async fn spawn_server(paths : DiscoveryPaths) -> Int {
 }
 
 ///|
-async fn connect_to_port(port : Int) -> @socket.Tcp? {
+async fn connect_to_port(port : Int32) -> @socket.Tcp? {
   try @socket.Tcp::connect(@socket.Addr::parse("127.0.0.1:\{port}")) catch {
     _ => None
   } noraise {
@@ -596,26 +596,21 @@ fn new_terminal(
 ///|
 async fn Pane::new(
   group : @async.TaskGroup[Unit],
-  id : Int,
-  rows : Int,
-  cols : Int,
+  id : Int32,
+  rows : Int32,
+  cols : Int32,
 ) -> Pane {
   let rows = rows.clamp(min=1, max=240)
   let cols = cols.clamp(min=1, max=240)
   let replies = Buffer()
-  let size = { rows, cols }
+  let size = { rows, cols, }
   let terminal = new_terminal(size, replies)
-  let pty = @pty.Pty::spawn(
-    group,
-    ["sh", "-lc", pane_shell_script()],
-    cols~,
-    rows~,
-  )
-  { id, pty, terminal, replies, size, closed: false, exit_code: None }
+  let pty = @pty.spawn(group, ["sh", "-lc", pane_shell_script()], cols~, rows~)
+  { id, pty, terminal, replies, size, closed: false, exit_code: None, }
 }
 
 ///|
-fn Pane::resize(self : Pane, rows : Int, cols : Int) -> Unit {
+fn Pane::resize(self : Pane, rows : Int32, cols : Int32) -> Unit {
   let rows = rows.clamp(min=1, max=240)
   let cols = cols.clamp(min=1, max=240)
   self.size.rows = rows
@@ -654,7 +649,7 @@ fn Pane::shutdown(self : Pane) -> Unit {
 }
 
 ///|
-fn MuxState::new(rows : Int, cols : Int) -> MuxState {
+fn MuxState::new(rows : Int32, cols : Int32) -> MuxState {
   {
     panes: [],
     active: 0,
@@ -679,7 +674,7 @@ fn MuxState::active_pane(self : MuxState) -> Pane? {
 }
 
 ///|
-fn visible_pane_count(state : MuxState) -> Int {
+fn visible_pane_count(state : MuxState) -> Int32 {
   let count = state.panes.length()
   if count <= 1 {
     count
@@ -691,7 +686,7 @@ fn visible_pane_count(state : MuxState) -> Int {
 }
 
 ///|
-fn visible_pane_index(state : MuxState, visible_index : Int) -> Int {
+fn visible_pane_index(state : MuxState, visible_index : Int32) -> Int32 {
   if visible_pane_count(state) == state.panes.length() {
     visible_index
   } else {
@@ -700,7 +695,7 @@ fn visible_pane_index(state : MuxState, visible_index : Int) -> Int {
 }
 
 ///|
-fn slot_rows(total_body_rows : Int, count : Int, index : Int) -> Int {
+fn slot_rows(total_body_rows : Int32, count : Int32, index : Int32) -> Int32 {
   if count <= 0 {
     total_body_rows
   } else {
@@ -728,7 +723,7 @@ fn resize_visible_panes(state : MuxState) -> Unit {
 }
 
 ///|
-fn resize_mux(state : MuxState, rows : Int, cols : Int) -> Unit {
+fn resize_mux(state : MuxState, rows : Int32, cols : Int32) -> Unit {
   state.rows = @cmp.maximum(rows, 2)
   state.cols = @cmp.maximum(cols, 20)
   resize_visible_panes(state)
@@ -821,7 +816,7 @@ fn plain_snapshot(terminal : @terminal.StreamTerminal) -> String {
 }
 
 ///|
-fn fit_line(text : String, cols : Int) -> String {
+fn fit_line(text : String, cols : Int32) -> String {
   if cols <= 0 {
     ""
   } else {
@@ -847,9 +842,9 @@ fn fit_line(text : String, cols : Int) -> String {
 fn append_screen_line(
   out : StringBuilder,
   text : String,
-  cols : Int,
-  row : Int,
-  rows : Int,
+  cols : Int32,
+  row : Int32,
+  rows : Int32,
 ) -> Unit {
   out.write_string(fit_line(text, cols))
   if row + 1 < rows {
@@ -861,9 +856,9 @@ fn append_screen_line(
 fn append_styled_screen_line(
   out : StringBuilder,
   text : String,
-  cols : Int,
-  row : Int,
-  rows : Int,
+  cols : Int32,
+  row : Int32,
+  rows : Int32,
   style : String,
 ) -> Unit {
   if style != "" {
@@ -889,7 +884,7 @@ fn pane_title(pane : Pane, active : Bool) -> String {
 }
 
 ///|
-fn border_line(title : String, cols : Int, active : Bool) -> String {
+fn border_line(title : String, cols : Int32, active : Bool) -> String {
   if cols <= 0 {
     ""
   } else if cols == 1 {
@@ -928,9 +923,9 @@ fn pane_border_style(pane : Pane, active : Bool) -> String {
 fn append_boxed_content_line(
   out : StringBuilder,
   text : String,
-  cols : Int,
-  row : Int,
-  rows : Int,
+  cols : Int32,
+  row : Int32,
+  rows : Int32,
   style : String,
 ) -> Unit {
   if cols <= 0 {
@@ -978,11 +973,11 @@ fn status_style(state : MuxState) -> String {
 fn append_pane(
   out : StringBuilder,
   state : MuxState,
-  pane_index : Int,
-  slot : Int,
-  visible_count : Int,
-  row0 : Int,
-) -> Int {
+  pane_index : Int32,
+  slot : Int32,
+  visible_count : Int32,
+  row0 : Int32,
+) -> Int32 {
   let mut row = row0
   let pane = state.panes[pane_index]
   let total = @cmp.maximum(state.rows - 1, 1)
@@ -1093,7 +1088,7 @@ fn active_cursor_position(state : MuxState) -> CursorPosition? {
         .cursor_x()
         .to_int()
         .clamp(min=0, max=content_cols - 1)
-      return Some({ row: row0 + cursor_row + 2, col: cursor_col + 2 })
+      return Some({ row: row0 + cursor_row + 2, col: cursor_col + 2, })
     }
     row0 += rows
   }
@@ -1102,7 +1097,7 @@ fn active_cursor_position(state : MuxState) -> CursorPosition? {
 
 ///|
 fn server_frame(state : MuxState) -> ServerFrame {
-  { text: render_text(state), cursor: active_cursor_position(state) }
+  { text: render_text(state), cursor: active_cursor_position(state), }
 }
 
 ///|
@@ -1115,7 +1110,7 @@ fn hex_encode(bytes : Bytes) -> String {
 }
 
 ///|
-fn hex_value(ch : Char) -> Int? {
+fn hex_value(ch : Char) -> Int32? {
   if ch >= '0' && ch <= '9' {
     Some(ch.to_int() - '0'.to_int())
   } else if ch >= 'a' && ch <= 'f' {
@@ -1130,7 +1125,7 @@ fn hex_value(ch : Char) -> Int? {
 ///|
 fn hex_decode(text : String) -> Bytes? {
   let bytes : Array[Byte] = []
-  let mut high : Int? = None
+  let mut high : Int32? = None
   for ch in text {
     match hex_value(ch) {
       Some(value) =>
@@ -1165,7 +1160,7 @@ fn bye_line(reason : String) -> String {
 }
 
 ///|
-fn parse_int_opt(text : String) -> Int? {
+fn parse_int_opt(text : String) -> Int32? {
   try @string.parse_int(text) catch {
     _ => None
   } noraise {
@@ -1244,8 +1239,8 @@ fn parse_server_frame(line : String) -> ServerFrame? {
       hex_decode(parts[4]),
     ) {
     (Some(visible), Some(row), Some(col), Some(bytes)) => {
-      let cursor = if visible { Some({ row, col }) } else { None }
-      Some({ text: @utf8.decode_lossy(bytes), cursor })
+      let cursor = if visible { Some({ row, col, }) } else { None }
+      Some({ text: @utf8.decode_lossy(bytes), cursor, })
     }
     _ => None
   }
@@ -1276,7 +1271,7 @@ async fn broadcast_frame(
   state : MuxState,
 ) -> Unit {
   let frame = server_frame(state)
-  let failed : Array[Int] = []
+  let failed : Array[Int32] = []
   for client in clients {
     if client.attached {
       let ok = send_frame(client.conn, frame)
@@ -1291,7 +1286,7 @@ async fn broadcast_frame(
 }
 
 ///|
-fn find_client_index(clients : Array[ServerClient], id : Int) -> Int? {
+fn find_client_index(clients : Array[ServerClient], id : Int32) -> Int32? {
   for i in 0..<clients.length() {
     if clients[i].id == id {
       return Some(i)
@@ -1301,7 +1296,7 @@ fn find_client_index(clients : Array[ServerClient], id : Int) -> Int? {
 }
 
 ///|
-fn remove_client(clients : Array[ServerClient], id : Int) -> Unit {
+fn remove_client(clients : Array[ServerClient], id : Int32) -> Unit {
   let mut i = 0
   while i < clients.length() {
     if clients[i].id == id {
@@ -1380,7 +1375,7 @@ async fn accept_clients(
 
 ///|
 async fn read_client_lines(
-  id : Int,
+  id : Int32,
   conn : @socket.Tcp,
   events : @aqueue.Queue[MuxEvent],
 ) -> Unit {
@@ -1403,7 +1398,7 @@ async fn read_client_lines(
 
 ///|
 async fn read_pane_output(
-  index : Int,
+  index : Int32,
   pane : Pane,
   events : @aqueue.Queue[MuxEvent],
 ) -> Unit {
@@ -1432,7 +1427,7 @@ async fn read_pane_output(
 ///|
 async fn handle_pane_output(
   state : MuxState,
-  index : Int,
+  index : Int32,
   bytes : Bytes,
 ) -> Unit {
   if index >= 0 && index < state.panes.length() {
@@ -1445,7 +1440,7 @@ async fn handle_pane_output(
 }
 
 ///|
-fn handle_pane_closed(state : MuxState, index : Int, code : Int) -> Unit {
+fn handle_pane_closed(state : MuxState, index : Int32, code : Int32) -> Unit {
   if index >= 0 && index < state.panes.length() {
     let pane = state.panes[index]
     pane.closed = true
@@ -1455,7 +1450,7 @@ fn handle_pane_closed(state : MuxState, index : Int, code : Int) -> Unit {
 }
 
 ///|
-async fn publish_running(paths : DiscoveryPaths, port : Int) -> Unit {
+async fn publish_running(paths : DiscoveryPaths, port : Int32) -> Unit {
   with_discovery_lock(paths, () => {
     write_discovery_unlocked(paths, {
       state: DiscoveryRunning,
@@ -1492,7 +1487,7 @@ async fn run_server(paths : DiscoveryPaths) -> Unit {
         ClientConnected(conn) => {
           let id = next_client_id
           next_client_id += 1
-          clients.push({ id, conn, attached: false })
+          clients.push({ id, conn, attached: false, })
           group.spawn_bg(no_wait=true) <| () => {
             read_client_lines(id, conn, events)
           }
@@ -1533,7 +1528,7 @@ async fn run_server(paths : DiscoveryPaths) -> Unit {
 }
 
 ///|
-fn terminal_size(tty : @tty.Tty) -> (Int, Int) {
+fn terminal_size(tty : @tty.Tty) -> (Int32, Int32) {
   try tty.window_size() catch {
     _ => (24, 80)
   } noraise {

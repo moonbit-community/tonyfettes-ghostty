@@ -74,4 +74,3 @@ pub fn ScreenGridState::write_cell(Self, Int, Int, UInt, @page.PageCellWide, @st
 // Type aliases
 
 // Traits
-

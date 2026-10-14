@@ -1,10 +1,10 @@
 ///|
-const DefaultMaxBytes : Int = 1024 * 1024
+const DefaultMaxBytes : Int32 = 1024 * 1024
 
 ///|
 priv struct DcsHandler {
   mut state : DcsState
-  mut max_bytes : Int
+  mut max_bytes : Int32
 }
 
 ///|
@@ -16,7 +16,7 @@ priv enum DcsCommand {
 ///|
 priv struct XtGetTCapCommand {
   data : Array[Byte]
-  mut index : Int
+  mut index : Int32
 } derive(Eq)
 
 ///|
@@ -44,11 +44,11 @@ priv struct HookResult {
 
 ///|
 fn DcsHandler::new() -> DcsHandler {
-  { state: Inactive, max_bytes: DefaultMaxBytes }
+  { state: Inactive, max_bytes: DefaultMaxBytes, }
 }
 
 ///|
-fn DcsHandler::set_max_bytes(self : DcsHandler, value : Int) -> Unit {
+fn DcsHandler::set_max_bytes(self : DcsHandler, value : Int32) -> Unit {
   self.max_bytes = value
 }
 
@@ -103,7 +103,7 @@ fn DcsHandler::unhook(self : DcsHandler) -> DcsCommand? {
   let command = match self.state {
     Inactive | Ignore => no_dcs_command()
     XtGetTCap(buffer) =>
-      Some(XtGetTCap({ data: uppercased_ascii(buffer), index: 0 }))
+      Some(XtGetTCap({ data: uppercased_ascii(buffer), index: 0, }))
     Decrqss(buffer) => Some(Decrqss(classify_decrqss(buffer)))
   }
   self.state = Inactive
@@ -128,13 +128,13 @@ fn DcsHandler::try_hook(_self : DcsHandler, dcs : @parser.Dcs) -> HookResult? {
       match dcs.intermediates[0] {
         b'+' =>
           if dcs.final_byte == b'q' {
-            Some({ state: XtGetTCap([]), command: None })
+            Some({ state: XtGetTCap([]), command: None, })
           } else {
             None
           }
         b'$' =>
           if dcs.final_byte == b'q' {
-            Some({ state: Decrqss([]), command: None })
+            Some({ state: Decrqss([]), command: None, })
           } else {
             None
           }
@@ -209,7 +209,7 @@ fn to_upper_ascii(value : Byte) -> Byte {
 fn make_plain_dcs(final_byte : Byte) -> @parser.Dcs {
   let intermediates : Array[Byte] = []
   let params : Array[UInt16] = []
-  { intermediates, params, final_byte }
+  { intermediates, params, final_byte, }
 }
 
 ///|
@@ -218,7 +218,7 @@ fn make_intermediate_dcs(
   final_byte : Byte,
 ) -> @parser.Dcs {
   let params : Array[UInt16] = []
-  { intermediates, params, final_byte }
+  { intermediates, params, final_byte, }
 }
 
 ///|

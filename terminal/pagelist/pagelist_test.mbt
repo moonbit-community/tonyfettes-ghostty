@@ -1,6 +1,6 @@
 ///|
 test "terminal screen state/reuses an evicted history row for the next blank" {
-  let scrollback = PageList::new(2, 2, 1)
+  let scrollback = @pagelist.PageList::new(2, 2, 1)
   let grid = scrollback.active_grid()
   let style = @style.CellStyle::new()
   let cursor = @cursor.TerminalCursorState::new(2, 2)

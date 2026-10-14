@@ -1,9 +1,9 @@
 ///|
 fn draw2800_28ff(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(metrics)
@@ -72,8 +72,8 @@ fn draw2800_28ff(
     abort("braille layout exceeds height")
   }
 
-  let x : ReadOnlyArray[Int] = [x_margin, x_margin + w + x_spacing]
-  let y : ReadOnlyArray[Int] = [
+  let x : ReadOnlyArray[Int32] = [x_margin, x_margin + w + x_spacing]
+  let y : ReadOnlyArray[Int32] = [
     y_margin,
     y_margin + w + y_spacing,
     y_margin + 2 * w + 2 * y_spacing,

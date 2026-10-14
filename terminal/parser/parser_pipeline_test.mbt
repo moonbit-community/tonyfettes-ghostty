@@ -4,7 +4,7 @@
 // internals.
 
 ///|
-fn expect_no_actions(actions : ActionList) -> Unit raise {
+fn expect_no_actions(actions : @parser.ActionList) -> Unit raise {
   guard actions.exit() is None &&
     actions.transition() is None &&
     actions.entry() is None else {
@@ -14,7 +14,7 @@ fn expect_no_actions(actions : ActionList) -> Unit raise {
 
 ///|
 test "parser/osc kitty color dispatch" {
-  let parser = Parser::new()
+  let parser = @parser.Parser::new()
   for byte in b"\x1b]21;foreground=?;255=#010203" {
     expect_no_actions(parser.next(byte))
   }

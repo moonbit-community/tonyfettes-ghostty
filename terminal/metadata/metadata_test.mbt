@@ -1,6 +1,6 @@
 ///|
 test "terminal metadata state/defaults" {
-  let state = TerminalMetadataState::new()
+  let state = @metadata.TerminalMetadataState::new()
   guard state.title() == None && state.shell_redraws_prompt() == Enabled else {
     fail("expected terminal metadata defaults")
   }
@@ -8,7 +8,7 @@ test "terminal metadata state/defaults" {
 
 ///|
 test "terminal metadata state/set title stores non-empty strings and clears empty title" {
-  let state = TerminalMetadataState::new()
+  let state = @metadata.TerminalMetadataState::new()
   state.set_title("Hello World")
   guard state.title() == Some("Hello World") else {
     fail("expected non-empty title storage")
@@ -22,7 +22,7 @@ test "terminal metadata state/set title stores non-empty strings and clears empt
 
 ///|
 test "terminal metadata state/prompt redraw and full reset" {
-  let state = TerminalMetadataState::new()
+  let state = @metadata.TerminalMetadataState::new()
   state.set_title("Prompt")
   state.set_shell_redraws_prompt(Last)
   guard state.title() == Some("Prompt") && state.shell_redraws_prompt() == Last else {

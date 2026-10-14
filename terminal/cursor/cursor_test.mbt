@@ -1,6 +1,6 @@
 ///|
 test "terminal cursor state/defaults and full reset" {
-  let state = TerminalCursorState::new(24, 80)
+  let state = @cursor.TerminalCursorState::new(24, 80)
   guard state.x() == 0 &&
     state.y() == 0 &&
     state.visual_style() == Block &&
@@ -31,7 +31,7 @@ test "terminal cursor state/defaults and full reset" {
 
 ///|
 test "terminal cursor state/zero dimensions clamp to one cell" {
-  let state = TerminalCursorState::new(0, 0)
+  let state = @cursor.TerminalCursorState::new(0, 0)
   guard state.x() == 0 &&
     state.y() == 0 &&
     state.top_margin() == 0 &&
@@ -44,7 +44,7 @@ test "terminal cursor state/zero dimensions clamp to one cell" {
 
 ///|
 test "terminal cursor state/applies csi cursor style mapping" {
-  let state = TerminalCursorState::new(24, 80)
+  let state = @cursor.TerminalCursorState::new(24, 80)
 
   guard !state.apply_cursor_style(Default) && state.visual_style() == Block else {
     fail("expected default cursor style mapping")
@@ -75,7 +75,7 @@ test "terminal cursor state/applies csi cursor style mapping" {
 
 ///|
 test "terminal cursor state/set cursor pos clamps and clears pending wrap" {
-  let state = TerminalCursorState::new(24, 80)
+  let state = @cursor.TerminalCursorState::new(24, 80)
   state.set_pending_wrap(true)
 
   state.set_cursor_pos(0, 0, false)
@@ -92,7 +92,7 @@ test "terminal cursor state/set cursor pos clamps and clears pending wrap" {
 
 ///|
 test "terminal cursor state/origin mode uses margins for positioning" {
-  let state = TerminalCursorState::new(24, 80)
+  let state = @cursor.TerminalCursorState::new(24, 80)
 
   state.set_top_and_bottom_margin(3, 10, true)
   guard state.x() == 0 && state.y() == 2 else {
@@ -117,7 +117,7 @@ test "terminal cursor state/origin mode uses margins for positioning" {
 
 ///|
 test "terminal cursor state/zero bottom requests clamp to terminal bounds" {
-  let state = TerminalCursorState::new(24, 80)
+  let state = @cursor.TerminalCursorState::new(24, 80)
 
   state.set_top_and_bottom_margin(3, 0, false)
   guard state.top_margin() == 2 && state.bottom_margin() == 23 else {
@@ -132,7 +132,7 @@ test "terminal cursor state/zero bottom requests clamp to terminal bounds" {
 
 ///|
 test "terminal cursor state/invalid or disabled margins keep prior state" {
-  let state = TerminalCursorState::new(24, 80)
+  let state = @cursor.TerminalCursorState::new(24, 80)
 
   state.set_left_and_right_margin(false, 5, 20, false)
   guard state.left_margin() == 0 && state.right_margin() == 79 else {

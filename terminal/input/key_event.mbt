@@ -242,11 +242,11 @@ struct KeyEvent {
   mut consumed_mods : KeyMods
   mut composing : Bool
   mut utf8 : Bytes
-  mut unshifted_codepoint : UInt
+  mut unshifted_codepoint : UInt32
 } derive(Eq, Debug)
 
 ///|
-let key_codepoint_map : ReadOnlyArray[(UInt, Key)] = [
+let key_codepoint_map : ReadOnlyArray[(UInt32, Key)] = [
   (b'a'.to_uint(), KeyA),
   (b'b'.to_uint(), KeyB),
   (b'c'.to_uint(), KeyC),
@@ -440,7 +440,7 @@ pub fn KeyMods::without_locks(self : KeyMods) -> KeyMods {
 }
 
 ///|
-pub fn Key::codepoint(self : Key) -> UInt? {
+pub fn Key::codepoint(self : Key) -> UInt32? {
   for entry in key_codepoint_map {
     if entry.1 == self {
       return Some(entry.0)
@@ -523,12 +523,15 @@ pub fn KeyEvent::set_utf8(self : KeyEvent, value : Bytes) -> Unit {
 }
 
 ///|
-pub fn KeyEvent::unshifted_codepoint(self : KeyEvent) -> UInt {
+pub fn KeyEvent::unshifted_codepoint(self : KeyEvent) -> UInt32 {
   self.unshifted_codepoint
 }
 
 ///|
-pub fn KeyEvent::set_unshifted_codepoint(self : KeyEvent, value : UInt) -> Unit {
+pub fn KeyEvent::set_unshifted_codepoint(
+  self : KeyEvent,
+  value : UInt32,
+) -> Unit {
   self.unshifted_codepoint = value
 }
 
@@ -563,3 +566,68 @@ fn key_mods_with_mask(raw : UInt16, mask : UInt16, value : Bool) -> UInt16 {
 fn key_mods_with_side(raw : UInt16, mask : UInt16, side : KeyModSide) -> UInt16 {
   key_mods_with_mask(raw, mask, side == Right)
 }
+
+///|
+pub extend KeyAction with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyAction with @debug.Debug::{to_repr}
+
+///|
+pub extend KeyModSide with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyModSide with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyModSide with @debug.Debug::{to_repr}
+
+///|
+pub extend KeyMods with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyMods with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyMods with @debug.Debug::{to_repr}
+
+///|
+pub extend Key with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Key with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Key with @debug.Debug::{to_repr}
+
+///|
+pub extend KeyEvent with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyEvent with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyEvent with @debug.Debug::{to_repr}

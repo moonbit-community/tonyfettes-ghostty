@@ -31,14 +31,14 @@ struct StreamTerminal {
 
 ///|
 pub fn StreamTerminal::new(
-  write_pty? : (Bytes) -> Unit = fn(_data) { () },
-  bell? : () -> Unit = fn() { () },
-  color_scheme? : () -> @device.ColorScheme? = fn() { None },
-  device_attributes? : () -> @device.DeviceAttributes? = fn() { None },
-  enquiry? : () -> Bytes = fn() { b"" },
-  size? : () -> @size_report.Size? = fn() { None },
-  title_changed? : () -> Unit = fn() { () },
-  xtversion? : () -> String = fn() { "" },
+  write_pty~ : (Bytes) -> Unit = fn(_data) { () },
+  bell~ : () -> Unit = fn() { () },
+  color_scheme~ : () -> @device.ColorScheme? = fn() { None },
+  device_attributes~ : () -> @device.DeviceAttributes? = fn() { None },
+  enquiry~ : () -> Bytes = fn() { b"" },
+  size~ : () -> @size_report.Size? = fn() { None },
+  title_changed~ : () -> Unit = fn() { () },
+  xtversion~ : () -> String = fn() { "" },
 ) -> StreamTerminal {
   let bridge = StreamTerminalBridgeState::with_effects(
     @bridge_effects.StreamTerminalBridgeEffects::new(
@@ -52,7 +52,7 @@ pub fn StreamTerminal::new(
       xtversion~,
     ),
   )
-  { stream: @stream.Stream::new({ bridge, }) }
+  { stream: @stream.Stream::new({ bridge, }), }
 }
 
 ///|
@@ -231,8 +231,8 @@ pub fn StreamTerminal::resize(
   self : StreamTerminal,
   columns : @size.CellCountInt,
   rows : @size.CellCountInt,
-  cell_width_px : UInt,
-  cell_height_px : UInt,
+  cell_width_px : UInt32,
+  cell_height_px : UInt32,
 ) -> @result_code.TerminalResultCode {
   self.bridge().resize(columns, rows, cell_width_px, cell_height_px)
 }
@@ -250,7 +250,7 @@ pub fn StreamTerminal::scroll_viewport_bottom(self : StreamTerminal) -> Unit {
 ///|
 pub fn StreamTerminal::scroll_viewport_delta(
   self : StreamTerminal,
-  delta : Int,
+  delta : Int32,
 ) -> Unit {
   self.bridge().scroll_viewport_delta(delta)
 }
@@ -273,12 +273,12 @@ pub fn StreamTerminal::active_screen(
 }
 
 ///|
-pub fn StreamTerminal::total_rows(self : StreamTerminal) -> UInt {
+pub fn StreamTerminal::total_rows(self : StreamTerminal) -> UInt32 {
   self.bridge().total_rows()
 }
 
 ///|
-pub fn StreamTerminal::scrollback_rows(self : StreamTerminal) -> UInt {
+pub fn StreamTerminal::scrollback_rows(self : StreamTerminal) -> UInt32 {
   self.bridge().scrollback_rows()
 }
 
@@ -290,12 +290,12 @@ pub fn StreamTerminal::scrollbar(
 }
 
 ///|
-pub fn StreamTerminal::width_px(self : StreamTerminal) -> UInt {
+pub fn StreamTerminal::width_px(self : StreamTerminal) -> UInt32 {
   self.bridge().width_px()
 }
 
 ///|
-pub fn StreamTerminal::height_px(self : StreamTerminal) -> UInt {
+pub fn StreamTerminal::height_px(self : StreamTerminal) -> UInt32 {
   self.bridge().height_px()
 }
 
@@ -609,7 +609,7 @@ pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(
   self : StreamTerminal,
   row : @size.CellCountInt,
   col : @size.CellCountInt,
-) -> ReadOnlyArray[UInt] {
+) -> ReadOnlyArray[UInt32] {
   match self.bridge().screen_cell_snapshot(row, col) {
     Some(cell) => self.active_grapheme_table().get(cell.grapheme_id())
     None => []

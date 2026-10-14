@@ -1,6 +1,6 @@
 ///|
 test "terminal input flags/defaults and full reset" {
-  let state = TerminalInputFlags::new()
+  let state = @terminal.TerminalInputFlags::new()
   guard state.mouse_shift_capture() == None && !state.modify_other_keys_2() else {
     fail("expected terminal input flag defaults")
   }
@@ -15,7 +15,7 @@ test "terminal input flags/defaults and full reset" {
 
 ///|
 test "terminal input flags/mouse shift capture and modify other keys" {
-  let state = TerminalInputFlags::new()
+  let state = @terminal.TerminalInputFlags::new()
   state.set_mouse_shift_capture(true)
   guard state.mouse_shift_capture() == Some(true) else {
     fail("expected enabled mouse shift capture")
@@ -39,7 +39,7 @@ test "terminal input flags/mouse shift capture and modify other keys" {
 
 ///|
 test "kitty keyboard state/current set and bit operations" {
-  let state = KittyKeyboardState::new()
+  let state = @terminal.KittyKeyboardState::new()
   guard state.current() == KittyKeyboardFlags(0) else {
     fail("expected kitty keyboard defaults")
   }
@@ -58,7 +58,7 @@ test "kitty keyboard state/current set and bit operations" {
 
 ///|
 test "kitty keyboard state/push and pop follow stack order" {
-  let state = KittyKeyboardState::new()
+  let state = @terminal.KittyKeyboardState::new()
   state.push(KittyKeyboardFlags(0x01))
   state.push(KittyKeyboardFlags(0x02))
   guard state.current() == KittyKeyboardFlags(0x02) else {
@@ -78,7 +78,7 @@ test "kitty keyboard state/push and pop follow stack order" {
 
 ///|
 test "kitty keyboard state/push wraps and large pop resets" {
-  let state = KittyKeyboardState::new()
+  let state = @terminal.KittyKeyboardState::new()
   for i in 1..<9 {
     state.push(KittyKeyboardFlags(i.to_byte()))
   }

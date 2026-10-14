@@ -14,6 +14,7 @@ import {
 type MouseEncoder derive(Eq, @debug.Debug)
 pub fn MouseEncoder::any_button_pressed(Self) -> Bool
 pub fn MouseEncoder::encode(Self, @input.MouseInputEvent) -> Bytes
+pub fn MouseEncoder::equal(Self, Self) -> Bool
 pub fn MouseEncoder::event(Self) -> @input.MouseEvent
 pub fn MouseEncoder::format(Self) -> @input.MouseFormat
 pub fn MouseEncoder::new() -> Self
@@ -30,6 +31,7 @@ pub fn MouseEncoder::track_last_cell(Self) -> Bool
 type MouseEncoderSize derive(Eq, @debug.Debug)
 pub fn MouseEncoderSize::cell_height(Self) -> UInt
 pub fn MouseEncoderSize::cell_width(Self) -> UInt
+pub fn MouseEncoderSize::equal(Self, Self) -> Bool
 pub fn MouseEncoderSize::new(UInt, UInt, UInt, UInt, padding_top? : UInt, padding_bottom? : UInt, padding_right? : UInt, padding_left? : UInt) -> Self?
 pub fn MouseEncoderSize::padding_bottom(Self) -> UInt
 pub fn MouseEncoderSize::padding_left(Self) -> UInt
@@ -41,4 +43,3 @@ pub fn MouseEncoderSize::screen_width(Self) -> UInt
 // Type aliases
 
 // Traits
-

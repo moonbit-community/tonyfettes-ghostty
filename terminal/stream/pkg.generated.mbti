@@ -22,15 +22,19 @@ pub(all) struct ConfigureCharsetAction {
   slot : @charsets.Slots
   charset : @charsets.Charset
 } derive(Eq, @debug.Debug)
+pub fn ConfigureCharsetAction::equal(Self, Self) -> Bool
 
 pub(all) struct CursorMovement(UInt16) derive(Eq, @debug.Debug)
+pub fn CursorMovement::equal(Self, Self) -> Bool
 
 pub(all) struct CursorPosition {
   row : UInt16
   col : UInt16
 } derive(Eq, @debug.Debug)
+pub fn CursorPosition::equal(Self, Self) -> Bool
 
 type DcsHookPayload derive(Eq, @debug.Debug)
+pub fn DcsHookPayload::equal(Self, Self) -> Bool
 pub fn DcsHookPayload::final_byte(Self) -> Byte
 pub fn DcsHookPayload::intermediates(Self) -> Bytes
 pub fn DcsHookPayload::params(Self) -> ReadOnlyArray[UInt16]
@@ -40,13 +44,16 @@ pub(all) struct InvokeCharsetAction {
   charset : @charsets.Slots
   locking : Bool
 } derive(Eq, @debug.Debug)
+pub fn InvokeCharsetAction::equal(Self, Self) -> Bool
 
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
+pub fn KittyKeyboardFlags::equal(Self, Self) -> Bool
 
 pub(all) struct Margin {
   top_left : UInt16
   bottom_right : UInt16
 } derive(Eq, @debug.Debug)
+pub fn Margin::equal(Self, Self) -> Bool
 
 type Stream[H]
 pub fn[H : StreamHandler] Stream::deinit(Self[H]) -> Unit
@@ -150,6 +157,7 @@ pub(all) enum StreamAction {
   StreamApcPut(Byte)
   StreamApcEnd
 } derive(Eq, @debug.Debug)
+pub fn StreamAction::equal(Self, Self) -> Bool
 
 // Type aliases
 
@@ -159,4 +167,3 @@ pub(open) trait StreamHandler {
   fn print(Self, UInt) -> Unit
   fn deinit(Self) -> Unit
 }
-

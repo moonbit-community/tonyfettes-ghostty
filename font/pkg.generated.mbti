@@ -11,10 +11,12 @@ import {
 pub suberror AtlasError {
   AtlasFull
 } derive(Eq, @debug.Debug)
+pub fn AtlasError::equal(Self, Self) -> Bool
 
 pub suberror ModifierParseError {
   InvalidFormat
 } derive(Eq, @debug.Debug)
+pub fn ModifierParseError::equal(Self, Self) -> Bool
 
 // Types and methods
 pub(all) struct Atlas {
@@ -26,6 +28,7 @@ pub(all) struct Atlas {
   mut resized : UInt
 } derive(Eq, @debug.Debug)
 pub fn Atlas::clear(Self) -> Unit
+pub fn Atlas::equal(Self, Self) -> Bool
 pub fn Atlas::grow(Self, UInt) -> Unit
 pub fn Atlas::new(UInt, AtlasFormat) -> Self
 pub fn Atlas::reserve(Self, UInt, UInt) -> AtlasRegion raise AtlasError
@@ -38,12 +41,14 @@ pub(all) enum AtlasFormat {
   Bgra
 } derive(Eq, @debug.Debug)
 pub fn AtlasFormat::depth(Self) -> Byte
+pub fn AtlasFormat::equal(Self, Self) -> Bool
 
 pub(all) struct AtlasNode {
   mut x : UInt
   mut y : UInt
   mut width : UInt
 } derive(Eq, @debug.Debug)
+pub fn AtlasNode::equal(Self, Self) -> Bool
 
 pub(all) struct AtlasRegion {
   mut x : UInt
@@ -51,11 +56,13 @@ pub(all) struct AtlasRegion {
   width : UInt
   height : UInt
 } derive(Eq, @debug.Debug)
+pub fn AtlasRegion::equal(Self, Self) -> Bool
 
 pub(all) struct CodepointMap {
   mut list : Array[CodepointMapEntry]
 } derive(Eq, @debug.Debug)
 pub fn CodepointMap::add(Self, CodepointMapEntry) -> Unit
+pub fn CodepointMap::equal(Self, Self) -> Bool
 pub fn CodepointMap::get(Self, UInt) -> Descriptor?
 pub fn CodepointMap::hashcode(Self) -> UInt
 pub fn CodepointMap::new() -> Self
@@ -64,6 +71,7 @@ pub(all) struct CodepointMapEntry {
   range : (UInt, UInt)
   descriptor : Descriptor
 } derive(Eq, @debug.Debug)
+pub fn CodepointMapEntry::equal(Self, Self) -> Bool
 
 pub(all) struct Descriptor {
   family : String?
@@ -75,6 +83,7 @@ pub(all) struct Descriptor {
   monospace : Bool
   variations : ReadOnlyArray[FontVariation]
 } derive(Eq, @debug.Debug)
+pub fn Descriptor::equal(Self, Self) -> Bool
 pub fn Descriptor::hashcode(Self) -> UInt
 pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Float, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : ArrayView[FontVariation]) -> Self
 
@@ -95,6 +104,7 @@ pub(all) struct FaceMetrics {
 } derive(Eq, @debug.Debug)
 pub fn FaceMetrics::ascii_height(Self) -> Double
 pub fn FaceMetrics::cap_height(Self) -> Double
+pub fn FaceMetrics::equal(Self, Self) -> Bool
 pub fn FaceMetrics::ex_height(Self) -> Double
 pub fn FaceMetrics::ic_width(Self) -> Double
 pub fn FaceMetrics::line_height(Self) -> Double
@@ -107,6 +117,7 @@ pub(all) struct FontVariation {
   id : FontVariationId
   value : Double
 } derive(Eq, @debug.Debug)
+pub fn FontVariation::equal(Self, Self) -> Bool
 
 pub(all) struct FontVariationId {
   a : Byte
@@ -114,6 +125,7 @@ pub(all) struct FontVariationId {
   c : Byte
   d : Byte
 } derive(Eq, @debug.Debug)
+pub fn FontVariationId::equal(Self, Self) -> Bool
 pub fn FontVariationId::init(BytesView) -> Self
 pub fn FontVariationId::str(Self) -> Bytes
 
@@ -125,6 +137,7 @@ pub(all) struct Glyph {
   atlas_x : UInt
   atlas_y : UInt
 } derive(Eq, @debug.Debug)
+pub fn Glyph::equal(Self, Self) -> Bool
 
 pub(all) enum MetricKey {
   CellWidth
@@ -145,6 +158,9 @@ pub(all) enum MetricKey {
   FaceHeight
   FaceY
 } derive(Eq, Hash, @debug.Debug)
+pub fn MetricKey::equal(Self, Self) -> Bool
+pub fn MetricKey::hash(Self) -> Int
+pub fn MetricKey::hash_combine(Self, Hasher) -> Unit
 
 pub(all) struct Metrics {
   mut cell_width : UInt
@@ -167,11 +183,13 @@ pub(all) struct Metrics {
 } derive(Eq, @debug.Debug)
 pub fn Metrics::apply(Self, ModifierSet) -> Unit
 pub fn Metrics::calc(FaceMetrics) -> Self
+pub fn Metrics::equal(Self, Self) -> Bool
 
 pub(all) enum Modifier {
   Percent(Double)
   Absolute(Int)
 } derive(Eq, @debug.Debug)
+pub fn Modifier::equal(Self, Self) -> Bool
 pub fn Modifier::parse(String) -> Self raise ModifierParseError
 
 type ModifierSet
@@ -186,6 +204,7 @@ pub fn Sprite::cursor_hollow_rect() -> Self
 pub fn Sprite::cursor_rect() -> Self
 pub fn Sprite::cursor_underline() -> Self
 pub fn Sprite::end() -> UInt
+pub fn Sprite::equal(Self, Self) -> Bool
 pub fn Sprite::from_codepoint(UInt) -> Self?
 pub fn Sprite::overline() -> Self
 pub fn Sprite::start() -> UInt
@@ -200,6 +219,7 @@ pub(all) struct SpriteBox[T] {
   p0 : SpritePoint[T]
   p1 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] SpriteBox::equal(Self[T], Self[T]) -> Bool
 pub fn SpriteBox::rect(Self[Int]) -> SpriteRect[Int]
 
 pub(all) struct SpriteCanvas {
@@ -215,6 +235,7 @@ pub(all) struct SpriteCanvas {
 } derive(Eq, @debug.Debug)
 pub fn SpriteCanvas::box(Self, Int, Int, Int, Int, SpriteColor) -> Unit
 pub fn SpriteCanvas::clear_clipping_regions(Self) -> Unit
+pub fn SpriteCanvas::equal(Self, Self) -> Bool
 pub fn SpriteCanvas::flip_horizontal(Self) -> Unit
 pub fn SpriteCanvas::flip_vertical(Self) -> Unit
 pub fn SpriteCanvas::invert(Self) -> Unit
@@ -224,6 +245,7 @@ pub fn SpriteCanvas::rect(Self, SpriteRect[Int], SpriteColor) -> Unit
 pub fn SpriteCanvas::write_atlas(Self, Atlas) -> AtlasRegion raise AtlasError
 
 type SpriteColor derive(Eq, @debug.Debug)
+pub fn SpriteColor::equal(Self, Self) -> Bool
 pub fn SpriteColor::from_byte(Byte) -> Self
 pub fn SpriteColor::off() -> Self
 pub fn SpriteColor::on() -> Self
@@ -233,11 +255,13 @@ pub(all) struct SpriteLine[T] {
   p0 : SpritePoint[T]
   p1 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] SpriteLine::equal(Self[T], Self[T]) -> Bool
 
 pub(all) struct SpritePoint[T] {
   x : T
   y : T
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] SpritePoint::equal(Self[T], Self[T]) -> Bool
 
 pub(all) struct SpriteQuad[T] {
   p0 : SpritePoint[T]
@@ -245,6 +269,7 @@ pub(all) struct SpriteQuad[T] {
   p2 : SpritePoint[T]
   p3 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] SpriteQuad::equal(Self[T], Self[T]) -> Bool
 
 pub(all) struct SpriteRect[T] {
   x : T
@@ -252,14 +277,15 @@ pub(all) struct SpriteRect[T] {
   width : T
   height : T
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] SpriteRect::equal(Self[T], Self[T]) -> Bool
 
 pub(all) struct SpriteTriangle[T] {
   p0 : SpritePoint[T]
   p1 : SpritePoint[T]
   p2 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
+pub fn[T : Eq] SpriteTriangle::equal(Self[T], Self[T]) -> Bool
 
 // Type aliases
 
 // Traits
-

@@ -58,15 +58,18 @@ pub(all) enum Mode {
   ReportColorScheme
   InBandSizeReports
 } derive(Eq, @debug.Debug)
+pub fn Mode::equal(Self, Self) -> Bool
 pub fn Mode::tag(Self) -> ModeTag
 
 type ModePacked derive(Eq, @debug.Debug)
 pub fn ModePacked::default() -> Self
 pub fn ModePacked::empty() -> Self
+pub fn ModePacked::equal(Self, Self) -> Bool
 pub fn ModePacked::get(Self, Mode) -> Bool
 pub fn ModePacked::set(Self, Mode, Bool) -> Self
 
 type ModeState derive(Eq, @debug.Debug)
+pub fn ModeState::equal(Self, Self) -> Bool
 pub fn ModeState::get(Self, Mode) -> Bool
 pub fn ModeState::get_report(Self, ModeTag) -> Report
 pub fn ModeState::new() -> Self
@@ -76,11 +79,13 @@ pub fn ModeState::set(Self, Mode, Bool) -> Self
 
 type ModeTag derive(Eq, @debug.Debug)
 pub fn ModeTag::ansi(Self) -> Bool
+pub fn ModeTag::equal(Self, Self) -> Bool
 pub fn ModeTag::raw(Self) -> UInt16
 pub fn ModeTag::value(Self) -> UInt16
 
 type Report derive(Eq, @debug.Debug)
 pub fn Report::encode(Self) -> Bytes
+pub fn Report::equal(Self, Self) -> Bool
 pub fn Report::state(Self) -> ReportState
 pub fn Report::tag(Self) -> ModeTag
 
@@ -92,8 +97,8 @@ pub(all) enum ReportState {
   PermanentlyReset
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
+pub fn ReportState::equal(Self, Self) -> Bool
 
 // Type aliases
 
 // Traits
-

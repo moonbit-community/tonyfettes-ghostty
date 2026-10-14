@@ -1,15 +1,15 @@
 ///|
-const OctantMin : UInt = 0x1CD00U
+const OctantMin : UInt32 = 0x1CD00U
 
 ///|
-const OctantMax : UInt = 0x1CDE5U
+const OctantMax : UInt32 = 0x1CDE5U
 
 ///|
 fn draw1cc1b_1cc1e(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   let w = width.reinterpret_as_int()
@@ -46,10 +46,10 @@ fn draw1cc1b_1cc1e(
 
 ///|
 fn draw1cc21_1cc2f(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(metrics)
@@ -95,10 +95,10 @@ fn draw1cc21_1cc2f(
 
 ///|
 fn draw1cd00_1cde5(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)
@@ -134,10 +134,10 @@ fn draw1cd00_1cde5(
 
 ///|
 fn draw1ce16_1ce19(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   let w = width.reinterpret_as_int()
@@ -182,10 +182,10 @@ fn draw1ce16_1ce19(
 
 ///|
 fn draw1ce51_1ce8f(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(metrics)
@@ -251,10 +251,10 @@ fn draw1ce51_1ce8f(
 
 ///|
 fn draw1ce90_1ceaf(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)

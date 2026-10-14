@@ -6,16 +6,16 @@
 /// `packed == 0`. Being a scalar (not a `#valtype` enum) lets it sit inline in
 /// a `#valtype` `CellStyle`; its representation stays internal to this package,
 /// reached only through the constructors and accessors below.
-struct StyleColor(UInt) derive(Eq, Debug, Hash)
+struct StyleColor(UInt32) derive(Eq, Debug, Hash)
 
 ///|
-const StyleColorTagShift : Int = 24
+const StyleColorTagShift : Int32 = 24
 
 ///|
-const StyleColorPaletteTag : UInt = 1
+const StyleColorPaletteTag : UInt32 = 1
 
 ///|
-const StyleColorRgbTag : UInt = 2
+const StyleColorRgbTag : UInt32 = 2
 
 ///|
 pub fn StyleColor::none() -> StyleColor {
@@ -36,7 +36,7 @@ pub fn StyleColor::rgb(value : @color.RGB) -> StyleColor {
 }
 
 ///|
-fn StyleColor::tag(self : StyleColor) -> UInt {
+fn StyleColor::tag(self : StyleColor) -> UInt32 {
   self.0 >> StyleColorTagShift
 }
 
@@ -97,37 +97,37 @@ pub fn StyleColor::resolve(
 // `SgrUnderline` ordinal, which matches Zig's `Underline` enum order).
 
 ///|
-const FlagBold : UInt = 0x1
+const FlagBold : UInt32 = 0x1
 
 ///|
-const FlagItalic : UInt = 0x2
+const FlagItalic : UInt32 = 0x2
 
 ///|
-const FlagFaint : UInt = 0x4
+const FlagFaint : UInt32 = 0x4
 
 ///|
-const FlagBlink : UInt = 0x8
+const FlagBlink : UInt32 = 0x8
 
 ///|
-const FlagInverse : UInt = 0x10
+const FlagInverse : UInt32 = 0x10
 
 ///|
-const FlagInvisible : UInt = 0x20
+const FlagInvisible : UInt32 = 0x20
 
 ///|
-const FlagStrikethrough : UInt = 0x40
+const FlagStrikethrough : UInt32 = 0x40
 
 ///|
-const FlagOverline : UInt = 0x80
+const FlagOverline : UInt32 = 0x80
 
 ///|
-const UnderlineShift : Int = 8
+const UnderlineShift : Int32 = 8
 
 ///|
-const UnderlineMask : UInt = 0x700
+const UnderlineMask : UInt32 = 0x700
 
 ///|
-fn underline_encode(value : @sgr.SgrUnderline) -> UInt {
+fn underline_encode(value : @sgr.SgrUnderline) -> UInt32 {
   match value {
     None => 0
     Single => 1
@@ -139,7 +139,7 @@ fn underline_encode(value : @sgr.SgrUnderline) -> UInt {
 }
 
 ///|
-fn underline_decode(bits : UInt) -> @sgr.SgrUnderline {
+fn underline_decode(bits : UInt32) -> @sgr.SgrUnderline {
   match bits {
     1 => Single
     2 => Double
@@ -165,23 +165,23 @@ pub struct CellStyle {
   priv fg_color : StyleColor
   priv bg_color : StyleColor
   priv underline_color : StyleColor
-  priv flags : UInt
+  priv flags : UInt32
 } derive(Eq, Debug, Hash)
 
 ///|
-fn CellStyle::has_flag(self : CellStyle, mask : UInt) -> Bool {
+fn CellStyle::has_flag(self : CellStyle, mask : UInt32) -> Bool {
   (self.flags & mask) != 0
 }
 
 ///|
-fn CellStyle::with_flags(self : CellStyle, flags : UInt) -> CellStyle {
+fn CellStyle::with_flags(self : CellStyle, flags : UInt32) -> CellStyle {
   { ..self, flags, }
 }
 
 ///|
 fn CellStyle::with_flag(
   self : CellStyle,
-  mask : UInt,
+  mask : UInt32,
   value : Bool,
 ) -> CellStyle {
   self.with_flags(
@@ -277,7 +277,7 @@ pub fn CellStyle::with_fg_color(
   self : CellStyle,
   color : StyleColor,
 ) -> CellStyle {
-  { ..self, fg_color: color }
+  { ..self, fg_color: color, }
 }
 
 ///|
@@ -286,7 +286,7 @@ pub fn CellStyle::with_bg_color(
   self : CellStyle,
   color : StyleColor,
 ) -> CellStyle {
-  { ..self, bg_color: color }
+  { ..self, bg_color: color, }
 }
 
 ///|
@@ -294,7 +294,7 @@ fn CellStyle::with_underline_color(
   self : CellStyle,
   color : StyleColor,
 ) -> CellStyle {
-  { ..self, underline_color: color }
+  { ..self, underline_color: color, }
 }
 
 ///|
@@ -364,3 +364,35 @@ pub fn CellStyle::apply_attribute(
     Color256Fg(index) => self.with_fg_color(StyleColor::palette(index))
   }
 }
+
+///|
+pub extend StyleColor with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StyleColor with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StyleColor with @debug.Debug::{to_repr}
+
+///|
+pub extend StyleColor with Hash::{hash, hash_combine}
+
+///|
+pub extend CellStyle with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CellStyle with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CellStyle with @debug.Debug::{to_repr}
+
+///|
+pub extend CellStyle with Hash::{hash, hash_combine}

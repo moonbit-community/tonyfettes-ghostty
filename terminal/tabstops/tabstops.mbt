@@ -1,12 +1,12 @@
 ///|
-const UnitBits : Int = 8
+const UnitBits : Int32 = 8
 
 ///|
 const DefaultTabstopInterval : @size.CellCountInt = 8
 
 ///|
 struct TerminalTabstopsState {
-  cols : Int
+  cols : Int32
   // One bit per column, packed 8-to-a-byte. Fixed `entry_count(cols)` wide —
   // never grown, only `fill`/indexed in place — so a `FixedArray` is the bare
   // contiguous buffer without the growable `Array` wrapper.
@@ -87,22 +87,22 @@ pub fn TerminalTabstopsState::reset(
 }
 
 ///|
-fn entry(col : Int) -> Int {
+fn entry(col : Int32) -> Int32 {
   col / UnitBits
 }
 
 ///|
-fn index(col : Int) -> Int {
+fn index(col : Int32) -> Int32 {
   col % UnitBits
 }
 
 ///|
-fn unit_mask(idx : Int) -> Byte {
+fn unit_mask(idx : Int32) -> Byte {
   (1 << idx).to_byte()
 }
 
 ///|
-fn entry_count(cols : Int) -> Int {
+fn entry_count(cols : Int32) -> Int32 {
   if cols <= 0 {
     0
   } else {
@@ -113,7 +113,20 @@ fn entry_count(cols : Int) -> Int {
 ///|
 fn TerminalTabstopsState::in_bounds(
   self : TerminalTabstopsState,
-  col : Int,
+  col : Int32,
 ) -> Bool {
   col >= 0 && col < self.cols
 }
+
+///|
+pub extend TerminalTabstopsState with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalTabstopsState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalTabstopsState with @debug.Debug::{to_repr}

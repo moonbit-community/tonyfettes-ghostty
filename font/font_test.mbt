@@ -1,6 +1,6 @@
 ///|
 test "glyph fields" {
-  let glyph = Glyph::{
+  let glyph = @font.Glyph::{
     width: 10U,
     height: 11U,
     offset_x: -1,
@@ -18,7 +18,7 @@ test "glyph fields" {
 
 ///|
 test "face metrics estimates and calc" {
-  let face : FaceMetrics = {
+  let face : @font.FaceMetrics = {
     px_per_em: 16.0,
     cell_width: 8.4,
     ascent: 12.0,
@@ -43,7 +43,7 @@ test "face metrics estimates and calc" {
   assert_eq(face.underline_position(), -1.0125)
   assert_eq(face.strikethrough_position(), 3.88125)
 
-  let metrics = Metrics::calc(face)
+  let metrics = @font.Metrics::calc(face)
   assert_eq(metrics.cell_width, 8U)
   assert_eq(metrics.cell_height, 18U)
   assert_eq(metrics.cell_baseline, 5U)
@@ -57,7 +57,7 @@ test "face metrics estimates and calc" {
 
 ///|
 test "face metrics explicit values override estimates" {
-  let face : FaceMetrics = {
+  let face : @font.FaceMetrics = {
     px_per_em: 16.0,
     cell_width: 8.0,
     ascent: 12.0,
@@ -84,7 +84,7 @@ test "face metrics explicit values override estimates" {
 
 ///|
 test "face metrics ic width estimate is capped by double cell width" {
-  let face : FaceMetrics = {
+  let face : @font.FaceMetrics = {
     px_per_em: 20.0,
     cell_width: 4.0,
     ascent: 20.0,
@@ -104,37 +104,37 @@ test "face metrics ic width estimate is capped by double cell width" {
 
 ///|
 test "metric modifier parse" {
-  guard Modifier::parse("100") == Absolute(100) else {
+  guard @font.Modifier::parse("100") == Absolute(100) else {
     fail("expected absolute modifier")
   }
-  guard Modifier::parse("-100") == Absolute(-100) else {
+  guard @font.Modifier::parse("-100") == Absolute(-100) else {
     fail("expected negative absolute modifier")
   }
-  guard Modifier::parse("20%") == Percent(1.2) else {
+  guard @font.Modifier::parse("20%") == Percent(1.2) else {
     fail("expected positive percent modifier")
   }
-  guard Modifier::parse("-20%") == Percent(0.8) else {
+  guard @font.Modifier::parse("-20%") == Percent(0.8) else {
     fail("expected negative percent modifier")
   }
-  guard Modifier::parse("-120%") == Percent(0.0) else {
+  guard @font.Modifier::parse("-120%") == Percent(0.0) else {
     fail("expected percent lower bound clamp")
   }
-  try Modifier::parse("") catch {
+  try @font.Modifier::parse("") catch {
     InvalidFormat => ()
   } noraise {
     _ => fail("expected empty metric modifier to be invalid")
   }
-  try Modifier::parse("%") catch {
+  try @font.Modifier::parse("%") catch {
     InvalidFormat => ()
   } noraise {
     _ => fail("expected missing percent value to be invalid")
   }
-  try Modifier::parse("abc%") catch {
+  try @font.Modifier::parse("abc%") catch {
     InvalidFormat => ()
   } noraise {
     _ => fail("expected invalid percent value to be invalid")
   }
-  try Modifier::parse("abc") catch {
+  try @font.Modifier::parse("abc") catch {
     InvalidFormat => ()
   } noraise {
     _ => fail("expected invalid absolute value to be invalid")
@@ -143,7 +143,7 @@ test "metric modifier parse" {
 
 ///|
 test "metric modifier set lookup" {
-  let set = ModifierSet::new()
+  let set = @font.ModifierSet::new()
   guard set.get(CellWidth) == None else {
     fail("expected empty modifier set lookup")
   }
@@ -155,8 +155,8 @@ test "metric modifier set lookup" {
 
 ///|
 test "font variation id init and str" {
-  let id = FontVariationId::init(b"wght".view())
-  guard id == { a: b'w', b: b'g', c: b'h', d: b't' } else {
+  let id = @font.FontVariationId::init(b"wght".exact_view())
+  guard id == { a: b'w', b: b'g', c: b'h', d: b't', } else {
     fail("expected variation id fields")
   }
   assert_eq(id.str(), b"wght")
@@ -164,17 +164,17 @@ test "font variation id init and str" {
 
 ///|
 test "panic font variation id requires four bytes" {
-  ignore(FontVariationId::init(b"wgh".view()))
+  ignore(@font.FontVariationId::init(b"wgh".exact_view()))
 }
 
 ///|
 test "descriptor hash and variation copy" {
-  let variation = FontVariation::{
-    id: { a: b'w', b: b'g', c: b'h', d: b't' },
+  let variation = @font.FontVariation::{
+    id: { a: b'w', b: b'g', c: b'h', d: b't', },
     value: 700.5,
   }
   let variations = [variation]
-  let descriptor = Descriptor::new(
+  let descriptor = @font.Descriptor::new(
     family=Some("A"),
     style=Some("Regular"),
     codepoint=65U,
@@ -182,7 +182,7 @@ test "descriptor hash and variation copy" {
     bold=true,
     variations~,
   )
-  variations.push({ id: { a: b's', b: b'l', c: b'n', d: b't' }, value: -5.0 })
+  variations.push({ id: { a: b's', b: b'l', c: b'n', d: b't', }, value: -5.0, })
 
   guard descriptor.family == Some("A") else {
     fail("expected descriptor family")
@@ -199,18 +199,18 @@ test "descriptor hash and variation copy" {
   guard descriptor.hashcode() != 0U else {
     fail("descriptor hash should include populated fields")
   }
-  let other = Descriptor::new(family=Some("B"))
+  let other = @font.Descriptor::new(family=Some("B"))
   guard descriptor.hashcode() != other.hashcode() else {
     fail("descriptor family names should affect hash")
   }
 
-  let fractional = Descriptor::new(
+  let fractional = @font.Descriptor::new(
     family=Some("A"),
     style=Some("Regular"),
     codepoint=65U,
     size=12.0,
     bold=true,
-    variations=[{ id: { a: b'w', b: b'g', c: b'h', d: b't' }, value: 700.6 }],
+    variations=[{ id: { a: b'w', b: b'g', c: b'h', d: b't', }, value: 700.6, }],
   )
   guard descriptor.hashcode() == fractional.hashcode() else {
     fail("descriptor variation hash follows upstream integer truncation")
@@ -219,22 +219,34 @@ test "descriptor hash and variation copy" {
 
 ///|
 test "codepoint map lookup priority and hash" {
-  let map = CodepointMap::new()
+  let map = @font.CodepointMap::new()
   guard map.get(1U) == None else { fail("expected empty map miss") }
-  map.add({ range: (1U, 1U), descriptor: Descriptor::new(family=Some("A")) })
+  map.add({
+    range: (1U, 1U),
+    descriptor: @font.Descriptor::new(family=Some("A")),
+  })
   guard map.get(1U) is Some(first) && first.family == Some("A") else {
     fail("expected exact range lookup")
   }
 
-  map.add({ range: (1U, 2U), descriptor: Descriptor::new(family=Some("B")) })
+  map.add({
+    range: (1U, 2U),
+    descriptor: @font.Descriptor::new(family=Some("B")),
+  })
   guard map.get(1U) is Some(priority) && priority.family == Some("B") else {
     fail("expected later entry to take priority")
   }
   guard map.get(0U) == None else { fail("expected low miss") }
   guard map.get(3U) == None else { fail("expected high miss") }
 
-  map.add({ range: (3U, 4U), descriptor: Descriptor::new(family=Some("C")) })
-  map.add({ range: (5U, 6U), descriptor: Descriptor::new(family=Some("D")) })
+  map.add({
+    range: (3U, 4U),
+    descriptor: @font.Descriptor::new(family=Some("C")),
+  })
+  map.add({
+    range: (5U, 6U),
+    descriptor: @font.Descriptor::new(family=Some("D")),
+  })
   guard map.get(3U) is Some(c) && c.family == Some("C") else {
     fail("expected independent later range")
   }
@@ -242,16 +254,28 @@ test "codepoint map lookup priority and hash" {
     fail("expected prior priority range to remain")
   }
 
-  let same = CodepointMap::new()
-  same.add({ range: (1U, 1U), descriptor: Descriptor::new(family=Some("A")) })
-  same.add({ range: (1U, 2U), descriptor: Descriptor::new(family=Some("B")) })
-  same.add({ range: (3U, 4U), descriptor: Descriptor::new(family=Some("C")) })
-  same.add({ range: (5U, 6U), descriptor: Descriptor::new(family=Some("D")) })
+  let same = @font.CodepointMap::new()
+  same.add({
+    range: (1U, 1U),
+    descriptor: @font.Descriptor::new(family=Some("A")),
+  })
+  same.add({
+    range: (1U, 2U),
+    descriptor: @font.Descriptor::new(family=Some("B")),
+  })
+  same.add({
+    range: (3U, 4U),
+    descriptor: @font.Descriptor::new(family=Some("C")),
+  })
+  same.add({
+    range: (5U, 6U),
+    descriptor: @font.Descriptor::new(family=Some("D")),
+  })
   assert_eq(map.hashcode(), same.hashcode())
-  let different = CodepointMap::new()
+  let different = @font.CodepointMap::new()
   different.add({
     range: (1U, 1U),
-    descriptor: Descriptor::new(family=Some("A")),
+    descriptor: @font.Descriptor::new(family=Some("A")),
   })
   guard map.hashcode() != different.hashcode() else {
     fail("codepoint map hash should include all entries")
@@ -260,16 +284,16 @@ test "codepoint map lookup priority and hash" {
 
 ///|
 test "codepoint map owns immutable descriptor variations" {
-  let variation = FontVariation::{
-    id: { a: b'w', b: b'g', c: b'h', d: b't' },
+  let variation = @font.FontVariation::{
+    id: { a: b'w', b: b'g', c: b'h', d: b't', },
     value: 700.5,
   }
   let variations = [variation]
-  let map = CodepointMap::new()
-  map.add({ range: (1U, 1U), descriptor: Descriptor::new(variations~) })
+  let map = @font.CodepointMap::new()
+  map.add({ range: (1U, 1U), descriptor: @font.Descriptor::new(variations~), })
   let original_hash = map.hashcode()
 
-  variations[0] = { id: { a: b's', b: b'l', c: b'n', d: b't' }, value: -5.0 }
+  variations[0] = { id: { a: b's', b: b'l', c: b'n', d: b't', }, value: -5.0, }
   variations.push(variation)
 
   guard map.get(1U) is Some(stored) else { fail("expected stored descriptor") }
