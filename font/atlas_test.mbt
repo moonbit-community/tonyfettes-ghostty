@@ -1,18 +1,18 @@
 ///|
 test "atlas format depth" {
-  assert_eq(AtlasFormat::Grayscale.depth(), 1)
-  assert_eq(AtlasFormat::Bgr.depth(), 3)
-  assert_eq(AtlasFormat::Bgra.depth(), 4)
+  assert_eq(@font.AtlasFormat::Grayscale.depth(), 1)
+  assert_eq(@font.AtlasFormat::Bgr.depth(), 3)
+  assert_eq(@font.AtlasFormat::Bgra.depth(), 4)
 }
 
 ///|
 test "atlas reserve empty region" {
-  let atlas = Atlas::new(4U, Grayscale)
+  let atlas = @font.Atlas::new(4U, Grayscale)
   let modified = atlas.modified
   let region = atlas.reserve(0U, 0U) catch {
     AtlasFull => fail("empty atlas region should fit")
   }
-  guard region == { x: 0U, y: 0U, width: 0U, height: 0U } else {
+  guard region == { x: 0U, y: 0U, width: 0U, height: 0U, } else {
     fail("expected empty region")
   }
   assert_eq(atlas.modified, modified)
@@ -20,7 +20,7 @@ test "atlas reserve empty region" {
 
 ///|
 test "atlas exact fit" {
-  let atlas = Atlas::new(34U, Grayscale)
+  let atlas = @font.Atlas::new(34U, Grayscale)
   let modified = atlas.modified
   ignore(
     atlas.reserve(32U, 32U) catch {
@@ -37,7 +37,7 @@ test "atlas exact fit" {
 
 ///|
 test "atlas does not fit due to border" {
-  let atlas = Atlas::new(32U, Grayscale)
+  let atlas = @font.Atlas::new(32U, Grayscale)
   try atlas.reserve(32U, 32U) catch {
     AtlasFull => ()
   } noraise {
@@ -47,7 +47,7 @@ test "atlas does not fit due to border" {
 
 ///|
 test "atlas fits multiple regions" {
-  let atlas = Atlas::new(32U, Grayscale)
+  let atlas = @font.Atlas::new(32U, Grayscale)
   ignore(
     atlas.reserve(15U, 30U) catch {
       AtlasFull => fail("expected first region")
@@ -67,8 +67,8 @@ test "atlas fits multiple regions" {
 
 ///|
 test "atlas fit raises y across skyline nodes" {
-  let atlas = Atlas::new(10U, Grayscale)
-  atlas.nodes = [{ x: 1U, y: 1U, width: 2U }, { x: 3U, y: 5U, width: 4U }]
+  let atlas = @font.Atlas::new(10U, Grayscale)
+  atlas.nodes = [{ x: 1U, y: 1U, width: 2U, }, { x: 3U, y: 5U, width: 4U, }]
   let reg = atlas.reserve(4U, 1U) catch {
     AtlasFull => fail("expected region across skyline nodes")
   }
@@ -79,7 +79,7 @@ test "atlas fit raises y across skyline nodes" {
 
 ///|
 test "atlas writes data" {
-  let atlas = Atlas::new(32U, Grayscale)
+  let atlas = @font.Atlas::new(32U, Grayscale)
   let reg = atlas.reserve(2U, 2U) catch { AtlasFull => fail("expected region") }
   let old = atlas.modified
   atlas.set(reg, [1, 2, 3, 4])
@@ -94,7 +94,7 @@ test "atlas writes data" {
 
 ///|
 test "atlas writes data from larger source" {
-  let atlas = Atlas::new(32U, Grayscale)
+  let atlas = @font.Atlas::new(32U, Grayscale)
   let reg = atlas.reserve(2U, 2U) catch { AtlasFull => fail("expected region") }
   let old = atlas.modified
   atlas.set_from_larger(
@@ -118,7 +118,7 @@ test "atlas writes data from larger source" {
 
 ///|
 test "atlas grow" {
-  let atlas = Atlas::new(4U, Grayscale)
+  let atlas = @font.Atlas::new(4U, Grayscale)
   let reg = atlas.reserve(2U, 2U) catch {
     AtlasFull => fail("expected initial region")
   }
@@ -154,7 +154,7 @@ test "atlas grow" {
 
 ///|
 test "atlas grow same size is no-op" {
-  let atlas = Atlas::new(4U, Grayscale)
+  let atlas = @font.Atlas::new(4U, Grayscale)
   let modified = atlas.modified
   let resized = atlas.resized
   atlas.grow(atlas.size)
@@ -164,7 +164,7 @@ test "atlas grow same size is no-op" {
 
 ///|
 test "atlas writes BGR data" {
-  let atlas = Atlas::new(32U, Bgr)
+  let atlas = @font.Atlas::new(32U, Bgr)
   let reg = atlas.reserve(1U, 2U) catch { AtlasFull => fail("expected region") }
   atlas.set(reg, [1, 2, 3, 4, 5, 6])
   let depth = atlas.format.depth().to_uint().reinterpret_as_int()
@@ -178,7 +178,7 @@ test "atlas writes BGR data" {
 
 ///|
 test "atlas grow BGR" {
-  let atlas = Atlas::new(4U, Bgr)
+  let atlas = @font.Atlas::new(4U, Bgr)
   let reg = atlas.reserve(2U, 2U) catch {
     AtlasFull => fail("expected initial region")
   }
@@ -243,7 +243,7 @@ test "atlas grow BGR" {
 
 ///|
 test "atlas clear resets data and nodes" {
-  let atlas = Atlas::new(4U, Grayscale)
+  let atlas = @font.Atlas::new(4U, Grayscale)
   let reg = atlas.reserve(2U, 2U) catch {
     AtlasFull => fail("expected initial region")
   }
@@ -251,7 +251,7 @@ test "atlas clear resets data and nodes" {
   let old = atlas.modified
   atlas.clear()
   guard atlas.modified > old else { fail("expected clear to modify atlas") }
-  guard atlas.nodes == [{ x: 1U, y: 1U, width: 2U }] else {
+  guard atlas.nodes == [{ x: 1U, y: 1U, width: 2U, }] else {
     fail("expected initial node after clear")
   }
   guard !atlas.data.contains(1) &&
@@ -264,12 +264,12 @@ test "atlas clear resets data and nodes" {
 
 ///|
 test "panic atlas set rejects out-of-bounds region" {
-  let atlas = Atlas::new(4U, Grayscale)
-  atlas.set({ x: 3U, y: 1U, width: 1U, height: 1U }, [1])
+  let atlas = @font.Atlas::new(4U, Grayscale)
+  atlas.set({ x: 3U, y: 1U, width: 1U, height: 1U, }, [1])
 }
 
 ///|
 test "panic atlas grow cannot shrink" {
-  let atlas = Atlas::new(4U, Grayscale)
+  let atlas = @font.Atlas::new(4U, Grayscale)
   atlas.grow(3U)
 }

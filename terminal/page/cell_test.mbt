@@ -3,9 +3,9 @@ test "page cell state/append_grapheme combines combining codepoints" {
   // The extras live in a `GraphemeTable`; the cell holds an id. Appending is
   // `GraphemeTable::append` (the old `with_grapheme_appended`), resolution is
   // `get`.
-  let graphemes = GraphemeTable::new()
+  let graphemes = @page.GraphemeTable::new()
   // Base: 'e' (U+0065) + combining acute accent (U+0301) → é
-  let mut cell = PageCellState::init(0x65U)
+  let mut cell = @page.PageCellState::init(0x65U)
   guard !cell.has_grapheme() && graphemes.get(cell.grapheme_id()) == [] else {
     fail("expected no grapheme before append")
   }
@@ -31,14 +31,14 @@ test "page cell state/append_grapheme combines combining codepoints" {
 
 ///|
 test "page cell state/a fresh cell has no grapheme extras" {
-  let graphemes = GraphemeTable::new()
-  let mut cell = PageCellState::init(0x41U)
+  let graphemes = @page.GraphemeTable::new()
+  let mut cell = @page.PageCellState::init(0x41U)
   cell = cell.with_grapheme_id(graphemes.append(cell.grapheme_id(), 0x301U))
   guard cell.has_grapheme() else {
     fail("precondition: cell should have grapheme")
   }
   // A blank cell is a fresh value; it carries no extras.
-  cell = PageCellState::new()
+  cell = @page.PageCellState::new()
   guard !cell.has_grapheme() &&
     graphemes.get(cell.grapheme_id()) == [] &&
     cell.codepoint() == 0U else {
@@ -50,7 +50,7 @@ test "page cell state/a fresh cell has no grapheme extras" {
 test "page row state/with builders pack and unpack flags" {
   // The `with_*` builders pack each flag into the `Int` bitfield; this checks the
   // full round-trip through every accessor.
-  let row = PageRowState::new()
+  let row = @page.PageRowState::new()
     .with_wrap(true)
     .with_wrap_continuation(true)
     .with_grapheme(true)
@@ -82,7 +82,7 @@ test "page row state/with builders pack and unpack flags" {
   }
 
   // A fresh descriptor is the all-zero value.
-  let blank = PageRowState::new()
+  let blank = @page.PageRowState::new()
   guard !blank.wrap() &&
     !blank.dirty() &&
     blank.semantic_prompt() == None &&
@@ -100,7 +100,7 @@ test "page row state/with builders pack and unpack flags" {
 
 ///|
 test "page row state/defaults and managed memory" {
-  let row = PageRowState::new()
+  let row = @page.PageRowState::new()
   guard !row.wrap() &&
     !row.wrap_continuation() &&
     !row.grapheme() &&
@@ -116,7 +116,7 @@ test "page row state/defaults and managed memory" {
 
 ///|
 test "page cell state/defaults and zero helpers" {
-  let cell = PageCellState::new()
+  let cell = @page.PageCellState::new()
   guard cell.codepoint() == 0U &&
     cell.style_id().is_default() &&
     cell.wide() == Narrow &&
@@ -135,7 +135,7 @@ test "page cell state/defaults and zero helpers" {
 
 ///|
 test "page cell state/codepoint grapheme and wide helpers" {
-  let mut cell = PageCellState::init(0x41U)
+  let mut cell = @page.PageCellState::init(0x41U)
   guard cell.codepoint() == 0x41U &&
     cell.has_text() &&
     !cell.has_grapheme() &&
@@ -159,7 +159,7 @@ test "page cell state/codepoint grapheme and wide helpers" {
 test "page cell state/set_codepoint clears grapheme extras" {
   // When set_codepoint is called with a new codepoint, the grapheme flag should
   // clear regardless of its prior state.
-  let mut cell = PageCellState::init(0x65U)
+  let mut cell = @page.PageCellState::init(0x65U)
   cell = cell.with_codepoint(0x65U, true) // flag grapheme but no extras yet
   guard cell.has_grapheme() else {
     fail("expected grapheme flag set when flagged but no extras")
@@ -174,14 +174,14 @@ test "page cell state/set_codepoint clears grapheme extras" {
 test "page cell state/hyperlink presence is a flag bit independent of any id" {
   // The cell records hyperlink membership as a flag bit only; the actual id lives
   // in the grid's per-row side array, not the cell.
-  let linked = PageCellState::new().with_hyperlink_present(true)
+  let linked = @page.PageCellState::new().with_hyperlink_present(true)
   guard linked.has_hyperlink() else {
     fail("with_hyperlink_present(true) must set the presence bit")
   }
   guard !linked.with_hyperlink_present(false).has_hyperlink() else {
     fail("with_hyperlink_present(false) must clear the presence bit")
   }
-  guard !PageCellState::new().has_hyperlink() else {
+  guard !@page.PageCellState::new().has_hyperlink() else {
     fail("a fresh cell must carry no hyperlink")
   }
 }
@@ -192,7 +192,7 @@ test "page cell state/background color lives in the style" {
   // it has no text and is `is_empty()` (no glyph) but `has_styling()`.
   let rgb = @color.RGB::new(1, 2, 3)
   let styles = @style.StyleTable::new()
-  let palette_cell = PageCellState::new(
+  let palette_cell = @page.PageCellState::new(
     style_id=styles.intern(
       @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
     ),
@@ -206,7 +206,7 @@ test "page cell state/background color lives in the style" {
     palette_cell.codepoint() == 0U else {
     fail("expected palette background carried in the style")
   }
-  let rgb_cell = PageCellState::new(
+  let rgb_cell = @page.PageCellState::new(
     style_id=styles.intern(
       @style.CellStyle::new().with_bg_color(@style.StyleColor::rgb(rgb)),
     ),
@@ -224,7 +224,7 @@ test "page cell state/style protected and semantic round-trip" {
   let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   let styles = @style.StyleTable::new()
-  let cell = PageCellState::new(
+  let cell = @page.PageCellState::new(
     style_id=styles.intern(style),
     protected_flag=true,
     semantic_content=Prompt,
@@ -241,7 +241,7 @@ test "page cell state/style protected and semantic round-trip" {
   }
 
   // A blank cell is just a fresh value.
-  let blank = PageCellState::new()
+  let blank = @page.PageCellState::new()
   guard blank.codepoint() == 0U &&
     blank.style_id().is_default() &&
     blank.wide() == Narrow &&

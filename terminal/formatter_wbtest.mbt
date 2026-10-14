@@ -143,7 +143,7 @@ test "formatter helpers/cover row bounds and sparse content paths" {
   formatter_write_content(
     formatter, sparse_state, missing_row_bounds, missing_buffer,
   )
-  guard formatter_row_is_blank(sparse_state, 9, { start_x: 0, end_x: 0 }) else {
+  guard formatter_row_is_blank(sparse_state, 9, { start_x: 0, end_x: 0, }) else {
     fail("expected blank-row helper to treat missing rows as blank")
   }
   sparse_state.grid = @grid.ScreenGridState::new(1, 2)

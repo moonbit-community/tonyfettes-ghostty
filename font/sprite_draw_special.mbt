@@ -1,9 +1,9 @@
 ///|
 fn underline(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -29,10 +29,10 @@ fn underline(
 
 ///|
 fn underline_double(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -67,10 +67,10 @@ fn underline_double(
 
 ///|
 fn underline_dashed(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -103,10 +103,10 @@ fn underline_dashed(
 
 ///|
 fn strikethrough(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -125,10 +125,10 @@ fn strikethrough(
 
 ///|
 fn overline(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -152,10 +152,10 @@ fn overline(
 
 ///|
 fn cursor_rect(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -174,10 +174,10 @@ fn cursor_rect(
 
 ///|
 fn cursor_hollow_rect(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -204,10 +204,10 @@ fn cursor_hollow_rect(
 
 ///|
 fn cursor_bar(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -226,10 +226,10 @@ fn cursor_bar(
 
 ///|
 fn cursor_underline(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(cp)
@@ -254,7 +254,7 @@ fn cursor_underline(
 }
 
 ///|
-fn saturating_add_uint(left : UInt, right : UInt) -> UInt {
+fn saturating_add_uint(left : UInt32, right : UInt32) -> UInt32 {
   if left > 0xFFFFFFFFU - right {
     0xFFFFFFFFU
   } else {

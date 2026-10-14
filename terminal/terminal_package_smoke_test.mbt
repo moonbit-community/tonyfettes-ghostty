@@ -1,19 +1,19 @@
 ///|
 struct PackageSurfaceLogRecorder {
-  mut call_count : Int
-  levels : Array[SystemLogLevel]
+  mut call_count : Int32
+  levels : Array[@terminal.SystemLogLevel]
   messages : Array[Bytes]
 } derive(Eq, Debug)
 
 ///|
 fn PackageSurfaceLogRecorder::new() -> PackageSurfaceLogRecorder {
-  { call_count: 0, levels: [], messages: [] }
+  { call_count: 0, levels: [], messages: [], }
 }
 
 ///|
 fn PackageSurfaceLogRecorder::record(
   self : PackageSurfaceLogRecorder,
-  level : SystemLogLevel,
+  level : @terminal.SystemLogLevel,
   message : Bytes,
 ) -> Unit {
   self.call_count += 1
@@ -24,8 +24,8 @@ fn PackageSurfaceLogRecorder::record(
 ///|
 fn package_smoke_key_event(
   key : @input.Key,
-  mods? : @input.KeyMods = @input.KeyMods::new(),
-  utf8? : Bytes = b"",
+  mods~ : @input.KeyMods = @input.KeyMods::new(),
+  utf8~ : Bytes = b"",
 ) -> @input.KeyEvent {
   let event = @input.KeyEvent::new()
   event.set_key(key)
@@ -53,17 +53,17 @@ fn package_smoke_mouse_event(
 
 ///|
 test "terminal package smoke/metadata registry and system hooks" {
-  let info = build_info()
+  let info = @terminal.build_info()
   guard info.version_string().length() > 0 else {
     fail("expected build info version string")
   }
 
-  let entries = terminal_surface_types()
+  let entries = @terminal.terminal_surface_types()
   guard entries.length() == 22 else {
     fail("expected the translated types.zig registry to stay complete")
   }
 
-  let string_info = terminal_surface_type("GhosttyString").unwrap()
+  let string_info = @terminal.terminal_surface_type("GhosttyString").unwrap()
   guard string_info.mapping() == Native &&
     string_info.moonbit_surface() == "String / Bytes" &&
     string_info.note() != None else {
@@ -71,12 +71,12 @@ test "terminal package smoke/metadata registry and system hooks" {
   }
 
   let recorder = PackageSurfaceLogRecorder::new()
-  terminal_system_clear_log()
-  terminal_system_set_log(fn(level, _scope, message) {
+  @terminal.terminal_system_clear_log()
+  @terminal.terminal_system_set_log(fn(level, _scope, message) {
     recorder.record(level, message)
   })
-  terminal_system_emit_log(Info, b"pkg", b"surface smoke")
-  terminal_system_clear_log()
+  @terminal.terminal_system_emit_log(Info, b"pkg", b"surface smoke")
+  @terminal.terminal_system_clear_log()
 
   guard recorder.call_count == 1 &&
     recorder.levels == [Info] &&
@@ -87,7 +87,7 @@ test "terminal package smoke/metadata registry and system hooks" {
 
 ///|
 test "terminal package smoke/terminal render formatter and graphics surface" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(4, 2, 8U, 16U) == Success else {
     fail("expected resize before package smoke terminal snapshot")
   }
@@ -108,19 +108,19 @@ test "terminal package smoke/terminal render formatter and graphics surface" {
     fail("expected terminal cell query surface")
   }
 
-  let formatter = Formatter::new_terminal(
+  let formatter = @terminal.Formatter::new_terminal(
     terminal,
-    FormatterOptions::new(
+    @terminal.FormatterOptions::new(
       Plain,
       selection=Some(selection),
-      extra=FormatterTerminalExtra::none(),
+      extra=@terminal.FormatterTerminalExtra::none(),
     ),
   )
   guard formatter.format() == b"B\nD" else {
     fail("expected formatter package smoke path")
   }
 
-  let render = RenderState::new()
+  let render = @terminal.RenderState::new()
   render.update(terminal)
   let rows = render.row_iterator()
   guard render.rows() == 2 &&
@@ -162,7 +162,7 @@ test "terminal package smoke/input helpers and encoders" {
     fail("expected focus and paste helper smoke path")
   }
 
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   terminal.mode_set(CursorKeys, true)
   terminal.mode_set(MouseEventAny, true)
   terminal.mode_set(MouseFormatSgr, true)

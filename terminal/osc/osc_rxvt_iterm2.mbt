@@ -43,7 +43,7 @@ fn parse_iterm2_command(buffer : BytesView) -> Command? {
 }
 
 ///|
-fn parse_iterm2_copy(buffer : BytesView, separator : Int?) -> Command? {
+fn parse_iterm2_copy(buffer : BytesView, separator : Int32?) -> Command? {
   let value_start = match separator {
     Some(index) => index + 1
     None => return None
@@ -69,7 +69,7 @@ fn parse_iterm2_copy(buffer : BytesView, separator : Int?) -> Command? {
 }
 
 ///|
-fn parse_iterm2_current_dir(buffer : BytesView, separator : Int?) -> Command? {
+fn parse_iterm2_current_dir(buffer : BytesView, separator : Int32?) -> Command? {
   let value_start = match separator {
     Some(index) => index + 1
     None => return None
@@ -84,8 +84,8 @@ fn parse_iterm2_current_dir(buffer : BytesView, separator : Int?) -> Command? {
 ///|
 fn slice_equals_bytes(
   bytes : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
   expected : Bytes,
 ) -> Bool {
   if end_ - start != expected.length() {
@@ -106,8 +106,8 @@ fn slice_equals_bytes(
 ///|
 fn slice_equals_ascii_ignore_case_bytes(
   bytes : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
   expected : Bytes,
 ) -> Bool {
   if end_ - start != expected.length() {

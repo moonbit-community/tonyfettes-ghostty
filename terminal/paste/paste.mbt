@@ -107,7 +107,7 @@ fn contains_bracketed_paste_end(data : Bytes) -> Bool {
 }
 
 ///|
-fn bytes_equal_at(haystack : Bytes, start : Int, needle : Bytes) -> Bool {
+fn bytes_equal_at(haystack : Bytes, start : Int32, needle : Bytes) -> Bool {
   let mut index = 0
   while index < needle.length() {
     if haystack[start + index] != needle[index] {
@@ -117,3 +117,9 @@ fn bytes_equal_at(haystack : Bytes, start : Int, needle : Bytes) -> Bool {
   }
   true
 }
+
+///|
+pub extend PasteOptions with Eq::{not_equal, equal}
+
+///|
+pub extend PasteOptions with @debug.Debug::{to_repr}

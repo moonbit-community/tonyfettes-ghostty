@@ -21,10 +21,10 @@ const SpriteSevenEighths : Double = 0.875
 
 ///|
 fn draw2580_259f(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)
@@ -149,25 +149,25 @@ fn draw2580_259f(
         1.0,
       )
     0x2596 =>
-      quadrant(metrics, canvas, { tl: false, tr: false, bl: true, br: false })
+      quadrant(metrics, canvas, { tl: false, tr: false, bl: true, br: false, })
     0x2597 =>
-      quadrant(metrics, canvas, { tl: false, tr: false, bl: false, br: true })
+      quadrant(metrics, canvas, { tl: false, tr: false, bl: false, br: true, })
     0x2598 =>
-      quadrant(metrics, canvas, { tl: true, tr: false, bl: false, br: false })
+      quadrant(metrics, canvas, { tl: true, tr: false, bl: false, br: false, })
     0x2599 =>
-      quadrant(metrics, canvas, { tl: true, tr: false, bl: true, br: true })
+      quadrant(metrics, canvas, { tl: true, tr: false, bl: true, br: true, })
     0x259A =>
-      quadrant(metrics, canvas, { tl: true, tr: false, bl: false, br: true })
+      quadrant(metrics, canvas, { tl: true, tr: false, bl: false, br: true, })
     0x259B =>
-      quadrant(metrics, canvas, { tl: true, tr: true, bl: true, br: false })
+      quadrant(metrics, canvas, { tl: true, tr: true, bl: true, br: false, })
     0x259C =>
-      quadrant(metrics, canvas, { tl: true, tr: true, bl: false, br: true })
+      quadrant(metrics, canvas, { tl: true, tr: true, bl: false, br: true, })
     0x259D =>
-      quadrant(metrics, canvas, { tl: false, tr: true, bl: false, br: false })
+      quadrant(metrics, canvas, { tl: false, tr: true, bl: false, br: false, })
     0x259E =>
-      quadrant(metrics, canvas, { tl: false, tr: true, bl: true, br: false })
+      quadrant(metrics, canvas, { tl: false, tr: true, bl: true, br: false, })
     0x259F =>
-      quadrant(metrics, canvas, { tl: false, tr: true, bl: true, br: true })
+      quadrant(metrics, canvas, { tl: false, tr: true, bl: true, br: true, })
     _ => abort("unreachable block element")
   }
 }

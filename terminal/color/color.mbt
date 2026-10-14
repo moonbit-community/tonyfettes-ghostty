@@ -8,7 +8,7 @@ pub suberror ColorParseError {
 /// 0-7 = b. Abstract (constructor-only): build with `RGB::new`, read via
 /// `r`/`g`/`b`. The newtype is a transparent scalar, so it stays unboxed and
 /// flat inside `Array[RGB]`, and can be carried as a `#valtype` enum payload.
-struct RGB(UInt) derive(Eq, Debug)
+struct RGB(UInt32) derive(Eq, Debug)
 
 ///|
 pub fn RGB::new(r : Byte, g : Byte, b : Byte) -> RGB {
@@ -164,7 +164,7 @@ pub fn Dynamic::next(self : Dynamic) -> Dynamic? {
 }
 
 ///|
-const PaletteLengthInt : Int = 256
+const PaletteLengthInt : Int32 = 256
 
 ///|
 fn default_palette_value() -> Array[RGB] {
@@ -441,12 +441,12 @@ struct DynamicRGB {
 
 ///|
 pub fn DynamicRGB::unset() -> DynamicRGB {
-  { override_: None, default_: None }
+  { override_: None, default_: None, }
 }
 
 ///|
 pub fn DynamicRGB::init(default_color : RGB) -> DynamicRGB {
-  { override_: None, default_: Some(default_color) }
+  { override_: None, default_: Some(default_color), }
 }
 
 ///|
@@ -882,8 +882,8 @@ fn parse_rgb_spec(value : BytesView) -> RGB raise ColorParseError {
 ///|
 fn parse_hex_component(
   value : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
 ) -> Byte raise ColorParseError {
   let width = end_ - start
   guard width >= 1 && width <= 4 else { raise InvalidFormat }
@@ -912,8 +912,8 @@ fn parse_hex_component(
 ///|
 fn parse_intensity_component(
   value : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
 ) -> Byte raise ColorParseError {
   guard start < end_ else { raise InvalidFormat }
 
@@ -956,7 +956,7 @@ fn parse_intensity_component(
 }
 
 ///|
-fn find_char(value : BytesView, start : Int, target : Byte) -> Int? {
+fn find_char(value : BytesView, start : Int32, target : Byte) -> Int32? {
   let mut i = start
   while i < value.length() {
     if value[i] == target {
@@ -968,7 +968,7 @@ fn find_char(value : BytesView, start : Int, target : Byte) -> Int? {
 }
 
 ///|
-fn hex_digit(value : Byte) -> Int? {
+fn hex_digit(value : Byte) -> Int32? {
   if value >= b'0' && value <= b'9' {
     Some(value.to_int() - b'0'.to_int())
   } else if value >= b'a' && value <= b'f' {
@@ -979,3 +979,51 @@ fn hex_digit(value : Byte) -> Int? {
     None
   }
 }
+
+///|
+pub extend ColorParseError with Eq::{not_equal, equal}
+
+///|
+pub extend ColorParseError with @debug.Debug::{to_repr}
+
+///|
+pub extend RGB with Eq::{not_equal, equal}
+
+///|
+pub extend RGB with @debug.Debug::{to_repr}
+
+///|
+pub extend Name with Eq::{not_equal, equal}
+
+///|
+pub extend Name with @debug.Debug::{to_repr}
+
+///|
+pub extend Special with Eq::{not_equal, equal}
+
+///|
+pub extend Special with @debug.Debug::{to_repr}
+
+///|
+pub extend Dynamic with Eq::{not_equal, equal}
+
+///|
+pub extend Dynamic with @debug.Debug::{to_repr}
+
+///|
+pub extend DynamicRGB with Eq::{not_equal, equal}
+
+///|
+pub extend DynamicRGB with @debug.Debug::{to_repr}
+
+///|
+pub extend DynamicPalette with Eq::{not_equal, equal}
+
+///|
+pub extend DynamicPalette with @debug.Debug::{to_repr}
+
+///|
+pub extend TerminalColors with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalColors with @debug.Debug::{to_repr}

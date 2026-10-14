@@ -46,6 +46,9 @@ pub(all) enum SgrAttribute {
   Color256Bg(Byte)
   Color256Fg(Byte)
 } derive(Eq, @debug.Debug)
+pub fn SgrAttribute::equal(Self, Self) -> Bool
+pub fn SgrAttribute::not_equal(Self, Self) -> Bool
+pub fn SgrAttribute::to_repr(Self) -> @debug.Repr
 
 type SgrParser derive(@debug.Debug)
 pub fn SgrParser::from_params(ArrayView[UInt16], @seplist.SepList) -> Self
@@ -54,6 +57,7 @@ pub fn SgrParser::next(Self) -> SgrAttribute?
 pub fn SgrParser::reset(Self) -> Unit
 pub fn SgrParser::set_params(Self, Array[UInt16], Array[Byte]) -> @result_code.TerminalResultCode
 pub fn SgrParser::set_view(Self, ArrayView[UInt16], @seplist.SepList) -> Unit
+pub fn SgrParser::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SgrUnderline {
   None
@@ -63,13 +67,18 @@ pub(all) enum SgrUnderline {
   Dotted
   Dashed
 } derive(Eq, @debug.Debug)
+pub fn SgrUnderline::equal(Self, Self) -> Bool
+pub fn SgrUnderline::not_equal(Self, Self) -> Bool
+pub fn SgrUnderline::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SgrUnknown {
   full : ReadOnlyArray[UInt16]
   partial : ArrayView[UInt16]
 } derive(Eq, @debug.Debug)
+pub fn SgrUnknown::equal(Self, Self) -> Bool
+pub fn SgrUnknown::not_equal(Self, Self) -> Bool
+pub fn SgrUnknown::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

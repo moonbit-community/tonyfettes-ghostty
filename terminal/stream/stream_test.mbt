@@ -1,6 +1,6 @@
 ///|
 struct Recorder {
-  actions : Array[StreamAction]
+  actions : Array[@stream.StreamAction]
   deinitialized : Array[Bool]
 }
 
@@ -20,10 +20,14 @@ impl StreamHandler for Recorder with fn deinit(self) {
 }
 
 ///|
-fn new_stream() -> (Stream[Recorder], Array[StreamAction], Array[Bool]) {
-  let actions : Array[StreamAction] = []
+fn new_stream() -> (
+  @stream.Stream[Recorder],
+  Array[@stream.StreamAction],
+  Array[Bool],
+) {
+  let actions : Array[@stream.StreamAction] = []
   let deinitialized : Array[Bool] = []
-  (Stream::new({ actions, deinitialized }), actions, deinitialized)
+  (@stream.Stream::new({ actions, deinitialized, }), actions, deinitialized)
 }
 
 ///|
@@ -47,7 +51,7 @@ test "stream/invalid utf8 emits replacement char" {
 ///|
 test "stream/incomplete utf8 completes across slices" {
   let (stream, actions, _) = new_stream()
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   stream.next_slice([0xE0])
   guard actions == expected_empty else {
     fail("expected decoder to hold incomplete prefix")
@@ -80,8 +84,8 @@ test "stream/c0 controls map to base actions" {
       StreamHorizontalTab(1),
       StreamLinefeed,
       StreamCarriageReturn,
-      StreamInvokeCharset({ bank: Gl, charset: G1, locking: false }),
-      StreamInvokeCharset({ bank: Gl, charset: G0, locking: false }),
+      StreamInvokeCharset({ bank: Gl, charset: G1, locking: false, }),
+      StreamInvokeCharset({ bank: Gl, charset: G0, locking: false, }),
     ] else {
     fail("expected C0 controls to map to stream actions")
   }
@@ -93,7 +97,7 @@ test "stream/ignored escape sequence does not block later text" {
   stream.next_slice(b"\x1B(Bz")
   guard actions ==
     [
-      StreamConfigureCharset({ slot: G0, charset: Ascii }),
+      StreamConfigureCharset({ slot: G0, charset: Ascii, }),
       StreamPrint(b'z'.to_uint()),
     ] else {
     fail("expected configured charset before later text")
@@ -127,7 +131,7 @@ test "stream/incomplete escape at slice end leaves no actions" {
   let (stream, actions, _) = new_stream()
   stream.next(0x1B)
   stream.next_slice(b"[")
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected no actions for incomplete CSI slice")
   }
@@ -150,7 +154,7 @@ test "stream/ignored c0 and parser execute fallback stay silent" {
   stream.next(0x02)
   stream.next(0x1B)
   stream.next(0x18)
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected ignored control path to stay silent")
   }
@@ -161,7 +165,7 @@ test "stream/csi placeholder returns to ground" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[1Hz")
   guard actions ==
-    [StreamCursorPos({ row: 1, col: 1 }), StreamPrint(b'z'.to_uint())] else {
+    [StreamCursorPos({ row: 1, col: 1, }), StreamPrint(b'z'.to_uint())] else {
     fail("expected text after implemented CUP dispatch")
   }
 }
@@ -396,7 +400,7 @@ test "stream/slice walker handles in-flight escape after printable prefix" {
   guard actions ==
     [
       StreamPrint(b'a'.to_uint()),
-      StreamConfigureCharset({ slot: G0, charset: Ascii }),
+      StreamConfigureCharset({ slot: G0, charset: Ascii, }),
     ] else {
     fail("expected slice walker to finish escape after printable prefix")
   }
@@ -496,10 +500,10 @@ test "stream/esc configure charset subset" {
   stream.next_slice(b"\x1B(B\x1B)A\x1B*0\x1B+B\x1B-B")
   guard actions ==
     [
-      StreamConfigureCharset({ slot: G0, charset: Ascii }),
-      StreamConfigureCharset({ slot: G1, charset: British }),
-      StreamConfigureCharset({ slot: G2, charset: DecSpecial }),
-      StreamConfigureCharset({ slot: G3, charset: Ascii }),
+      StreamConfigureCharset({ slot: G0, charset: Ascii, }),
+      StreamConfigureCharset({ slot: G1, charset: British, }),
+      StreamConfigureCharset({ slot: G2, charset: DecSpecial, }),
+      StreamConfigureCharset({ slot: G3, charset: Ascii, }),
     ] else {
     fail("expected charset configuration subset")
   }
@@ -526,13 +530,13 @@ test "stream/esc invoke charset subset" {
   stream.next_slice(b"\x1BN\x1BO\x1Bn\x1Bo\x1B~\x1B}\x1B|")
   guard actions ==
     [
-      StreamInvokeCharset({ bank: Gl, charset: G2, locking: true }),
-      StreamInvokeCharset({ bank: Gl, charset: G3, locking: true }),
-      StreamInvokeCharset({ bank: Gl, charset: G2, locking: false }),
-      StreamInvokeCharset({ bank: Gl, charset: G3, locking: false }),
-      StreamInvokeCharset({ bank: Gr, charset: G1, locking: false }),
-      StreamInvokeCharset({ bank: Gr, charset: G2, locking: false }),
-      StreamInvokeCharset({ bank: Gr, charset: G3, locking: false }),
+      StreamInvokeCharset({ bank: Gl, charset: G2, locking: true, }),
+      StreamInvokeCharset({ bank: Gl, charset: G3, locking: true, }),
+      StreamInvokeCharset({ bank: Gl, charset: G2, locking: false, }),
+      StreamInvokeCharset({ bank: Gl, charset: G3, locking: false, }),
+      StreamInvokeCharset({ bank: Gr, charset: G1, locking: false, }),
+      StreamInvokeCharset({ bank: Gr, charset: G2, locking: false, }),
+      StreamInvokeCharset({ bank: Gr, charset: G3, locking: false, }),
     ] else {
     fail("expected ESC invoke-charset subset")
   }
@@ -719,7 +723,7 @@ test "stream/csi save and restore cursor controls" {
     [
       StreamLeftAndRightMarginAmbiguous,
       StreamRestoreCursor,
-      StreamLeftAndRightMargin({ top_left: 1, bottom_right: 0 }),
+      StreamLeftAndRightMargin({ top_left: 1, bottom_right: 0, }),
     ] else {
     fail("expected save/restore cursor control subset")
   }
@@ -764,12 +768,12 @@ test "stream/csi cursor position and tab movement subset" {
       StreamCarriageReturn,
       StreamCursorUp(CursorMovement(2)),
       StreamCarriageReturn,
-      StreamCursorPos({ row: 1, col: 1 }),
-      StreamCursorPos({ row: 3, col: 1 }),
-      StreamCursorPos({ row: 4, col: 5 }),
+      StreamCursorPos({ row: 1, col: 1, }),
+      StreamCursorPos({ row: 3, col: 1, }),
+      StreamCursorPos({ row: 4, col: 5, }),
       StreamHorizontalTab(1),
       StreamHorizontalTabBack(6),
-      StreamCursorPos({ row: 1, col: 2 }),
+      StreamCursorPos({ row: 1, col: 2, }),
     ] else {
     fail("expected cursor position and tab movement subset")
   }
@@ -804,12 +808,12 @@ test "stream/csi margins subset" {
   )
   guard actions ==
     [
-      StreamTopAndBottomMargin({ top_left: 0, bottom_right: 0 }),
-      StreamTopAndBottomMargin({ top_left: 3, bottom_right: 0 }),
-      StreamTopAndBottomMargin({ top_left: 4, bottom_right: 5 }),
+      StreamTopAndBottomMargin({ top_left: 0, bottom_right: 0, }),
+      StreamTopAndBottomMargin({ top_left: 3, bottom_right: 0, }),
+      StreamTopAndBottomMargin({ top_left: 4, bottom_right: 5, }),
       StreamLeftAndRightMarginAmbiguous,
-      StreamLeftAndRightMargin({ top_left: 6, bottom_right: 0 }),
-      StreamLeftAndRightMargin({ top_left: 7, bottom_right: 8 }),
+      StreamLeftAndRightMargin({ top_left: 6, bottom_right: 0, }),
+      StreamLeftAndRightMargin({ top_left: 7, bottom_right: 8, }),
     ] else {
     fail("expected margin subset")
   }
@@ -838,7 +842,7 @@ test "stream/csi save and restore mode subset" {
 test "stream/csi margin and mode invalid forms stay silent" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[>1r\x1B[>2s\x1B[1;2;3r\x1B[1;2;3s")
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected invalid margin and mode forms to stay silent")
   }
@@ -899,7 +903,7 @@ test "stream/csi device and protected invalid forms stay silent" {
   stream.next_slice(
     b"\x1B[1;2n\x1B[?5;6n\x1B[$p\x1B[1;2$p\x1B[3\"q\x1B[2$}\x1B[$}\x1B[?0$}\x1B[!c",
   )
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected invalid CSI device and protected forms to stay silent")
   }
@@ -917,7 +921,7 @@ test "stream/csi sgr subset" {
       StreamSetAttribute(Bold),
       StreamSetAttribute(Underline(Curly)),
       StreamSetAttribute(DirectColorFg(@color.RGB::new(1, 2, 3))),
-      StreamSetAttribute(Unknown({ full: [1, 2], partial: [1, 2] })),
+      StreamSetAttribute(Unknown({ full: [1, 2], partial: [1, 2], })),
       StreamSetAttribute(Color256Underline(9)),
     ] else {
     fail("expected CSI m SGR subset")
@@ -952,7 +956,7 @@ test "stream/csi modify key format invalid forms stay silent" {
   stream.next_slice(
     b"\x1B[>3m\x1B[>5m\x1B[>4;1m\x1B[>4;2;3m\x1B[=1m\x1B[?4m\x1B[0~",
   )
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected invalid CSI > m forms to stay silent")
   }
@@ -999,7 +1003,7 @@ test "stream/csi kitty keyboard upstream tolerance subset" {
 test "stream/csi kitty keyboard invalid forms stay silent" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[>32u\x1B[=32u\x1B[=1;4u\x1B[!u")
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected invalid CSI u forms to stay silent")
   }
@@ -1024,7 +1028,7 @@ test "stream/csi size report subset" {
 test "stream/csi invalid size report forms stay silent" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[19t\x1B[14;1t\x1B[21;2t\x1B[>14t")
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected invalid CSI t size-report forms to stay silent")
   }
@@ -1053,7 +1057,7 @@ test "stream/csi title stack subset" {
 test "stream/csi title stack rejects unsupported scopes and arity" {
   let (stream, actions, _) = new_stream()
   stream.next_slice(b"\x1B[22;1t\x1B[23;1t\x1B[22t\x1B[23t\x1B[22;0;5;9t")
-  let expected_empty : Array[StreamAction] = []
+  let expected_empty : Array[@stream.StreamAction] = []
   guard actions == expected_empty else {
     fail("expected invalid title stack forms to stay silent")
   }

@@ -1,6 +1,6 @@
 ///|
 test "terminal style/default state" {
-  let style = CellStyle::new()
+  let style = @style.CellStyle::new()
   guard style.is_default() else { fail("expected default style") }
   guard style.fg_color().is_default() else {
     fail("expected default foreground color")
@@ -24,7 +24,7 @@ test "terminal style/default state" {
 
 ///|
 test "terminal style/apply sgr flags and resets" {
-  let mut style = CellStyle::new()
+  let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   style = style.apply_attribute(Faint)
   style = style.apply_attribute(Italic)
@@ -72,7 +72,7 @@ test "terminal style/apply sgr flags and resets" {
 
 ///|
 test "terminal style/applies foreground background and underline colors" {
-  let mut style = CellStyle::new()
+  let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Color8Fg(Red))
   style = style.apply_attribute(Color8Bg(Blue))
   style = style.apply_attribute(BrightColor8Bg(BrightBlue))
@@ -89,7 +89,7 @@ test "terminal style/applies foreground background and underline colors" {
     fail("expected palette underline color")
   }
 
-  let mut palette_bg = CellStyle::new()
+  let mut palette_bg = @style.CellStyle::new()
   palette_bg = palette_bg.apply_attribute(Color8Bg(Blue))
   guard palette_bg.bg_color().palette_index() == Some(@color.Name::Blue.code()) else {
     fail("expected base palette background color")
@@ -132,7 +132,7 @@ test "terminal style/applies foreground background and underline colors" {
 
 ///|
 test "terminal style/unset resets whole style" {
-  let mut style = CellStyle::new()
+  let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
   style = style.apply_attribute(
     DirectColorFg(@color.RGB::new(0xAA, 0xBB, 0xCC)),
@@ -146,9 +146,9 @@ test "terminal style/unset resets whole style" {
 
 ///|
 test "terminal style/unknown sgr attribute is ignored" {
-  let mut style = CellStyle::new()
+  let mut style = @style.CellStyle::new()
   style = style.apply_attribute(Bold)
-  style = style.apply_attribute(Unknown({ full: [999], partial: [999] }))
+  style = style.apply_attribute(Unknown({ full: [999], partial: [999], }))
   guard style.bold() else {
     fail("expected unknown sgr attribute to leave existing style untouched")
   }

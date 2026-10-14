@@ -1,6 +1,6 @@
 ///|
 test "render state/new defaults and manual dirty setter" {
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
 
   guard state.rows() == 0 &&
     state.columns() == 0 &&
@@ -28,7 +28,7 @@ test "render state/new defaults and manual dirty setter" {
 
 ///|
 test "render state/update captures terminal snapshot and reverse colors" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   let background = @color.RGB::new(1, 2, 3)
   let foreground = @color.RGB::new(4, 5, 6)
   let cursor = @color.RGB::new(7, 8, 9)
@@ -39,7 +39,7 @@ test "render state/update captures terminal snapshot and reverse colors" {
   terminal.mode_set(ReverseColors, true)
   terminal.next_slice(b"\x1B[5 q")
 
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   state.update(terminal)
 
   guard state.dirty() == Full &&
@@ -60,8 +60,8 @@ test "render state/update captures terminal snapshot and reverse colors" {
 
 ///|
 test "render state/palette snapshot is cloned" {
-  let terminal = StreamTerminal::new()
-  let state = RenderState::new()
+  let terminal = @terminal.StreamTerminal::new()
+  let state = @terminal.RenderState::new()
   state.update(terminal)
 
   let palette = state.palette()
@@ -77,8 +77,8 @@ test "render state/palette snapshot is cloned" {
 
 ///|
 test "render state/update is false when snapshot is stable" {
-  let terminal = StreamTerminal::new()
-  let state = RenderState::new()
+  let terminal = @terminal.StreamTerminal::new()
+  let state = @terminal.RenderState::new()
 
   state.update(terminal)
   state.set_dirty(False)
@@ -93,8 +93,8 @@ test "render state/update is false when snapshot is stable" {
 
 ///|
 test "render state/update becomes partial after terminal mutation" {
-  let terminal = StreamTerminal::new()
-  let state = RenderState::new()
+  let terminal = @terminal.StreamTerminal::new()
+  let state = @terminal.RenderState::new()
 
   state.update(terminal)
   state.set_dirty(False)
@@ -110,8 +110,8 @@ test "render state/update becomes partial after terminal mutation" {
 
 ///|
 test "render state/hyperlink-only uri change dirties the row" {
-  let terminal = StreamTerminal::new()
-  let state = RenderState::new()
+  let terminal = @terminal.StreamTerminal::new()
+  let state = @terminal.RenderState::new()
 
   // Print 'A' carrying an OSC 8 hyperlink, snapshot, and settle to clean.
   terminal.next_slice(b"\x1B]8;;https://a.example\x07A\x1B]8;;\x07")
@@ -138,8 +138,8 @@ test "render state/hyperlink-only uri change dirties the row" {
 
 ///|
 test "render state/full reset reusing intern ids still forces damage" {
-  let terminal = StreamTerminal::new()
-  let state = RenderState::new()
+  let terminal = @terminal.StreamTerminal::new()
+  let state = @terminal.RenderState::new()
 
   // Print a red 'A' — the first non-default style mints style id 1. Snapshot and
   // settle to clean.
@@ -163,12 +163,12 @@ test "render state/full reset reusing intern ids still forces damage" {
 
 ///|
 test "render state/cursor viewport follows terminal viewport" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(5, 2, 0U, 0U) == Success else {
     fail("expected resize before cursor viewport test")
   }
 
-  let state = RenderState::new()
+  let state = @terminal.RenderState::new()
   terminal.next_slice(b"a\r\nb\r\nc\x1B[2;1H")
   guard terminal.scrollback_rows() > 0U && terminal.cursor_y() == 1 else {
     fail(

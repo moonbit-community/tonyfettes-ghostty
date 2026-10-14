@@ -12,8 +12,8 @@ fn expect_row(
 // only a `StyleId`.
 fn ScreenGridState::cell_style(
   self : ScreenGridState,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
 ) -> @style.CellStyle {
   self.style_table.get(self.cells[row][col].style_id())
 }
@@ -25,8 +25,8 @@ fn ScreenGridState::cell_style(
 // that were unlinked without scrubbing the array).
 fn ScreenGridState::cell_hyperlink(
   self : ScreenGridState,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
 ) -> @hyperlink.CellHyperlink? {
   if self.cells[row][col].has_hyperlink() {
     self.hyperlink_table.get(self.link_id_at(row, col))
@@ -67,15 +67,15 @@ fn expect_cell(
 // value back into the grid slot directly.
 fn set_test_cell(
   grid : ScreenGridState,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
   cell : @page.PageCellState,
 ) -> Unit {
   grid.cells[row][col] = cell
 }
 
 ///|
-fn fill_ascii(grid : ScreenGridState, row : Int, chars : Array[Byte]) -> Unit {
+fn fill_ascii(grid : ScreenGridState, row : Int32, chars : Array[Byte]) -> Unit {
   for i in 0..<chars.length() {
     grid.write_cell(
       row,

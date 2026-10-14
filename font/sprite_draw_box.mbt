@@ -16,20 +16,20 @@ priv struct SpriteDrawLines {
 
 ///|
 fn sprite_draw_lines(
-  up? : SpriteDrawLineStyle = LineNone,
-  right? : SpriteDrawLineStyle = LineNone,
-  down? : SpriteDrawLineStyle = LineNone,
-  left? : SpriteDrawLineStyle = LineNone,
+  up~ : SpriteDrawLineStyle = LineNone,
+  right~ : SpriteDrawLineStyle = LineNone,
+  down~ : SpriteDrawLineStyle = LineNone,
+  left~ : SpriteDrawLineStyle = LineNone,
 ) -> SpriteDrawLines {
-  { up, right, down, left }
+  { up, right, down, left, }
 }
 
 ///|
 fn draw2500_257f(
-  cp : UInt,
+  cp : UInt32,
   canvas : SpriteCanvas,
-  width : UInt,
-  height : UInt,
+  width : UInt32,
+  height : UInt32,
   metrics : Metrics,
 ) -> Unit {
   ignore(width)
@@ -809,7 +809,7 @@ fn draw2500_257f(
           right=LineDouble,
         ),
       )
-    0x256D..=0x2573 => abort("box drawing arc and diagonal codepoint deferred")
+    0x256D..<=0x2573 => abort("box drawing arc and diagonal codepoint deferred")
     0x2574 => lines_char(metrics, canvas, sprite_draw_lines(left=LineLight))
     0x2575 => lines_char(metrics, canvas, sprite_draw_lines(up=LineLight))
     0x2576 => lines_char(metrics, canvas, sprite_draw_lines(right=LineLight))
@@ -1118,9 +1118,9 @@ fn lines_char(
 fn dash_horizontal(
   metrics : Metrics,
   canvas : SpriteCanvas,
-  count : UInt,
-  thick_px : UInt,
-  desired_gap : UInt,
+  count : UInt32,
+  thick_px : UInt32,
+  desired_gap : UInt32,
 ) -> Unit {
   guard count >= 2U && count <= 4U else {
     abort("box horizontal dash count outside supported range")
@@ -1165,9 +1165,9 @@ fn dash_horizontal(
 fn dash_vertical(
   metrics : Metrics,
   canvas : SpriteCanvas,
-  count : UInt,
-  thick_px : UInt,
-  desired_gap : UInt,
+  count : UInt32,
+  thick_px : UInt32,
+  desired_gap : UInt32,
 ) -> Unit {
   guard count >= 2U && count <= 4U else {
     abort("box vertical dash count outside supported range")

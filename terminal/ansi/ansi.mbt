@@ -95,7 +95,7 @@ pub(all) enum CursorStyle {
 } derive(Eq, Debug)
 
 ///|
-pub fn CursorStyle::ordinal(self : CursorStyle) -> Int {
+pub fn CursorStyle::ordinal(self : CursorStyle) -> Int32 {
   match self {
     Default => 0
     BlinkingBlock => 1
@@ -108,7 +108,7 @@ pub fn CursorStyle::ordinal(self : CursorStyle) -> Int {
 }
 
 ///|
-pub fn cursor_style_from_int(value : Int) -> CursorStyle? {
+pub fn cursor_style_from_int(value : Int32) -> CursorStyle? {
   match value {
     0 => Some(Default)
     1 => Some(BlinkingBlock)
@@ -154,7 +154,7 @@ pub(all) enum StatusDisplay {
 } derive(Eq, Debug)
 
 ///|
-pub fn StatusDisplay::ordinal(self : StatusDisplay) -> Int {
+pub fn StatusDisplay::ordinal(self : StatusDisplay) -> Int32 {
   match self {
     Main => 0
     StatusLine => 1
@@ -162,7 +162,7 @@ pub fn StatusDisplay::ordinal(self : StatusDisplay) -> Int {
 }
 
 ///|
-pub fn status_display_from_int(value : Int) -> StatusDisplay? {
+pub fn status_display_from_int(value : Int32) -> StatusDisplay? {
   match value {
     0 => Some(Main)
     1 => Some(StatusLine)
@@ -181,7 +181,7 @@ pub(all) enum ModifyKeyFormat {
 } derive(Eq, Debug)
 
 ///|
-pub fn ModifyKeyFormat::ordinal(self : ModifyKeyFormat) -> Int {
+pub fn ModifyKeyFormat::ordinal(self : ModifyKeyFormat) -> Int32 {
   match self {
     Legacy => 0
     CursorKeys => 1
@@ -193,7 +193,7 @@ pub fn ModifyKeyFormat::ordinal(self : ModifyKeyFormat) -> Int {
 }
 
 ///|
-pub fn modify_key_format_from_int(value : Int) -> ModifyKeyFormat? {
+pub fn modify_key_format_from_int(value : Int32) -> ModifyKeyFormat? {
   match value {
     0 => Some(Legacy)
     1 => Some(CursorKeys)
@@ -211,3 +211,45 @@ pub(all) enum ProtectedMode {
   Iso
   Dec
 } derive(Eq, Debug)
+
+///|
+pub extend C0 with Eq::{not_equal, equal}
+
+///|
+pub extend C0 with @debug.Debug::{to_repr}
+
+///|
+pub extend RenditionAspect with Eq::{not_equal, equal}
+
+///|
+pub extend RenditionAspect with @debug.Debug::{to_repr}
+
+///|
+pub extend CursorStyle with Eq::{not_equal, equal}
+
+///|
+pub extend CursorStyle with @debug.Debug::{to_repr}
+
+///|
+pub extend StatusLineType with Eq::{not_equal, equal}
+
+///|
+pub extend StatusLineType with @debug.Debug::{to_repr}
+
+///|
+pub extend StatusDisplay with Eq::{not_equal, equal}
+
+///|
+pub extend StatusDisplay with @debug.Debug::{to_repr}
+
+///|
+pub extend ModifyKeyFormat with Eq::{not_equal, equal}
+
+///|
+pub extend ModifyKeyFormat with @debug.Debug::{to_repr}
+
+///|
+pub extend ProtectedMode with Eq::{not_equal, equal}
+
+///|
+pub extend ProtectedMode with @debug.Debug::{to_repr}

@@ -128,3 +128,21 @@ pub fn MouseShape::from_string(value : String) -> MouseShape? {
   }
   None
 }
+
+///|
+pub extend MouseEvent with Eq::{not_equal, equal}
+
+///|
+pub extend MouseEvent with @debug.Debug::{to_repr}
+
+///|
+pub extend MouseFormat with Eq::{not_equal, equal}
+
+///|
+pub extend MouseFormat with @debug.Debug::{to_repr}
+
+///|
+pub extend MouseShape with Eq::{not_equal, equal}
+
+///|
+pub extend MouseShape with @debug.Debug::{to_repr}

@@ -1,7 +1,11 @@
 ///|
 /// Drive a full OSC command (every byte through `next`, then `end`) so the bench
 /// exercises the per-byte dispatch hot path plus the terminal parse/decode.
-fn bench_run(parser : OscParser, bytes : Bytes, terminator : Byte?) -> Unit {
+fn bench_run(
+  parser : @osc.OscParser,
+  bytes : Bytes,
+  terminator : Byte?,
+) -> Unit {
   for byte in bytes {
     parser.next(byte)
   }
@@ -10,7 +14,7 @@ fn bench_run(parser : OscParser, bytes : Bytes, terminator : Byte?) -> Unit {
 
 ///|
 test (b : @bench.T) {
-  let parser = OscParser::new()
+  let parser = @osc.OscParser::new()
   // Window title — the most frequent OSC in practice (shells emit it per prompt).
   let title = b"0;user@host:~/work/project — zsh"
   b.bench(name="title", fn() { b.keep(bench_run(parser, title, Some(0x07))) })

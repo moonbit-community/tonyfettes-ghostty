@@ -17,3 +17,9 @@ pub fn FocusEvent::encode(self : FocusEvent) -> Bytes {
     Lost => FocusLostBytes
   }
 }
+
+///|
+pub extend FocusEvent with Eq::{not_equal, equal}
+
+///|
+pub extend FocusEvent with @debug.Debug::{to_repr}

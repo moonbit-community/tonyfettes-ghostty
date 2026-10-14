@@ -137,3 +137,15 @@ fn ScreenSemanticState::set_prompt_kind(
     Continuation | Secondary => PromptContinuation
   }
 }
+
+///|
+pub extend SemanticClickMode with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticClickMode with @debug.Debug::{to_repr}
+
+///|
+pub extend ScreenSemanticState with Eq::{not_equal, equal}
+
+///|
+pub extend ScreenSemanticState with @debug.Debug::{to_repr}

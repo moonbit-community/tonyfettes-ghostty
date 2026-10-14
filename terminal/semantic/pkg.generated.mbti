@@ -19,21 +19,26 @@ pub fn ScreenSemanticState::clear_row_prompt(Self) -> Unit
 pub fn ScreenSemanticState::click(Self) -> SemanticClickMode
 pub fn ScreenSemanticState::cursor_content(Self) -> @page.SemanticContent
 pub fn ScreenSemanticState::cursor_content_clear_eol(Self) -> Bool
+pub fn ScreenSemanticState::equal(Self, Self) -> Bool
 pub fn ScreenSemanticState::full_reset(Self) -> Unit
 pub fn ScreenSemanticState::new() -> Self
+pub fn ScreenSemanticState::not_equal(Self, Self) -> Bool
 pub fn ScreenSemanticState::row_prompt(Self) -> @page.RowSemanticPrompt
 pub fn ScreenSemanticState::seen(Self) -> Bool
 pub fn ScreenSemanticState::set_output(Self) -> Unit
 pub fn ScreenSemanticState::set_row_prompt(Self, @page.RowSemanticPrompt) -> Unit
 pub fn ScreenSemanticState::start_input(Self, Bool) -> Unit
+pub fn ScreenSemanticState::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SemanticClickMode {
   None
   ClickEvents
   Cl(@osc.SemanticPromptClick)
 } derive(Eq, @debug.Debug)
+pub fn SemanticClickMode::equal(Self, Self) -> Bool
+pub fn SemanticClickMode::not_equal(Self, Self) -> Bool
+pub fn SemanticClickMode::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

@@ -1,19 +1,19 @@
 ///|
 struct RenderRowIterator {
   state : RenderState
-  mut y : Int
+  mut y : Int32
 }
 
 ///|
 struct RenderRowCells {
   state : RenderState
-  row : Int
-  mut x : Int
+  row : Int32
+  mut x : Int32
 }
 
 ///|
 pub fn RenderState::row_iterator(self : RenderState) -> RenderRowIterator {
-  { state: self, y: -1 }
+  { state: self, y: -1, }
 }
 
 ///|
@@ -59,7 +59,7 @@ pub fn RenderRowIterator::cells(self : RenderRowIterator) -> RenderRowCells? {
   if self.y < 0 || self.y >= self.state.row_states.length() {
     None
   } else {
-    Some({ state: self.state, row: self.y, x: -1 })
+    Some({ state: self.state, row: self.y, x: -1, })
   }
 }
 
@@ -125,7 +125,7 @@ pub fn RenderRowCells::cell_style(self : RenderRowCells) -> @style.CellStyle? {
 // grapheme table. Empty when the cell is not a grapheme cluster.
 pub fn RenderRowCells::cell_grapheme_codepoints(
   self : RenderRowCells,
-) -> ReadOnlyArray[UInt] {
+) -> ReadOnlyArray[UInt32] {
   match render_cell_at(self.state, self.row, self.x) {
     Some(cell) => self.state.grapheme_table.get(cell.grapheme_id())
     None => []

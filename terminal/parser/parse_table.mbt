@@ -1,12 +1,12 @@
 ///|
-const ActionMask : Int = 0x0F
+const ActionMask : Int32 = 0x0F
 
 ///|
 fn decode_transition(code : Byte) -> Transition {
   let packed = code.to_int()
   let state = parser_state_from_int(packed >> 4)
   let action = transition_action_from_int(packed & ActionMask)
-  { state, action }
+  { state, action, }
 }
 
 ///|

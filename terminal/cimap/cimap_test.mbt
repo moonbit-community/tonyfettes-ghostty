@@ -1,6 +1,6 @@
 ///|
 test "cimap/get and get_view are ascii case-insensitive" {
-  let entries : ReadOnlyArray[(String, Int)] = [
+  let entries : ReadOnlyArray[(String, Int32)] = [
     ("AliceBlue", 1),
     ("forest green", 2),
     ("black", 3),
@@ -18,7 +18,7 @@ test "cimap/get and get_view are ascii case-insensitive" {
 
 ///|
 test "cimap/misses return None" {
-  let entries : ReadOnlyArray[(String, Int)] = [("white", 1), ("red", 2)]
+  let entries : ReadOnlyArray[(String, Int32)] = [("white", 1), ("red", 2)]
   let map = @cimap.CiStrMap::from_entries(entries)
   guard map.get("green") == None else { fail("absent key") }
   guard map.get_view(b"whit") == None else { fail("prefix is not a match") }
@@ -30,7 +30,7 @@ test "cimap/misses return None" {
 
 ///|
 test "cimap/empty map" {
-  let entries : ReadOnlyArray[(String, Int)] = []
+  let entries : ReadOnlyArray[(String, Int32)] = []
   let map = @cimap.CiStrMap::from_entries(entries)
   guard map.get("anything") == None else { fail("empty map lookup") }
 }

@@ -21,7 +21,7 @@ test "kitty graphics wb/skips placements whose backing image is missing" {
     },
   ]
 
-  let graphics : KittyGraphics = { bridge, screen: Primary }
+  let graphics : KittyGraphics = { bridge, screen: Primary, }
   guard !(graphics.placement_iterator().next() is Some(_)) else {
     fail("expected missing-image placements to be skipped")
   }

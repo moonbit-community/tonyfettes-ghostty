@@ -8,13 +8,13 @@ const BuildKittyGraphics : Bool = true
 const BuildTmuxControlMode : Bool = false
 
 ///|
-const BuildVersionMajor : UInt = 0U
+const BuildVersionMajor : UInt32 = 0U
 
 ///|
-const BuildVersionMinor : UInt = 1U
+const BuildVersionMinor : UInt32 = 1U
 
 ///|
-const BuildVersionPatch : UInt = 0U
+const BuildVersionPatch : UInt32 = 0U
 
 ///|
 let current_build_version_pre : String? = None
@@ -32,25 +32,25 @@ pub(all) enum OptimizeMode {
 
 ///|
 struct BuildVersion {
-  major : UInt
-  minor : UInt
-  patch : UInt
+  major : UInt32
+  minor : UInt32
+  patch : UInt32
   pre : String?
   build : String?
 } derive(Eq, Debug)
 
 ///|
-pub fn BuildVersion::major(self : BuildVersion) -> UInt {
+pub fn BuildVersion::major(self : BuildVersion) -> UInt32 {
   self.major
 }
 
 ///|
-pub fn BuildVersion::minor(self : BuildVersion) -> UInt {
+pub fn BuildVersion::minor(self : BuildVersion) -> UInt32 {
   self.minor
 }
 
 ///|
-pub fn BuildVersion::patch(self : BuildVersion) -> UInt {
+pub fn BuildVersion::patch(self : BuildVersion) -> UInt32 {
   self.patch
 }
 
@@ -142,3 +142,21 @@ fn current_build_version() -> BuildVersion {
     build: current_build_version_build,
   }
 }
+
+///|
+pub extend OptimizeMode with Eq::{not_equal, equal}
+
+///|
+pub extend OptimizeMode with @debug.Debug::{to_repr}
+
+///|
+pub extend BuildVersion with Eq::{not_equal, equal}
+
+///|
+pub extend BuildVersion with @debug.Debug::{to_repr}
+
+///|
+pub extend BuildInfo with Eq::{not_equal, equal}
+
+///|
+pub extend BuildInfo with @debug.Debug::{to_repr}

@@ -12,7 +12,7 @@ pub fn FontVariationId::init(value : BytesView) -> FontVariationId {
   guard value.length() == 4 else {
     abort("FontVariationId requires four bytes")
   }
-  { a: value[0], b: value[1], c: value[2], d: value[3] }
+  { a: value[0], b: value[1], c: value[2], d: value[3], }
 }
 
 ///|
@@ -31,7 +31,7 @@ pub(all) struct FontVariation {
 pub(all) struct Descriptor {
   family : String?
   style : String?
-  codepoint : UInt
+  codepoint : UInt32
   size : Float
   bold : Bool
   italic : Bool
@@ -41,14 +41,14 @@ pub(all) struct Descriptor {
 
 ///|
 pub fn Descriptor::new(
-  family? : String? = None,
-  style? : String? = None,
-  codepoint? : UInt = 0U,
-  size? : Float = 0.0,
-  bold? : Bool = false,
-  italic? : Bool = false,
-  monospace? : Bool = false,
-  variations? : ArrayView[FontVariation] = [],
+  family~ : String? = None,
+  style~ : String? = None,
+  codepoint~ : UInt32 = 0U,
+  size~ : Float = 0.0,
+  bold~ : Bool = false,
+  italic~ : Bool = false,
+  monospace~ : Bool = false,
+  variations~ : ArrayView[FontVariation] = [],
 ) -> Descriptor {
   {
     family,
@@ -63,7 +63,7 @@ pub fn Descriptor::new(
 }
 
 ///|
-pub fn Descriptor::hashcode(self : Descriptor) -> UInt {
+pub fn Descriptor::hashcode(self : Descriptor) -> UInt32 {
   let hasher = Hasher(seed=0)
   self.hash_combine(hasher)
   hasher.finalize().reinterpret_as_uint()
@@ -86,7 +86,7 @@ fn Descriptor::hash_combine(self : Descriptor, hasher : Hasher) -> Unit {
 }
 
 ///|
-fn font_variation_id_to_uint(id : FontVariationId) -> UInt {
+fn font_variation_id_to_uint(id : FontVariationId) -> UInt32 {
   (id.a.to_uint() << 24) |
   (id.b.to_uint() << 16) |
   (id.c.to_uint() << 8) |
@@ -103,3 +103,21 @@ fn hash_optional_string(hasher : Hasher, value : String?) -> Unit {
     None => hasher.combine_bool(false)
   }
 }
+
+///|
+pub extend FontVariationId with Eq::{not_equal, equal}
+
+///|
+pub extend FontVariationId with @debug.Debug::{to_repr}
+
+///|
+pub extend FontVariation with Eq::{not_equal, equal}
+
+///|
+pub extend FontVariation with @debug.Debug::{to_repr}
+
+///|
+pub extend Descriptor with Eq::{not_equal, equal}
+
+///|
+pub extend Descriptor with @debug.Debug::{to_repr}

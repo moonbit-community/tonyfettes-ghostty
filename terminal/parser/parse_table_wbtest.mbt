@@ -1,7 +1,7 @@
 ///|
 
 ///|
-fn transition_action_ordinal(action : TransitionAction) -> Int {
+fn transition_action_ordinal(action : TransitionAction) -> Int32 {
   match action {
     None => 0
     Ignore => 1

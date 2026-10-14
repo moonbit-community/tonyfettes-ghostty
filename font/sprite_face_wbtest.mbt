@@ -22,7 +22,7 @@ fn sprite_face_test_metrics() -> Metrics {
 }
 
 ///|
-fn sprite_face_atlas_pixel(atlas : Atlas, x : UInt, y : UInt) -> Byte {
+fn sprite_face_atlas_pixel(atlas : Atlas, x : UInt32, y : UInt32) -> Byte {
   atlas.data[(y * atlas.size + x).reinterpret_as_int()]
 }
 
@@ -193,7 +193,7 @@ test "sprite face deferred box drawing codepoints return blank glyph" {
 test "sprite face deferred legacy supplement codepoints return blank glyph" {
   let face = SpriteFace::new(sprite_face_test_metrics())
   let atlas = Atlas::new(32U, Grayscale)
-  let deferred : ReadOnlyArray[UInt] = [
+  let deferred : ReadOnlyArray[UInt32] = [
     0x1CC1AU, 0x1CC1FU, 0x1CC30U, 0x1CCFFU, 0x1CDE6U, 0x1CE0BU, 0x1CE0CU, 0x1CE15U,
     0x1CE1AU,
   ]
@@ -212,7 +212,7 @@ test "sprite face deferred legacy supplement codepoints return blank glyph" {
 test "sprite face deferred legacy computing codepoints return blank glyph" {
   let face = SpriteFace::new(sprite_face_test_metrics())
   let atlas = Atlas::new(32U, Grayscale)
-  let deferred : ReadOnlyArray[UInt] = [
+  let deferred : ReadOnlyArray[UInt32] = [
     0x1FB3CU, 0x1FB68U, 0x1FB98U, 0x1FB9AU, 0x1FBA0U, 0x1FBBDU, 0x1FBD0U, 0x1FBE0U,
     0x1FBE8U,
   ]
@@ -818,7 +818,7 @@ test "sprite face renders every pure legacy computing arm" {
     }
   }
 
-  let singletons : ReadOnlyArray[UInt] = [
+  let singletons : ReadOnlyArray[UInt32] = [
     0x1FBAFU, 0x1FBCEU, 0x1FBCFU, 0x1FBE4U, 0x1FBE5U, 0x1FBE6U, 0x1FBE7U,
   ]
   for cp in singletons {

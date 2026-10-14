@@ -24,7 +24,7 @@ fn DesktopNotification::new(
   title : String,
   body : String,
 ) -> DesktopNotification {
-  { title, body }
+  { title, body, }
 }
 
 ///|
@@ -63,7 +63,7 @@ fn ConEmuProgressReport::new(
   state : ConEmuProgressState,
   progress : Byte?,
 ) -> ConEmuProgressReport {
-  { state, progress }
+  { state, progress, }
 }
 
 ///|
@@ -89,7 +89,7 @@ fn ConEmuXtermEmulation::new(
   keyboard : Bool?,
   output : Bool?,
 ) -> ConEmuXtermEmulation {
-  { keyboard, output }
+  { keyboard, output, }
 }
 
 ///|
@@ -109,7 +109,7 @@ const ConEmuSleepDefaultMs : UInt16 = 100
 const ConEmuSleepMaxMs : UInt16 = 10000
 
 ///|
-const ConEmuProgressMax : UInt = 100U
+const ConEmuProgressMax : UInt32 = 100U
 
 ///|
 fn parse_osc9_command(buffer : BytesView) -> Command {
@@ -156,7 +156,7 @@ fn desktop_notification_command(buffer : BytesView) -> Command {
 }
 
 ///|
-fn conemu_sleep_from_bytes(buffer : BytesView, start : Int) -> ConEmuSleep {
+fn conemu_sleep_from_bytes(buffer : BytesView, start : Int32) -> ConEmuSleep {
   match @ascii.parse_u32_ascii(buffer, start, buffer.length()) {
     Some(value) =>
       if value >= ConEmuSleepMaxMs.to_uint() {
@@ -201,7 +201,7 @@ fn conemu_comment_or_notification(buffer : BytesView) -> Command {
 ///|
 fn conemu_string_or_notification(
   buffer : BytesView,
-  separator_index : Int,
+  separator_index : Int32,
   builder : (String) -> Command,
 ) -> Command {
   if buffer.length() < separator_index {
@@ -266,3 +266,39 @@ fn conemu_progress_or_notification(buffer : BytesView) -> Command {
     None => ConEmuProgressReport(report)
   }
 }
+
+///|
+pub extend ConEmuTabTitleChange with Eq::{not_equal, equal}
+
+///|
+pub extend ConEmuTabTitleChange with @debug.Debug::{to_repr}
+
+///|
+pub extend ConEmuProgressState with Eq::{not_equal, equal}
+
+///|
+pub extend ConEmuProgressState with @debug.Debug::{to_repr}
+
+///|
+pub extend DesktopNotification with Eq::{not_equal, equal}
+
+///|
+pub extend DesktopNotification with @debug.Debug::{to_repr}
+
+///|
+pub extend ConEmuSleep with Eq::{not_equal, equal}
+
+///|
+pub extend ConEmuSleep with @debug.Debug::{to_repr}
+
+///|
+pub extend ConEmuProgressReport with Eq::{not_equal, equal}
+
+///|
+pub extend ConEmuProgressReport with @debug.Debug::{to_repr}
+
+///|
+pub extend ConEmuXtermEmulation with Eq::{not_equal, equal}
+
+///|
+pub extend ConEmuXtermEmulation with @debug.Debug::{to_repr}

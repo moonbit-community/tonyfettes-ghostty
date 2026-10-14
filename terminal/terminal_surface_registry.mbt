@@ -61,9 +61,9 @@ fn terminal_surface_type_info(
   upstream_name : String,
   mapping : TerminalSurfaceTypeMapping,
   moonbit_surface : String,
-  note? : String? = None,
+  note~ : String? = None,
 ) -> TerminalSurfaceTypeInfo {
-  { upstream_name, mapping, moonbit_surface, note }
+  { upstream_name, mapping, moonbit_surface, note, }
 }
 
 ///|
@@ -155,3 +155,15 @@ let terminal_surface_type_entries : ReadOnlyArray[TerminalSurfaceTypeInfo] = [
     ),
   ),
 ]
+
+///|
+pub extend TerminalSurfaceTypeMapping with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalSurfaceTypeMapping with @debug.Debug::{to_repr}
+
+///|
+pub extend TerminalSurfaceTypeInfo with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalSurfaceTypeInfo with @debug.Debug::{to_repr}

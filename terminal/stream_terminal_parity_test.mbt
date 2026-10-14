@@ -1,13 +1,13 @@
 ///|
 struct StreamTerminalParityRecorder {
   writes : Array[Bytes]
-  mut bell_count : Int
-  mut title_changed_count : Int
+  mut bell_count : Int32
+  mut title_changed_count : Int32
 }
 
 ///|
 fn StreamTerminalParityRecorder::new() -> StreamTerminalParityRecorder {
-  { writes: [], bell_count: 0, title_changed_count: 0 }
+  { writes: [], bell_count: 0, title_changed_count: 0, }
 }
 
 ///|
@@ -35,7 +35,7 @@ fn StreamTerminalParityRecorder::title_changed(
 ///|
 fn expect_parity_write(
   recorder : StreamTerminalParityRecorder,
-  index : Int,
+  index : Int32,
   expected : Bytes,
 ) -> Unit raise {
   guard recorder.writes[index] == expected else {
@@ -45,7 +45,7 @@ fn expect_parity_write(
 
 ///|
 fn expect_parity_cell(
-  terminal : StreamTerminal,
+  terminal : @terminal.StreamTerminal,
   row : @size.CellCountInt,
   col : @size.CellCountInt,
 ) -> @page.PageCellState {
@@ -54,7 +54,7 @@ fn expect_parity_cell(
 
 ///|
 fn expect_ascii_text(
-  terminal : StreamTerminal,
+  terminal : @terminal.StreamTerminal,
   row : @size.CellCountInt,
   start_col : @size.CellCountInt,
   expected : Bytes,
@@ -70,7 +70,7 @@ fn expect_ascii_text(
 
 ///|
 test "stream terminal parity/vt_write" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   terminal.next_slice(b"Hello")
 
@@ -84,7 +84,7 @@ test "stream terminal parity/vt_write" {
 
 ///|
 test "stream terminal parity/vt_write split escape sequence" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   terminal.next_slice(b"Hello \x1B")
   terminal.next_slice(b"[1mBold\x1B[0m")
@@ -102,7 +102,7 @@ test "stream terminal parity/vt_write split escape sequence" {
 ///|
 test "stream terminal parity/set write_pty callback" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(write_pty=fn(data) {
+  let terminal = @terminal.StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
   })
 
@@ -119,7 +119,7 @@ test "stream terminal parity/set write_pty callback" {
 ///|
 test "stream terminal parity/set bell callback" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(bell=fn() { recorder.bell() })
+  let terminal = @terminal.StreamTerminal::new(bell=fn() { recorder.bell() })
 
   terminal.next_slice(b"\x07")
   terminal.next_slice(b"\x07\x07")
@@ -132,7 +132,7 @@ test "stream terminal parity/set bell callback" {
 ///|
 test "stream terminal parity/set enquiry callback" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     enquiry=fn() { b"OK" },
   )
@@ -150,7 +150,7 @@ test "stream terminal parity/set enquiry callback" {
 ///|
 test "stream terminal parity/set xtversion callback" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     xtversion=fn() { "myterm 1.0" },
   )
@@ -168,7 +168,7 @@ test "stream terminal parity/set xtversion callback" {
 ///|
 test "stream terminal parity/xtversion without callback reports default" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(write_pty=fn(data) {
+  let terminal = @terminal.StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
   })
 
@@ -185,7 +185,7 @@ test "stream terminal parity/xtversion without callback reports default" {
 ///|
 test "stream terminal parity/set title_changed callback" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(title_changed=fn() {
+  let terminal = @terminal.StreamTerminal::new(title_changed=fn() {
     recorder.title_changed()
   })
 
@@ -203,7 +203,7 @@ test "stream terminal parity/set title_changed callback" {
 test "stream terminal parity/replaces and clears callbacks on the same terminal" {
   let first = StreamTerminalParityRecorder::new()
   let second = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { first.write_pty(data) },
     bell=fn() { first.bell() },
     title_changed=fn() { first.title_changed() },
@@ -251,7 +251,7 @@ test "stream terminal parity/replaces callbacks with default fallback paths" {
     @device.SecondaryDeviceAttributes::new(Vt220, 10, 0),
     @device.TertiaryDeviceAttributes::new(0U),
   )
-  let terminal = StreamTerminal::new(write_pty=fn(data) {
+  let terminal = @terminal.StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
   })
 
@@ -290,7 +290,7 @@ test "stream terminal parity/replaces callbacks with default fallback paths" {
 ///|
 test "stream terminal parity/set size callback" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     size=fn() { Some(@size_report.Size::new(24, 80, 8, 16)) },
   )
@@ -307,7 +307,7 @@ test "stream terminal parity/set size callback" {
 
 ///|
 test "stream terminal parity/metadata mode and reset controls" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   terminal.set_title("Hello")
   terminal.set_pwd("/workspace")
@@ -351,7 +351,7 @@ test "stream terminal parity/set device_attributes callback primary" {
     @device.SecondaryDeviceAttributes::new(Vt220, 10, 0),
     @device.TertiaryDeviceAttributes::new(0U),
   )
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     device_attributes=fn() { Some(attributes) },
   )
@@ -374,7 +374,7 @@ test "stream terminal parity/set device_attributes callback secondary" {
     @device.SecondaryDeviceAttributes::new(Vt220, 10, 0),
     @device.TertiaryDeviceAttributes::new(0U),
   )
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     device_attributes=fn() { Some(attributes) },
   )
@@ -397,7 +397,7 @@ test "stream terminal parity/set device_attributes callback tertiary" {
     @device.SecondaryDeviceAttributes::new(Vt220, 0, 0),
     @device.TertiaryDeviceAttributes::new(0xAABBCCDDU),
   )
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     device_attributes=fn() { Some(attributes) },
   )
@@ -415,7 +415,7 @@ test "stream terminal parity/set device_attributes callback tertiary" {
 ///|
 test "stream terminal parity/device_attributes without callback uses default" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(write_pty=fn(data) {
+  let terminal = @terminal.StreamTerminal::new(write_pty=fn(data) {
     recorder.write_pty(data)
   })
 
@@ -432,7 +432,7 @@ test "stream terminal parity/device_attributes without callback uses default" {
 ///|
 test "stream terminal parity/device_attributes callback none uses default" {
   let recorder = StreamTerminalParityRecorder::new()
-  let terminal = StreamTerminal::new(
+  let terminal = @terminal.StreamTerminal::new(
     write_pty=fn(data) { recorder.write_pty(data) },
     device_attributes=fn() { None },
   )
@@ -449,7 +449,7 @@ test "stream terminal parity/device_attributes callback none uses default" {
 
 ///|
 test "stream terminal parity/get title set via vt_write" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   terminal.next_slice(b"\x1B]2;VT Title\x1B\\")
 

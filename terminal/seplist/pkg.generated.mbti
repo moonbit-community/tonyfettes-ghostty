@@ -15,8 +15,8 @@ pub fn SepList::count(Self) -> Int
 pub fn SepList::init_empty() -> Self
 pub fn SepList::is_set(Self, Int) -> Bool
 pub fn SepList::set(Self, Int) -> Self
+pub fn SepList::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

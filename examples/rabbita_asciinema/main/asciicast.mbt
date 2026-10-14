@@ -10,27 +10,27 @@ priv enum CastKind {
 
 ///|
 priv struct CastEvent {
-  delay_ms : Int
+  delay_ms : Int32
   kind : CastKind
   data : String
 }
 
 ///|
 priv struct Cast {
-  version : Int
+  version : Int32
   title : String?
-  cols : Int
-  rows : Int
-  duration_ms : Int
+  cols : Int32
+  rows : Int32
+  duration_ms : Int32
   events : Array[CastEvent]
 }
 
 ///|
 priv struct CastHeader {
-  version : Int
+  version : Int32
   title : String?
-  cols : Int
-  rows : Int
+  cols : Int32
+  rows : Int32
 }
 
 ///|
@@ -65,7 +65,7 @@ fn sample_cast() -> String {
 }
 
 ///|
-fn seconds_to_ms(seconds : Double) -> Int {
+fn seconds_to_ms(seconds : Double) -> Int32 {
   let ms = (seconds * 1000.0).to_int()
   if ms < 0 {
     0
@@ -130,7 +130,7 @@ fn kind_from_code(code : String) -> CastKind {
 
 ///|
 fn event_from_json(
-  version : Int,
+  version : Int32,
   previous_time : Double,
   json : Json,
 ) -> (CastEvent, Double) raise {
@@ -141,13 +141,13 @@ fn event_from_json(
     seconds_to_ms(time)
   }
   let next_time = if version == 2 { time } else { previous_time + time }
-  ({ delay_ms: delay, kind: kind_from_code(code), data }, next_time)
+  ({ delay_ms: delay, kind: kind_from_code(code), data, }, next_time)
 }
 
 ///|
 fn parse_cast(source : String) -> ParseResult {
   let mut header : Json? = None
-  let raw_events : Array[(Int, Json)] = []
+  let raw_events : Array[(Int32, Json)] = []
   let mut line_no = 0
   for piece in source.split("\n") {
     line_no += 1

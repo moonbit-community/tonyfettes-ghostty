@@ -1,6 +1,6 @@
 ///|
 test "terminal saved cursor state/charset defaults and reset" {
-  let state = ScreenCharsetState::new()
+  let state = @pagelist.ScreenCharsetState::new()
   guard state.charset(G0) == Utf8 &&
     state.charset(G1) == Utf8 &&
     state.charset(G2) == Utf8 &&
@@ -34,7 +34,7 @@ test "terminal saved cursor state/charset defaults and reset" {
 
 ///|
 test "terminal saved cursor state/charset configure invoke and single shift" {
-  let state = ScreenCharsetState::new()
+  let state = @pagelist.ScreenCharsetState::new()
   state.configure(G1, DecSpecial)
   state.configure(G3, British)
   guard state.charset(G1) == DecSpecial && state.charset(G3) == British else {
@@ -63,7 +63,7 @@ test "terminal saved cursor state/charset configure invoke and single shift" {
 
 ///|
 test "terminal saved cursor state/restore defaults when empty" {
-  let state = ScreenSavedCursorState::new()
+  let state = @pagelist.ScreenSavedCursorState::new()
   guard !state.has_saved() else { fail("expected empty saved cursor state") }
 
   let saved = state.restore()
@@ -95,12 +95,12 @@ test "terminal saved cursor state/save captures snapshot values" {
   style = style.apply_attribute(Bold)
   style = style.apply_attribute(Color256Fg(9))
 
-  let charset = ScreenCharsetState::new()
+  let charset = @pagelist.ScreenCharsetState::new()
   charset.configure(G1, DecSpecial)
   charset.invoke(Gl, G1, false)
   charset.invoke(Gl, G2, true)
 
-  let state = ScreenSavedCursorState::new()
+  let state = @pagelist.ScreenSavedCursorState::new()
   state.save(cursor, style, true, true, charset)
   guard state.has_saved() else {
     fail("expected save to populate saved cursor state")
@@ -134,12 +134,12 @@ test "terminal saved cursor state/save captures snapshot values" {
 
 ///|
 test "terminal saved cursor state/latest save wins and reset clears state" {
-  let state = ScreenSavedCursorState::new()
+  let state = @pagelist.ScreenSavedCursorState::new()
 
   let first_cursor = @cursor.TerminalCursorState::new(24, 80)
   let mut first_style = @style.CellStyle::new()
   first_style = first_style.apply_attribute(Bold)
-  let first_charset = ScreenCharsetState::new()
+  let first_charset = @pagelist.ScreenCharsetState::new()
   first_charset.configure(G1, DecSpecial)
   state.save(first_cursor, first_style, false, false, first_charset)
 
@@ -147,7 +147,7 @@ test "terminal saved cursor state/latest save wins and reset clears state" {
   second_cursor.set_cursor_pos(2, 3, false)
   let mut second_style = @style.CellStyle::new()
   second_style = second_style.apply_attribute(Italic)
-  let second_charset = ScreenCharsetState::new()
+  let second_charset = @pagelist.ScreenCharsetState::new()
   second_charset.configure(G3, British)
   second_charset.invoke(Gr, G3, false)
   state.save(second_cursor, second_style, false, true, second_charset)

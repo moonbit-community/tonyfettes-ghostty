@@ -1,5 +1,5 @@
 ///|
-const KittyKeyboardStackLen : Int = 8
+const KittyKeyboardStackLen : Int32 = 8
 
 ///|
 const KittyKeyboardFlagsMask : Byte = 0x1F
@@ -12,7 +12,7 @@ struct TerminalInputFlags {
 
 ///|
 pub fn TerminalInputFlags::new() -> TerminalInputFlags {
-  { mouse_shift_capture: None, modify_other_keys_2: false }
+  { mouse_shift_capture: None, modify_other_keys_2: false, }
 }
 
 ///|
@@ -62,12 +62,12 @@ pub fn TerminalInputFlags::full_reset(self : TerminalInputFlags) -> Unit {
 ///|
 struct KittyKeyboardState {
   mut flags : Array[@stream.KittyKeyboardFlags]
-  mut idx : Int
+  mut idx : Int32
 } derive(Eq, Debug)
 
 ///|
 pub fn KittyKeyboardState::new() -> KittyKeyboardState {
-  { flags: empty_kitty_keyboard_stack(), idx: 0 }
+  { flags: empty_kitty_keyboard_stack(), idx: 0, }
 }
 
 ///|
@@ -168,7 +168,7 @@ fn clear_kitty_keyboard_flags(current : Byte, mask : Byte) -> Byte {
 }
 
 ///|
-fn wrapped_kitty_keyboard_index(index : Int) -> Int {
+fn wrapped_kitty_keyboard_index(index : Int32) -> Int32 {
   if index < 0 {
     KittyKeyboardStackLen - 1
   } else if index >= KittyKeyboardStackLen {
@@ -177,3 +177,15 @@ fn wrapped_kitty_keyboard_index(index : Int) -> Int {
     index
   }
 }
+
+///|
+pub extend TerminalInputFlags with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalInputFlags with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyKeyboardState with Eq::{not_equal, equal}
+
+///|
+pub extend KittyKeyboardState with @debug.Debug::{to_repr}

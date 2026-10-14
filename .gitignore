@@ -2,3 +2,11 @@
 _build/
 .mooncakes/
 .moonagent/
+
+# Upstream reference source is not part of the published MoonBit package.
+/upstream/
+
+# Local worktrees and handoff artifacts must stay out of release packages.
+/worktrees/
+/.tmp/
+/GTK_RENDERER_HANDOFF.md

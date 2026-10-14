@@ -82,18 +82,18 @@ pub fn FaceMetrics::strikethrough_position(self : FaceMetrics) -> Double {
 
 ///|
 pub(all) struct Metrics {
-  mut cell_width : UInt
-  mut cell_height : UInt
-  mut cell_baseline : UInt
-  mut underline_position : UInt
-  mut underline_thickness : UInt
-  mut strikethrough_position : UInt
-  mut strikethrough_thickness : UInt
-  mut overline_position : Int
-  mut overline_thickness : UInt
-  mut box_thickness : UInt
-  mut cursor_thickness : UInt
-  mut cursor_height : UInt
+  mut cell_width : UInt32
+  mut cell_height : UInt32
+  mut cell_baseline : UInt32
+  mut underline_position : UInt32
+  mut underline_thickness : UInt32
+  mut strikethrough_position : UInt32
+  mut strikethrough_thickness : UInt32
+  mut overline_position : Int32
+  mut overline_thickness : UInt32
+  mut box_thickness : UInt32
+  mut cursor_thickness : UInt32
+  mut cursor_height : UInt32
   mut icon_height : Double
   mut icon_height_single : Double
   mut face_width : Double
@@ -130,7 +130,7 @@ pub suberror ModifierParseError {
 ///|
 pub(all) enum Modifier {
   Percent(Double)
-  Absolute(Int)
+  Absolute(Int32)
 } derive(Eq, Debug)
 
 ///|
@@ -293,8 +293,8 @@ pub fn Metrics::apply(self : Metrics, mods : ModifierSet) -> Unit {
 ///|
 fn Metrics::adjust_cell_height_positions(
   self : Metrics,
-  original : UInt,
-  next : UInt,
+  original : UInt32,
+  next : UInt32,
 ) -> Unit {
   let original_f64 = original.to_double()
   let next_f64 = next.to_double()
@@ -337,7 +337,7 @@ fn Metrics::clamp(self : Metrics) -> Unit {
 }
 
 ///|
-fn Modifier::apply_uint(self : Modifier, value : UInt) -> UInt {
+fn Modifier::apply_uint(self : Modifier, value : UInt32) -> UInt32 {
   match self {
     Percent(percent) =>
       @math.round(value.to_double() * nonnegative(percent)).to_uint()
@@ -346,7 +346,7 @@ fn Modifier::apply_uint(self : Modifier, value : UInt) -> UInt {
 }
 
 ///|
-fn Modifier::apply_int(self : Modifier, value : Int) -> Int {
+fn Modifier::apply_int(self : Modifier, value : Int32) -> Int32 {
   match self {
     Percent(percent) =>
       @math.round(value.to_double() * nonnegative(percent)).to_int()
@@ -363,17 +363,17 @@ fn Modifier::apply_double(self : Modifier, value : Double) -> Double {
 }
 
 ///|
-fn add_double_to_uint(value : UInt, delta : Double) -> UInt {
+fn add_double_to_uint(value : UInt32, delta : Double) -> UInt32 {
   clamp_int64_to_uint(value.to_int64() + delta.to_int64())
 }
 
 ///|
-fn add_double_to_int(value : Int, delta : Double) -> Int {
+fn add_double_to_int(value : Int32, delta : Double) -> Int32 {
   clamp_int64_to_int(value.to_int64() + delta.to_int64())
 }
 
 ///|
-fn clamp_int64_to_uint(value : Int64) -> UInt {
+fn clamp_int64_to_uint(value : Int64) -> UInt32 {
   if value <= 0L {
     0U
   } else if value >= 4294967295L {
@@ -384,7 +384,7 @@ fn clamp_int64_to_uint(value : Int64) -> UInt {
 }
 
 ///|
-fn clamp_int64_to_int(value : Int64) -> Int {
+fn clamp_int64_to_int(value : Int64) -> Int32 {
   if value <= -2147483648L {
     -2147483648
   } else if value >= 2147483647L {
@@ -422,10 +422,43 @@ fn max_double(left : Double, right : Double) -> Double {
 }
 
 ///|
-fn max_uint(left : UInt, right : UInt) -> UInt {
+fn max_uint(left : UInt32, right : UInt32) -> UInt32 {
   if left > right {
     left
   } else {
     right
   }
 }
+
+///|
+pub extend FaceMetrics with Eq::{not_equal, equal}
+
+///|
+pub extend FaceMetrics with @debug.Debug::{to_repr}
+
+///|
+pub extend Metrics with Eq::{not_equal, equal}
+
+///|
+pub extend Metrics with @debug.Debug::{to_repr}
+
+///|
+pub extend MetricKey with Eq::{not_equal, equal}
+
+///|
+pub extend MetricKey with @debug.Debug::{to_repr}
+
+///|
+pub extend MetricKey with Hash::{hash, hash_combine}
+
+///|
+pub extend ModifierParseError with Eq::{not_equal, equal}
+
+///|
+pub extend ModifierParseError with @debug.Debug::{to_repr}
+
+///|
+pub extend Modifier with Eq::{not_equal, equal}
+
+///|
+pub extend Modifier with @debug.Debug::{to_repr}

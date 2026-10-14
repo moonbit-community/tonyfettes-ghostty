@@ -19,18 +19,21 @@ pub fn SepList::init_empty() -> SepList {
 }
 
 ///|
-pub fn SepList::set(self : SepList, index : Int) -> SepList {
+pub fn SepList::set(self : SepList, index : Int32) -> SepList {
   self.0 | (1UL << index)
 }
 
 ///|
-pub fn SepList::is_set(self : SepList, index : Int) -> Bool {
+pub fn SepList::is_set(self : SepList, index : Int32) -> Bool {
   (self.0 & (1UL << index)) != 0UL
 }
 
 ///|
 /// Number of separators set. `set` only ever targets indices below the param
 /// cap, so the high bits stay clear and a full-word popcount equals the count.
-pub fn SepList::count(self : SepList) -> Int {
+pub fn SepList::count(self : SepList) -> Int32 {
   self.0.popcnt()
 }
+
+///|
+pub extend SepList with @debug.Debug::{to_repr}

@@ -8,7 +8,7 @@ pub(all) enum TerminalResultCode {
 } derive(Eq, Debug)
 
 ///|
-pub fn TerminalResultCode::code(self : TerminalResultCode) -> Int {
+pub fn TerminalResultCode::code(self : TerminalResultCode) -> Int32 {
   match self {
     Success => 0
     OutOfMemory => -1
@@ -19,7 +19,7 @@ pub fn TerminalResultCode::code(self : TerminalResultCode) -> Int {
 }
 
 ///|
-pub fn terminal_result_code_from_int(value : Int) -> TerminalResultCode? {
+pub fn terminal_result_code_from_int(value : Int32) -> TerminalResultCode? {
   match value {
     0 => Some(Success)
     -1 => Some(OutOfMemory)
@@ -29,3 +29,9 @@ pub fn terminal_result_code_from_int(value : Int) -> TerminalResultCode? {
     _ => None
   }
 }
+
+///|
+pub extend TerminalResultCode with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalResultCode with @debug.Debug::{to_repr}

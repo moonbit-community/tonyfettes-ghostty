@@ -17,10 +17,10 @@ priv enum ParserState {
 } derive(Eq)
 
 ///|
-const ParserStateCount : Int = 14
+const ParserStateCount : Int32 = 14
 
 ///|
-fn ParserState::ordinal(self : ParserState) -> Int {
+fn ParserState::ordinal(self : ParserState) -> Int32 {
   match self {
     Ground => 0
     Escape => 1
@@ -40,7 +40,7 @@ fn ParserState::ordinal(self : ParserState) -> Int {
 }
 
 ///|
-fn parser_state_from_int(value : Int) -> ParserState {
+fn parser_state_from_int(value : Int32) -> ParserState {
   match value {
     0 => Ground
     1 => Escape
@@ -76,7 +76,7 @@ priv enum TransitionAction {
 }
 
 ///|
-fn transition_action_from_int(value : Int) -> TransitionAction {
+fn transition_action_from_int(value : Int32) -> TransitionAction {
   match value {
     0 => None
     1 => Ignore

@@ -1,6 +1,6 @@
 ///|
 test "key mods/builders and helpers preserve the upstream bit semantics" {
-  let mods = KeyMods::new()
+  let mods = @input.KeyMods::new()
     .with_shift(true)
     .with_ctrl(true)
     .with_alt(true)
@@ -35,7 +35,9 @@ test "key mods/builders and helpers preserve the upstream bit semantics" {
     fail("binding modifiers should clear side metadata")
   }
 
-  let cleared = mods.unset(KeyMods::new().with_shift(true).with_alt(true))
+  let cleared = mods.unset(
+    @input.KeyMods::new().with_shift(true).with_alt(true),
+  )
   guard !cleared.shift() && !cleared.alt() else {
     fail("unset should clear requested modifier bits")
   }
@@ -62,80 +64,80 @@ test "key mods/builders and helpers preserve the upstream bit semantics" {
 
 ///|
 test "key/codepoint covers printable and non-printable keys" {
-  guard Key::KeyA.codepoint() == Some(b'a'.to_uint()) else {
+  guard @input.Key::KeyA.codepoint() == Some(b'a'.to_uint()) else {
     fail("KeyA should map to lowercase a")
   }
-  guard Key::KeyB.codepoint() == Some(b'b'.to_uint()) else {
+  guard @input.Key::KeyB.codepoint() == Some(b'b'.to_uint()) else {
     fail("KeyB should map to lowercase b")
   }
-  guard Key::KeyC.codepoint() == Some(b'c'.to_uint()) else {
+  guard @input.Key::KeyC.codepoint() == Some(b'c'.to_uint()) else {
     fail("KeyC should map to lowercase c")
   }
-  guard Key::KeyD.codepoint() == Some(b'd'.to_uint()) else {
+  guard @input.Key::KeyD.codepoint() == Some(b'd'.to_uint()) else {
     fail("KeyD should map to lowercase d")
   }
-  guard Key::Digit7.codepoint() == Some(b'7'.to_uint()) else {
+  guard @input.Key::Digit7.codepoint() == Some(b'7'.to_uint()) else {
     fail("Digit7 should map to 7")
   }
-  guard Key::Digit8.codepoint() == Some(b'8'.to_uint()) else {
+  guard @input.Key::Digit8.codepoint() == Some(b'8'.to_uint()) else {
     fail("Digit8 should map to 8")
   }
-  guard Key::Digit9.codepoint() == Some(b'9'.to_uint()) else {
+  guard @input.Key::Digit9.codepoint() == Some(b'9'.to_uint()) else {
     fail("Digit9 should map to 9")
   }
-  guard Key::Semicolon.codepoint() == Some(b';'.to_uint()) else {
+  guard @input.Key::Semicolon.codepoint() == Some(b';'.to_uint()) else {
     fail("Semicolon should map to semicolon")
   }
-  guard Key::Tab.codepoint() == Some(0x09U) else {
+  guard @input.Key::Tab.codepoint() == Some(0x09U) else {
     fail("Tab should map to horizontal tab")
   }
-  guard Key::NumpadEqual.codepoint() == Some(b'='.to_uint()) else {
+  guard @input.Key::NumpadEqual.codepoint() == Some(b'='.to_uint()) else {
     fail("NumpadEqual should map to equals")
   }
-  guard Key::BracketLeft.codepoint() == Some(b'['.to_uint()) else {
+  guard @input.Key::BracketLeft.codepoint() == Some(b'['.to_uint()) else {
     fail("BracketLeft should map to left bracket")
   }
-  guard Key::BracketRight.codepoint() == Some(b']'.to_uint()) else {
+  guard @input.Key::BracketRight.codepoint() == Some(b']'.to_uint()) else {
     fail("BracketRight should map to right bracket")
   }
-  guard Key::Backslash.codepoint() == Some(b'\\'.to_uint()) else {
+  guard @input.Key::Backslash.codepoint() == Some(b'\\'.to_uint()) else {
     fail("Backslash should map to backslash")
   }
-  guard Key::NumpadDecimal.codepoint() == Some(b'.'.to_uint()) else {
+  guard @input.Key::NumpadDecimal.codepoint() == Some(b'.'.to_uint()) else {
     fail("NumpadDecimal should map to period")
   }
-  guard Key::NumpadDivide.codepoint() == Some(b'/'.to_uint()) else {
+  guard @input.Key::NumpadDivide.codepoint() == Some(b'/'.to_uint()) else {
     fail("NumpadDivide should map to slash")
   }
-  guard Key::NumpadMultiply.codepoint() == Some(b'*'.to_uint()) else {
+  guard @input.Key::NumpadMultiply.codepoint() == Some(b'*'.to_uint()) else {
     fail("NumpadMultiply should map to asterisk")
   }
-  guard Key::Enter.codepoint() == None else {
+  guard @input.Key::Enter.codepoint() == None else {
     fail("Enter should not map to a printable codepoint")
   }
 }
 
 ///|
 test "key event/defaults and setters roundtrip" {
-  let event = KeyEvent::new()
+  let event = @input.KeyEvent::new()
   guard event.action() == Press else {
     fail("new key events should default to press")
   }
   guard event.key() == Unidentified else {
     fail("new key events should default to unidentified")
   }
-  guard event.mods() == KeyMods::new() else {
+  guard event.mods() == @input.KeyMods::new() else {
     fail("new key events should start with empty modifiers")
   }
-  guard event.consumed_mods() == KeyMods::new() else {
+  guard event.consumed_mods() == @input.KeyMods::new() else {
     fail("new key events should start with empty consumed modifiers")
   }
   guard !event.composing() else { fail("new key events should not compose") }
   assert_eq(event.utf8(), b"")
   assert_eq(event.unshifted_codepoint(), 0U)
 
-  let mods = KeyMods::new().with_alt(true).with_super_(true)
-  let consumed = KeyMods::new().with_alt(true)
+  let mods = @input.KeyMods::new().with_alt(true).with_super_(true)
+  let consumed = @input.KeyMods::new().with_alt(true)
   event.set_action(Repeat)
   event.set_key(KeyZ)
   event.set_mods(mods)
@@ -157,10 +159,10 @@ test "key event/defaults and setters roundtrip" {
 
 ///|
 test "key event/effective mods only remove consumed text modifiers" {
-  let event = KeyEvent::new()
-  let mods = KeyMods::new().with_shift(true).with_ctrl(true)
+  let event = @input.KeyEvent::new()
+  let mods = @input.KeyMods::new().with_shift(true).with_ctrl(true)
   event.set_mods(mods)
-  event.set_consumed_mods(KeyMods::new().with_shift(true))
+  event.set_consumed_mods(@input.KeyMods::new().with_shift(true))
 
   guard event.effective_mods() == mods else {
     fail("empty utf8 should preserve the original modifier set")

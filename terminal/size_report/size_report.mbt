@@ -10,18 +10,18 @@ pub(all) enum Style {
 struct Size {
   rows : @size.CellCountInt
   columns : @size.CellCountInt
-  cell_width : UInt
-  cell_height : UInt
+  cell_width : UInt32
+  cell_height : UInt32
 } derive(Eq, Debug)
 
 ///|
 pub fn Size::new(
   rows : @size.CellCountInt,
   columns : @size.CellCountInt,
-  cell_width : UInt,
-  cell_height : UInt,
+  cell_width : UInt32,
+  cell_height : UInt32,
 ) -> Size {
-  { rows, columns, cell_width, cell_height }
+  { rows, columns, cell_width, cell_height, }
 }
 
 ///|
@@ -35,12 +35,12 @@ pub fn Size::columns(self : Size) -> @size.CellCountInt {
 }
 
 ///|
-pub fn Size::cell_width(self : Size) -> UInt {
+pub fn Size::cell_width(self : Size) -> UInt32 {
   self.cell_width
 }
 
 ///|
-pub fn Size::cell_height(self : Size) -> UInt {
+pub fn Size::cell_height(self : Size) -> UInt32 {
   self.cell_height
 }
 
@@ -94,3 +94,15 @@ pub fn encode(style : Style, size : Size) -> Bytes {
   }
   buffer.contents()
 }
+
+///|
+pub extend Style with Eq::{not_equal, equal}
+
+///|
+pub extend Style with @debug.Debug::{to_repr}
+
+///|
+pub extend Size with Eq::{not_equal, equal}
+
+///|
+pub extend Size with @debug.Debug::{to_repr}

@@ -1,5 +1,5 @@
 ///|
-const SgrSeparatorCapacity : Int = 64
+const SgrSeparatorCapacity : Int32 = 64
 
 ///|
 pub(all) enum SgrUnderline {
@@ -64,7 +64,7 @@ pub(all) enum SgrAttribute {
 struct SgrParser {
   mut params : ArrayView[UInt16]
   mut params_sep : @seplist.SepList
-  mut idx : Int
+  mut idx : Int32
 } derive(Debug)
 
 ///|
@@ -93,7 +93,7 @@ pub fn SgrParser::from_params(
   params : ArrayView[UInt16],
   params_sep : @seplist.SepList,
 ) -> SgrParser {
-  { params, params_sep, idx: 0 }
+  { params, params_sep, idx: 0, }
 }
 
 ///|
@@ -249,7 +249,7 @@ pub fn SgrParser::next(self : SgrParser) -> SgrAttribute? {
 ///|
 fn parse_color_selector(
   parser : SgrParser,
-  current : Int,
+  current : Int32,
   colon : Bool,
   foreground : Bool,
 ) -> SgrAttribute? {
@@ -287,7 +287,7 @@ fn parse_color_selector(
 ///|
 fn parse_underline_color_selector(
   parser : SgrParser,
-  current : Int,
+  current : Int32,
   colon : Bool,
 ) -> SgrAttribute? {
   if remaining_len(parser, current) < 2 {
@@ -314,7 +314,7 @@ fn parse_underline_color_selector(
 ///|
 fn SgrParser::parse_direct_color(
   self : SgrParser,
-  current : Int,
+  current : Int32,
   colon : Bool,
 ) -> @color.RGB? {
   if remaining_len(self, current) < 5 {
@@ -370,7 +370,7 @@ fn SgrParser::is_colon(self : SgrParser) -> Bool {
 }
 
 ///|
-fn SgrParser::count_colon(self : SgrParser) -> Int {
+fn SgrParser::count_colon(self : SgrParser) -> Int32 {
   let mut count = 0
   let mut index = self.idx
   while index < self.params.length() - 1 && self.params_sep.is_set(index) {
@@ -386,7 +386,7 @@ fn SgrParser::consume_unknown_colon(self : SgrParser) -> Unit {
 }
 
 ///|
-fn SgrParser::unknown_from(self : SgrParser, current : Int) -> SgrAttribute {
+fn SgrParser::unknown_from(self : SgrParser, current : Int32) -> SgrAttribute {
   Unknown(self.make_unknown(current, self.params.length()))
 }
 
@@ -398,15 +398,15 @@ fn SgrParser::unknown_from(self : SgrParser, current : Int) -> SgrAttribute {
 /// off the hot path (known attributes are returned as borrow-free value types).
 fn SgrParser::make_unknown(
   self : SgrParser,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> SgrUnknown {
   let full = ReadOnlyArray::from_array(self.params.to_owned())
-  { full, partial: full[start:end] }
+  { full, partial: full[start:end], }
 }
 
 ///|
-fn remaining_len(parser : SgrParser, current : Int) -> Int {
+fn remaining_len(parser : SgrParser, current : Int32) -> Int32 {
   parser.params.length() - current
 }
 
@@ -431,3 +431,24 @@ fn name_from_code(code : Byte) -> @color.Name {
     _ => BrightWhite
   }
 }
+
+///|
+pub extend SgrUnderline with Eq::{not_equal, equal}
+
+///|
+pub extend SgrUnderline with @debug.Debug::{to_repr}
+
+///|
+pub extend SgrUnknown with Eq::{not_equal, equal}
+
+///|
+pub extend SgrUnknown with @debug.Debug::{to_repr}
+
+///|
+pub extend SgrAttribute with Eq::{not_equal, equal}
+
+///|
+pub extend SgrAttribute with @debug.Debug::{to_repr}
+
+///|
+pub extend SgrParser with @debug.Debug::{to_repr}

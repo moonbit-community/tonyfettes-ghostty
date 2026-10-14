@@ -6,7 +6,7 @@ struct ScreenProtectedState {
 
 ///|
 pub fn ScreenProtectedState::new() -> ScreenProtectedState {
-  { mode: Off, cursor_protected: false }
+  { mode: Off, cursor_protected: false, }
 }
 
 ///|
@@ -54,3 +54,9 @@ pub fn ScreenProtectedState::set_cursor_protected(
 ) -> Unit {
   self.cursor_protected = value
 }
+
+///|
+pub extend ScreenProtectedState with Eq::{not_equal, equal}
+
+///|
+pub extend ScreenProtectedState with @debug.Debug::{to_repr}

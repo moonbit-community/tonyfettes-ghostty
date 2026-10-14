@@ -1,5 +1,5 @@
 ///|
-const KittyTextSizingPayloadLimit : Int = 4096
+const KittyTextSizingPayloadLimit : Int32 = 4096
 
 ///|
 pub(all) enum KittyTextSizingVerticalAlign {
@@ -38,7 +38,7 @@ fn KittyTextSizingOsc::new(
   text : String,
   terminator : Terminator,
 ) -> KittyTextSizingOsc {
-  { scale, width, numerator, denominator, valign, halign, text, terminator }
+  { scale, width, numerator, denominator, valign, halign, text, terminator, }
 }
 
 ///|
@@ -210,3 +210,21 @@ fn kitty_text_contains_escape_control(text : String) -> Bool {
   }
   false
 }
+
+///|
+pub extend KittyTextSizingVerticalAlign with Eq::{not_equal, equal}
+
+///|
+pub extend KittyTextSizingVerticalAlign with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyTextSizingHorizontalAlign with Eq::{not_equal, equal}
+
+///|
+pub extend KittyTextSizingHorizontalAlign with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyTextSizingOsc with Eq::{not_equal, equal}
+
+///|
+pub extend KittyTextSizingOsc with @debug.Debug::{to_repr}

@@ -1,12 +1,12 @@
 ///|
 fn make_key_event(
   key : @input.Key,
-  mods? : @input.KeyMods = @input.KeyMods::new(),
-  utf8? : Bytes = b"",
-  unshifted_codepoint? : UInt = 0U,
-  action? : @input.KeyAction = Press,
-  consumed_mods? : @input.KeyMods = @input.KeyMods::new(),
-  composing? : Bool = false,
+  mods~ : @input.KeyMods = @input.KeyMods::new(),
+  utf8~ : Bytes = b"",
+  unshifted_codepoint~ : UInt32 = 0U,
+  action~ : @input.KeyAction = Press,
+  consumed_mods~ : @input.KeyMods = @input.KeyMods::new(),
+  composing~ : Bool = false,
 ) -> @input.KeyEvent {
   let event = @input.KeyEvent::new()
   event.set_key(key)
@@ -21,7 +21,7 @@ fn make_key_event(
 
 ///|
 test "key encoder/new and setters expose typed owner surface" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
   guard !encoder.cursor_key_application() &&
     !encoder.keypad_key_application() &&
     !encoder.ignore_keypad_with_numlock() &&
@@ -59,7 +59,7 @@ test "key encoder/new and setters expose typed owner surface" {
 
 ///|
 test "key encoder/sync copies the option set and resets option-as-alt" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
   encoder.set_macos_option_as_alt(True)
 
   // sync adopts the supplied modes/flags and always resets the macOS
@@ -88,7 +88,7 @@ test "key encoder/sync copies the option set and resets option-as-alt" {
 
 ///|
 test "key encoder/kitty plain text control release and composing cases" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
   encoder.set_kitty_flags(KittyKeyboardFlags(0x01))
   guard encoder.encode(make_key_event(KeyA, utf8=b"abcd")) == b"abcd" else {
     fail("expected plain text with disambiguate-only kitty mode")
@@ -132,7 +132,7 @@ test "key encoder/kitty plain text control release and composing cases" {
 
 ///|
 test "key encoder/kitty alternates associated text dead-key and keypad cases" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
   encoder.set_kitty_flags(KittyKeyboardFlags(0x05))
   guard encoder.encode(
       make_key_event(
@@ -173,7 +173,7 @@ test "key encoder/kitty alternates associated text dead-key and keypad cases" {
 
 ///|
 test "key encoder/kitty macos option-as-alt behavior matches platform branches" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
   encoder.set_kitty_flags(KittyKeyboardFlags(0x1D))
   encoder.set_host_is_macos(true)
 
@@ -197,7 +197,7 @@ test "key encoder/kitty macos option-as-alt behavior matches platform branches" 
 
 ///|
 test "key encoder/legacy control and alt-prefix cases" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   guard encoder.encode(
       make_key_event(
@@ -236,7 +236,7 @@ test "key encoder/legacy control and alt-prefix cases" {
 
 ///|
 test "key encoder/legacy backspace modify-other and csi-u cases" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   guard encoder.encode(make_key_event(Backspace)) == b"\x7F" else {
     fail("expected backspace DEL with DECBKM reset")
@@ -309,7 +309,7 @@ test "key encoder/legacy backspace modify-other and csi-u cases" {
 
 ///|
 test "key encoder/legacy function key and keypad application paths" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   guard encoder.encode(
       make_key_event(
@@ -354,7 +354,7 @@ test "key encoder/legacy function key and keypad application paths" {
 
 ///|
 test "key encoder/kitty release gates and modifier suppression" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   encoder.set_kitty_flags(KittyKeyboardFlags(0x01))
   guard encoder.encode(make_key_event(F1, action=Release)) == b"" else {
@@ -402,7 +402,7 @@ test "key encoder/kitty release gates and modifier suppression" {
 
 ///|
 test "key encoder/kitty alternates associated text and special keys" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   encoder.set_kitty_flags(KittyKeyboardFlags(0x01))
   guard encoder.encode(
@@ -520,7 +520,7 @@ test "key encoder/kitty alternates associated text and special keys" {
 
 ///|
 test "key encoder/legacy guard and ctrl fallback coverage" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   guard encoder.encode(make_key_event(KeyA, utf8=b"a", action=Release)) == b"" else {
     fail("expected legacy release events to stay silent")
@@ -602,7 +602,7 @@ test "key encoder/legacy guard and ctrl fallback coverage" {
 
 ///|
 test "key encoder/legacy macos option-as-alt branches" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
   encoder.set_host_is_macos(true)
   encoder.set_modify_other_keys_state_2(true)
 
@@ -718,7 +718,7 @@ test "key encoder/legacy macos option-as-alt branches" {
 
 ///|
 test "key encoder/legacy ctrl sequence coverage" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   guard encoder.encode(
       make_key_event(
@@ -826,7 +826,7 @@ test "key encoder/legacy ctrl sequence coverage" {
 
 ///|
 test "key encoder/legacy function key matrix coverage" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
 
   guard encoder.encode(make_key_event(ArrowDown)) == b"\x1B[B" else {
     fail("expected cursor-down CSI fallback")
@@ -990,7 +990,7 @@ test "key encoder/legacy function key matrix coverage" {
 
 ///|
 test "key encoder/kitty right-option associated-text suppression" {
-  let encoder = KeyEncoder::new()
+  let encoder = @key_encoder.KeyEncoder::new()
   encoder.set_host_is_macos(true)
   encoder.set_macos_option_as_alt(Right)
   encoder.set_kitty_flags(KittyKeyboardFlags(0x10))

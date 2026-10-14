@@ -15,8 +15,11 @@ type Size derive(Eq, @debug.Debug)
 pub fn Size::cell_height(Self) -> UInt
 pub fn Size::cell_width(Self) -> UInt
 pub fn Size::columns(Self) -> UInt16
+pub fn Size::equal(Self, Self) -> Bool
 pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
+pub fn Size::not_equal(Self, Self) -> Bool
 pub fn Size::rows(Self) -> UInt16
+pub fn Size::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Style {
   Mode2048
@@ -24,8 +27,10 @@ pub(all) enum Style {
   Csi16t
   Csi18t
 } derive(Eq, @debug.Debug)
+pub fn Style::equal(Self, Self) -> Bool
+pub fn Style::not_equal(Self, Self) -> Bool
+pub fn Style::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

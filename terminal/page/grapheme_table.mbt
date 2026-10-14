@@ -31,26 +31,26 @@ fn GraphemeId::is_none(self : GraphemeId) -> Bool {
 pub struct GraphemeTable {
   // id-1 indexed: `list[id - 1]` is the extras for id >= 1. `list[0]` is the
   // empty run (id 1). There is no entry for id 0 ("not a grapheme cell").
-  priv list : Array[ReadOnlyArray[UInt]]
-  priv index : Map[ReadOnlyArray[UInt], GraphemeId]
+  priv list : Array[ReadOnlyArray[UInt32]]
+  priv index : Map[ReadOnlyArray[UInt32], GraphemeId]
   // One-entry cache of the last interned run.
-  priv mut last_extras : ReadOnlyArray[UInt]?
+  priv mut last_extras : ReadOnlyArray[UInt32]?
   priv mut last_id : GraphemeId
 }
 
 ///|
 pub fn GraphemeTable::new() -> GraphemeTable {
-  let empty : ReadOnlyArray[UInt] = []
-  let index : Map[ReadOnlyArray[UInt], GraphemeId] = Map([])
+  let empty : ReadOnlyArray[UInt32] = []
+  let index : Map[ReadOnlyArray[UInt32], GraphemeId] = Map([])
   index[empty] = empty_grapheme_id
-  { list: [empty], index, last_extras: None, last_id: no_grapheme_id }
+  { list: [empty], index, last_extras: None, last_id: no_grapheme_id, }
 }
 
 ///|
 /// Intern a combining run, returning its id (always >= 1; the empty run is id 1).
 fn GraphemeTable::intern(
   self : GraphemeTable,
-  extras : ReadOnlyArray[UInt],
+  extras : ReadOnlyArray[UInt32],
 ) -> GraphemeId {
   if self.last_extras is Some(last) && last == extras {
     return self.last_id
@@ -86,7 +86,7 @@ fn GraphemeTable::intern(
 pub fn GraphemeTable::get(
   self : GraphemeTable,
   id : GraphemeId,
-) -> ReadOnlyArray[UInt] {
+) -> ReadOnlyArray[UInt32] {
   if id.is_none() {
     []
   } else {
@@ -101,13 +101,22 @@ pub fn GraphemeTable::get(
 pub fn GraphemeTable::append(
   self : GraphemeTable,
   id : GraphemeId,
-  codepoint : UInt,
+  codepoint : UInt32,
 ) -> GraphemeId {
   let existing = self.get(id)
   // Build a fresh array so interned runs never share mutable storage.
-  let extras : Array[UInt] = Array::make(existing.length() + 1, codepoint)
+  let extras : Array[UInt32] = Array::make(existing.length() + 1, codepoint)
   for index in 0..<existing.length() {
     extras[index] = existing.at(index)
   }
   self.intern(ReadOnlyArray::from_array(extras))
 }
+
+///|
+pub extend GraphemeId with Eq::{not_equal, equal}
+
+///|
+pub extend GraphemeId with @debug.Debug::{to_repr}
+
+///|
+pub extend GraphemeId with Hash::{hash, hash_combine}

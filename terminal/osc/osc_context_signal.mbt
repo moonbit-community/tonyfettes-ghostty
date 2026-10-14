@@ -1,5 +1,5 @@
 ///|
-const ContextSignalMaxIdLength : Int = 64
+const ContextSignalMaxIdLength : Int32 = 64
 
 ///|
 pub(all) enum ContextSignalAction {
@@ -44,7 +44,7 @@ fn ContextSignalOsc::new(
   id_unvalidated : Bytes,
   metadata_unvalidated : Bytes,
 ) -> ContextSignalOsc {
-  { action, id_unvalidated, metadata_unvalidated }
+  { action, id_unvalidated, metadata_unvalidated, }
 }
 
 ///|
@@ -274,8 +274,8 @@ fn context_signal_option_value(
 ///|
 fn context_signal_id_is_valid(
   buffer : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
 ) -> Bool {
   let length = end_ - start
   if length == 0 || length > ContextSignalMaxIdLength {
@@ -355,7 +355,7 @@ fn context_signal_exit_status_from_bytes(
 }
 
 ///|
-fn parse_u64_ascii(bytes : BytesView, start : Int, end_ : Int) -> UInt64? {
+fn parse_u64_ascii(bytes : BytesView, start : Int32, end_ : Int32) -> UInt64? {
   if start >= end_ {
     return None
   }
@@ -380,3 +380,27 @@ fn parse_u64_ascii(bytes : BytesView, start : Int, end_ : Int) -> UInt64? {
 
   Some(value)
 }
+
+///|
+pub extend ContextSignalAction with Eq::{not_equal, equal}
+
+///|
+pub extend ContextSignalAction with @debug.Debug::{to_repr}
+
+///|
+pub extend ContextSignalType with Eq::{not_equal, equal}
+
+///|
+pub extend ContextSignalType with @debug.Debug::{to_repr}
+
+///|
+pub extend ContextSignalExitStatus with Eq::{not_equal, equal}
+
+///|
+pub extend ContextSignalExitStatus with @debug.Debug::{to_repr}
+
+///|
+pub extend ContextSignalOsc with Eq::{not_equal, equal}
+
+///|
+pub extend ContextSignalOsc with @debug.Debug::{to_repr}

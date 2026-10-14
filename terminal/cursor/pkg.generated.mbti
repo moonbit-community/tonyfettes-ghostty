@@ -16,6 +16,9 @@ pub(all) enum CursorVisualStyle {
   Bar
   Underline
 } derive(Eq, @debug.Debug)
+pub fn CursorVisualStyle::equal(Self, Self) -> Bool
+pub fn CursorVisualStyle::not_equal(Self, Self) -> Bool
+pub fn CursorVisualStyle::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalCursorState {
   mut rows : UInt16
@@ -31,9 +34,11 @@ pub(all) struct TerminalCursorState {
 } derive(Eq, @debug.Debug)
 pub fn TerminalCursorState::apply_cursor_style(Self, @ansi.CursorStyle) -> Bool
 pub fn TerminalCursorState::bottom_margin(Self) -> UInt16
+pub fn TerminalCursorState::equal(Self, Self) -> Bool
 pub fn TerminalCursorState::full_reset(Self) -> Unit
 pub fn TerminalCursorState::left_margin(Self) -> UInt16
 pub fn TerminalCursorState::new(UInt16, UInt16) -> Self
+pub fn TerminalCursorState::not_equal(Self, Self) -> Bool
 pub fn TerminalCursorState::pending_wrap(Self) -> Bool
 pub fn TerminalCursorState::resize(Self, UInt16, UInt16) -> Unit
 pub fn TerminalCursorState::right_margin(Self) -> UInt16
@@ -41,6 +46,7 @@ pub fn TerminalCursorState::set_cursor_pos(Self, UInt16, UInt16, Bool) -> Unit
 pub fn TerminalCursorState::set_left_and_right_margin(Self, Bool, UInt16, UInt16, Bool) -> Unit
 pub fn TerminalCursorState::set_pending_wrap(Self, Bool) -> Unit
 pub fn TerminalCursorState::set_top_and_bottom_margin(Self, UInt16, UInt16, Bool) -> Unit
+pub fn TerminalCursorState::to_repr(Self) -> @debug.Repr
 pub fn TerminalCursorState::top_margin(Self) -> UInt16
 pub fn TerminalCursorState::visual_style(Self) -> CursorVisualStyle
 pub fn TerminalCursorState::x(Self) -> UInt16
@@ -49,4 +55,3 @@ pub fn TerminalCursorState::y(Self) -> UInt16
 // Type aliases
 
 // Traits
-

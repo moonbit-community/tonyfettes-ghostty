@@ -40,12 +40,12 @@ pub(all) struct SpriteBox[T] {
 } derive(Eq, Debug)
 
 ///|
-pub fn SpriteBox::rect(self : SpriteBox[Int]) -> SpriteRect[Int] {
+pub fn SpriteBox::rect(self : SpriteBox[Int32]) -> SpriteRect[Int32] {
   let tl_x = @cmp.minimum(self.p0.x, self.p1.x)
   let tl_y = @cmp.minimum(self.p0.y, self.p1.y)
   let br_x = @cmp.maximum(self.p0.x, self.p1.x)
   let br_y = @cmp.maximum(self.p0.y, self.p1.y)
-  { x: tl_x, y: tl_y, width: br_x - tl_x, height: br_y - tl_y }
+  { x: tl_x, y: tl_y, width: br_x - tl_x, height: br_y - tl_y, }
 }
 
 ///|
@@ -74,22 +74,22 @@ pub(all) struct SpriteQuad[T] {
 ///|
 pub(all) struct SpriteCanvas {
   mut data : Array[Byte]
-  width : UInt
-  height : UInt
-  padding_x : UInt
-  padding_y : UInt
-  mut clip_top : UInt
-  mut clip_left : UInt
-  mut clip_right : UInt
-  mut clip_bottom : UInt
+  width : UInt32
+  height : UInt32
+  padding_x : UInt32
+  padding_y : UInt32
+  mut clip_top : UInt32
+  mut clip_left : UInt32
+  mut clip_right : UInt32
+  mut clip_bottom : UInt32
 } derive(Eq, Debug)
 
 ///|
 pub fn SpriteCanvas::new(
-  width : UInt,
-  height : UInt,
-  padding_x : UInt,
-  padding_y : UInt,
+  width : UInt32,
+  height : UInt32,
+  padding_x : UInt32,
+  padding_y : UInt32,
 ) -> SpriteCanvas {
   let surface_width = width + 2U * padding_x
   let surface_height = height + 2U * padding_y
@@ -134,7 +134,7 @@ pub fn SpriteCanvas::write_atlas(
   if region.width > 0U && region.height > 0U {
     atlas.set_from_larger(
       region,
-      self.data.view(),
+      self.data.exact_view(),
       self.width,
       self.clip_left,
       self.clip_top,
@@ -235,8 +235,8 @@ pub fn SpriteCanvas::clear_clipping_regions(self : SpriteCanvas) -> Unit {
 ///|
 pub fn SpriteCanvas::pixel(
   self : SpriteCanvas,
-  x : Int,
-  y : Int,
+  x : Int32,
+  y : Int32,
   color : SpriteColor,
 ) -> Unit {
   let surface_x = x + self.padding_x.reinterpret_as_int()
@@ -253,7 +253,7 @@ pub fn SpriteCanvas::pixel(
 ///|
 pub fn SpriteCanvas::rect(
   self : SpriteCanvas,
-  v : SpriteRect[Int],
+  v : SpriteRect[Int32],
   color : SpriteColor,
 ) -> Unit {
   let mut y = v.y
@@ -270,13 +270,13 @@ pub fn SpriteCanvas::rect(
 ///|
 pub fn SpriteCanvas::box(
   self : SpriteCanvas,
-  x0 : Int,
-  y0 : Int,
-  x1 : Int,
-  y1 : Int,
+  x0 : Int32,
+  y0 : Int32,
+  x1 : Int32,
+  y1 : Int32,
   color : SpriteColor,
 ) -> Unit {
-  let box : SpriteBox[Int] = { p0: { x: x0, y: y0 }, p1: { x: x1, y: y1 } }
+  let box : SpriteBox[Int32] = { p0: { x: x0, y: y0, }, p1: { x: x1, y: y1, }, }
   self.rect(box.rect(), color)
 }
 
@@ -316,3 +316,51 @@ pub fn SpriteCanvas::flip_vertical(self : SpriteCanvas) -> Unit {
   self.clip_top = self.clip_bottom
   self.clip_bottom = clip_top
 }
+
+///|
+pub extend SpriteColor with Eq::{not_equal, equal}
+
+///|
+pub extend SpriteColor with @debug.Debug::{to_repr}
+
+///|
+pub extend SpritePoint with Eq::{not_equal, equal}
+
+///|
+pub extend SpritePoint with @debug.Debug::{to_repr}
+
+///|
+pub extend SpriteLine with Eq::{not_equal, equal}
+
+///|
+pub extend SpriteLine with @debug.Debug::{to_repr}
+
+///|
+pub extend SpriteBox with Eq::{not_equal, equal}
+
+///|
+pub extend SpriteBox with @debug.Debug::{to_repr}
+
+///|
+pub extend SpriteRect with Eq::{not_equal, equal}
+
+///|
+pub extend SpriteRect with @debug.Debug::{to_repr}
+
+///|
+pub extend SpriteTriangle with Eq::{not_equal, equal}
+
+///|
+pub extend SpriteTriangle with @debug.Debug::{to_repr}
+
+///|
+pub extend SpriteQuad with Eq::{not_equal, equal}
+
+///|
+pub extend SpriteQuad with @debug.Debug::{to_repr}
+
+///|
+pub extend SpriteCanvas with Eq::{not_equal, equal}
+
+///|
+pub extend SpriteCanvas with @debug.Debug::{to_repr}

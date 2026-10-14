@@ -11,13 +11,13 @@ fn test_parse(params : ReadOnlyArray[UInt16]) -> SgrAttribute {
 ///|
 fn parser_with_colons(
   params : ReadOnlyArray[UInt16],
-  colon_indices : Array[Int],
+  colon_indices : Array[Int32],
 ) -> SgrParser {
   let mut params_sep = @seplist.SepList::init_empty()
   for index in colon_indices {
     params_sep = params_sep.set(index)
   }
-  { params, params_sep, idx: 0 }
+  { params, params_sep, idx: 0, }
 }
 
 ///|

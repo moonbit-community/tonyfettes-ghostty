@@ -190,6 +190,26 @@ post-implementation auditing.
 
 ## Phase board
 
+### Maintenance M1: Current-toolchain compatibility and formatting
+
+Status: `done`
+
+User-requested maintenance of completed translation and demo work, independent
+of the remaining P17 translation sequence. Preserve runtime behavior, storage,
+and public contracts while updating dependency compatibility, warning syntax,
+formatter output, generated interfaces, and package exclusions.
+
+- Plan and validation audit:
+  [2026-10-14-m1-toolchain-maintenance.md](plans/2026-10-14-m1-toolchain-maintenance.md)
+- Gate: `moon check --target all --deny-warn`, `moon test --target all`,
+  coverage review of touched code, `moon fmt --check`, and `moon info` API
+  review, plus the standalone native `tools` module checks.
+- Completed: strict all-backend check with zero compiler warnings; 660 tests
+  each on Wasm, Wasm-GC and Native, 682 on JS, and 9 standalone generator
+  tests. Coverage gaps, preserved trait methods, dependency pins and package
+  content checks are recorded in the linked audit. Remaining P17 steps are
+  unchanged.
+
 ### Phase 0: Translation control plane
 
 Gate: `[S]`  

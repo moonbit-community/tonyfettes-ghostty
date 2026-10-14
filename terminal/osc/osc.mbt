@@ -1,5 +1,5 @@
 ///|
-const OscMaxBuf : Int = 2048
+const OscMaxBuf : Int32 = 2048
 
 ///|
 pub(all) enum Terminator {
@@ -60,7 +60,7 @@ pub fn ColoredTarget::new(
   target : ColorTarget,
   color : @color.RGB,
 ) -> ColoredTarget {
-  { target, color }
+  { target, color, }
 }
 
 ///|
@@ -94,7 +94,7 @@ pub fn ColorCommand::new(
   requests : Array[ColorRequest],
   terminator : Terminator,
 ) -> ColorCommand {
-  { op, requests, terminator }
+  { op, requests, terminator, }
 }
 
 ///|
@@ -236,7 +236,7 @@ struct OscParser {
   // (`%identity`), so the capture freezes to a zero-copy `BytesView` with no
   // snapshot copy. The array is reused across commands (length 0 = empty).
   mut buffer : FixedArray[Byte]
-  mut buffer_len : Int
+  mut buffer_len : Int32
 }
 // No `derive(Debug)`: `buffer` is reused across commands and reset only rewinds
 // `buffer_len`, so the backing array keeps stale bytes past the live capture.
@@ -245,7 +245,7 @@ struct OscParser {
 // derive is dropped outright rather than hidden behind a custom Show.
 
 ///|
-const OscCaptureInitCap : Int = 64
+const OscCaptureInitCap : Int32 = 64
 
 ///|
 pub fn OscParser::new() -> OscParser {
@@ -772,12 +772,12 @@ fn parse_hyperlink_command(buffer : BytesView) -> Command? {
       None => Some(HyperlinkEnd)
     }
   } else {
-    Some(HyperlinkStart({ uri, id }))
+    Some(HyperlinkStart({ uri, id, }))
   }
 }
 
 ///|
-fn parse_hyperlink_id(buffer : BytesView, end_ : Int) -> String? {
+fn parse_hyperlink_id(buffer : BytesView, end_ : Int32) -> String? {
   let mut result : String? = None
   let mut start = 0
   while start <= end_ {
@@ -862,7 +862,7 @@ fn parse_color_command(
 /// Start of the next non-empty `;`-token at or after `from`, skipping empty
 /// tokens (leading or consecutive `;`). Returns `body.length()` when none
 /// remain — so e.g. `4;;1;red` still yields the `1;red` pair.
-fn token_start(body : BytesView, from : Int) -> Int {
+fn token_start(body : BytesView, from : Int32) -> Int32 {
   let mut cursor = from
   while cursor < body.length() && body[cursor] == b';' {
     cursor += 1
@@ -873,7 +873,7 @@ fn token_start(body : BytesView, from : Int) -> Int {
 ///|
 /// End index (exclusive) of the token beginning at `start`: the next `;` or the
 /// end of `body`. `end == body.length()` marks the last token.
-fn token_end(body : BytesView, start : Int) -> Int {
+fn token_end(body : BytesView, start : Int32) -> Int32 {
   if @ascii.find_byte(body, start, body.length(), b';') is Some(index) {
     index
   } else {
@@ -975,7 +975,7 @@ fn parse_get_set_ansi_color(
       } noraise {
         rgb => rgb
       }
-      result.push(Set({ target, color: rgb }))
+      result.push(Set({ target, color: rgb, }))
     }
     continue spec_end
   }
@@ -1036,7 +1036,7 @@ fn parse_get_set_dynamic_color(
       } noraise {
         rgb => rgb
       }
-      result.push(Set({ target: Dynamic(dynamic), color: rgb }))
+      result.push(Set({ target: Dynamic(dynamic), color: rgb, }))
     }
     continue spec_end, dynamic.next()
   }
@@ -1067,7 +1067,7 @@ fn parse_reset_dynamic_color(
 }
 
 ///|
-fn ansi_target_from_index(op : ColorOperation, value : Int) -> ColorTarget? {
+fn ansi_target_from_index(op : ColorOperation, value : Int32) -> ColorTarget? {
   match op {
     Osc5 =>
       if special_from_int(value) is Some(special) {
@@ -1091,7 +1091,7 @@ fn ansi_target_from_index(op : ColorOperation, value : Int) -> ColorTarget? {
 }
 
 ///|
-fn special_from_int(value : Int) -> @color.Special? {
+fn special_from_int(value : Int32) -> @color.Special? {
   match value {
     0 => Some(Bold)
     1 => Some(Underline)
@@ -1103,7 +1103,7 @@ fn special_from_int(value : Int) -> @color.Special? {
 }
 
 ///|
-fn parse_decimal(buffer : BytesView, start : Int, end_ : Int) -> Int? {
+fn parse_decimal(buffer : BytesView, start : Int32, end_ : Int32) -> Int32? {
   if start >= end_ {
     return None
   }
@@ -1117,3 +1117,57 @@ fn parse_decimal(buffer : BytesView, start : Int, end_ : Int) -> Int? {
   }
   Some(result)
 }
+
+///|
+pub extend Terminator with Eq::{not_equal, equal}
+
+///|
+pub extend Terminator with @debug.Debug::{to_repr}
+
+///|
+pub extend ColorOperation with Eq::{not_equal, equal}
+
+///|
+pub extend ColorOperation with @debug.Debug::{to_repr}
+
+///|
+pub extend ColorTarget with Eq::{not_equal, equal}
+
+///|
+pub extend ColorTarget with @debug.Debug::{to_repr}
+
+///|
+pub extend ColoredTarget with Eq::{not_equal, equal}
+
+///|
+pub extend ColoredTarget with @debug.Debug::{to_repr}
+
+///|
+pub extend ColorRequest with Eq::{not_equal, equal}
+
+///|
+pub extend ColorRequest with @debug.Debug::{to_repr}
+
+///|
+pub extend ColorCommand with Eq::{not_equal, equal}
+
+///|
+pub extend ColorCommand with @debug.Debug::{to_repr}
+
+///|
+pub extend HyperlinkStart with Eq::{not_equal, equal}
+
+///|
+pub extend HyperlinkStart with @debug.Debug::{to_repr}
+
+///|
+pub extend ClipboardContents with Eq::{not_equal, equal}
+
+///|
+pub extend ClipboardContents with @debug.Debug::{to_repr}
+
+///|
+pub extend Command with Eq::{not_equal, equal}
+
+///|
+pub extend Command with @debug.Debug::{to_repr}

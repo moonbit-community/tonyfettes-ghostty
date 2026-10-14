@@ -185,12 +185,12 @@ pub fn KeyEncoder::sync(
 
 ///|
 priv struct KittySequence {
-  key : UInt
+  key : UInt32
   final_byte : Byte
   mods : KittyMods
   mut event : KittySequenceEvent
-  mut alternate_shifted : UInt?
-  mut alternate_base : UInt?
+  mut alternate_shifted : UInt32?
+  mut alternate_base : UInt32?
   mut text : Bytes
 }
 
@@ -605,7 +605,7 @@ fn KeyEncoder::legacy_alt_prefix(
 fn ctrl_sequence(
   logical_key : @input.Key,
   utf8 : Bytes,
-  unshifted_codepoint : UInt,
+  unshifted_codepoint : UInt32,
   mods : @input.KeyMods,
 ) -> Byte? {
   let ctrl_only = @input.KeyMods::new().with_ctrl(true)
@@ -720,7 +720,7 @@ fn kitty_flag_enabled(flags : @stream.KittyKeyboardFlags, mask : Byte) -> Bool {
 }
 
 ///|
-fn is_control(codepoint : Int) -> Bool {
+fn is_control(codepoint : Int32) -> Bool {
   codepoint < 0x20 || codepoint == 0x7F
 }
 
@@ -730,13 +730,13 @@ fn is_control_utf8(bytes : Bytes) -> Bool {
 }
 
 ///|
-fn utf8_codepoints(bytes : Bytes) -> Array[Int]? {
+fn utf8_codepoints(bytes : Bytes) -> Array[Int32]? {
   let text = try @utf8.decode(bytes) catch {
     _ => return None
   } noraise {
     text => text
   }
-  let result : Array[Int] = []
+  let result : Array[Int32] = []
   for char in text {
     result.push(char.to_int())
   }
@@ -849,7 +849,7 @@ fn KittySequence::encode_special(self : KittySequence) -> Bytes {
 }
 
 ///|
-fn kitty_sequence_event_code(event : KittySequenceEvent) -> UInt {
+fn kitty_sequence_event_code(event : KittySequenceEvent) -> UInt32 {
   match event {
     None => 0U
     Press => 1U
@@ -860,16 +860,16 @@ fn kitty_sequence_event_code(event : KittySequenceEvent) -> UInt {
 
 ///|
 fn CsiUMods::from_input(mods : @input.KeyMods) -> CsiUMods {
-  { shift: mods.shift(), alt: mods.alt(), ctrl: mods.ctrl() }
+  { shift: mods.shift(), alt: mods.alt(), ctrl: mods.ctrl(), }
 }
 
 ///|
-fn CsiUMods::int(self : CsiUMods) -> UInt {
+fn CsiUMods::int(self : CsiUMods) -> UInt32 {
   self.shift.to_uint() | (self.alt.to_uint() << 1) | (self.ctrl.to_uint() << 2)
 }
 
 ///|
-fn CsiUMods::seq_int(self : CsiUMods) -> UInt {
+fn CsiUMods::seq_int(self : CsiUMods) -> UInt32 {
   self.int() + 1U
 }
 
@@ -901,7 +901,7 @@ fn KittyMods::prevents_text(self : KittyMods, alt_prevents_text : Bool) -> Bool 
 }
 
 ///|
-fn KittyMods::int(self : KittyMods) -> UInt {
+fn KittyMods::int(self : KittyMods) -> UInt32 {
   self.shift.to_uint() |
   (self.alt.to_uint() << 1) |
   (self.ctrl.to_uint() << 2) |
@@ -913,7 +913,7 @@ fn KittyMods::int(self : KittyMods) -> UInt {
 }
 
 ///|
-fn KittyMods::seq_int(self : KittyMods) -> UInt {
+fn KittyMods::seq_int(self : KittyMods) -> UInt32 {
   self.int() + 1U
 }
 
@@ -925,3 +925,15 @@ pub fn KeyEncoder::encode(self : KeyEncoder, event : @input.KeyEvent) -> Bytes {
     self.encode_legacy(event)
   }
 }
+
+///|
+pub extend OptionAsAlt with Eq::{not_equal, equal}
+
+///|
+pub extend OptionAsAlt with @debug.Debug::{to_repr}
+
+///|
+pub extend KeyEncoder with Eq::{not_equal, equal}
+
+///|
+pub extend KeyEncoder with @debug.Debug::{to_repr}

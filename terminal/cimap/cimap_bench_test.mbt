@@ -8,14 +8,14 @@
 //                        per lookup (the cost `get_view` avoids)
 
 ///|
-fn bench_dataset() -> Array[(String, Int)] {
+fn bench_dataset() -> Array[(String, Int32)] {
   let shades = ["", "light", "dark", "medium", "pale", "deep", "bright"]
   let bases = [
     "red", "green", "blue", "cyan", "magenta", "yellow", "white", "black", "navy",
     "teal", "olive", "maroon", "silver", "gray", "orange", "purple", "brown", "pink",
     "gold", "coral",
   ]
-  let entries : Array[(String, Int)] = []
+  let entries : Array[(String, Int32)] = []
   for shade in shades {
     for base in bases {
       entries.push((shade + base, entries.length()))
@@ -54,7 +54,10 @@ fn lower_bytes_string(name : String) -> Bytes {
 }
 
 ///|
-fn linear_scan_lookup(entries : Array[(String, Int)], view : BytesView) -> Int? {
+fn linear_scan_lookup(
+  entries : Array[(String, Int32)],
+  view : BytesView,
+) -> Int32? {
   for entry in entries {
     let name = entry.0
     if name.length() != view.length() {
@@ -81,8 +84,10 @@ fn linear_scan_lookup(entries : Array[(String, Int)], view : BytesView) -> Int? 
 ///|
 test (b : @bench.T) {
   let entries = bench_dataset()
-  let cimap = CiStrMap::from_entries(ReadOnlyArray::from_iter(entries.iter()))
-  let std_map : Map[Bytes, Int] = Map([])
+  let cimap = @cimap.CiStrMap::from_entries(
+    ReadOnlyArray::from_iter(entries.iter()),
+  )
+  let std_map : Map[Bytes, Int32] = Map([])
   for entry in entries {
     std_map[lower_bytes_string(entry.0)] = entry.1
   }

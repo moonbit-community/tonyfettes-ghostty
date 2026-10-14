@@ -15,6 +15,11 @@ pub let no_grapheme_id : GraphemeId
 
 // Types and methods
 type GraphemeId derive(Eq, Hash, @debug.Debug)
+pub fn GraphemeId::equal(Self, Self) -> Bool
+pub fn GraphemeId::hash(Self) -> Int
+pub fn GraphemeId::hash_combine(Self, Hasher) -> Unit
+pub fn GraphemeId::not_equal(Self, Self) -> Bool
+pub fn GraphemeId::to_repr(Self) -> @debug.Repr
 
 pub struct GraphemeTable {
   // private fields
@@ -24,9 +29,13 @@ pub fn GraphemeTable::get(Self, GraphemeId) -> ReadOnlyArray[UInt]
 pub fn GraphemeTable::new() -> Self
 
 type PageCellFlags derive(Eq, @debug.Debug)
+pub fn PageCellFlags::equal(Self, Self) -> Bool
+pub fn PageCellFlags::not_equal(Self, Self) -> Bool
+pub fn PageCellFlags::to_repr(Self) -> @debug.Repr
 
 type PageCellState derive(Eq, @debug.Debug)
 pub fn PageCellState::codepoint(Self) -> UInt
+pub fn PageCellState::equal(Self, Self) -> Bool
 pub fn PageCellState::grapheme_id(Self) -> GraphemeId
 pub fn PageCellState::grid_width(Self) -> Int
 pub fn PageCellState::has_grapheme(Self) -> Bool
@@ -38,8 +47,10 @@ pub fn PageCellState::is_empty(Self) -> Bool
 pub fn PageCellState::is_protected(Self) -> Bool
 pub fn PageCellState::is_zero(Self) -> Bool
 pub fn PageCellState::new(codepoint? : UInt, grapheme? : Bool, style_id? : @style.StyleId, wide? : PageCellWide, protected_flag? : Bool, hyperlink_present? : Bool, semantic_content? : SemanticContent) -> Self
+pub fn PageCellState::not_equal(Self, Self) -> Bool
 pub fn PageCellState::semantic_content(Self) -> SemanticContent
 pub fn PageCellState::style_id(Self) -> @style.StyleId
+pub fn PageCellState::to_repr(Self) -> @debug.Repr
 pub fn PageCellState::wide(Self) -> PageCellWide
 pub fn PageCellState::with_codepoint(Self, UInt, Bool) -> Self
 pub fn PageCellState::with_grapheme_id(Self, GraphemeId) -> Self
@@ -54,18 +65,24 @@ pub(all) enum PageCellWide {
   SpacerTail
   SpacerHead
 } derive(Eq, @debug.Debug)
+pub fn PageCellWide::equal(Self, Self) -> Bool
+pub fn PageCellWide::not_equal(Self, Self) -> Bool
+pub fn PageCellWide::to_repr(Self) -> @debug.Repr
 
 type PageRowState derive(Eq, @debug.Debug)
 pub fn PageRowState::dirty(Self) -> Bool
+pub fn PageRowState::equal(Self, Self) -> Bool
 pub fn PageRowState::equals_ignoring_dirty(Self, Self) -> Bool
 pub fn PageRowState::grapheme(Self) -> Bool
 pub fn PageRowState::hyperlink(Self) -> Bool
 pub fn PageRowState::kitty_virtual_placeholder(Self) -> Bool
 pub fn PageRowState::managed_memory(Self) -> Bool
 pub fn PageRowState::new() -> Self
+pub fn PageRowState::not_equal(Self, Self) -> Bool
 pub fn PageRowState::record_cell_write(Self, styled~ : Bool, hyperlink~ : Bool) -> Self
 pub fn PageRowState::semantic_prompt(Self) -> RowSemanticPrompt
 pub fn PageRowState::styled(Self) -> Bool
+pub fn PageRowState::to_repr(Self) -> @debug.Repr
 pub fn PageRowState::with_dirty(Self, Bool) -> Self
 pub fn PageRowState::with_grapheme(Self, Bool) -> Self
 pub fn PageRowState::with_hyperlink(Self, Bool) -> Self
@@ -82,14 +99,19 @@ pub(all) enum RowSemanticPrompt {
   Prompt
   PromptContinuation
 } derive(Eq, @debug.Debug)
+pub fn RowSemanticPrompt::equal(Self, Self) -> Bool
+pub fn RowSemanticPrompt::not_equal(Self, Self) -> Bool
+pub fn RowSemanticPrompt::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SemanticContent {
   Output
   Input
   Prompt
 } derive(Eq, @debug.Debug)
+pub fn SemanticContent::equal(Self, Self) -> Bool
+pub fn SemanticContent::not_equal(Self, Self) -> Bool
+pub fn SemanticContent::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

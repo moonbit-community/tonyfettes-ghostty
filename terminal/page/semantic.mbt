@@ -19,3 +19,15 @@ pub(all) enum RowSemanticPrompt {
   Prompt
   PromptContinuation
 } derive(Eq, Debug)
+
+///|
+pub extend SemanticContent with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticContent with @debug.Debug::{to_repr}
+
+///|
+pub extend RowSemanticPrompt with Eq::{not_equal, equal}
+
+///|
+pub extend RowSemanticPrompt with @debug.Debug::{to_repr}

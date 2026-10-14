@@ -1,8 +1,8 @@
 ///|
-const DefaultKittyImageStorageLimit : UInt = 320_000_000U
+const DefaultKittyImageStorageLimit : UInt32 = 320_000_000U
 
 ///|
-const KittyPlacementBelowBackgroundThreshold : Int = -1_073_741_824
+const KittyPlacementBelowBackgroundThreshold : Int32 = -1_073_741_824
 
 ///|
 pub(all) enum KittyGraphicsFormat {
@@ -27,10 +27,10 @@ pub(all) enum KittyPlacementLayer {
 
 ///|
 struct KittyImage {
-  id : UInt
-  number : UInt
-  width : UInt
-  height : UInt
+  id : UInt32
+  number : UInt32
+  width : UInt32
+  height : UInt32
   format_ : KittyGraphicsFormat
   compression_ : KittyGraphicsCompression
   data : Bytes
@@ -38,28 +38,28 @@ struct KittyImage {
 
 ///|
 struct KittyPlacementPixelSize {
-  width : UInt
-  height : UInt
+  width : UInt32
+  height : UInt32
 } derive(Eq, Debug)
 
 ///|
 struct KittyPlacementGridSize {
-  cols : UInt
-  rows : UInt
+  cols : UInt32
+  rows : UInt32
 } derive(Eq, Debug)
 
 ///|
 struct KittyPlacementSourceRect {
-  x : UInt
-  y : UInt
-  width : UInt
-  height : UInt
+  x : UInt32
+  y : UInt32
+  width : UInt32
+  height : UInt32
 } derive(Eq, Debug)
 
 ///|
 struct KittyPlacementViewportPosition {
-  col : Int
-  row : Int
+  col : Int32
+  row : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -87,16 +87,16 @@ struct KittyPlacement {
 ///|
 struct KittyPlacementIterator {
   entries : Array[KittyPlacement]
-  mut index : Int
+  mut index : Int32
 }
 
 ///|
 pub fn StreamTerminal::kitty_graphics(self : StreamTerminal) -> KittyGraphics {
-  { bridge: self.bridge(), screen: self.active_screen() }
+  { bridge: self.bridge(), screen: self.active_screen(), }
 }
 
 ///|
-pub fn KittyGraphics::image_storage_limit(self : KittyGraphics) -> UInt {
+pub fn KittyGraphics::image_storage_limit(self : KittyGraphics) -> UInt32 {
   ignore(self)
   DefaultKittyImageStorageLimit
 }
@@ -126,7 +126,7 @@ pub fn KittyGraphics::supports_shared_memory_medium(
 ///|
 pub fn KittyGraphics::image(
   self : KittyGraphics,
-  image_id : UInt,
+  image_id : UInt32,
 ) -> KittyImage? {
   kitty_graphics_owner_state(self).image_by_id(image_id).map(kitty_public_image)
 }
@@ -134,9 +134,9 @@ pub fn KittyGraphics::image(
 ///|
 pub fn KittyGraphics::placement_iterator(
   self : KittyGraphics,
-  layer? : KittyPlacementLayer = All,
+  layer~ : KittyPlacementLayer = All,
 ) -> KittyPlacementIterator {
-  { entries: kitty_public_placements(self, layer), index: 0 }
+  { entries: kitty_public_placements(self, layer), index: 0, }
 }
 
 ///|
@@ -153,22 +153,22 @@ pub fn KittyPlacementIterator::next(
 }
 
 ///|
-pub fn KittyImage::id(self : KittyImage) -> UInt {
+pub fn KittyImage::id(self : KittyImage) -> UInt32 {
   self.id
 }
 
 ///|
-pub fn KittyImage::number(self : KittyImage) -> UInt {
+pub fn KittyImage::number(self : KittyImage) -> UInt32 {
   self.number
 }
 
 ///|
-pub fn KittyImage::width(self : KittyImage) -> UInt {
+pub fn KittyImage::width(self : KittyImage) -> UInt32 {
   self.width
 }
 
 ///|
-pub fn KittyImage::height(self : KittyImage) -> UInt {
+pub fn KittyImage::height(self : KittyImage) -> UInt32 {
   self.height
 }
 
@@ -193,12 +193,12 @@ pub fn KittyPlacement::image(self : KittyPlacement) -> KittyImage {
 }
 
 ///|
-pub fn KittyPlacement::image_id(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::image_id(self : KittyPlacement) -> UInt32 {
   self.placement.image_id
 }
 
 ///|
-pub fn KittyPlacement::placement_id(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::placement_id(self : KittyPlacement) -> UInt32 {
   self.placement.placement_id
 }
 
@@ -208,47 +208,47 @@ pub fn KittyPlacement::is_virtual(self : KittyPlacement) -> Bool {
 }
 
 ///|
-pub fn KittyPlacement::x_offset(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::x_offset(self : KittyPlacement) -> UInt32 {
   self.placement.x_offset
 }
 
 ///|
-pub fn KittyPlacement::y_offset(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::y_offset(self : KittyPlacement) -> UInt32 {
   self.placement.y_offset
 }
 
 ///|
-pub fn KittyPlacement::source_x(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::source_x(self : KittyPlacement) -> UInt32 {
   self.placement.source_x
 }
 
 ///|
-pub fn KittyPlacement::source_y(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::source_y(self : KittyPlacement) -> UInt32 {
   self.placement.source_y
 }
 
 ///|
-pub fn KittyPlacement::source_width(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::source_width(self : KittyPlacement) -> UInt32 {
   self.placement.source_width
 }
 
 ///|
-pub fn KittyPlacement::source_height(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::source_height(self : KittyPlacement) -> UInt32 {
   self.placement.source_height
 }
 
 ///|
-pub fn KittyPlacement::columns(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::columns(self : KittyPlacement) -> UInt32 {
   self.placement.columns
 }
 
 ///|
-pub fn KittyPlacement::rows(self : KittyPlacement) -> UInt {
+pub fn KittyPlacement::rows(self : KittyPlacement) -> UInt32 {
   self.placement.rows
 }
 
 ///|
-pub fn KittyPlacement::z(self : KittyPlacement) -> Int {
+pub fn KittyPlacement::z(self : KittyPlacement) -> Int32 {
   self.placement.z
 }
 
@@ -308,8 +308,8 @@ pub fn KittyPlacement::rect(self : KittyPlacement) -> Selection? {
   }
   Some(
     Selection::new(
-      { screen: self.screen, pin: top_left },
-      { screen: self.screen, pin: bottom_right },
+      { screen: self.screen, pin: top_left, },
+      { screen: self.screen, pin: bottom_right, },
       true,
     ),
   )
@@ -327,7 +327,7 @@ pub fn KittyPlacement::pixel_size(
     self.bridge.width_px,
     self.bridge.height_px,
   )
-  { width: pixel_size.width, height: pixel_size.height }
+  { width: pixel_size.width, height: pixel_size.height, }
 }
 
 ///|
@@ -342,7 +342,7 @@ pub fn KittyPlacement::grid_size(
     self.bridge.width_px,
     self.bridge.height_px,
   )
-  { cols: grid_size.cols, rows: grid_size.rows }
+  { cols: grid_size.cols, rows: grid_size.rows, }
 }
 
 ///|
@@ -370,7 +370,7 @@ pub fn KittyPlacement::viewport_position(
       if bottom <= 0 || row >= grid.rows.to_int() {
         None
       } else {
-        Some({ col: pin_x.to_int(), row })
+        Some({ col: pin_x.to_int(), row, })
       }
     }
   }
@@ -383,7 +383,7 @@ pub fn KittyPlacement::source_rect(
   let rect = self.placement.source_rect(
     kitty_private_image(self.image_snapshot),
   )
-  { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+  { x: rect.x, y: rect.y, width: rect.width, height: rect.height, }
 }
 
 ///|
@@ -399,58 +399,62 @@ pub fn KittyPlacement::render_info(
 }
 
 ///|
-pub fn KittyPlacementPixelSize::width(self : KittyPlacementPixelSize) -> UInt {
+pub fn KittyPlacementPixelSize::width(self : KittyPlacementPixelSize) -> UInt32 {
   self.width
 }
 
 ///|
-pub fn KittyPlacementPixelSize::height(self : KittyPlacementPixelSize) -> UInt {
+pub fn KittyPlacementPixelSize::height(
+  self : KittyPlacementPixelSize,
+) -> UInt32 {
   self.height
 }
 
 ///|
-pub fn KittyPlacementGridSize::cols(self : KittyPlacementGridSize) -> UInt {
+pub fn KittyPlacementGridSize::cols(self : KittyPlacementGridSize) -> UInt32 {
   self.cols
 }
 
 ///|
-pub fn KittyPlacementGridSize::rows(self : KittyPlacementGridSize) -> UInt {
+pub fn KittyPlacementGridSize::rows(self : KittyPlacementGridSize) -> UInt32 {
   self.rows
 }
 
 ///|
-pub fn KittyPlacementSourceRect::x(self : KittyPlacementSourceRect) -> UInt {
+pub fn KittyPlacementSourceRect::x(self : KittyPlacementSourceRect) -> UInt32 {
   self.x
 }
 
 ///|
-pub fn KittyPlacementSourceRect::y(self : KittyPlacementSourceRect) -> UInt {
+pub fn KittyPlacementSourceRect::y(self : KittyPlacementSourceRect) -> UInt32 {
   self.y
 }
 
 ///|
-pub fn KittyPlacementSourceRect::width(self : KittyPlacementSourceRect) -> UInt {
+pub fn KittyPlacementSourceRect::width(
+  self : KittyPlacementSourceRect,
+) -> UInt32 {
   self.width
 }
 
 ///|
 pub fn KittyPlacementSourceRect::height(
   self : KittyPlacementSourceRect,
-) -> UInt {
+) -> UInt32 {
   self.height
 }
 
 ///|
 pub fn KittyPlacementViewportPosition::col(
   self : KittyPlacementViewportPosition,
-) -> Int {
+) -> Int32 {
   self.col
 }
 
 ///|
 pub fn KittyPlacementViewportPosition::row(
   self : KittyPlacementViewportPosition,
-) -> Int {
+) -> Int32 {
   self.row
 }
 
@@ -507,7 +511,7 @@ fn kitty_public_placements(
 }
 
 ///|
-fn KittyPlacementLayer::matches(self : KittyPlacementLayer, z : Int) -> Bool {
+fn KittyPlacementLayer::matches(self : KittyPlacementLayer, z : Int32) -> Bool {
   match self {
     All => true
     BelowBackground => z < KittyPlacementBelowBackgroundThreshold
@@ -607,10 +611,64 @@ fn kitty_placement_scrollback(placement : KittyPlacement) -> @pagelist.PageList 
 }
 
 ///|
-fn kitty_min_int(left : Int, right : Int) -> Int {
+fn kitty_min_int(left : Int32, right : Int32) -> Int32 {
   if left <= right {
     left
   } else {
     right
   }
 }
+
+///|
+pub extend KittyGraphicsFormat with Eq::{not_equal, equal}
+
+///|
+pub extend KittyGraphicsFormat with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyGraphicsCompression with Eq::{not_equal, equal}
+
+///|
+pub extend KittyGraphicsCompression with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyPlacementLayer with Eq::{not_equal, equal}
+
+///|
+pub extend KittyPlacementLayer with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyImage with Eq::{not_equal, equal}
+
+///|
+pub extend KittyImage with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyPlacementPixelSize with Eq::{not_equal, equal}
+
+///|
+pub extend KittyPlacementPixelSize with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyPlacementGridSize with Eq::{not_equal, equal}
+
+///|
+pub extend KittyPlacementGridSize with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyPlacementSourceRect with Eq::{not_equal, equal}
+
+///|
+pub extend KittyPlacementSourceRect with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyPlacementViewportPosition with Eq::{not_equal, equal}
+
+///|
+pub extend KittyPlacementViewportPosition with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyPlacementRenderInfo with Eq::{not_equal, equal}
+
+///|
+pub extend KittyPlacementRenderInfo with @debug.Debug::{to_repr}

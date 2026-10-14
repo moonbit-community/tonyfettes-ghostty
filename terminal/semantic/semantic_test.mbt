@@ -45,7 +45,7 @@ fn expect_screen_semantic_prompt(bytes : Bytes) -> @osc.SemanticPrompt raise {
 
 ///|
 test "screen semantic state/defaults" {
-  let state = ScreenSemanticState::new()
+  let state = @semantic.ScreenSemanticState::new()
   guard !state.seen() else { fail("expected semantic state to start unseen") }
   guard state.click() == None &&
     state.cursor_content() == Output &&
@@ -60,7 +60,7 @@ test "screen semantic state/fresh line new prompt applies prompt and click_event
   let prompt = expect_screen_semantic_prompt(
     b"\x1B]133;A;click_events=1;cl=line\x07",
   )
-  let state = ScreenSemanticState::new()
+  let state = @semantic.ScreenSemanticState::new()
   state.apply_fresh_line_new_prompt(prompt)
 
   guard state.seen() &&
@@ -74,7 +74,7 @@ test "screen semantic state/fresh line new prompt applies prompt and click_event
 ///|
 test "screen semantic state/prompt start maps continuation kinds" {
   let prompt = expect_screen_semantic_prompt(b"\x1B]133;P;k=c\x07")
-  let state = ScreenSemanticState::new()
+  let state = @semantic.ScreenSemanticState::new()
   state.apply_prompt_start(prompt)
 
   guard state.seen() &&
@@ -91,7 +91,7 @@ test "screen semantic state/cl fallback and disabled click_events preserve exist
   let disabled_prompt = expect_screen_semantic_prompt(
     b"\x1B]133;A;click_events=0\x07",
   )
-  let state = ScreenSemanticState::new()
+  let state = @semantic.ScreenSemanticState::new()
   state.apply_fresh_line_new_prompt(click_prompt)
   guard state.click() == Cl(SmartVertical) else {
     fail("expected cl fallback click mode")
@@ -105,7 +105,7 @@ test "screen semantic state/cl fallback and disabled click_events preserve exist
 
 ///|
 test "screen semantic state/input output row clear and full reset" {
-  let state = ScreenSemanticState::new()
+  let state = @semantic.ScreenSemanticState::new()
   let prompt = expect_screen_semantic_prompt(b"\x1B]133;P;k=i\x07")
   state.apply_prompt_start(prompt)
   state.start_input(true)

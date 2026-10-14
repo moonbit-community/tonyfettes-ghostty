@@ -19,7 +19,7 @@ fn x11_color_lookup(value : BytesView) -> RGB? {
 }
 
 ///|
-fn trim_name_bounds(input : BytesView) -> (Int, Int) {
+fn trim_name_bounds(input : BytesView) -> (Int32, Int32) {
   let mut start = 0
   let mut end_ = input.length()
   while start < end_ && input[start] == b' ' {

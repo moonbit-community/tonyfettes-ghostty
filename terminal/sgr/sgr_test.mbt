@@ -1,6 +1,6 @@
 ///|
 test "sgr parser/new empty parser yields unset once" {
-  let parser = SgrParser::new()
+  let parser = @sgr.SgrParser::new()
   guard parser.next() == Some(Unset) else {
     fail("expected empty public sgr parser to yield unset")
   }
@@ -11,7 +11,7 @@ test "sgr parser/new empty parser yields unset once" {
 
 ///|
 test "sgr parser/set params parses and reset rewinds iteration" {
-  let parser = SgrParser::new()
+  let parser = @sgr.SgrParser::new()
   guard parser.set_params([1, 38, 2, 40, 44, 52], []) == Success else {
     fail("expected sgr params to be accepted")
   }
@@ -34,7 +34,7 @@ test "sgr parser/set params parses and reset rewinds iteration" {
 
 ///|
 test "sgr parser/unknown payload stays visible through public attribute surface" {
-  let parser = SgrParser::new()
+  let parser = @sgr.SgrParser::new()
   guard parser.set_params([0, 4, 1], [b':', b';', b';']) == Success else {
     fail("expected colon-marked sgr params to be accepted")
   }
@@ -51,7 +51,7 @@ test "sgr parser/unknown payload stays visible through public attribute surface"
 
 ///|
 test "sgr parser/rejects invalid separator lengths" {
-  let parser = SgrParser::new()
+  let parser = @sgr.SgrParser::new()
   guard parser.set_params([1], [b':', b':']) == InvalidValue else {
     fail("expected mismatched separator lengths to be rejected")
   }
@@ -59,7 +59,7 @@ test "sgr parser/rejects invalid separator lengths" {
 
 ///|
 test "sgr parser/rejects oversized parameter payloads" {
-  let parser = SgrParser::new()
+  let parser = @sgr.SgrParser::new()
   let oversized : Array[UInt16] = []
   for value in 0..<65 {
     oversized.push(value.to_uint16())

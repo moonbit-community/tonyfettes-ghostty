@@ -1,8 +1,8 @@
 ///|
 fn next_placement(
-  graphics : KittyGraphics,
-  layer? : KittyPlacementLayer = All,
-) -> KittyPlacement raise {
+  graphics : @terminal.KittyGraphics,
+  layer~ : @terminal.KittyPlacementLayer = All,
+) -> @terminal.KittyPlacement raise {
   let iter = graphics.placement_iterator(layer~)
   match iter.next() {
     Some(placement) => placement
@@ -12,9 +12,9 @@ fn next_placement(
 
 ///|
 fn placement_count(
-  graphics : KittyGraphics,
-  layer? : KittyPlacementLayer = All,
-) -> Int {
+  graphics : @terminal.KittyGraphics,
+  layer~ : @terminal.KittyPlacementLayer = All,
+) -> Int32 {
   let iter = graphics.placement_iterator(layer~)
   let mut count = 0
   while iter.next() is Some(_) {
@@ -25,10 +25,10 @@ fn placement_count(
 
 ///|
 test "kitty graphics/exposes build info and empty owner defaults" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   let graphics = terminal.kitty_graphics()
 
-  guard build_info().kitty_graphics() &&
+  guard @terminal.build_info().kitty_graphics() &&
     graphics.image_storage_limit() == 320_000_000U &&
     !graphics.supports_file_medium() &&
     !graphics.supports_temporary_file_medium() &&
@@ -44,13 +44,13 @@ test "kitty graphics/exposes build info and empty owner defaults" {
 ///|
 test "kitty graphics/png transmit uses the installed terminal decoder" {
   let decoded_payloads : Array[Bytes] = []
-  terminal_system_clear_decode_png()
-  terminal_system_set_decode_png(fn(data) {
+  @terminal.terminal_system_clear_decode_png()
+  @terminal.terminal_system_set_decode_png(fn(data) {
     decoded_payloads.push(data)
-    Some(SystemImage::new(1U, 1U, b"\x10\x20\x30\x40"))
+    Some(@terminal.SystemImage::new(1U, 1U, b"\x10\x20\x30\x40"))
   })
 
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   terminal.next_slice(b"\x1B_Ga=t,t=d,f=100,i=1;QUJD\x1B\\")
 
   let image = terminal.kitty_graphics().image(1U).unwrap()
@@ -65,12 +65,12 @@ test "kitty graphics/png transmit uses the installed terminal decoder" {
   }
 
   terminal.deinit()
-  terminal_system_clear_decode_png()
+  @terminal.terminal_system_clear_decode_png()
 }
 
 ///|
 test "kitty graphics/image lookup and placement geometry match transmitted state" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 24, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics geometry test")
   }
@@ -143,7 +143,7 @@ test "kitty graphics/image lookup and placement geometry match transmitted state
 
 ///|
 test "kitty graphics/placement pin survives column resize reflow" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(8, 3, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics reflow-pin test")
   }
@@ -171,7 +171,7 @@ test "kitty graphics/placement pin survives column resize reflow" {
 
 ///|
 test "kitty graphics/source rect and virtual placement stay typed" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 24, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics source-rect test")
   }
@@ -207,7 +207,7 @@ test "kitty graphics/source rect and virtual placement stay typed" {
 
 ///|
 test "kitty graphics/zero cell metrics keep geometry absent" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 24, 0U, 0U) == Success else {
     fail("expected resize before kitty graphics zero-metric test")
   }
@@ -236,7 +236,7 @@ test "kitty graphics/zero cell metrics keep geometry absent" {
 
 ///|
 test "kitty graphics/stale placements drop coordinate queries after reset" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 5, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics stale-placement test")
   }
@@ -261,7 +261,7 @@ test "kitty graphics/stale placements drop coordinate queries after reset" {
 
 ///|
 test "kitty graphics/layer filters and inactive screen handles stay queryable" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 24, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics layer-filter test")
   }
@@ -296,7 +296,7 @@ test "kitty graphics/layer filters and inactive screen handles stay queryable" {
 
 ///|
 test "kitty graphics/alternate owner survives screen switches" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 24, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics alternate-owner test")
   }
@@ -326,7 +326,7 @@ test "kitty graphics/alternate owner survives screen switches" {
 
 ///|
 test "kitty graphics/viewport position tracks visible and off-screen placements" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 5, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics viewport test")
   }
@@ -353,7 +353,7 @@ test "kitty graphics/viewport position tracks visible and off-screen placements"
 
 ///|
 test "kitty graphics/rgba placement clamps to screen bounds" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 5, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics rgba-clamp test")
   }
@@ -389,7 +389,7 @@ test "kitty graphics/rgba placement clamps to screen bounds" {
 
 ///|
 test "kitty graphics/no-op delete selectors preserve visible state" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   guard terminal.resize(80, 5, 10U, 20U) == Success else {
     fail("expected resize before kitty graphics delete-selector test")
   }

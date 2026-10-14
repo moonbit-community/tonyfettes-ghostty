@@ -9,10 +9,10 @@
 /// digit loop (an `Array[Byte]` does not coerce to a `BytesView`).
 pub fn find_byte(
   bytes : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
   needle : Byte,
-) -> Int? {
+) -> Int32? {
   let mut index = start
   while index < end_ {
     if bytes[index] == needle {
@@ -26,8 +26,8 @@ pub fn find_byte(
 ///|
 pub fn slice_equals_ascii(
   bytes : BytesView,
-  start : Int,
-  end_ : Int,
+  start : Int32,
+  end_ : Int32,
   expected : String,
 ) -> Bool {
   if end_ - start != expected.length() {
@@ -44,7 +44,11 @@ pub fn slice_equals_ascii(
 }
 
 ///|
-pub fn parse_u32_ascii(bytes : BytesView, start : Int, end_ : Int) -> UInt? {
+pub fn parse_u32_ascii(
+  bytes : BytesView,
+  start : Int32,
+  end_ : Int32,
+) -> UInt32? {
   if start >= end_ {
     return None
   }
@@ -52,7 +56,11 @@ pub fn parse_u32_ascii(bytes : BytesView, start : Int, end_ : Int) -> UInt? {
 }
 
 ///|
-pub fn parse_i32_ascii(bytes : BytesView, start : Int, end_ : Int) -> Int? {
+pub fn parse_i32_ascii(
+  bytes : BytesView,
+  start : Int32,
+  end_ : Int32,
+) -> Int32? {
   if start >= end_ {
     return None
   }
@@ -60,11 +68,11 @@ pub fn parse_i32_ascii(bytes : BytesView, start : Int, end_ : Int) -> Int? {
 }
 
 ///|
-pub fn parse_kitty_graphics_u32(bytes : Array[Byte]) -> UInt? {
+pub fn parse_kitty_graphics_u32(bytes : Array[Byte]) -> UInt32? {
   if bytes.length() == 0 {
     return None
   }
-  let mut value : UInt = 0U
+  let mut value : UInt32 = 0U
   let limit = 4294967295U
   let mut index = 0
   while index < bytes.length() {
@@ -83,7 +91,7 @@ pub fn parse_kitty_graphics_u32(bytes : Array[Byte]) -> UInt? {
 }
 
 ///|
-pub fn parse_kitty_graphics_i32(bytes : Array[Byte]) -> Int? {
+pub fn parse_kitty_graphics_i32(bytes : Array[Byte]) -> Int32? {
   if bytes.length() == 0 {
     return None
   }
@@ -92,7 +100,7 @@ pub fn parse_kitty_graphics_i32(bytes : Array[Byte]) -> Int? {
   if start >= bytes.length() {
     return None
   }
-  let mut value : UInt = 0U
+  let mut value : UInt32 = 0U
   let limit = if negative { 2147483648U } else { 2147483647U }
   let mut index = start
   while index < bytes.length() {
@@ -119,11 +127,11 @@ pub fn parse_kitty_graphics_i32(bytes : Array[Byte]) -> Int? {
 }
 
 ///|
-fn digits_to_u32(bytes : BytesView) -> UInt? {
+fn digits_to_u32(bytes : BytesView) -> UInt32? {
   if bytes.length() == 0 {
     return None
   }
-  let mut value : UInt = 0U
+  let mut value : UInt32 = 0U
   let limit = 4294967295U
   let mut index = 0
   while index < bytes.length() {
@@ -142,7 +150,7 @@ fn digits_to_u32(bytes : BytesView) -> UInt? {
 }
 
 ///|
-fn digits_to_i32(bytes : BytesView) -> Int? {
+fn digits_to_i32(bytes : BytesView) -> Int32? {
   if bytes.length() == 0 {
     return None
   }
@@ -151,7 +159,7 @@ fn digits_to_i32(bytes : BytesView) -> Int? {
   if start >= bytes.length() {
     return None
   }
-  let mut value : UInt = 0U
+  let mut value : UInt32 = 0U
   let limit = if negative { 2147483648U } else { 2147483647U }
   let mut index = start
   while index < bytes.length() {

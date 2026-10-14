@@ -71,7 +71,7 @@ pub fn DcsHookPayload::final_byte(self : DcsHookPayload) -> Byte {
 
 ///|
 pub(all) enum StreamAction {
-  StreamPrint(UInt)
+  StreamPrint(UInt32)
   StreamPrintRepeat(UInt16)
   StreamBell
   StreamBackspace
@@ -174,7 +174,7 @@ pub(open) trait StreamHandler {
   // through a dedicated typed method avoids allocating + dropping a
   // `StreamPrint` box per character (the generic `vt` path boxes; this does
   // not). Mirrors upstream's comptime-specialized `vt(.print, …)`.
-  fn print(Self, UInt) -> Unit
+  fn print(Self, UInt32) -> Unit
   fn deinit(Self) -> Unit
 }
 
@@ -192,7 +192,7 @@ struct Stream[H] {
   utf8decoder : @utf8_decoder.Utf8Decoder
   // Reused UTF-32 scratch for the ground-state bulk decode
   // (`decode_utf8_until_control_seq`). Allocated once; never escapes the stream.
-  cp_buf : FixedArray[UInt]
+  cp_buf : FixedArray[UInt32]
   // Reused SGR iterator. `emit_sgr` re-points it at each CSI `m` parameter view
   // via `set_view` instead of allocating a fresh parser per sequence (SGR is a
   // very hot CSI). The stored param view aliases the parser buffer only for the
@@ -313,8 +313,8 @@ fn[H : StreamHandler] Stream::next_slice_capped(
 fn[H : StreamHandler] Stream::consume_all_escapes(
   self : Stream[H],
   input : BytesView,
-  start : Int,
-) -> Int {
+  start : Int32,
+) -> Int32 {
   let mut offset = start
   while offset < input.length() && input[offset] == 0x1B {
     self.parser.enter_escape()
@@ -328,8 +328,8 @@ fn[H : StreamHandler] Stream::consume_all_escapes(
 fn[H : StreamHandler] Stream::consume_until_ground(
   self : Stream[H],
   input : BytesView,
-  start : Int,
-) -> Int {
+  start : Int32,
+) -> Int32 {
   // Iterate the tail view rather than indexing `input[offset]`: the view
   // iterator carries its own bound, so the byte load is emitted without a
   // per-byte bounds check (an `input[offset]` index re-checks `offset` against
@@ -379,7 +379,7 @@ fn[H : StreamHandler] Stream::next_utf8(self : Stream[H], byte : Byte) -> Unit {
 ///|
 fn[H : StreamHandler] Stream::handle_codepoint(
   self : Stream[H],
-  codepoint : UInt,
+  codepoint : UInt32,
 ) -> Unit {
   if codepoint <= 0x0FU {
     self.execute(codepoint.to_byte())
@@ -444,7 +444,10 @@ fn[H : StreamHandler] Stream::emit(
 }
 
 ///|
-fn[H : StreamHandler] Stream::print(self : Stream[H], codepoint : UInt) -> Unit {
+fn[H : StreamHandler] Stream::print(
+  self : Stream[H],
+  codepoint : UInt32,
+) -> Unit {
   // Fast lane: call the handler's typed `print` directly instead of
   // `emit(StreamPrint(codepoint))`, which would box the action. Both the
   // ground-state codepoint path (`handle_codepoint`) and the parser-dispatched
@@ -468,7 +471,7 @@ fn[H : StreamHandler] Stream::emit_sgr(
 ///|
 fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
   if byte > 0x7F {
-    self.esc_dispatch({ intermediates: [], final_byte: byte - 0x40 })
+    self.esc_dispatch({ intermediates: [], final_byte: byte - 0x40, })
     return
   }
 
@@ -481,9 +484,9 @@ fn[H : StreamHandler] Stream::execute(self : Stream[H], byte : Byte) -> Unit {
     Some(Lf) | Some(Vt) | Some(Ff) => self.emit(StreamLinefeed)
     Some(Cr) => self.emit(StreamCarriageReturn)
     Some(So) =>
-      self.emit(StreamInvokeCharset({ bank: Gl, charset: G1, locking: false }))
+      self.emit(StreamInvokeCharset({ bank: Gl, charset: G1, locking: false, }))
     Some(Si) =>
-      self.emit(StreamInvokeCharset({ bank: Gl, charset: G0, locking: false }))
+      self.emit(StreamInvokeCharset({ bank: Gl, charset: G0, locking: false, }))
     None => ()
   }
 }
@@ -737,11 +740,11 @@ fn[H : StreamHandler] Stream::csi_dispatch(
         ([], []) => self.emit(StreamLeftAndRightMarginAmbiguous)
         ([], [left]) =>
           self.emit(
-            StreamLeftAndRightMargin({ top_left: left, bottom_right: 0 }),
+            StreamLeftAndRightMargin({ top_left: left, bottom_right: 0, }),
           )
         ([], [left, right]) =>
           self.emit(
-            StreamLeftAndRightMargin({ top_left: left, bottom_right: right }),
+            StreamLeftAndRightMargin({ top_left: left, bottom_right: right, }),
           )
         ([b'?'], _) =>
           for value in csi.params {
@@ -942,7 +945,7 @@ fn[H : StreamHandler] Stream::emit_invoke_charset(
   charset : @charsets.Slots,
   locking : Bool,
 ) -> Unit {
-  self.emit(StreamInvokeCharset({ bank, charset, locking }))
+  self.emit(StreamInvokeCharset({ bank, charset, locking, }))
 }
 
 ///|
@@ -952,10 +955,10 @@ fn[H : StreamHandler] Stream::configure_charset(
   charset : @charsets.Charset,
 ) -> Unit {
   match intermediates {
-    [b'('] => self.emit(StreamConfigureCharset({ slot: G0, charset }))
-    [b')'] => self.emit(StreamConfigureCharset({ slot: G1, charset }))
-    [b'*'] => self.emit(StreamConfigureCharset({ slot: G2, charset }))
-    [b'+'] => self.emit(StreamConfigureCharset({ slot: G3, charset }))
+    [b'('] => self.emit(StreamConfigureCharset({ slot: G0, charset, }))
+    [b')'] => self.emit(StreamConfigureCharset({ slot: G1, charset, }))
+    [b'*'] => self.emit(StreamConfigureCharset({ slot: G2, charset, }))
+    [b'+'] => self.emit(StreamConfigureCharset({ slot: G3, charset, }))
     _ => ()
   }
 }
@@ -972,9 +975,9 @@ fn default_single_param(params : ArrayView[UInt16]) -> UInt16? {
 ///|
 fn cursor_position(params : ArrayView[UInt16]) -> CursorPosition? {
   match params {
-    [] => Some({ row: 1, col: 1 })
-    [row] => Some({ row, col: 1 })
-    [row, col] => Some({ row, col })
+    [] => Some({ row: 1, col: 1, })
+    [row] => Some({ row, col: 1, })
+    [row, col] => Some({ row, col, })
     _ => None
   }
 }
@@ -982,9 +985,9 @@ fn cursor_position(params : ArrayView[UInt16]) -> CursorPosition? {
 ///|
 fn top_and_bottom_margin(params : ArrayView[UInt16]) -> Margin? {
   match params {
-    [] => Some({ top_left: 0, bottom_right: 0 })
-    [top] => Some({ top_left: top, bottom_right: 0 })
-    [top, bottom] => Some({ top_left: top, bottom_right: bottom })
+    [] => Some({ top_left: 0, bottom_right: 0, })
+    [top] => Some({ top_left: top, bottom_right: 0, })
+    [top, bottom] => Some({ top_left: top, bottom_right: bottom, })
     _ => None
   }
 }
@@ -1187,3 +1190,51 @@ fn mode_ansi(intermediates : ArrayView[Byte]) -> Bool? {
     _ => None
   }
 }
+
+///|
+pub extend InvokeCharsetAction with Eq::{not_equal, equal}
+
+///|
+pub extend InvokeCharsetAction with @debug.Debug::{to_repr}
+
+///|
+pub extend ConfigureCharsetAction with Eq::{not_equal, equal}
+
+///|
+pub extend ConfigureCharsetAction with @debug.Debug::{to_repr}
+
+///|
+pub extend CursorMovement with Eq::{not_equal, equal}
+
+///|
+pub extend CursorMovement with @debug.Debug::{to_repr}
+
+///|
+pub extend CursorPosition with Eq::{not_equal, equal}
+
+///|
+pub extend CursorPosition with @debug.Debug::{to_repr}
+
+///|
+pub extend Margin with Eq::{not_equal, equal}
+
+///|
+pub extend Margin with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyKeyboardFlags with Eq::{not_equal, equal}
+
+///|
+pub extend KittyKeyboardFlags with @debug.Debug::{to_repr}
+
+///|
+pub extend DcsHookPayload with Eq::{not_equal, equal}
+
+///|
+pub extend DcsHookPayload with @debug.Debug::{to_repr}
+
+///|
+pub extend StreamAction with Eq::{not_equal, equal}
+
+///|
+pub extend StreamAction with @debug.Debug::{to_repr}

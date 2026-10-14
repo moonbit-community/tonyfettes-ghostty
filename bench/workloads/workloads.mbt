@@ -14,7 +14,7 @@
 struct Workload {
   name : String
   payload : Bytes
-  default_iters : Int
+  default_iters : Int32
 }
 
 ///|
@@ -55,7 +55,7 @@ pub fn Workload::run_main(self : Workload) -> Unit {
 
 ///|
 /// Append a decimal integer as ASCII (for CSI/OSC numeric params).
-fn put_uint(buf : Buffer, value : Int) -> Unit {
+fn put_uint(buf : Buffer, value : Int32) -> Unit {
   if value >= 10 {
     put_uint(buf, value / 10)
   }
@@ -75,7 +75,7 @@ pub fn plain_lines() -> Workload {
   for _ in 0..<200 {
     buf.write_bytes(lb)
   }
-  { name: "plain_lines", payload: buf.contents(), default_iters: 1500 }
+  { name: "plain_lines", payload: buf.contents(), default_iters: 1500, }
 }
 
 ///|
@@ -86,12 +86,12 @@ pub fn wrapped_blob() -> Workload {
   for _ in 0..<(16000 / 26) {
     buf.write_bytes(chunk)
   }
-  { name: "wrapped_blob", payload: buf.contents(), default_iters: 2000 }
+  { name: "wrapped_blob", payload: buf.contents(), default_iters: 2000, }
 }
 
 ///|
 /// `lines` rows of `x\n`: stresses scrolling / scrollback.
-fn scroll(lines : Int) -> Bytes {
+fn scroll(lines : Int32) -> Bytes {
   let buf = Buffer(size_hint=256)
   for _ in 0..<lines {
     buf.write_bytes(b"x\n")
@@ -102,7 +102,7 @@ fn scroll(lines : Int) -> Bytes {
 ///|
 /// Mostly newlines, staying within the scrollback limit.
 pub fn scroll_storm() -> Workload {
-  { name: "scroll_storm", payload: scroll(4000), default_iters: 300 }
+  { name: "scroll_storm", payload: scroll(4000), default_iters: 300, }
 }
 
 ///|
@@ -110,7 +110,7 @@ pub fn scroll_storm() -> Workload {
 /// 10_000), so every line past the limit forces a history eviction — the path
 /// `scroll_storm` (4_000 lines) never reaches.
 pub fn scroll_full() -> Workload {
-  { name: "scroll_full", payload: scroll(20000), default_iters: 80 }
+  { name: "scroll_full", payload: scroll(20000), default_iters: 80, }
 }
 
 ///|
@@ -122,7 +122,7 @@ pub fn colored_log() -> Workload {
     put_uint(buf, i % 100)
     buf.write_bytes(b"\x1b[0m started on \x1b[33mport 8080\x1b[0m\n")
   }
-  { name: "colored_log", payload: buf.contents(), default_iters: 1500 }
+  { name: "colored_log", payload: buf.contents(), default_iters: 1500, }
 }
 
 ///|
@@ -139,7 +139,7 @@ pub fn tui_redraw() -> Workload {
       buf.write_bytes(b" content here \x1b[0m")
     }
   }
-  { name: "tui_redraw", payload: buf.contents(), default_iters: 800 }
+  { name: "tui_redraw", payload: buf.contents(), default_iters: 800, }
 }
 
 ///|
@@ -153,7 +153,7 @@ pub fn cjk_text() -> Workload {
       buf.write_bytes(chunk)
     }
   }
-  { name: "cjk_text", payload: buf.contents(), default_iters: 900 }
+  { name: "cjk_text", payload: buf.contents(), default_iters: 900, }
 }
 
 ///|
@@ -165,7 +165,7 @@ pub fn osc_titles() -> Workload {
     put_uint(buf, i % 1000)
     buf.write_bytes(b" running\x07compiling module output line\n")
   }
-  { name: "osc_titles", payload: buf.contents(), default_iters: 1500 }
+  { name: "osc_titles", payload: buf.contents(), default_iters: 1500, }
 }
 
 ///|
@@ -183,7 +183,7 @@ pub fn color_storm() -> Workload {
     buf.write_bytes(b"\x1b]10;rgb:ffff/0000/0000\x07")
     buf.write_bytes(b"\x1b]11;#1e1e2e\x07")
   }
-  { name: "color_storm", payload: buf.contents(), default_iters: 60 }
+  { name: "color_storm", payload: buf.contents(), default_iters: 60, }
 }
 
 ///|
@@ -196,7 +196,7 @@ pub fn sgr_storm() -> Workload {
   for _ in 0..<50000 {
     buf.write_bytes(b"\x1b[1m\x1b[0m")
   }
-  { name: "sgr_storm", payload: buf.contents(), default_iters: 120 }
+  { name: "sgr_storm", payload: buf.contents(), default_iters: 120, }
 }
 
 ///|
@@ -207,7 +207,7 @@ pub fn query_storm() -> Workload {
   for _ in 0..<20000 {
     buf.write_bytes(b"\x1b[?7$p\x1b[c\x1b[>q\x05\x1b[18t")
   }
-  { name: "query_storm", payload: buf.contents(), default_iters: 80 }
+  { name: "query_storm", payload: buf.contents(), default_iters: 80, }
 }
 
 ///|
@@ -226,5 +226,5 @@ pub fn mixed_realistic() -> Workload {
     put_uint(buf, i)
     buf.write_bytes(b"\n")
   }
-  { name: "mixed_realistic", payload: buf.contents(), default_iters: 900 }
+  { name: "mixed_realistic", payload: buf.contents(), default_iters: 900, }
 }

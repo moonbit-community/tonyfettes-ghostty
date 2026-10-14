@@ -1,31 +1,31 @@
 ///|
-const DefaultCellWidthPx : UInt = 10U
+const DefaultCellWidthPx : UInt32 = 10U
 
 ///|
-const DefaultCellHeightPx : UInt = 20U
+const DefaultCellHeightPx : UInt32 = 20U
 
 ///|
-const MinColumns : Int = 1
+const MinColumns : Int32 = 1
 
 ///|
-const MaxColumns : Int = 240
+const MaxColumns : Int32 = 240
 
 ///|
-const MinRows : Int = 1
+const MinRows : Int32 = 1
 
 ///|
-const MaxRows : Int = 120
+const MaxRows : Int32 = 120
 
 ///|
 priv struct PlaygroundLog {
-  mut bell_count : Int
-  mut title_change_count : Int
+  mut bell_count : Int32
+  mut title_change_count : Int32
   pty : @buffer.Buffer
 }
 
 ///|
 fn PlaygroundLog::new() -> PlaygroundLog {
-  { bell_count: 0, title_change_count: 0, pty: Buffer() }
+  { bell_count: 0, title_change_count: 0, pty: Buffer(), }
 }
 
 ///|
@@ -81,7 +81,7 @@ fn PlaygroundSession::new() -> PlaygroundSession {
     )
   })
   terminal.set_enquiry(fn() { bytes_from_string("ghostty-playground") })
-  { terminal, log }
+  { terminal, log, }
 }
 
 ///|
@@ -99,7 +99,7 @@ fn PlaygroundSession::full_reset(self : PlaygroundSession) -> Unit {
 let sessions : Array[PlaygroundSession?] = []
 
 ///|
-pub fn playground_new(columns : Int, rows : Int) -> Int {
+pub fn playground_new(columns : Int32, rows : Int32) -> Int32 {
   let session = PlaygroundSession::new()
   ignore(
     session.terminal.resize(
@@ -113,7 +113,7 @@ pub fn playground_new(columns : Int, rows : Int) -> Int {
 }
 
 ///|
-pub fn playground_free(handle : Int) -> Unit {
+pub fn playground_free(handle : Int32) -> Unit {
   match session_index(handle) {
     Some(index) =>
       match sessions.get(index) {
@@ -128,7 +128,7 @@ pub fn playground_free(handle : Int) -> Unit {
 }
 
 ///|
-pub fn playground_reset(handle : Int) -> Unit {
+pub fn playground_reset(handle : Int32) -> Unit {
   match session(handle) {
     Some(session) => session.full_reset()
     None => ()
@@ -136,7 +136,11 @@ pub fn playground_reset(handle : Int) -> Unit {
 }
 
 ///|
-pub fn playground_resize(handle : Int, columns : Int, rows : Int) -> Int {
+pub fn playground_resize(
+  handle : Int32,
+  columns : Int32,
+  rows : Int32,
+) -> Int32 {
   match session(handle) {
     Some(session) =>
       session.terminal
@@ -152,7 +156,7 @@ pub fn playground_resize(handle : Int, columns : Int, rows : Int) -> Int {
 }
 
 ///|
-pub fn playground_apply_text(handle : Int, input : String) -> Unit {
+pub fn playground_apply_text(handle : Int32, input : String) -> Unit {
   match session(handle) {
     Some(session) => session.terminal.next_slice(bytes_from_string(input))
     None => ()
@@ -160,7 +164,7 @@ pub fn playground_apply_text(handle : Int, input : String) -> Unit {
 }
 
 ///|
-pub fn playground_scroll_delta(handle : Int, delta : Int) -> Unit {
+pub fn playground_scroll_delta(handle : Int32, delta : Int32) -> Unit {
   match session(handle) {
     Some(session) => session.terminal.scroll_viewport_delta(delta)
     None => ()
@@ -168,28 +172,28 @@ pub fn playground_scroll_delta(handle : Int, delta : Int) -> Unit {
 }
 
 ///|
-pub fn playground_render_html(handle : Int) -> String {
+pub fn playground_render_html(handle : Int32) -> String {
   with_session_string(handle, fn(session) {
     formatted_terminal(session.terminal, Html)
   })
 }
 
 ///|
-pub fn playground_render_plain(handle : Int) -> String {
+pub fn playground_render_plain(handle : Int32) -> String {
   with_session_string(handle, fn(session) {
     formatted_terminal(session.terminal, Plain)
   })
 }
 
 ///|
-pub fn playground_render_vt(handle : Int) -> String {
+pub fn playground_render_vt(handle : Int32) -> String {
   with_session_string(handle, fn(session) {
     formatted_terminal(session.terminal, Vt)
   })
 }
 
 ///|
-pub fn playground_state_json(handle : Int) -> String {
+pub fn playground_state_json(handle : Int32) -> String {
   with_session_string(handle, fn(session) {
     let scrollbar = session.terminal.scrollbar()
     let value : Json = {
@@ -231,7 +235,7 @@ pub fn playground_state_json(handle : Int) -> String {
 }
 
 ///|
-pub fn playground_cell_json(handle : Int, row : Int, col : Int) -> String {
+pub fn playground_cell_json(handle : Int32, row : Int32, col : Int32) -> String {
   with_session_string(handle, fn(session) {
     if row < 0 || col < 0 {
       return Json::null().stringify()
@@ -253,7 +257,7 @@ pub fn playground_cell_json(handle : Int, row : Int, col : Int) -> String {
 }
 
 ///|
-pub fn playground_kitty_json(handle : Int) -> String {
+pub fn playground_kitty_json(handle : Int32) -> String {
   with_session_string(handle, fn(session) {
     let graphics = session.terminal.kitty_graphics()
     let placements : Array[Json] = []
@@ -274,12 +278,12 @@ pub fn playground_kitty_json(handle : Int) -> String {
 }
 
 ///|
-pub fn playground_pty_output(handle : Int) -> String {
+pub fn playground_pty_output(handle : Int32) -> String {
   with_session_string(handle, fn(session) { session.log.pty_text() })
 }
 
 ///|
-pub fn playground_clear_pty_output(handle : Int) -> Unit {
+pub fn playground_clear_pty_output(handle : Int32) -> Unit {
   match session(handle) {
     Some(session) => session.log.pty.reset()
     None => ()
@@ -287,7 +291,7 @@ pub fn playground_clear_pty_output(handle : Int) -> Unit {
 }
 
 ///|
-fn session(handle : Int) -> PlaygroundSession? {
+fn session(handle : Int32) -> PlaygroundSession? {
   match session_index(handle) {
     Some(index) =>
       match sessions.get(index) {
@@ -299,7 +303,7 @@ fn session(handle : Int) -> PlaygroundSession? {
 }
 
 ///|
-fn session_index(handle : Int) -> Int? {
+fn session_index(handle : Int32) -> Int32? {
   if handle <= 0 {
     return None
   }
@@ -312,7 +316,7 @@ fn session_index(handle : Int) -> Int? {
 }
 
 ///|
-fn store_session(session : PlaygroundSession) -> Int {
+fn store_session(session : PlaygroundSession) -> Int32 {
   for index in 0..<sessions.length() {
     if sessions[index] is None {
       sessions[index] = Some(session)
@@ -324,17 +328,17 @@ fn store_session(session : PlaygroundSession) -> Int {
 }
 
 ///|
-fn clamp_columns(columns : Int) -> UInt16 {
+fn clamp_columns(columns : Int32) -> UInt16 {
   clamp_int(columns, MinColumns, MaxColumns).to_uint16()
 }
 
 ///|
-fn clamp_rows(rows : Int) -> UInt16 {
+fn clamp_rows(rows : Int32) -> UInt16 {
   clamp_int(rows, MinRows, MaxRows).to_uint16()
 }
 
 ///|
-fn clamp_int(value : Int, lower : Int, upper : Int) -> Int {
+fn clamp_int(value : Int32, lower : Int32, upper : Int32) -> Int32 {
   if value < lower {
     lower
   } else if value > upper {
@@ -346,7 +350,7 @@ fn clamp_int(value : Int, lower : Int, upper : Int) -> Int {
 
 ///|
 fn with_session_string(
-  handle : Int,
+  handle : Int32,
   f : (PlaygroundSession) -> String,
 ) -> String {
   match session(handle) {
@@ -356,7 +360,7 @@ fn with_session_string(
 }
 
 ///|
-fn invalid_handle_json(handle : Int) -> String {
+fn invalid_handle_json(handle : Int32) -> String {
   let value : Json = { "error": "invalid handle", "handle": handle }
   value.stringify()
 }
@@ -392,7 +396,7 @@ fn bytes_from_string(value : String) -> Bytes {
 }
 
 ///|
-fn uint_to_int(value : UInt) -> Int {
+fn uint_to_int(value : UInt32) -> Int32 {
   value.reinterpret_as_int()
 }
 
@@ -580,7 +584,7 @@ fn json_cell_state(
 ///|
 fn json_byte_or_null(value : Byte?) -> Json {
   match value {
-    Some(byte) => byte.to_int().to_json()
+    Some(byte) => Json(byte.to_int())
     None => Json::null()
   }
 }
@@ -599,9 +603,9 @@ fn json_hyperlink(value : @hyperlink.CellHyperlink?) -> Json {
 }
 
 ///|
-fn json_int_or_null(value : Int?) -> Json {
+fn json_int_or_null(value : Int32?) -> Json {
   match value {
-    Some(number) => number.to_json()
+    Some(number) => Json(number)
     None => Json::null()
   }
 }

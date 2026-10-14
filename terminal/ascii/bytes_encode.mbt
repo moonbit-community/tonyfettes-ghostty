@@ -14,7 +14,7 @@ pub fn write_uint_ascii(buffer : @buffer.Buffer, value : UInt64) -> Unit {
 }
 
 ///|
-pub fn write_hex8(buffer : @buffer.Buffer, value : UInt) -> Unit {
+pub fn write_hex8(buffer : @buffer.Buffer, value : UInt32) -> Unit {
   let mut shift = 28
   while shift >= 0 {
     let nibble = ((value >> shift) & 0xF).reinterpret_as_int()
@@ -24,7 +24,7 @@ pub fn write_hex8(buffer : @buffer.Buffer, value : UInt) -> Unit {
 }
 
 ///|
-pub fn hex_digit_upper(value : Int) -> Byte {
+pub fn hex_digit_upper(value : Int32) -> Byte {
   if value < 10 {
     (value + AsciiZero.to_int()).to_byte()
   } else {

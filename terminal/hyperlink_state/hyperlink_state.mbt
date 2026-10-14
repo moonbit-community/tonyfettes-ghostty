@@ -1,12 +1,12 @@
 ///|
-const FirstImplicitHyperlinkId : Int = 0
+const FirstImplicitHyperlinkId : Int32 = 0
 
 ///|
 struct ScreenHyperlinkState {
   mut uri : String?
   mut explicit_id : String?
-  mut implicit_id : Int?
-  mut next_implicit_id : Int
+  mut implicit_id : Int32?
+  mut next_implicit_id : Int32
   mut cell : @hyperlink.CellHyperlink?
 } derive(Eq, Debug)
 
@@ -39,14 +39,14 @@ pub fn ScreenHyperlinkState::explicit_id(
 }
 
 ///|
-pub fn ScreenHyperlinkState::implicit_id(self : ScreenHyperlinkState) -> Int? {
+pub fn ScreenHyperlinkState::implicit_id(self : ScreenHyperlinkState) -> Int32? {
   self.implicit_id
 }
 
 ///|
 pub fn ScreenHyperlinkState::next_implicit_id(
   self : ScreenHyperlinkState,
-) -> Int {
+) -> Int32 {
   self.next_implicit_id
 }
 
@@ -94,3 +94,9 @@ pub fn ScreenHyperlinkState::full_reset(self : ScreenHyperlinkState) -> Unit {
   self.end()
   self.next_implicit_id = FirstImplicitHyperlinkId
 }
+
+///|
+pub extend ScreenHyperlinkState with Eq::{not_equal, equal}
+
+///|
+pub extend ScreenHyperlinkState with @debug.Debug::{to_repr}

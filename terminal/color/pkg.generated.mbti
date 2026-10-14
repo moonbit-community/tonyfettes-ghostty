@@ -12,6 +12,9 @@ pub fn default_palette() -> Array[RGB]
 pub suberror ColorParseError {
   InvalidFormat
 } derive(Eq, @debug.Debug)
+pub fn ColorParseError::equal(Self, Self) -> Bool
+pub fn ColorParseError::not_equal(Self, Self) -> Bool
+pub fn ColorParseError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum Dynamic {
@@ -27,21 +30,30 @@ pub(all) enum Dynamic {
   HighlightForeground
 } derive(Eq, @debug.Debug)
 pub fn Dynamic::code(Self) -> UInt16
+pub fn Dynamic::equal(Self, Self) -> Bool
 pub fn Dynamic::next(Self) -> Self?
+pub fn Dynamic::not_equal(Self, Self) -> Bool
+pub fn Dynamic::to_repr(Self) -> @debug.Repr
 
 type DynamicPalette derive(Eq, @debug.Debug)
 pub fn DynamicPalette::change_default(Self, Array[RGB]) -> Unit
 pub fn DynamicPalette::color(Self, Byte) -> RGB
+pub fn DynamicPalette::equal(Self, Self) -> Bool
 pub fn DynamicPalette::new() -> Self
+pub fn DynamicPalette::not_equal(Self, Self) -> Bool
 pub fn DynamicPalette::reset(Self, Byte) -> Unit
 pub fn DynamicPalette::reset_all(Self) -> Unit
 pub fn DynamicPalette::set(Self, Byte, RGB) -> Unit
+pub fn DynamicPalette::to_repr(Self) -> @debug.Repr
 
 type DynamicRGB derive(Eq, @debug.Debug)
+pub fn DynamicRGB::equal(Self, Self) -> Bool
 pub fn DynamicRGB::get(Self) -> RGB?
 pub fn DynamicRGB::init(RGB) -> Self
+pub fn DynamicRGB::not_equal(Self, Self) -> Bool
 pub fn DynamicRGB::reset(Self) -> Unit
 pub fn DynamicRGB::set(Self, RGB) -> Unit
+pub fn DynamicRGB::to_repr(Self) -> @debug.Repr
 pub fn DynamicRGB::unset() -> Self
 
 pub(all) enum Name {
@@ -64,13 +76,19 @@ pub(all) enum Name {
 } derive(Eq, @debug.Debug)
 pub fn Name::code(Self) -> Byte
 pub fn Name::default_rgb(Self) -> RGB
+pub fn Name::equal(Self, Self) -> Bool
+pub fn Name::not_equal(Self, Self) -> Bool
+pub fn Name::to_repr(Self) -> @debug.Repr
 
 type RGB derive(Eq, @debug.Debug)
 pub fn RGB::b(Self) -> Byte
+pub fn RGB::equal(Self, Self) -> Bool
 pub fn RGB::g(Self) -> Byte
 pub fn RGB::new(Byte, Byte, Byte) -> Self
+pub fn RGB::not_equal(Self, Self) -> Bool
 pub fn RGB::parse(BytesView) -> Self raise ColorParseError
 pub fn RGB::r(Self) -> Byte
+pub fn RGB::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Special {
   Bold
@@ -79,7 +97,10 @@ pub(all) enum Special {
   Reverse
   Italic
 } derive(Eq, @debug.Debug)
+pub fn Special::equal(Self, Self) -> Bool
+pub fn Special::not_equal(Self, Self) -> Bool
 pub fn Special::osc4(Self) -> UInt16
+pub fn Special::to_repr(Self) -> @debug.Repr
 
 type TerminalColors derive(Eq, @debug.Debug)
 pub fn TerminalColors::background(Self) -> RGB?
@@ -89,9 +110,11 @@ pub fn TerminalColors::default_background(Self) -> RGB?
 pub fn TerminalColors::default_cursor(Self) -> RGB?
 pub fn TerminalColors::default_foreground(Self) -> RGB?
 pub fn TerminalColors::default_palette_snapshot(Self) -> Array[RGB]
+pub fn TerminalColors::equal(Self, Self) -> Bool
 pub fn TerminalColors::foreground(Self) -> RGB?
 pub fn TerminalColors::has_palette_changes(Self) -> Bool
 pub fn TerminalColors::new() -> Self
+pub fn TerminalColors::not_equal(Self, Self) -> Bool
 pub fn TerminalColors::palette_color(Self, Byte) -> RGB
 pub fn TerminalColors::palette_snapshot(Self) -> Array[RGB]
 pub fn TerminalColors::reset_background(Self) -> Unit
@@ -107,8 +130,8 @@ pub fn TerminalColors::set_default_foreground(Self, RGB?) -> Unit
 pub fn TerminalColors::set_default_palette(Self, Array[RGB]?) -> Bool
 pub fn TerminalColors::set_foreground(Self, RGB) -> Unit
 pub fn TerminalColors::set_palette_color(Self, Byte, RGB) -> Unit
+pub fn TerminalColors::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

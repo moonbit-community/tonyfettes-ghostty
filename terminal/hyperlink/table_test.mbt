@@ -1,6 +1,6 @@
 ///|
 test "hyperlink table interns and dedups runs" {
-  let table = HyperlinkTable::new()
+  let table = @hyperlink.HyperlinkTable::new()
   // None is the free fast path: no entry, id 0, resolves back to None.
   let none_id = table.intern(None)
   guard none_id.is_none() && table.get(none_id) == None else {
@@ -9,14 +9,14 @@ test "hyperlink table interns and dedups runs" {
 
   // A real link gets a non-zero id; the same link (a run under one OSC 8 span)
   // re-interns to the same id.
-  let link = CellHyperlink::implicit("https://example.com", 7)
+  let link = @hyperlink.CellHyperlink::implicit("https://example.com", 7)
   let id = table.intern(Some(link))
   guard !id.is_none() && table.intern(Some(link)) == id else {
     fail("re-interning the same link must be idempotent")
   }
 
   // A distinct link gets a distinct id.
-  let other = CellHyperlink::explicit("https://other.example", "x")
+  let other = @hyperlink.CellHyperlink::explicit("https://other.example", "x")
   let other_id = table.intern(Some(other))
   guard other_id != id else { fail("distinct links must get distinct ids") }
 
@@ -29,13 +29,13 @@ test "hyperlink table interns and dedups runs" {
 
 ///|
 test "cell hyperlink constructors preserve explicit and implicit ids" {
-  let explicit = CellHyperlink::explicit("https://a.example", "id-1")
+  let explicit = @hyperlink.CellHyperlink::explicit("https://a.example", "id-1")
   guard explicit.uri() == "https://a.example" &&
     explicit.explicit_id() == Some("id-1") &&
     explicit.implicit_id() == None else {
     fail("expected explicit hyperlink payload")
   }
-  let implicit = CellHyperlink::implicit("https://b.example", 4)
+  let implicit = @hyperlink.CellHyperlink::implicit("https://b.example", 4)
   guard implicit.uri() == "https://b.example" &&
     implicit.explicit_id() == None &&
     implicit.implicit_id() == Some(4) else {

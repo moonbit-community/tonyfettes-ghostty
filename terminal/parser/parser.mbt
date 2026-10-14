@@ -1,11 +1,11 @@
 ///|
-const MaxIntermediate : Int = 4
+const MaxIntermediate : Int32 = 4
 
 ///|
-const MaxParams : Int = 24
+const MaxParams : Int32 = 24
 
 ///|
-const MaxParamDigits : Int = 255
+const MaxParamDigits : Int32 = 255
 
 ///|
 const MaxParamValue : UInt16 = 65535
@@ -44,7 +44,7 @@ pub(all) struct Dcs {
 
 ///|
 pub(all) enum Action {
-  Print(UInt)
+  Print(UInt32)
   Execute(Byte)
   CsiDispatch(Csi)
   EscDispatch(Esc)
@@ -103,7 +103,7 @@ struct Parser {
   params : Array[UInt16]
   mut params_sep : @seplist.SepList
   mut param_acc : UInt16
-  mut param_acc_idx : Int
+  mut param_acc_idx : Int32
   osc_parser : @osc.OscParser
 }
 
@@ -204,7 +204,7 @@ pub fn Parser::next(self : Parser, c : Byte) -> ActionList {
   }
 
   self.state = next_state
-  { exit: exit_action, transition: transition_action, entry: entry_action }
+  { exit: exit_action, transition: transition_action, entry: entry_action, }
 }
 
 ///|
@@ -256,7 +256,7 @@ fn Parser::do_action(
         }
       }
     EscDispatch =>
-      Some(EscDispatch({ intermediates: self.intermediates, final_byte: c }))
+      Some(EscDispatch({ intermediates: self.intermediates, final_byte: c, }))
     Put => Some(DcsPut(c))
     ApcPut => Some(ApcPut(c))
   }

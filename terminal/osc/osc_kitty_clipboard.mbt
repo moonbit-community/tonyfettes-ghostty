@@ -36,7 +36,7 @@ fn KittyClipboardOsc::new(
   payload_unvalidated : Bytes?,
   terminator : Terminator,
 ) -> KittyClipboardOsc {
-  { metadata_unvalidated, payload_unvalidated, terminator }
+  { metadata_unvalidated, payload_unvalidated, terminator, }
 }
 
 ///|
@@ -287,7 +287,7 @@ fn kitty_clipboard_identifier_byte_allowed(value : Byte) -> Bool {
 ///|
 fn slice_starts_with_bytes(
   bytes : BytesView,
-  start : Int,
+  start : Int32,
   expected : Bytes,
 ) -> Bool {
   if start + expected.length() > bytes.length() {
@@ -314,3 +314,27 @@ fn kitty_clipboard_is_whitespace(value : Byte) -> Bool {
   value == 0x0B ||
   value == 0x0C
 }
+
+///|
+pub extend KittyClipboardLocation with Eq::{not_equal, equal}
+
+///|
+pub extend KittyClipboardLocation with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyClipboardOperation with Eq::{not_equal, equal}
+
+///|
+pub extend KittyClipboardOperation with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyClipboardStatus with Eq::{not_equal, equal}
+
+///|
+pub extend KittyClipboardStatus with @debug.Debug::{to_repr}
+
+///|
+pub extend KittyClipboardOsc with Eq::{not_equal, equal}
+
+///|
+pub extend KittyClipboardOsc with @debug.Debug::{to_repr}

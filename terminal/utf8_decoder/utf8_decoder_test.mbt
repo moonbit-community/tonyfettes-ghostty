@@ -1,7 +1,7 @@
 ///|
-fn decode_sequence(bytes : Bytes) -> Array[UInt] {
-  let decoder = Utf8Decoder::new()
-  let out : Array[UInt] = []
+fn decode_sequence(bytes : Bytes) -> Array[UInt32] {
+  let decoder = @utf8_decoder.Utf8Decoder::new()
+  let out : Array[UInt32] = []
   for byte in bytes {
     let mut consumed = false
     while !consumed {
@@ -18,7 +18,7 @@ fn decode_sequence(bytes : Bytes) -> Array[UInt] {
 ///|
 test "utf8 decoder/ascii" {
   let decoded = decode_sequence(b"Hello, World!")
-  let expected : Array[UInt] = []
+  let expected : Array[UInt32] = []
   for byte in b"Hello, World!" {
     expected.push(byte.to_uint())
   }
@@ -39,7 +39,7 @@ test "utf8 decoder/well formed utf8" {
 
 ///|
 test "utf8 decoder/well formed input consumes immediately" {
-  let decoder = Utf8Decoder::new()
+  let decoder = @utf8_decoder.Utf8Decoder::new()
   let bytes : Bytes = [
     0xF0, 0x9F, 0x98, 0x84, 0xE2, 0x9C, 0xA4, 0xC3, 0x81, 0x41,
   ]
@@ -60,7 +60,7 @@ test "utf8 decoder/partially invalid utf8" {
 
 ///|
 test "utf8 decoder/invalid leading byte consumes" {
-  let decoder = Utf8Decoder::new()
+  let decoder = @utf8_decoder.Utf8Decoder::new()
   let decoded = decoder.next(0x80)
   guard decoded.value == Some(0xFFFD) && decoded.consumed else {
     fail("expected invalid leading byte to emit replacement and consume")
@@ -69,7 +69,7 @@ test "utf8 decoder/invalid leading byte consumes" {
 
 ///|
 test "utf8 decoder/invalid continuation retries same byte" {
-  let decoder = Utf8Decoder::new()
+  let decoder = @utf8_decoder.Utf8Decoder::new()
   let first = decoder.next(0xE2)
   guard first.value == None && first.consumed else {
     fail("expected decoder to start a multibyte sequence")

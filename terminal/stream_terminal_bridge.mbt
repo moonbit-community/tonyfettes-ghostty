@@ -5,19 +5,19 @@ const DefaultRows : @size.CellCountInt = 24
 const DefaultColumns : @size.CellCountInt = 80
 
 ///|
-const DefaultMaxScrollback : Int = 10_000
+const DefaultMaxScrollback : Int32 = 10_000
 
 ///|
 const DefaultXtversion : String = "libghostty"
 
 ///|
-const MaxTitleBytes : Int = 1024
+const MaxTitleBytes : Int32 = 1024
 
 ///|
-const MaxEnquiryBytes : Int = 256
+const MaxEnquiryBytes : Int32 = 256
 
 ///|
-const MaxXtversionBytes : Int = 256
+const MaxXtversionBytes : Int32 = 256
 
 ///|
 priv struct StreamTerminalBridgeState {
@@ -41,13 +41,13 @@ priv struct StreamTerminalBridgeState {
   mut alternate_storage : TerminalScreenStorage
   mut charset : @pagelist.ScreenCharsetState
   mut current_style : @style.CellStyle
-  mut previous_char : UInt?
+  mut previous_char : UInt32?
   mut mouse_event : @input.MouseEvent
   mut mouse_format : @input.MouseFormat
   mut palette_dirty : Bool
   mut active_screen : @pagelist.TerminalScreen
-  mut width_px : UInt
-  mut height_px : UInt
+  mut width_px : UInt32
+  mut height_px : UInt32
   mut scrollback_cleared : Bool
 }
 
@@ -408,7 +408,7 @@ fn StreamTerminalBridgeState::pin(
   point : @point.Point,
 ) -> @pagelist.Pin? {
   match self.scrollback.pin(self.grid, point) {
-    Some(pin) => Some({ screen: self.active_screen, pin })
+    Some(pin) => Some({ screen: self.active_screen, pin, })
     None => None
   }
 }
@@ -478,14 +478,14 @@ fn StreamTerminalBridgeState::active_screen(
 ///|
 fn StreamTerminalBridgeState::total_rows(
   self : StreamTerminalBridgeState,
-) -> UInt {
+) -> UInt32 {
   self.scrollback.total_rows(self.grid.rows)
 }
 
 ///|
 fn StreamTerminalBridgeState::scrollback_rows(
   self : StreamTerminalBridgeState,
-) -> UInt {
+) -> UInt32 {
   self.scrollback.scrollback_rows()
 }
 
@@ -499,14 +499,14 @@ fn StreamTerminalBridgeState::scrollbar(
 ///|
 fn StreamTerminalBridgeState::width_px(
   self : StreamTerminalBridgeState,
-) -> UInt {
+) -> UInt32 {
   self.width_px
 }
 
 ///|
 fn StreamTerminalBridgeState::height_px(
   self : StreamTerminalBridgeState,
-) -> UInt {
+) -> UInt32 {
   self.height_px
 }
 
@@ -713,8 +713,8 @@ fn StreamTerminalBridgeState::resize(
   self : StreamTerminalBridgeState,
   columns : @size.CellCountInt,
   rows : @size.CellCountInt,
-  cell_width_px : UInt,
-  cell_height_px : UInt,
+  cell_width_px : UInt32,
+  cell_height_px : UInt32,
 ) -> @result_code.TerminalResultCode {
   if columns == 0 || rows == 0 {
     return InvalidValue
@@ -757,7 +757,7 @@ fn StreamTerminalBridgeState::scroll_viewport_bottom(
 ///|
 fn StreamTerminalBridgeState::scroll_viewport_delta(
   self : StreamTerminalBridgeState,
-  delta : Int,
+  delta : Int32,
 ) -> Unit {
   self.scrollback.scroll_delta(delta)
 }
@@ -1282,7 +1282,7 @@ fn StreamTerminalBridgeState::restore_cursor(
 ///|
 fn StreamTerminalBridgeState::print(
   self : StreamTerminalBridgeState,
-  codepoint : UInt,
+  codepoint : UInt32,
 ) -> Unit {
   // Pattern-match the tag instead of `!= Main`: the latter compiles to a
   // polymorphic Eq::not_equal call (StatusDisplay derives Eq), which on this
@@ -2835,12 +2835,12 @@ fn movement_count(movement : @stream.CursorMovement) -> @size.CellCountInt {
 }
 
 ///|
-fn movement_count_int(movement : @stream.CursorMovement) -> Int {
+fn movement_count_int(movement : @stream.CursorMovement) -> Int32 {
   movement_count(movement).to_int()
 }
 
 ///|
-fn bounded_count(request : Int, max : Int) -> Int {
+fn bounded_count(request : Int32, max : Int32) -> Int32 {
   if request > max {
     max
   } else {
@@ -2849,7 +2849,7 @@ fn bounded_count(request : Int, max : Int) -> Int {
 }
 
 ///|
-fn saturated_request(value : Int) -> @size.CellCountInt {
+fn saturated_request(value : Int32) -> @size.CellCountInt {
   if value > 0xFFFF {
     0xFFFF
   } else {
@@ -2861,12 +2861,12 @@ fn saturated_request(value : Int) -> @size.CellCountInt {
 // Emoji skin-tone modifiers (EMOJI MODIFIER FITZPATRICK TYPE-1-2 … TYPE-6).
 // wcwidth classifies these as wide, but they extend the preceding emoji rather
 // than occupying their own cell, so the print path clusters them.
-fn is_emoji_modifier(codepoint : UInt) -> Bool {
+fn is_emoji_modifier(codepoint : UInt32) -> Bool {
   codepoint >= 0x1F3FBU && codepoint <= 0x1F3FFU
 }
 
 ///|
-fn codepoint_width(codepoint : UInt) -> Int {
+fn codepoint_width(codepoint : UInt32) -> Int32 {
   // Fast path: the lowest zero-width range starts at U+0300 and the lowest wide
   // range at U+1100, so any codepoint below U+0300 is narrow (width 1), except
   // NUL. This skips the range tables entirely for ASCII/Latin text, the
@@ -2884,7 +2884,7 @@ fn codepoint_width(codepoint : UInt) -> Int {
 }
 
 ///|
-let zero_width_codepoint_ranges : ReadOnlyArray[(UInt, UInt)] = [
+let zero_width_codepoint_ranges : ReadOnlyArray[(UInt32, UInt32)] = [
   (0x0300U, 0x036FU),
   (0x0483U, 0x0489U),
   (0x0591U, 0x05BDU),
@@ -3208,7 +3208,7 @@ let zero_width_codepoint_ranges : ReadOnlyArray[(UInt, UInt)] = [
 ]
 
 ///|
-let wide_codepoint_ranges : ReadOnlyArray[(UInt, UInt)] = [
+let wide_codepoint_ranges : ReadOnlyArray[(UInt32, UInt32)] = [
   (0x1100U, 0x115FU),
   (0x231AU, 0x231BU),
   (0x2329U, 0x232AU),
@@ -3297,19 +3297,19 @@ let wide_codepoint_ranges : ReadOnlyArray[(UInt, UInt)] = [
 ]
 
 ///|
-fn is_zero_width(codepoint : UInt) -> Bool {
+fn is_zero_width(codepoint : UInt32) -> Bool {
   codepoint_in_ranges(codepoint, zero_width_codepoint_ranges)
 }
 
 ///|
-fn is_wide_codepoint(codepoint : UInt) -> Bool {
+fn is_wide_codepoint(codepoint : UInt32) -> Bool {
   codepoint_in_ranges(codepoint, wide_codepoint_ranges)
 }
 
 ///|
 fn codepoint_in_ranges(
-  codepoint : UInt,
-  ranges : ArrayView[(UInt, UInt)],
+  codepoint : UInt32,
+  ranges : ArrayView[(UInt32, UInt32)],
 ) -> Bool {
   // `ranges` is sorted ascending and non-overlapping, so binary search the
   // interval table instead of scanning all entries.
@@ -3330,7 +3330,7 @@ fn codepoint_in_ranges(
 }
 
 ///|
-fn saturated_dimension(count : @size.CellCountInt, unit : UInt) -> UInt {
+fn saturated_dimension(count : @size.CellCountInt, unit : UInt32) -> UInt32 {
   let product = count.to_uint64() * unit.to_uint64()
   if product > 0xFFFFFFFFUL {
     0xFFFFFFFF
@@ -3340,7 +3340,7 @@ fn saturated_dimension(count : @size.CellCountInt, unit : UInt) -> UInt {
 }
 
 ///|
-fn truncate_utf8(value : String, max_bytes : Int) -> String {
+fn truncate_utf8(value : String, max_bytes : Int32) -> String {
   let original = @utf8.encode(value)
   if original.length() <= max_bytes {
     return value
@@ -3364,7 +3364,7 @@ fn truncate_utf8(value : String, max_bytes : Int) -> String {
 ///|
 /// Smaller of two ints. Hub-local copy of the trivial helper that used to live
 /// in the grid file (the grid keeps its own private copy in @grid).
-fn min_int(a : Int, b : Int) -> Int {
+fn min_int(a : Int32, b : Int32) -> Int32 {
   if a < b {
     a
   } else {

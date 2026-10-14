@@ -139,7 +139,7 @@ fn StreamTerminalBridgeState::hyperlink_explicit_id(
 ///|
 fn StreamTerminalBridgeState::hyperlink_implicit_id(
   self : StreamTerminalBridgeState,
-) -> Int? {
+) -> Int32? {
   self.hyperlink.implicit_id()
 }
 
@@ -231,13 +231,13 @@ impl @stream.StreamHandler for BridgeStreamRecorder with fn deinit(_self) {
 ///|
 struct BridgeEffectsRecorder {
   writes : Array[Bytes]
-  mut bell_count : Int
-  mut title_changed_count : Int
+  mut bell_count : Int32
+  mut title_changed_count : Int32
 }
 
 ///|
 fn BridgeEffectsRecorder::new() -> BridgeEffectsRecorder {
-  { writes: [], bell_count: 0, title_changed_count: 0 }
+  { writes: [], bell_count: 0, title_changed_count: 0, }
 }
 
 ///|
@@ -261,7 +261,7 @@ fn BridgeEffectsRecorder::title_changed(self : BridgeEffectsRecorder) -> Unit {
 ///|
 fn expect_effect_write(
   recorder : BridgeEffectsRecorder,
-  index : Int,
+  index : Int32,
   expected : Bytes,
 ) -> Unit raise {
   guard recorder.writes[index] == expected else {
@@ -270,7 +270,7 @@ fn expect_effect_write(
 }
 
 ///|
-fn ascii_string(byte : Byte, count : Int) -> String {
+fn ascii_string(byte : Byte, count : Int32) -> String {
   let buffer = Buffer(size_hint=count)
   for _ in 0..<count {
     buffer.write_byte(byte)
@@ -525,22 +525,22 @@ test "stream terminal bridge/applies semantic newline transitions" {
 test "stream terminal bridge/applies reverse index at the top margin" {
   let state = StreamTerminalBridgeState::new()
 
-  guard state.apply(StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3 })) else {
+  guard state.apply(StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3, })) else {
     fail("expected top/bottom margin setup")
   }
-  guard state.apply(StreamCursorPos({ row: 2, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 2, col: 1, })) else {
     fail("expected cursor move to top margin")
   }
   guard apply_stream_bytes(state, b"A") else {
     fail("expected first reverse-index row write")
   }
-  guard state.apply(StreamCursorPos({ row: 3, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 3, col: 1, })) else {
     fail("expected cursor move inside scroll region")
   }
   guard apply_stream_bytes(state, b"B") else {
     fail("expected second reverse-index row write")
   }
-  guard state.apply(StreamCursorPos({ row: 2, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 2, col: 1, })) else {
     fail("expected cursor reset to top margin")
   }
 
@@ -586,7 +586,7 @@ test "stream terminal bridge/applies edit and scroll mutations" {
   }
 
   let pending_wrap = StreamTerminalBridgeState::new()
-  guard pending_wrap.apply(StreamCursorPos({ row: 1, col: 80 })) else {
+  guard pending_wrap.apply(StreamCursorPos({ row: 1, col: 80, })) else {
     fail("expected pending-wrap cursor setup")
   }
   guard apply_stream_bytes(pending_wrap, b"Z") else {
@@ -606,7 +606,7 @@ test "stream terminal bridge/applies edit and scroll mutations" {
   guard apply_stream_bytes(scroll, b"A\x1BEB\x1BEC") else {
     fail("expected scroll population bytes to be handled")
   }
-  guard scroll.apply(StreamCursorPos({ row: 1, col: 1 })) else {
+  guard scroll.apply(StreamCursorPos({ row: 1, col: 1, })) else {
     fail("expected scroll cursor reset")
   }
   guard scroll.apply(StreamScrollUp(1)) else {
@@ -689,9 +689,9 @@ test "stream terminal bridge/covers accessors and print guard branches" {
   }
 
   guard state.apply(StreamSetMode(EnableLeftAndRightMargin)) &&
-    state.apply(StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 })) &&
+    state.apply(StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20, })) &&
     state.apply(StreamSetMode(Origin)) &&
-    state.apply(StreamCursorPos({ row: 1, col: 15 })) &&
+    state.apply(StreamCursorPos({ row: 1, col: 15, })) &&
     state.apply(StreamCarriageReturn) else {
     fail("expected carriage-return origin setup")
   }
@@ -700,7 +700,7 @@ test "stream terminal bridge/covers accessors and print guard branches" {
   }
 
   guard state.apply(StreamResetMode(Origin)) &&
-    state.apply(StreamCursorPos({ row: 1, col: 1 })) &&
+    state.apply(StreamCursorPos({ row: 1, col: 1, })) &&
     state.apply(StreamCarriageReturn) else {
     fail("expected carriage-return non-origin setup")
   }
@@ -800,8 +800,8 @@ test "stream terminal bridge/covers movement helper branches" {
   }
 
   guard state.apply(StreamSetMode(EnableLeftAndRightMargin)) &&
-    state.apply(StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 })) &&
-    state.apply(StreamCursorPos({ row: 5, col: 1 })) &&
+    state.apply(StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20, })) &&
+    state.apply(StreamCursorPos({ row: 5, col: 1, })) &&
     state.apply(StreamIndex) else {
     fail("expected index setup outside scroll region")
   }
@@ -834,7 +834,7 @@ test "stream terminal bridge/covers erase and insertion bridge arms" {
   }
 
   guard apply_stream_bytes(state, b"ABCDE") &&
-    state.apply(StreamCursorPos({ row: 1, col: 3 })) &&
+    state.apply(StreamCursorPos({ row: 1, col: 3, })) &&
     state.apply(StreamEraseLineRight(false)) &&
     state.apply(StreamEraseLineLeft(false)) &&
     state.apply(StreamEraseLineComplete(false)) else {
@@ -842,7 +842,7 @@ test "stream terminal bridge/covers erase and insertion bridge arms" {
   }
 
   guard apply_stream_bytes(state, b"ABCDE") &&
-    state.apply(StreamCursorPos({ row: 1, col: 3 })) &&
+    state.apply(StreamCursorPos({ row: 1, col: 3, })) &&
     state.apply(StreamEraseLineRightUnlessPendingWrap(false)) else {
     fail("expected erase-line-right-unless-pending-wrap action")
   }
@@ -912,7 +912,7 @@ test "stream terminal bridge/covers repeat print and remaining semantic branches
   let fresh_line_state = StreamTerminalBridgeState::new()
   guard fresh_line_state.apply(StreamSetMode(EnableLeftAndRightMargin)) &&
     fresh_line_state.apply(
-      StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 }),
+      StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20, }),
     ) &&
     apply_stream_bytes(fresh_line_state, b"\x1B]133;L\x07") else {
     fail("expected fresh-line left-margin bytes")
@@ -926,7 +926,7 @@ test "stream terminal bridge/covers repeat print and remaining semantic branches
 test "stream terminal bridge/covers cursor-left wrap modes" {
   let plain = StreamTerminalBridgeState::new()
   guard plain.apply(StreamResetMode(Wraparound)) &&
-    plain.apply(StreamCursorPos({ row: 2, col: 4 })) &&
+    plain.apply(StreamCursorPos({ row: 2, col: 4, })) &&
     plain.apply(StreamCursorLeft(CursorMovement(1))) else {
     fail("expected plain cursor-left setup")
   }
@@ -945,7 +945,7 @@ test "stream terminal bridge/covers cursor-left wrap modes" {
 
   let pending = StreamTerminalBridgeState::new()
   guard pending.apply(StreamSetMode(ReverseWrap)) &&
-    pending.apply(StreamCursorPos({ row: 1, col: 80 })) &&
+    pending.apply(StreamCursorPos({ row: 1, col: 80, })) &&
     apply_stream_bytes(pending, b"Z") &&
     pending.apply(StreamCursorLeft(CursorMovement(1))) else {
     fail("expected pending-wrap cursor-left setup")
@@ -958,10 +958,10 @@ test "stream terminal bridge/covers cursor-left wrap modes" {
 
   let extended = StreamTerminalBridgeState::new()
   guard extended.apply(
-      StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3 }),
+      StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3, }),
     ) &&
     extended.apply(StreamSetMode(ReverseWrapExtended)) &&
-    extended.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+    extended.apply(StreamCursorPos({ row: 2, col: 1, })) &&
     extended.apply(StreamCursorLeft(CursorMovement(1))) else {
     fail("expected reverse-wrap-extended cursor-left setup")
   }
@@ -972,10 +972,10 @@ test "stream terminal bridge/covers cursor-left wrap modes" {
   let left_margin_branch = StreamTerminalBridgeState::new()
   guard left_margin_branch.apply(StreamSetMode(EnableLeftAndRightMargin)) &&
     left_margin_branch.apply(
-      StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 }),
+      StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20, }),
     ) &&
     left_margin_branch.apply(StreamSetMode(ReverseWrapExtended)) &&
-    left_margin_branch.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+    left_margin_branch.apply(StreamCursorPos({ row: 2, col: 1, })) &&
     left_margin_branch.apply(StreamCursorLeft(CursorMovement(1))) else {
     fail("expected reverse-wrap-extended left-margin setup")
   }
@@ -986,7 +986,7 @@ test "stream terminal bridge/covers cursor-left wrap modes" {
 
   let top_return = StreamTerminalBridgeState::new()
   guard top_return.apply(StreamSetMode(ReverseWrap)) &&
-    top_return.apply(StreamCursorPos({ row: 1, col: 2 })) &&
+    top_return.apply(StreamCursorPos({ row: 1, col: 2, })) &&
     top_return.apply(StreamCursorLeft(CursorMovement(2))) else {
     fail("expected reverse-wrap top-row setup")
   }
@@ -996,10 +996,10 @@ test "stream terminal bridge/covers cursor-left wrap modes" {
 
   let y_zero_return = StreamTerminalBridgeState::new()
   guard y_zero_return.apply(
-      StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3 }),
+      StreamTopAndBottomMargin({ top_left: 2, bottom_right: 3, }),
     ) &&
     y_zero_return.apply(StreamSetMode(ReverseWrap)) &&
-    y_zero_return.apply(StreamCursorPos({ row: 1, col: 2 })) &&
+    y_zero_return.apply(StreamCursorPos({ row: 1, col: 2, })) &&
     y_zero_return.apply(StreamCursorLeft(CursorMovement(2))) else {
     fail("expected reverse-wrap y-zero setup")
   }
@@ -1009,7 +1009,7 @@ test "stream terminal bridge/covers cursor-left wrap modes" {
 
   let no_prev_wrap = StreamTerminalBridgeState::new()
   guard no_prev_wrap.apply(StreamSetMode(ReverseWrap)) &&
-    no_prev_wrap.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+    no_prev_wrap.apply(StreamCursorPos({ row: 2, col: 1, })) &&
     no_prev_wrap.apply(StreamCursorLeft(CursorMovement(1))) else {
     fail("expected reverse-wrap no-prev-wrap setup")
   }
@@ -1026,7 +1026,7 @@ test "stream terminal bridge/covers cursor-left wrap modes" {
       fail("expected wrap-generating print")
     }
   }
-  guard prev_wrap.apply(StreamCursorPos({ row: 2, col: 1 })) &&
+  guard prev_wrap.apply(StreamCursorPos({ row: 2, col: 1, })) &&
     prev_wrap.apply(StreamCursorLeft(CursorMovement(1))) else {
     fail("expected reverse-wrap previous-row-wrap action")
   }
@@ -1079,7 +1079,7 @@ test "stream terminal bridge/applies protected and display actions" {
 test "stream terminal bridge/applies cursor movement and mode metadata" {
   let state = StreamTerminalBridgeState::new()
 
-  guard state.apply(StreamCursorPos({ row: 4, col: 5 })) else {
+  guard state.apply(StreamCursorPos({ row: 4, col: 5, })) else {
     fail("expected cursor position to be handled")
   }
   guard state.cursor_x() == 4 && state.cursor_y() == 3 else {
@@ -1293,7 +1293,7 @@ test "stream terminal bridge/applies cursor movement and mode metadata" {
 test "stream terminal bridge/applies margin actions and cursor save branches" {
   let state = StreamTerminalBridgeState::new()
 
-  guard state.apply(StreamTopAndBottomMargin({ top_left: 3, bottom_right: 5 })) else {
+  guard state.apply(StreamTopAndBottomMargin({ top_left: 3, bottom_right: 5, })) else {
     fail("expected top/bottom margins to be handled")
   }
   guard state.cursor_top_margin() == 2 &&
@@ -1320,7 +1320,7 @@ test "stream terminal bridge/applies margin actions and cursor save branches" {
   }
 
   guard state.apply(
-    StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 }),
+    StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20, }),
   ) else {
     fail("expected left/right margins to be handled")
   }
@@ -1338,7 +1338,7 @@ test "stream terminal bridge/applies margin actions and cursor save branches" {
     fail("expected cursor right margin clamp")
   }
 
-  guard state.apply(StreamCursorPos({ row: 1, col: 3 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 3, })) else {
     fail("expected cursor position inside left/right margins")
   }
   guard state.apply(StreamCursorLeft(CursorMovement(5))) else {
@@ -1376,7 +1376,7 @@ test "stream terminal bridge/applies margin actions and cursor save branches" {
     fail("expected left/right margin reset branch")
   }
 
-  guard state.apply(StreamCursorPos({ row: 4, col: 5 })) else {
+  guard state.apply(StreamCursorPos({ row: 4, col: 5, })) else {
     fail("expected cursor position after margin reset")
   }
   guard state.apply(StreamLeftAndRightMarginAmbiguous) else {
@@ -1386,7 +1386,7 @@ test "stream terminal bridge/applies margin actions and cursor save branches" {
     fail("expected ambiguous action to save cursor when margins disabled")
   }
 
-  guard state.apply(StreamCursorPos({ row: 1, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 1, })) else {
     fail("expected cursor mutation before restore")
   }
   guard state.apply(StreamRestoreCursor) else {
@@ -1403,16 +1403,16 @@ test "stream terminal bridge/applies margin actions and cursor save branches" {
 test "stream terminal bridge/applies charset save restore and keyboard state" {
   let state = StreamTerminalBridgeState::new()
 
-  guard state.apply(StreamConfigureCharset({ slot: G1, charset: British })) else {
+  guard state.apply(StreamConfigureCharset({ slot: G1, charset: British, })) else {
     fail("expected charset configure to be handled")
   }
   guard state.apply(
-    StreamInvokeCharset({ bank: Gl, charset: G1, locking: false }),
+    StreamInvokeCharset({ bank: Gl, charset: G1, locking: false, }),
   ) else {
     fail("expected locking charset invoke to be handled")
   }
   guard state.apply(
-    StreamInvokeCharset({ bank: Gl, charset: G2, locking: true }),
+    StreamInvokeCharset({ bank: Gl, charset: G2, locking: true, }),
   ) else {
     fail("expected single-shift charset invoke to be handled")
   }
@@ -1422,18 +1422,18 @@ test "stream terminal bridge/applies charset save restore and keyboard state" {
   guard state.apply(StreamSetMode(Origin)) else {
     fail("expected origin mode before save")
   }
-  guard state.apply(StreamCursorPos({ row: 2, col: 3 })) else {
+  guard state.apply(StreamCursorPos({ row: 2, col: 3, })) else {
     fail("expected cursor position before save")
   }
   guard state.apply(StreamSaveCursor) else {
     fail("expected direct save cursor to be handled")
   }
 
-  guard state.apply(StreamConfigureCharset({ slot: G1, charset: Ascii })) else {
+  guard state.apply(StreamConfigureCharset({ slot: G1, charset: Ascii, })) else {
     fail("expected charset reconfigure to be handled")
   }
   guard state.apply(
-    StreamInvokeCharset({ bank: Gl, charset: G0, locking: false }),
+    StreamInvokeCharset({ bank: Gl, charset: G0, locking: false, }),
   ) else {
     fail("expected charset invoke mutation")
   }
@@ -1443,7 +1443,7 @@ test "stream terminal bridge/applies charset save restore and keyboard state" {
   guard state.apply(StreamResetMode(Origin)) else {
     fail("expected origin reset mutation")
   }
-  guard state.apply(StreamCursorPos({ row: 10, col: 10 })) else {
+  guard state.apply(StreamCursorPos({ row: 10, col: 10, })) else {
     fail("expected cursor mutation before restore")
   }
 
@@ -1465,13 +1465,13 @@ test "stream terminal bridge/applies charset save restore and keyboard state" {
     fail("expected restored cursor protection")
   }
 
-  guard state.apply(StreamCursorPos({ row: 5, col: 6 })) else {
+  guard state.apply(StreamCursorPos({ row: 5, col: 6, })) else {
     fail("expected cursor mutation before mode save")
   }
   guard state.apply(StreamSetMode(SaveCursor)) else {
     fail("expected save-cursor mode set to be handled")
   }
-  guard state.apply(StreamCursorPos({ row: 1, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 1, })) else {
     fail("expected cursor mutation before mode restore")
   }
   guard state.apply(StreamResetMode(SaveCursor)) else {
@@ -1524,13 +1524,13 @@ test "stream terminal bridge/applies tab operations" {
     fail("expected default horizontal tab stop")
   }
 
-  guard state.apply(StreamCursorPos({ row: 1, col: 6 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 6, })) else {
     fail("expected cursor position before tab set")
   }
   guard state.apply(StreamTabSet) else {
     fail("expected tab set to be handled")
   }
-  guard state.apply(StreamCursorPos({ row: 1, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 1, })) else {
     fail("expected cursor reset before tab jump")
   }
   guard state.apply(StreamHorizontalTab(1)) else {
@@ -1543,7 +1543,7 @@ test "stream terminal bridge/applies tab operations" {
   }
   guard !state.tabstop(5) else { fail("expected current tab stop clear") }
 
-  guard state.apply(StreamCursorPos({ row: 1, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 1, })) else {
     fail("expected cursor reset before default tab")
   }
   guard state.apply(StreamHorizontalTab(1)) else {
@@ -1556,7 +1556,7 @@ test "stream terminal bridge/applies tab operations" {
   guard state.apply(StreamTabClearAll) else {
     fail("expected tab clear all to be handled")
   }
-  guard state.apply(StreamCursorPos({ row: 1, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 1, })) else {
     fail("expected cursor reset before clear-all tab")
   }
   guard state.apply(StreamHorizontalTab(1)) else {
@@ -1576,7 +1576,7 @@ test "stream terminal bridge/applies tab operations" {
   guard state.apply(StreamTabReset) else {
     fail("expected tab reset to be handled")
   }
-  guard state.apply(StreamCursorPos({ row: 1, col: 21 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 21, })) else {
     fail("expected cursor position before horizontal tab back")
   }
   guard state.apply(StreamHorizontalTabBack(1)) else {
@@ -1591,10 +1591,10 @@ test "stream terminal bridge/applies tab operations" {
 test "stream terminal bridge/covers cursor movement edge branches" {
   let state = StreamTerminalBridgeState::new()
 
-  guard state.apply(StreamTopAndBottomMargin({ top_left: 3, bottom_right: 5 })) else {
+  guard state.apply(StreamTopAndBottomMargin({ top_left: 3, bottom_right: 5, })) else {
     fail("expected top/bottom margin setup")
   }
-  guard state.apply(StreamCursorPos({ row: 10, col: 1 })) else {
+  guard state.apply(StreamCursorPos({ row: 10, col: 1, })) else {
     fail("expected cursor move below bottom margin")
   }
   guard state.apply(StreamCursorDown(CursorMovement(1))) else {
@@ -1608,11 +1608,11 @@ test "stream terminal bridge/covers cursor movement edge branches" {
     fail("expected left/right margin mode setup")
   }
   guard state.apply(
-    StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20 }),
+    StreamLeftAndRightMargin({ top_left: 11, bottom_right: 20, }),
   ) else {
     fail("expected left/right margin setup")
   }
-  guard state.apply(StreamCursorPos({ row: 1, col: 80 })) else {
+  guard state.apply(StreamCursorPos({ row: 1, col: 80, })) else {
     fail("expected cursor move outside right margin")
   }
   guard state.apply(StreamCursorRight(CursorMovement(1))) else {
@@ -1803,11 +1803,11 @@ test "stream terminal bridge/applies query responses and callbacks" {
   }
 
   guard state.apply(StreamDeviceStatus(OperatingStatus)) &&
-    state.apply(StreamCursorPos({ row: 5, col: 10 })) &&
+    state.apply(StreamCursorPos({ row: 5, col: 10, })) &&
     state.apply(StreamDeviceStatus(CursorPosition)) &&
-    state.apply(StreamTopAndBottomMargin({ top_left: 5, bottom_right: 20 })) &&
+    state.apply(StreamTopAndBottomMargin({ top_left: 5, bottom_right: 20, })) &&
     state.apply(StreamSetMode(Origin)) &&
-    state.apply(StreamCursorPos({ row: 3, col: 5 })) &&
+    state.apply(StreamCursorPos({ row: 3, col: 5, })) &&
     state.apply(StreamDeviceStatus(CursorPosition)) &&
     state.apply(StreamRequestMode(Wraparound)) &&
     state.apply(StreamResetMode(Wraparound)) &&
@@ -2257,7 +2257,7 @@ test "stream terminal bridge/kitty graphics display and delete edge branches" {
   }
 
   state.execute_kitty_graphics_delete(
-    Newest({ delete: false, image_number: 7U, placement_id: 4U }),
+    Newest({ delete: false, image_number: 7U, placement_id: 4U, }),
   )
   guard state.kitty_graphics.placements().length() == 0 else {
     fail("expected newest delete helper usage")
@@ -2271,7 +2271,7 @@ test "stream terminal bridge/kitty graphics display and delete edge branches" {
     fail("expected cursor-pin validation")
   }
 
-  state.execute_kitty_graphics_delete(Z({ delete: true, z: 1 }))
+  state.execute_kitty_graphics_delete(Z({ delete: true, z: 1, }))
   guard state.kitty_graphics.images().length() == 1 else {
     fail("expected unimplemented delete selectors to stay no-op")
   }
@@ -2352,7 +2352,7 @@ test "stream terminal bridge/a full clear reclaims the intern id space" {
 ///|
 fn fill_ascii(
   grid : @grid.ScreenGridState,
-  row : Int,
+  row : Int32,
   chars : Array[Byte],
 ) -> Unit {
   for i in 0..<chars.length() {

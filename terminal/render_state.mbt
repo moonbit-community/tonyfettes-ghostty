@@ -492,7 +492,7 @@ fn render_row_cells_equal(
 }
 
 ///|
-fn render_row_at(state : RenderState, row_idx : Int) -> @page.PageRowState? {
+fn render_row_at(state : RenderState, row_idx : Int32) -> @page.PageRowState? {
   if row_idx < 0 || row_idx >= state.row_states.length() {
     None
   } else {
@@ -501,7 +501,7 @@ fn render_row_at(state : RenderState, row_idx : Int) -> @page.PageRowState? {
 }
 
 ///|
-fn render_row_dirty_at(state : RenderState, row_idx : Int) -> Bool? {
+fn render_row_dirty_at(state : RenderState, row_idx : Int32) -> Bool? {
   if row_idx < 0 || row_idx >= state.row_states.length() {
     None
   } else {
@@ -512,7 +512,7 @@ fn render_row_dirty_at(state : RenderState, row_idx : Int) -> Bool? {
 ///|
 fn render_set_row_dirty_at(
   state : RenderState,
-  row_idx : Int,
+  row_idx : Int32,
   value : Bool,
 ) -> Bool {
   if row_idx < 0 || row_idx >= state.row_states.length() {
@@ -526,8 +526,8 @@ fn render_set_row_dirty_at(
 ///|
 fn render_cell_at(
   state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
+  row_idx : Int32,
+  col_idx : Int32,
 ) -> @page.PageCellState? {
   if row_idx < 0 || row_idx >= state.row_cells.length() {
     return None
@@ -545,8 +545,8 @@ fn render_cell_at(
 // captured `hyperlink_table`, so no live-terminal access is needed.
 fn render_cell_hyperlink_at(
   state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
+  row_idx : Int32,
+  col_idx : Int32,
 ) -> @hyperlink.CellHyperlink? {
   match render_cell_at(state, row_idx, col_idx) {
     Some(cell) =>
@@ -566,8 +566,8 @@ fn render_cell_hyperlink_at(
 ///|
 fn render_cell_background_color_at(
   state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
+  row_idx : Int32,
+  col_idx : Int32,
 ) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
     Some(cell) =>
@@ -582,8 +582,8 @@ fn render_cell_background_color_at(
 ///|
 fn render_cell_foreground_color_at(
   state : RenderState,
-  row_idx : Int,
-  col_idx : Int,
+  row_idx : Int32,
+  col_idx : Int32,
 ) -> @color.RGB? {
   match render_cell_at(state, row_idx, col_idx) {
     Some(cell) =>
@@ -674,3 +674,6 @@ fn default_render_background() -> @color.RGB {
 fn default_render_foreground() -> @color.RGB {
   @color.RGB::new(0xFF, 0xFF, 0xFF)
 }
+
+///|
+pub extend RenderDirty with Eq::{not_equal, equal}

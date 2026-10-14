@@ -49,7 +49,7 @@ pub fn SemanticPrompt::new(
   action : SemanticPromptAction,
   options_unvalidated : Bytes,
 ) -> SemanticPrompt {
-  { action, options_unvalidated }
+  { action, options_unvalidated, }
 }
 
 ///|
@@ -120,7 +120,7 @@ pub fn SemanticPrompt::cmdline_url(self : SemanticPrompt) -> String? {
 }
 
 ///|
-pub fn SemanticPrompt::exit_code(self : SemanticPrompt) -> Int? {
+pub fn SemanticPrompt::exit_code(self : SemanticPrompt) -> Int32? {
   if self.options_unvalidated.length() == 0 {
     return None
   }
@@ -341,7 +341,7 @@ fn semantic_prompt_printf_q_decode(
 ///|
 fn semantic_prompt_printf_q_range(
   value : BytesView,
-) -> (Int, Int) raise SemanticPromptDecodeError {
+) -> (Int32, Int32) raise SemanticPromptDecodeError {
   if value.length() >= 2 && value[0] == b'$' && value[1] == b'\'' {
     if value.length() < 3 || value[value.length() - 1] != b'\'' {
       raise DecodeError
@@ -388,7 +388,7 @@ fn semantic_prompt_url_percent_decode(
 }
 
 ///|
-fn semantic_prompt_hex(byte : Byte) -> Int? {
+fn semantic_prompt_hex(byte : Byte) -> Int32? {
   if byte >= b'0' && byte <= b'9' {
     Some(byte.to_int() - b'0'.to_int())
   } else if byte >= b'a' && byte <= b'f' {
@@ -399,3 +399,39 @@ fn semantic_prompt_hex(byte : Byte) -> Int? {
     None
   }
 }
+
+///|
+pub extend SemanticPromptAction with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticPromptAction with @debug.Debug::{to_repr}
+
+///|
+pub extend SemanticPromptClick with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticPromptClick with @debug.Debug::{to_repr}
+
+///|
+pub extend SemanticPromptKind with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticPromptKind with @debug.Debug::{to_repr}
+
+///|
+pub extend SemanticPromptRedraw with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticPromptRedraw with @debug.Debug::{to_repr}
+
+///|
+pub extend SemanticPromptDecodeError with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticPromptDecodeError with @debug.Debug::{to_repr}
+
+///|
+pub extend SemanticPrompt with Eq::{not_equal, equal}
+
+///|
+pub extend SemanticPrompt with @debug.Debug::{to_repr}

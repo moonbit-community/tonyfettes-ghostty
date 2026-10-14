@@ -71,3 +71,21 @@ pub fn device_status_request_from_int(
     _ => None
   }
 }
+
+///|
+pub extend ColorScheme with Eq::{not_equal, equal}
+
+///|
+pub extend ColorScheme with @debug.Debug::{to_repr}
+
+///|
+pub extend DeviceStatusRequest with Eq::{not_equal, equal}
+
+///|
+pub extend DeviceStatusRequest with @debug.Debug::{to_repr}
+
+///|
+pub extend DeviceStatusTag with Eq::{not_equal, equal}
+
+///|
+pub extend DeviceStatusTag with @debug.Debug::{to_repr}

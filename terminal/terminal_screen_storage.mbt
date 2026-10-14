@@ -55,7 +55,7 @@ fn TerminalScreenStorage::resize(
 fn TerminalScreenStorage::new(
   rows : @size.CellCountInt,
   cols : @size.CellCountInt,
-  max_scrollback : Int,
+  max_scrollback : Int32,
 ) -> TerminalScreenStorage {
   let scrollback = @pagelist.PageList::new(rows, cols, max_scrollback)
   {

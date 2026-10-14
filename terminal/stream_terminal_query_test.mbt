@@ -5,7 +5,7 @@ fn expect_rgb(actual : @color.RGB?, expected : @color.RGB?) -> Unit raise {
 
 ///|
 test "stream terminal query/exposes cursor and scrollbar state" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   guard terminal.columns() == 80 &&
     terminal.rows() == 24 &&
@@ -63,7 +63,7 @@ test "stream terminal query/exposes cursor and scrollbar state" {
 
 ///|
 test "stream terminal query/exposes visibility mouse and kitty keyboard state" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
 
   guard terminal.cursor_visible() &&
     !terminal.mouse_tracking() &&
@@ -95,7 +95,7 @@ test "stream terminal query/exposes visibility mouse and kitty keyboard state" {
 
 ///|
 test "stream terminal query/exposes current and default colors" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   let default_fg = @color.RGB::new(0xAA, 0xBB, 0xCC)
   let default_bg = @color.RGB::new(0x11, 0x22, 0x33)
   let default_cursor = @color.RGB::new(0xFF, 0x00, 0x88)
@@ -149,7 +149,7 @@ test "stream terminal query/exposes current and default colors" {
 
 ///|
 test "stream terminal query/exposes current and default palette snapshots" {
-  let terminal = StreamTerminal::new()
+  let terminal = @terminal.StreamTerminal::new()
   let custom = @color.default_palette()
   custom[0] = @color.RGB::new(0x12, 0x34, 0x56)
 
