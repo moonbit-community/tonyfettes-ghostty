@@ -1069,3 +1069,26 @@ test "stream/deinit delegates to handler" {
   stream.deinit()
   assert_true(deinitialized == [true])
 }
+
+///|
+test "stream/csi fast paths preserve events at every chunk split" {
+  let inputs : Array[Bytes] = [
+    b"a\x1b[31mred\x1b[0m\x1b[12;34H!", b"\x1b[38:2::240:143:104mA\x1b[1;4;0mB",
+    b"\x1b[1\x07;2\x0aH\x1b[1\x0e;2\x0fH", b"\x1b[1\x10\x17\x19\x1c\x1f\x7f;2H",
+    b"\x1b[12\x18z\x1b[34\x1ay\x1b[0m", b"\x1b[?2026$p\x1b[65536C\x1b[1:2H\x1b[0m",
+    b"\xe4\xb8\xad\xe2\x1b[31mX\x1b[0m\xe4\xb8\xad", b"\x1b]0;title\x07\x1b[31m\x1bP1;2+qabc\x1b\\\x1b_apc\x1b\\",
+    b"\x1b[1:2$\x1b\x1b[3m\x1b[0m",
+  ]
+  for input in inputs {
+    let (byte_stream, expected, _) = new_stream()
+    for byte in input {
+      byte_stream.next(byte)
+    }
+    for split in 0..<=input.length() {
+      let (chunk_stream, actual, _) = new_stream()
+      chunk_stream.next_slice(input[:split].to_owned())
+      chunk_stream.next_slice(input[split:].to_owned())
+      assert_eq(actual, expected)
+    }
+  }
+}
