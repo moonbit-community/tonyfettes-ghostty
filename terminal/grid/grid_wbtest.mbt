@@ -1049,6 +1049,110 @@ test "screen grid/full-width scrolls clear orphaned trailing spacer heads" {
 }
 
 ///|
+test "screen grid/full-width scroll dirty flags follow moved and blank rows" {
+  let plain = @style.CellStyle::new()
+  let bold = plain.apply_attribute(Bold)
+  let erase = plain.apply_attribute(Color256Bg(4))
+  let link = @hyperlink.CellHyperlink::implicit("https://example.com", 1)
+  for up in [false, true] {
+    for partial in [false, true] {
+      let top = if partial { 1 } else { 0 }
+      let bottom = if partial { 3 } else { 4 }
+      for count in [1, 2, bottom - top + 1] {
+        for origin in [0, 4] {
+          let grid = ScreenGridState::new(5, 4)
+          let cursor = @cursor.TerminalCursorState::new(5, 4)
+          grid.row_origin = origin
+          for row in 0..<5 {
+            cursor.y = row.to_uint16()
+            cursor.x = 0
+            grid.print_cell(
+              cursor,
+              b'A'.to_uint() + row.reinterpret_as_uint(),
+              Narrow,
+              bold,
+              false,
+              Prompt,
+              Some(link),
+            )
+            cursor.x = 1
+            grid.append_grapheme(cursor, 0x301U)
+            grid.write_cell(row, 3, 0U, SpacerHead, plain, false, Output, None)
+            grid.set_row_state(
+              row,
+              grid
+              .row_state(row)
+              .with_wrap(true)
+              .with_wrap_continuation(true)
+              .with_semantic_prompt(Prompt)
+              .with_dirty(false),
+            )
+          }
+          // Exercise both pooled and newly allocated blank buffers for count>1.
+          grid.recycle_row_cells(make_row_cells(4))
+          if up {
+            grid.shift_region_up(top, bottom, 0, 3, count, erase)
+          } else {
+            grid.shift_region_down(top, bottom, 0, 3, count, erase)
+          }
+          for row in 0..<5 {
+            let desc = expect_row(grid, row.to_uint16())
+            let cell = expect_cell(grid, row.to_uint16(), 0)
+            let trailing = expect_cell(grid, row.to_uint16(), 3)
+            let outside = row < top || row > bottom
+            if outside {
+              guard !desc.dirty() &&
+                desc.wrap() &&
+                desc.wrap_continuation() &&
+                desc.styled() &&
+                desc.hyperlink() &&
+                desc.grapheme() &&
+                desc.semantic_prompt() == Prompt &&
+                cell.codepoint() == b'A'.to_uint() + row.reinterpret_as_uint() &&
+                trailing.wide() == SpacerHead &&
+                grid.cell_hyperlink(row, 0) == Some(link) else {
+                fail("expected rows outside the region to remain unchanged")
+              }
+              continue
+            }
+            guard desc.dirty() && !desc.wrap() && !desc.wrap_continuation() else {
+              fail("expected every moved or blank row dirty with wraps cleared")
+            }
+            let source = if up { row + count } else { row - count }
+            if source >= top && source <= bottom {
+              guard cell.codepoint() ==
+                b'A'.to_uint() + source.reinterpret_as_uint() &&
+                cell.has_grapheme() &&
+                desc.grapheme() &&
+                desc.styled() &&
+                desc.hyperlink() &&
+                desc.semantic_prompt() == Prompt &&
+                grid.cell_hyperlink(row, 0) == Some(link) &&
+                trailing.is_empty() else {
+                fail(
+                  "expected moved rows to retain metadata after spacer cleanup",
+                )
+              }
+            } else {
+              guard cell.is_empty() &&
+                trailing.is_empty() &&
+                desc.styled() &&
+                !desc.grapheme() &&
+                !desc.hyperlink() &&
+                desc.semantic_prompt() == None &&
+                grid.cell_hyperlink(row, 0) == None &&
+                grid.cell_style(row, 0).bg_color().palette_index() == Some(4) else {
+                fail("expected dirty colored blanks without displaced metadata")
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
 test "screen grid/circular origin wraps and partial-height moves stay logical" {
   let grid = ScreenGridState::new(3, 2)
   fill_ascii(grid, 0, [b'A', b'a'])
@@ -1246,6 +1350,84 @@ test "screen grid/print cell clears prior wide and spacer forms" {
   grid.print_cell(cursor, b'H'.to_uint(), Narrow, style, false, Output, None)
   guard expect_cell(grid, 1, 1).codepoint() == b'H'.to_uint() else {
     fail("expected print cell to overwrite prior spacer heads")
+  }
+}
+
+///|
+test "screen grid/print overwrite rescans lost row metadata" {
+  let grid = ScreenGridState::new(1, 3)
+  let cursor = @cursor.TerminalCursorState::new(1, 3)
+  let plain = @style.CellStyle::new()
+  let bold = plain.apply_attribute(Bold)
+  let link = @hyperlink.CellHyperlink::implicit("https://example.com", 1)
+
+  // Removing one contributor must retain the flag from another cell; removing
+  // the final contributor must clear it. Exercise each rescan trigger alone.
+  grid.print_cell(cursor, b'A'.to_uint(), Narrow, bold, false, Output, None)
+  cursor.x = 1
+  grid.print_cell(cursor, b'B'.to_uint(), Narrow, bold, false, Output, None)
+  cursor.x = 0
+  grid.print_cell(cursor, b'C'.to_uint(), Narrow, plain, false, Output, None)
+  guard expect_row(grid, 0).styled() else {
+    fail("expected the other styled cell to keep the row styled")
+  }
+  cursor.x = 1
+  grid.print_cell(cursor, b'D'.to_uint(), Narrow, plain, false, Output, None)
+  guard !expect_row(grid, 0).styled() else {
+    fail("expected overwriting the last styled cell to clear the row flag")
+  }
+
+  cursor.x = 0
+  grid.print_cell(
+    cursor,
+    b'E'.to_uint(),
+    Narrow,
+    plain,
+    false,
+    Output,
+    Some(link),
+  )
+  cursor.x = 1
+  grid.print_cell(
+    cursor,
+    b'F'.to_uint(),
+    Narrow,
+    plain,
+    false,
+    Output,
+    Some(link),
+  )
+  cursor.x = 0
+  grid.print_cell(cursor, b'G'.to_uint(), Narrow, plain, false, Output, None)
+  guard expect_row(grid, 0).hyperlink() &&
+    grid.cell_hyperlink(0, 0) == None &&
+    grid.cell_hyperlink(0, 1) == Some(link) else {
+    fail("expected the other linked cell to retain the row link flag")
+  }
+  cursor.x = 1
+  grid.print_cell(cursor, b'H'.to_uint(), Narrow, plain, false, Output, None)
+  guard !expect_row(grid, 0).hyperlink() else {
+    fail("expected overwriting the final link to clear the row flag")
+  }
+
+  // The preceding two plain cells become independent grapheme contributors.
+  cursor.x = 1
+  grid.append_grapheme(cursor, 0x301U)
+  cursor.x = 2
+  grid.append_grapheme(cursor, 0x301U)
+  cursor.x = 0
+  grid.print_cell(cursor, b'I'.to_uint(), Narrow, plain, false, Output, None)
+  guard expect_row(grid, 0).grapheme() &&
+    !expect_cell(grid, 0, 0).has_grapheme() &&
+    expect_cell(grid, 0, 1).has_grapheme() else {
+    fail("expected the other grapheme cell to keep the row flag")
+  }
+  cursor.x = 1
+  grid.print_cell(cursor, b'J'.to_uint(), Narrow, plain, false, Output, None)
+  guard !expect_row(grid, 0).grapheme() && expect_row(grid, 0).dirty() else {
+    fail(
+      "expected the final grapheme overwrite to clear its flag and stay dirty",
+    )
   }
 }
 

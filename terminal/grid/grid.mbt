@@ -305,8 +305,9 @@ pub fn ScreenGridState::recycle_row_cells(
 ///|
 /// Fill row `row_idx`'s slot with a blank full-width line for a scroll, writing
 /// the `descs[row_idx]`/`cells[row_idx]` slots directly — no intermediate row
-/// object or tuple is allocated. Reuses a recycled cell array (resetting every
-/// cell in place) when one is pooled, otherwise allocates a fresh one. Always a
+/// object or tuple is allocated. The new blank row is marked dirty.
+/// Reuses a recycled cell array (resetting every cell in place) when one is
+/// pooled, otherwise allocates a fresh one. Always a
 /// *distinct* cell buffer from any active row — the moved rows above may
 /// transiently alias their source slot, and a distinct buffer breaks that alias
 /// instead of clearing a shared line in place.
@@ -337,7 +338,9 @@ fn ScreenGridState::set_blank_row(
   // store directly: `replace_row` remains public for PageList rebuilds, but an
   // extra call here showed up on every full-screen linefeed.
   let physical = self.physical_row(row_idx)
-  let desc = @page.PageRowState::new().with_styled(blank_row_is_styled(style))
+  let desc = @page.PageRowState::new()
+    .with_styled(blank_row_is_styled(style))
+    .with_dirty(true)
   // Compute the packed value before the indexed write so the descriptor array
   // is not retained across the cross-package `with_styled` call.
   self.descs[physical] = desc
@@ -958,45 +961,14 @@ fn ScreenGridState::print_cell(
     Narrow | SpacerHead => ()
   }
 
+  // Keep the write and flag maintenance in this function, mirroring upstream
+  // printCell, so the old cell and physical row stay local across the write.
   // Flags the cell being overwritten contributed to the row. If the new cell
   // drops any of them, the row flag may need clearing, which only a full rescan
   // can decide. Capture before the write replaces the cell object.
   let lost_grapheme = current.has_grapheme()
   let lost_styled = current.has_styling()
   let lost_hyperlink = current.has_hyperlink()
-  self.write_cell_and_update_row_flags(
-    row_idx, physical_row, col_idx, codepoint, wide, style, protected_flag, semantic_content,
-    hyperlink, lost_grapheme, lost_styled, lost_hyperlink,
-  )
-}
-
-///|
-/// Fused write + row-flag maintenance for the single-cell print hot path.
-///
-/// Splitting this across `write_cell` + `update_row_flags_after_write` made the
-/// row's cell slot touched three times per printed cell (read old, write new,
-/// read new) and recomputed the new cell's flags by re-reading the word that was
-/// just packed. Here the new cell's flag contributions are known directly: a
-/// printed base char never carries a grapheme, so `has_grapheme` is always
-/// false; `has_styled` is `style_id != default`; `has_hyperlink` is `has_link`.
-/// So the post-write rescan decision and the OR-in use those values without
-/// re-reading the cell. `write_cell` stays as the standalone path for `decaln`
-/// and tests, which maintain row flags differently (or in bulk).
-fn ScreenGridState::write_cell_and_update_row_flags(
-  self : ScreenGridState,
-  row_idx : Int32,
-  physical_row : Int32,
-  col_idx : Int32,
-  codepoint : UInt32,
-  wide : @page.PageCellWide,
-  style : @style.CellStyle,
-  protected_flag : Bool,
-  semantic_content : @page.SemanticContent,
-  hyperlink : @hyperlink.CellHyperlink?,
-  lost_grapheme : Bool,
-  lost_styled : Bool,
-  lost_hyperlink : Bool,
-) -> Unit {
   // Intern the optional link; `None` is the free fast path → id 0. Guard on
   // `Some` so the common unlinked write skips the call and its table refcount.
   let link_id = if hyperlink is Some(_) {
@@ -1168,6 +1140,7 @@ fn ScreenGridState::shift_full_width_down(
       let desc = self.descs[physical]
         .with_wrap(false)
         .with_wrap_continuation(false)
+        .with_dirty(true)
       self.descs[physical] = desc
       src -= 1
     }
@@ -1190,19 +1163,11 @@ fn ScreenGridState::shift_full_width_down(
       src -= 1
     }
   }
-  // Fresh blank rows scroll in at the top (reusing pooled cell arrays).
+  // Fresh dirty blank rows scroll in at the top (reusing pooled cell arrays).
   let mut row_idx = start_y
   while row_idx < start_y + count {
     self.set_blank_row(row_idx, style)
     row_idx += 1
-  }
-  // Every row's contents moved, so the whole region is dirty.
-  let mut dirty_idx = start_y
-  while dirty_idx <= bottom {
-    let physical = self.physical_row(dirty_idx)
-    let desc = self.descs[physical].with_dirty(true)
-    self.descs[physical] = desc
-    dirty_idx += 1
   }
 }
 
@@ -1248,7 +1213,7 @@ fn ScreenGridState::shift_region_up(
 /// blank rows fill the bottom.
 ///
 /// A whole-screen move advances the private origin, so the three reference
-/// arrays are not blitted. The per-row survivor cleanup and dirty pass remain;
+/// arrays are not blitted. Survivor cleanup also marks each moved row dirty;
 /// only row relocation becomes constant time. A partial-height full-width move
 /// copies the affected logical rows because rotating the whole screen would
 /// disturb rows outside the region.
@@ -1279,6 +1244,7 @@ fn ScreenGridState::shift_full_width_up(
       let desc = self.descs[physical]
         .with_wrap(false)
         .with_wrap_continuation(false)
+        .with_dirty(true)
       self.descs[physical] = desc
       src += 1
     }
@@ -1301,19 +1267,11 @@ fn ScreenGridState::shift_full_width_up(
       src += 1
     }
   }
-  // Fresh blank rows scroll in at the bottom (reusing pooled cell arrays).
+  // Fresh dirty blank rows scroll in at the bottom (reusing pooled cell arrays).
   let mut row_idx = bottom - count + 1
   while row_idx <= bottom {
     self.set_blank_row(row_idx, style)
     row_idx += 1
-  }
-  // Every row's contents moved, so the whole region is dirty.
-  let mut dirty_idx = start_y
-  while dirty_idx <= bottom {
-    let physical = self.physical_row(dirty_idx)
-    let desc = self.descs[physical].with_dirty(true)
-    self.descs[physical] = desc
-    dirty_idx += 1
   }
 }
 
@@ -1446,7 +1404,7 @@ fn ScreenGridState::apply_row_prompt(
   row_idx : Int32,
   row_prompt : @page.RowSemanticPrompt,
 ) -> Unit {
-  if row_prompt != None {
+  if !(row_prompt is None) {
     self.set_row_state(
       row_idx,
       self.row_state(row_idx).with_semantic_prompt(row_prompt),

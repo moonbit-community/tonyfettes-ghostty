@@ -114,6 +114,7 @@ pub fn PageRowState::with_grapheme(
 // public bit mutators, and small enough for the cross-package inliner to fold
 // into plain OR/AND at the grid's per-cell write site (the `if b { BIT } else
 // { 0 }` selects lower to branchless `csel`).
+#inline
 pub fn PageRowState::record_cell_write(
   self : PageRowState,
   styled~ : Bool,
