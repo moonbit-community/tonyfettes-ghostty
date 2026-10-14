@@ -165,13 +165,27 @@ fn terminal_system_no_log(
 }
 
 ///|
-pub extend SystemLogLevel with Eq::{not_equal, equal}
+pub extend SystemLogLevel with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SystemLogLevel with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SystemLogLevel with @debug.Debug::{to_repr}
 
 ///|
-pub extend SystemImage with Eq::{not_equal, equal}
+pub extend SystemImage with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SystemImage with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SystemImage with @debug.Debug::{to_repr}

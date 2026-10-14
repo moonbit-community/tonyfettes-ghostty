@@ -38,8 +38,6 @@ pub(all) enum C0 {
 } derive(Eq, @debug.Debug)
 pub fn C0::code(Self) -> Byte
 pub fn C0::equal(Self, Self) -> Bool
-pub fn C0::not_equal(Self, Self) -> Bool
-pub fn C0::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CursorStyle {
   Default
@@ -51,9 +49,7 @@ pub(all) enum CursorStyle {
   SteadyBar
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::equal(Self, Self) -> Bool
-pub fn CursorStyle::not_equal(Self, Self) -> Bool
 pub fn CursorStyle::ordinal(Self) -> Int
-pub fn CursorStyle::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ModifyKeyFormat {
   Legacy
@@ -64,9 +60,7 @@ pub(all) enum ModifyKeyFormat {
   OtherKeysNumeric
 } derive(Eq, @debug.Debug)
 pub fn ModifyKeyFormat::equal(Self, Self) -> Bool
-pub fn ModifyKeyFormat::not_equal(Self, Self) -> Bool
 pub fn ModifyKeyFormat::ordinal(Self) -> Int
-pub fn ModifyKeyFormat::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ProtectedMode {
   Off
@@ -74,8 +68,6 @@ pub(all) enum ProtectedMode {
   Dec
 } derive(Eq, @debug.Debug)
 pub fn ProtectedMode::equal(Self, Self) -> Bool
-pub fn ProtectedMode::not_equal(Self, Self) -> Bool
-pub fn ProtectedMode::to_repr(Self) -> @debug.Repr
 
 pub(all) enum RenditionAspect {
   Default
@@ -85,17 +77,13 @@ pub(all) enum RenditionAspect {
 } derive(Eq, @debug.Debug)
 pub fn RenditionAspect::code(Self) -> UInt16
 pub fn RenditionAspect::equal(Self, Self) -> Bool
-pub fn RenditionAspect::not_equal(Self, Self) -> Bool
-pub fn RenditionAspect::to_repr(Self) -> @debug.Repr
 
 pub(all) enum StatusDisplay {
   Main
   StatusLine
 } derive(Eq, @debug.Debug)
 pub fn StatusDisplay::equal(Self, Self) -> Bool
-pub fn StatusDisplay::not_equal(Self, Self) -> Bool
 pub fn StatusDisplay::ordinal(Self) -> Int
-pub fn StatusDisplay::to_repr(Self) -> @debug.Repr
 
 pub(all) enum StatusLineType {
   None
@@ -104,8 +92,6 @@ pub(all) enum StatusLineType {
 } derive(Eq, @debug.Debug)
 pub fn StatusLineType::code(Self) -> UInt16
 pub fn StatusLineType::equal(Self, Self) -> Bool
-pub fn StatusLineType::not_equal(Self, Self) -> Bool
-pub fn StatusLineType::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

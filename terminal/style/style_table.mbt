@@ -118,9 +118,16 @@ pub fn StyleTable::len(self : StyleTable) -> Int32 {
 }
 
 ///|
-pub extend StyleId with Eq::{not_equal, equal}
+pub extend StyleId with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StyleId with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend StyleId with @debug.Debug::{to_repr}
 
 ///|

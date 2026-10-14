@@ -1316,19 +1316,40 @@ fn write_hex_byte(buffer : @buffer.Buffer, value : Byte) -> Unit {
 }
 
 ///|
-pub extend Format with Eq::{not_equal, equal}
+pub extend Format with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Format with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Format with @debug.Debug::{to_repr}
 
 ///|
-pub extend FormatterScreenExtra with Eq::{not_equal, equal}
+pub extend FormatterScreenExtra with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FormatterScreenExtra with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend FormatterScreenExtra with @debug.Debug::{to_repr}
 
 ///|
-pub extend FormatterTerminalExtra with Eq::{not_equal, equal}
+pub extend FormatterTerminalExtra with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FormatterTerminalExtra with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend FormatterTerminalExtra with @debug.Debug::{to_repr}

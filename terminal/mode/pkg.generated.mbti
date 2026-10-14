@@ -59,45 +59,35 @@ pub(all) enum Mode {
   InBandSizeReports
 } derive(Eq, @debug.Debug)
 pub fn Mode::equal(Self, Self) -> Bool
-pub fn Mode::not_equal(Self, Self) -> Bool
 pub fn Mode::tag(Self) -> ModeTag
-pub fn Mode::to_repr(Self) -> @debug.Repr
 
 type ModePacked derive(Eq, @debug.Debug)
 pub fn ModePacked::default() -> Self
 pub fn ModePacked::empty() -> Self
 pub fn ModePacked::equal(Self, Self) -> Bool
 pub fn ModePacked::get(Self, Mode) -> Bool
-pub fn ModePacked::not_equal(Self, Self) -> Bool
 pub fn ModePacked::set(Self, Mode, Bool) -> Self
-pub fn ModePacked::to_repr(Self) -> @debug.Repr
 
 type ModeState derive(Eq, @debug.Debug)
 pub fn ModeState::equal(Self, Self) -> Bool
 pub fn ModeState::get(Self, Mode) -> Bool
 pub fn ModeState::get_report(Self, ModeTag) -> Report
 pub fn ModeState::new() -> Self
-pub fn ModeState::not_equal(Self, Self) -> Bool
 pub fn ModeState::save(Self, Mode) -> Self
 pub fn ModeState::saved_value(Self, Mode) -> Bool
 pub fn ModeState::set(Self, Mode, Bool) -> Self
-pub fn ModeState::to_repr(Self) -> @debug.Repr
 
 type ModeTag derive(Eq, @debug.Debug)
 pub fn ModeTag::ansi(Self) -> Bool
 pub fn ModeTag::equal(Self, Self) -> Bool
-pub fn ModeTag::not_equal(Self, Self) -> Bool
 pub fn ModeTag::raw(Self) -> UInt16
-pub fn ModeTag::to_repr(Self) -> @debug.Repr
 pub fn ModeTag::value(Self) -> UInt16
 
 type Report derive(Eq, @debug.Debug)
 pub fn Report::encode(Self) -> Bytes
 pub fn Report::equal(Self, Self) -> Bool
-pub fn Report::not_equal(Self, Self) -> Bool
 pub fn Report::state(Self) -> ReportState
 pub fn Report::tag(Self) -> ModeTag
-pub fn Report::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ReportState {
   NotRecognized
@@ -108,8 +98,6 @@ pub(all) enum ReportState {
 } derive(Eq, @debug.Debug)
 pub fn ReportState::code(Self) -> Int
 pub fn ReportState::equal(Self, Self) -> Bool
-pub fn ReportState::not_equal(Self, Self) -> Bool
-pub fn ReportState::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

@@ -314,49 +314,105 @@ pub fn DeviceAttributes::encode(
 }
 
 ///|
-pub extend DeviceAttributeRequest with Eq::{not_equal, equal}
+pub extend DeviceAttributeRequest with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceAttributeRequest with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DeviceAttributeRequest with @debug.Debug::{to_repr}
 
 ///|
-pub extend ConformanceLevel with Eq::{not_equal, equal}
+pub extend ConformanceLevel with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConformanceLevel with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ConformanceLevel with @debug.Debug::{to_repr}
 
 ///|
-pub extend PrimaryDeviceAttributeFeature with Eq::{not_equal, equal}
+pub extend PrimaryDeviceAttributeFeature with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PrimaryDeviceAttributeFeature with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend PrimaryDeviceAttributeFeature with @debug.Debug::{to_repr}
 
 ///|
-pub extend DeviceType with Eq::{not_equal, equal}
+pub extend DeviceType with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceType with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DeviceType with @debug.Debug::{to_repr}
 
 ///|
-pub extend PrimaryDeviceAttributes with Eq::{not_equal, equal}
+pub extend PrimaryDeviceAttributes with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PrimaryDeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend PrimaryDeviceAttributes with @debug.Debug::{to_repr}
 
 ///|
-pub extend SecondaryDeviceAttributes with Eq::{not_equal, equal}
+pub extend SecondaryDeviceAttributes with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SecondaryDeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SecondaryDeviceAttributes with @debug.Debug::{to_repr}
 
 ///|
-pub extend TertiaryDeviceAttributes with Eq::{not_equal, equal}
+pub extend TertiaryDeviceAttributes with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TertiaryDeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend TertiaryDeviceAttributes with @debug.Debug::{to_repr}
 
 ///|
-pub extend DeviceAttributes with Eq::{not_equal, equal}
+pub extend DeviceAttributes with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceAttributes with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DeviceAttributes with @debug.Debug::{to_repr}

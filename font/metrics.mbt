@@ -431,34 +431,69 @@ fn max_uint(left : UInt32, right : UInt32) -> UInt32 {
 }
 
 ///|
-pub extend FaceMetrics with Eq::{not_equal, equal}
+pub extend FaceMetrics with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FaceMetrics with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend FaceMetrics with @debug.Debug::{to_repr}
 
 ///|
-pub extend Metrics with Eq::{not_equal, equal}
+pub extend Metrics with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Metrics with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Metrics with @debug.Debug::{to_repr}
 
 ///|
-pub extend MetricKey with Eq::{not_equal, equal}
+pub extend MetricKey with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MetricKey with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend MetricKey with @debug.Debug::{to_repr}
 
 ///|
 pub extend MetricKey with Hash::{hash, hash_combine}
 
 ///|
-pub extend ModifierParseError with Eq::{not_equal, equal}
+pub extend ModifierParseError with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModifierParseError with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ModifierParseError with @debug.Debug::{to_repr}
 
 ///|
-pub extend Modifier with Eq::{not_equal, equal}
+pub extend Modifier with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Modifier with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Modifier with @debug.Debug::{to_repr}

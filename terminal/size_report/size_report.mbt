@@ -96,13 +96,27 @@ pub fn encode(style : Style, size : Size) -> Bytes {
 }
 
 ///|
-pub extend Style with Eq::{not_equal, equal}
+pub extend Style with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Style with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Style with @debug.Debug::{to_repr}
 
 ///|
-pub extend Size with Eq::{not_equal, equal}
+pub extend Size with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Size with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Size with @debug.Debug::{to_repr}

@@ -191,8 +191,6 @@ pub(all) enum Key {
 } derive(Eq, @debug.Debug)
 pub fn Key::codepoint(Self) -> UInt?
 pub fn Key::equal(Self, Self) -> Bool
-pub fn Key::not_equal(Self, Self) -> Bool
-pub fn Key::to_repr(Self) -> @debug.Repr
 
 pub(all) enum KeyAction {
   Release
@@ -200,8 +198,6 @@ pub(all) enum KeyAction {
   Repeat
 } derive(Eq, @debug.Debug)
 pub fn KeyAction::equal(Self, Self) -> Bool
-pub fn KeyAction::not_equal(Self, Self) -> Bool
-pub fn KeyAction::to_repr(Self) -> @debug.Repr
 
 type KeyEvent derive(Eq, @debug.Debug)
 pub fn KeyEvent::action(Self) -> KeyAction
@@ -212,7 +208,6 @@ pub fn KeyEvent::equal(Self, Self) -> Bool
 pub fn KeyEvent::key(Self) -> Key
 pub fn KeyEvent::mods(Self) -> KeyMods
 pub fn KeyEvent::new() -> Self
-pub fn KeyEvent::not_equal(Self, Self) -> Bool
 pub fn KeyEvent::set_action(Self, KeyAction) -> Unit
 pub fn KeyEvent::set_composing(Self, Bool) -> Unit
 pub fn KeyEvent::set_consumed_mods(Self, KeyMods) -> Unit
@@ -220,7 +215,6 @@ pub fn KeyEvent::set_key(Self, Key) -> Unit
 pub fn KeyEvent::set_mods(Self, KeyMods) -> Unit
 pub fn KeyEvent::set_unshifted_codepoint(Self, UInt) -> Unit
 pub fn KeyEvent::set_utf8(Self, Bytes) -> Unit
-pub fn KeyEvent::to_repr(Self) -> @debug.Repr
 pub fn KeyEvent::unshifted_codepoint(Self) -> UInt
 pub fn KeyEvent::utf8(Self) -> Bytes
 
@@ -229,8 +223,6 @@ pub(all) enum KeyModSide {
   Right
 } derive(Eq, @debug.Debug)
 pub fn KeyModSide::equal(Self, Self) -> Bool
-pub fn KeyModSide::not_equal(Self, Self) -> Bool
-pub fn KeyModSide::to_repr(Self) -> @debug.Repr
 
 pub(all) struct KeyMods(UInt16) derive(Eq, @debug.Debug)
 pub fn KeyMods::alt(Self) -> Bool
@@ -242,13 +234,11 @@ pub fn KeyMods::ctrl_side(Self) -> KeyModSide
 pub fn KeyMods::empty(Self) -> Bool
 pub fn KeyMods::equal(Self, Self) -> Bool
 pub fn KeyMods::new() -> Self
-pub fn KeyMods::not_equal(Self, Self) -> Bool
 pub fn KeyMods::num_lock(Self) -> Bool
 pub fn KeyMods::shift(Self) -> Bool
 pub fn KeyMods::shift_side(Self) -> KeyModSide
 pub fn KeyMods::super_(Self) -> Bool
 pub fn KeyMods::super_side(Self) -> KeyModSide
-pub fn KeyMods::to_repr(Self) -> @debug.Repr
 pub fn KeyMods::unset(Self, Self) -> Self
 pub fn KeyMods::with_alt(Self, Bool) -> Self
 pub fn KeyMods::with_alt_side(Self, KeyModSide) -> Self
@@ -268,8 +258,6 @@ pub(all) enum MouseAction {
   Motion
 } derive(Eq, @debug.Debug)
 pub fn MouseAction::equal(Self, Self) -> Bool
-pub fn MouseAction::not_equal(Self, Self) -> Bool
-pub fn MouseAction::to_repr(Self) -> @debug.Repr
 
 pub(all) enum MouseButton {
   Unknown
@@ -286,8 +274,6 @@ pub(all) enum MouseButton {
   Eleven
 } derive(Eq, @debug.Debug)
 pub fn MouseButton::equal(Self, Self) -> Bool
-pub fn MouseButton::not_equal(Self, Self) -> Bool
-pub fn MouseButton::to_repr(Self) -> @debug.Repr
 
 pub(all) enum MouseEvent {
   None
@@ -297,8 +283,6 @@ pub(all) enum MouseEvent {
   Any
 } derive(Eq, @debug.Debug)
 pub fn MouseEvent::equal(Self, Self) -> Bool
-pub fn MouseEvent::not_equal(Self, Self) -> Bool
-pub fn MouseEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) enum MouseFormat {
   X10
@@ -308,8 +292,6 @@ pub(all) enum MouseFormat {
   SgrPixels
 } derive(Eq, @debug.Debug)
 pub fn MouseFormat::equal(Self, Self) -> Bool
-pub fn MouseFormat::not_equal(Self, Self) -> Bool
-pub fn MouseFormat::to_repr(Self) -> @debug.Repr
 
 type MouseInputEvent derive(Eq, @debug.Debug)
 pub fn MouseInputEvent::action(Self) -> MouseAction
@@ -318,13 +300,11 @@ pub fn MouseInputEvent::clear_button(Self) -> Unit
 pub fn MouseInputEvent::equal(Self, Self) -> Bool
 pub fn MouseInputEvent::mods(Self) -> KeyMods
 pub fn MouseInputEvent::new() -> Self
-pub fn MouseInputEvent::not_equal(Self, Self) -> Bool
 pub fn MouseInputEvent::position(Self) -> MousePosition
 pub fn MouseInputEvent::set_action(Self, MouseAction) -> Unit
 pub fn MouseInputEvent::set_button(Self, MouseButton) -> Unit
 pub fn MouseInputEvent::set_mods(Self, KeyMods) -> Unit
 pub fn MouseInputEvent::set_position(Self, MousePosition) -> Unit
-pub fn MouseInputEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) struct MousePosition {
   x : Float
@@ -332,8 +312,6 @@ pub(all) struct MousePosition {
 } derive(Eq, @debug.Debug)
 pub fn MousePosition::equal(Self, Self) -> Bool
 pub fn MousePosition::new(Float, Float) -> Self
-pub fn MousePosition::not_equal(Self, Self) -> Bool
-pub fn MousePosition::to_repr(Self) -> @debug.Repr
 pub fn MousePosition::x(Self) -> Float
 pub fn MousePosition::y(Self) -> Float
 
@@ -375,8 +353,6 @@ pub(all) enum MouseShape {
 } derive(Eq, @debug.Debug)
 pub fn MouseShape::equal(Self, Self) -> Bool
 pub fn MouseShape::from_string(String) -> Self?
-pub fn MouseShape::not_equal(Self, Self) -> Bool
-pub fn MouseShape::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

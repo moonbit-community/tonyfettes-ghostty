@@ -53,13 +53,27 @@ pub fn CodepointMap::hashcode(self : CodepointMap) -> UInt32 {
 }
 
 ///|
-pub extend CodepointMapEntry with Eq::{not_equal, equal}
+pub extend CodepointMapEntry with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CodepointMapEntry with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend CodepointMapEntry with @debug.Debug::{to_repr}
 
 ///|
-pub extend CodepointMap with Eq::{not_equal, equal}
+pub extend CodepointMap with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CodepointMap with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend CodepointMap with @debug.Debug::{to_repr}

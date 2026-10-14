@@ -255,31 +255,66 @@ fn Atlas::assert_region(self : Atlas, reg : AtlasRegion) -> Unit {
 }
 
 ///|
-pub extend AtlasFormat with Eq::{not_equal, equal}
+pub extend AtlasFormat with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasFormat with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend AtlasFormat with @debug.Debug::{to_repr}
 
 ///|
-pub extend AtlasNode with Eq::{not_equal, equal}
+pub extend AtlasNode with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasNode with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend AtlasNode with @debug.Debug::{to_repr}
 
 ///|
-pub extend AtlasError with Eq::{not_equal, equal}
+pub extend AtlasError with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasError with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend AtlasError with @debug.Debug::{to_repr}
 
 ///|
-pub extend AtlasRegion with Eq::{not_equal, equal}
+pub extend AtlasRegion with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend AtlasRegion with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend AtlasRegion with @debug.Debug::{to_repr}
 
 ///|
-pub extend Atlas with Eq::{not_equal, equal}
+pub extend Atlas with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Atlas with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Atlas with @debug.Debug::{to_repr}

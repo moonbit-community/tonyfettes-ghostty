@@ -144,19 +144,40 @@ fn current_build_version() -> BuildVersion {
 }
 
 ///|
-pub extend OptimizeMode with Eq::{not_equal, equal}
+pub extend OptimizeMode with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend OptimizeMode with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend OptimizeMode with @debug.Debug::{to_repr}
 
 ///|
-pub extend BuildVersion with Eq::{not_equal, equal}
+pub extend BuildVersion with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend BuildVersion with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend BuildVersion with @debug.Debug::{to_repr}
 
 ///|
-pub extend BuildInfo with Eq::{not_equal, equal}
+pub extend BuildInfo with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend BuildInfo with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend BuildInfo with @debug.Debug::{to_repr}

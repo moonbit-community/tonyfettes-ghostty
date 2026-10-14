@@ -10,7 +10,14 @@ pub(all) struct Glyph {
 } derive(Eq, Debug)
 
 ///|
-pub extend Glyph with Eq::{not_equal, equal}
+pub extend Glyph with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Glyph with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Glyph with @debug.Debug::{to_repr}

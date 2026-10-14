@@ -179,13 +179,27 @@ fn wrapped_kitty_keyboard_index(index : Int32) -> Int32 {
 }
 
 ///|
-pub extend TerminalInputFlags with Eq::{not_equal, equal}
+pub extend TerminalInputFlags with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalInputFlags with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend TerminalInputFlags with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyKeyboardState with Eq::{not_equal, equal}
+pub extend KittyKeyboardState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyKeyboardState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyKeyboardState with @debug.Debug::{to_repr}

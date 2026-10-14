@@ -618,25 +618,53 @@ pub fn PageCellState::with_grapheme_id(
 }
 
 ///|
-pub extend PageCellWide with Eq::{not_equal, equal}
+pub extend PageCellWide with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellWide with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend PageCellWide with @debug.Debug::{to_repr}
 
 ///|
-pub extend PageRowState with Eq::{not_equal, equal}
+pub extend PageRowState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageRowState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend PageRowState with @debug.Debug::{to_repr}
 
 ///|
-pub extend PageCellFlags with Eq::{not_equal, equal}
+pub extend PageCellFlags with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellFlags with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend PageCellFlags with @debug.Debug::{to_repr}
 
 ///|
-pub extend PageCellState with Eq::{not_equal, equal}
+pub extend PageCellState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PageCellState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend PageCellState with @debug.Debug::{to_repr}

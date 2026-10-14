@@ -382,25 +382,53 @@ fn parse_u64_ascii(bytes : BytesView, start : Int32, end_ : Int32) -> UInt64? {
 }
 
 ///|
-pub extend ContextSignalAction with Eq::{not_equal, equal}
+pub extend ContextSignalAction with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ContextSignalAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ContextSignalAction with @debug.Debug::{to_repr}
 
 ///|
-pub extend ContextSignalType with Eq::{not_equal, equal}
+pub extend ContextSignalType with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ContextSignalType with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ContextSignalType with @debug.Debug::{to_repr}
 
 ///|
-pub extend ContextSignalExitStatus with Eq::{not_equal, equal}
+pub extend ContextSignalExitStatus with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ContextSignalExitStatus with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ContextSignalExitStatus with @debug.Debug::{to_repr}
 
 ///|
-pub extend ContextSignalOsc with Eq::{not_equal, equal}
+pub extend ContextSignalOsc with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ContextSignalOsc with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ContextSignalOsc with @debug.Debug::{to_repr}

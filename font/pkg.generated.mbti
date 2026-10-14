@@ -12,15 +12,11 @@ pub suberror AtlasError {
   AtlasFull
 } derive(Eq, @debug.Debug)
 pub fn AtlasError::equal(Self, Self) -> Bool
-pub fn AtlasError::not_equal(Self, Self) -> Bool
-pub fn AtlasError::to_repr(Self) -> @debug.Repr
 
 pub suberror ModifierParseError {
   InvalidFormat
 } derive(Eq, @debug.Debug)
 pub fn ModifierParseError::equal(Self, Self) -> Bool
-pub fn ModifierParseError::not_equal(Self, Self) -> Bool
-pub fn ModifierParseError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) struct Atlas {
@@ -35,11 +31,9 @@ pub fn Atlas::clear(Self) -> Unit
 pub fn Atlas::equal(Self, Self) -> Bool
 pub fn Atlas::grow(Self, UInt) -> Unit
 pub fn Atlas::new(UInt, AtlasFormat) -> Self
-pub fn Atlas::not_equal(Self, Self) -> Bool
 pub fn Atlas::reserve(Self, UInt, UInt) -> AtlasRegion raise AtlasError
 pub fn Atlas::set(Self, AtlasRegion, ArrayView[Byte]) -> Unit
 pub fn Atlas::set_from_larger(Self, AtlasRegion, ArrayView[Byte], UInt, UInt, UInt) -> Unit
-pub fn Atlas::to_repr(Self) -> @debug.Repr
 
 pub(all) enum AtlasFormat {
   Grayscale
@@ -48,8 +42,6 @@ pub(all) enum AtlasFormat {
 } derive(Eq, @debug.Debug)
 pub fn AtlasFormat::depth(Self) -> Byte
 pub fn AtlasFormat::equal(Self, Self) -> Bool
-pub fn AtlasFormat::not_equal(Self, Self) -> Bool
-pub fn AtlasFormat::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AtlasNode {
   mut x : UInt
@@ -57,8 +49,6 @@ pub(all) struct AtlasNode {
   mut width : UInt
 } derive(Eq, @debug.Debug)
 pub fn AtlasNode::equal(Self, Self) -> Bool
-pub fn AtlasNode::not_equal(Self, Self) -> Bool
-pub fn AtlasNode::to_repr(Self) -> @debug.Repr
 
 pub(all) struct AtlasRegion {
   mut x : UInt
@@ -67,8 +57,6 @@ pub(all) struct AtlasRegion {
   height : UInt
 } derive(Eq, @debug.Debug)
 pub fn AtlasRegion::equal(Self, Self) -> Bool
-pub fn AtlasRegion::not_equal(Self, Self) -> Bool
-pub fn AtlasRegion::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CodepointMap {
   mut list : Array[CodepointMapEntry]
@@ -78,16 +66,12 @@ pub fn CodepointMap::equal(Self, Self) -> Bool
 pub fn CodepointMap::get(Self, UInt) -> Descriptor?
 pub fn CodepointMap::hashcode(Self) -> UInt
 pub fn CodepointMap::new() -> Self
-pub fn CodepointMap::not_equal(Self, Self) -> Bool
-pub fn CodepointMap::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CodepointMapEntry {
   range : (UInt, UInt)
   descriptor : Descriptor
 } derive(Eq, @debug.Debug)
 pub fn CodepointMapEntry::equal(Self, Self) -> Bool
-pub fn CodepointMapEntry::not_equal(Self, Self) -> Bool
-pub fn CodepointMapEntry::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Descriptor {
   family : String?
@@ -102,8 +86,6 @@ pub(all) struct Descriptor {
 pub fn Descriptor::equal(Self, Self) -> Bool
 pub fn Descriptor::hashcode(Self) -> UInt
 pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Float, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : ArrayView[FontVariation]) -> Self
-pub fn Descriptor::not_equal(Self, Self) -> Bool
-pub fn Descriptor::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FaceMetrics {
   px_per_em : Double
@@ -126,10 +108,8 @@ pub fn FaceMetrics::equal(Self, Self) -> Bool
 pub fn FaceMetrics::ex_height(Self) -> Double
 pub fn FaceMetrics::ic_width(Self) -> Double
 pub fn FaceMetrics::line_height(Self) -> Double
-pub fn FaceMetrics::not_equal(Self, Self) -> Bool
 pub fn FaceMetrics::strikethrough_position(Self) -> Double
 pub fn FaceMetrics::strikethrough_thickness(Self) -> Double
-pub fn FaceMetrics::to_repr(Self) -> @debug.Repr
 pub fn FaceMetrics::underline_position(Self) -> Double
 pub fn FaceMetrics::underline_thickness(Self) -> Double
 
@@ -138,8 +118,6 @@ pub(all) struct FontVariation {
   value : Double
 } derive(Eq, @debug.Debug)
 pub fn FontVariation::equal(Self, Self) -> Bool
-pub fn FontVariation::not_equal(Self, Self) -> Bool
-pub fn FontVariation::to_repr(Self) -> @debug.Repr
 
 pub(all) struct FontVariationId {
   a : Byte
@@ -149,9 +127,7 @@ pub(all) struct FontVariationId {
 } derive(Eq, @debug.Debug)
 pub fn FontVariationId::equal(Self, Self) -> Bool
 pub fn FontVariationId::init(BytesView) -> Self
-pub fn FontVariationId::not_equal(Self, Self) -> Bool
 pub fn FontVariationId::str(Self) -> Bytes
-pub fn FontVariationId::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Glyph {
   width : UInt
@@ -162,8 +138,6 @@ pub(all) struct Glyph {
   atlas_y : UInt
 } derive(Eq, @debug.Debug)
 pub fn Glyph::equal(Self, Self) -> Bool
-pub fn Glyph::not_equal(Self, Self) -> Bool
-pub fn Glyph::to_repr(Self) -> @debug.Repr
 
 pub(all) enum MetricKey {
   CellWidth
@@ -187,8 +161,6 @@ pub(all) enum MetricKey {
 pub fn MetricKey::equal(Self, Self) -> Bool
 pub fn MetricKey::hash(Self) -> Int
 pub fn MetricKey::hash_combine(Self, Hasher) -> Unit
-pub fn MetricKey::not_equal(Self, Self) -> Bool
-pub fn MetricKey::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Metrics {
   mut cell_width : UInt
@@ -212,17 +184,13 @@ pub(all) struct Metrics {
 pub fn Metrics::apply(Self, ModifierSet) -> Unit
 pub fn Metrics::calc(FaceMetrics) -> Self
 pub fn Metrics::equal(Self, Self) -> Bool
-pub fn Metrics::not_equal(Self, Self) -> Bool
-pub fn Metrics::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Modifier {
   Percent(Double)
   Absolute(Int)
 } derive(Eq, @debug.Debug)
 pub fn Modifier::equal(Self, Self) -> Bool
-pub fn Modifier::not_equal(Self, Self) -> Bool
 pub fn Modifier::parse(String) -> Self raise ModifierParseError
-pub fn Modifier::to_repr(Self) -> @debug.Repr
 
 type ModifierSet
 pub fn ModifierSet::get(Self, MetricKey) -> Modifier?
@@ -238,11 +206,9 @@ pub fn Sprite::cursor_underline() -> Self
 pub fn Sprite::end() -> UInt
 pub fn Sprite::equal(Self, Self) -> Bool
 pub fn Sprite::from_codepoint(UInt) -> Self?
-pub fn Sprite::not_equal(Self, Self) -> Bool
 pub fn Sprite::overline() -> Self
 pub fn Sprite::start() -> UInt
 pub fn Sprite::strikethrough() -> Self
-pub fn Sprite::to_repr(Self) -> @debug.Repr
 pub fn Sprite::underline() -> Self
 pub fn Sprite::underline_curly() -> Self
 pub fn Sprite::underline_dashed() -> Self
@@ -254,9 +220,7 @@ pub(all) struct SpriteBox[T] {
   p1 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
 pub fn[T : Eq] SpriteBox::equal(Self[T], Self[T]) -> Bool
-pub fn[T : Eq] SpriteBox::not_equal(Self[T], Self[T]) -> Bool
 pub fn SpriteBox::rect(Self[Int]) -> SpriteRect[Int]
-pub fn[T : @debug.Debug] SpriteBox::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct SpriteCanvas {
   mut data : Array[Byte]
@@ -276,19 +240,15 @@ pub fn SpriteCanvas::flip_horizontal(Self) -> Unit
 pub fn SpriteCanvas::flip_vertical(Self) -> Unit
 pub fn SpriteCanvas::invert(Self) -> Unit
 pub fn SpriteCanvas::new(UInt, UInt, UInt, UInt) -> Self
-pub fn SpriteCanvas::not_equal(Self, Self) -> Bool
 pub fn SpriteCanvas::pixel(Self, Int, Int, SpriteColor) -> Unit
 pub fn SpriteCanvas::rect(Self, SpriteRect[Int], SpriteColor) -> Unit
-pub fn SpriteCanvas::to_repr(Self) -> @debug.Repr
 pub fn SpriteCanvas::write_atlas(Self, Atlas) -> AtlasRegion raise AtlasError
 
 type SpriteColor derive(Eq, @debug.Debug)
 pub fn SpriteColor::equal(Self, Self) -> Bool
 pub fn SpriteColor::from_byte(Byte) -> Self
-pub fn SpriteColor::not_equal(Self, Self) -> Bool
 pub fn SpriteColor::off() -> Self
 pub fn SpriteColor::on() -> Self
-pub fn SpriteColor::to_repr(Self) -> @debug.Repr
 pub fn SpriteColor::value(Self) -> Byte
 
 pub(all) struct SpriteLine[T] {
@@ -296,16 +256,12 @@ pub(all) struct SpriteLine[T] {
   p1 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
 pub fn[T : Eq] SpriteLine::equal(Self[T], Self[T]) -> Bool
-pub fn[T : Eq] SpriteLine::not_equal(Self[T], Self[T]) -> Bool
-pub fn[T : @debug.Debug] SpriteLine::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct SpritePoint[T] {
   x : T
   y : T
 } derive(Eq, @debug.Debug)
 pub fn[T : Eq] SpritePoint::equal(Self[T], Self[T]) -> Bool
-pub fn[T : Eq] SpritePoint::not_equal(Self[T], Self[T]) -> Bool
-pub fn[T : @debug.Debug] SpritePoint::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct SpriteQuad[T] {
   p0 : SpritePoint[T]
@@ -314,8 +270,6 @@ pub(all) struct SpriteQuad[T] {
   p3 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
 pub fn[T : Eq] SpriteQuad::equal(Self[T], Self[T]) -> Bool
-pub fn[T : Eq] SpriteQuad::not_equal(Self[T], Self[T]) -> Bool
-pub fn[T : @debug.Debug] SpriteQuad::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct SpriteRect[T] {
   x : T
@@ -324,8 +278,6 @@ pub(all) struct SpriteRect[T] {
   height : T
 } derive(Eq, @debug.Debug)
 pub fn[T : Eq] SpriteRect::equal(Self[T], Self[T]) -> Bool
-pub fn[T : Eq] SpriteRect::not_equal(Self[T], Self[T]) -> Bool
-pub fn[T : @debug.Debug] SpriteRect::to_repr(Self[T]) -> @debug.Repr
 
 pub(all) struct SpriteTriangle[T] {
   p0 : SpritePoint[T]
@@ -333,8 +285,6 @@ pub(all) struct SpriteTriangle[T] {
   p2 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
 pub fn[T : Eq] SpriteTriangle::equal(Self[T], Self[T]) -> Bool
-pub fn[T : Eq] SpriteTriangle::not_equal(Self[T], Self[T]) -> Bool
-pub fn[T : @debug.Debug] SpriteTriangle::to_repr(Self[T]) -> @debug.Repr
 
 // Type aliases
 

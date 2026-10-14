@@ -373,37 +373,79 @@ pub fn ModeState::get_report(self : ModeState, tag : ModeTag) -> Report {
 }
 
 ///|
-pub extend Mode with Eq::{not_equal, equal}
+pub extend Mode with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Mode with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Mode with @debug.Debug::{to_repr}
 
 ///|
-pub extend ModeTag with Eq::{not_equal, equal}
+pub extend ModeTag with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModeTag with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ModeTag with @debug.Debug::{to_repr}
 
 ///|
-pub extend ModePacked with Eq::{not_equal, equal}
+pub extend ModePacked with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModePacked with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ModePacked with @debug.Debug::{to_repr}
 
 ///|
-pub extend ModeState with Eq::{not_equal, equal}
+pub extend ModeState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModeState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ModeState with @debug.Debug::{to_repr}
 
 ///|
-pub extend ReportState with Eq::{not_equal, equal}
+pub extend ReportState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ReportState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ReportState with @debug.Debug::{to_repr}
 
 ///|
-pub extend Report with Eq::{not_equal, equal}
+pub extend Report with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Report with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Report with @debug.Debug::{to_repr}

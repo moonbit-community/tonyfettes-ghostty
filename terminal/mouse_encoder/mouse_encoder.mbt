@@ -533,13 +533,27 @@ fn max_uint(a : UInt32, b : UInt32) -> UInt32 {
 }
 
 ///|
-pub extend MouseEncoderSize with Eq::{not_equal, equal}
+pub extend MouseEncoderSize with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEncoderSize with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend MouseEncoderSize with @debug.Debug::{to_repr}
 
 ///|
-pub extend MouseEncoder with Eq::{not_equal, equal}
+pub extend MouseEncoder with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend MouseEncoder with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend MouseEncoder with @debug.Debug::{to_repr}

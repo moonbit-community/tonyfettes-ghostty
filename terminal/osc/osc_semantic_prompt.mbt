@@ -401,37 +401,79 @@ fn semantic_prompt_hex(byte : Byte) -> Int32? {
 }
 
 ///|
-pub extend SemanticPromptAction with Eq::{not_equal, equal}
+pub extend SemanticPromptAction with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticPromptAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SemanticPromptAction with @debug.Debug::{to_repr}
 
 ///|
-pub extend SemanticPromptClick with Eq::{not_equal, equal}
+pub extend SemanticPromptClick with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticPromptClick with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SemanticPromptClick with @debug.Debug::{to_repr}
 
 ///|
-pub extend SemanticPromptKind with Eq::{not_equal, equal}
+pub extend SemanticPromptKind with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticPromptKind with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SemanticPromptKind with @debug.Debug::{to_repr}
 
 ///|
-pub extend SemanticPromptRedraw with Eq::{not_equal, equal}
+pub extend SemanticPromptRedraw with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticPromptRedraw with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SemanticPromptRedraw with @debug.Debug::{to_repr}
 
 ///|
-pub extend SemanticPromptDecodeError with Eq::{not_equal, equal}
+pub extend SemanticPromptDecodeError with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticPromptDecodeError with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SemanticPromptDecodeError with @debug.Debug::{to_repr}
 
 ///|
-pub extend SemanticPrompt with Eq::{not_equal, equal}
+pub extend SemanticPrompt with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SemanticPrompt with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SemanticPrompt with @debug.Debug::{to_repr}

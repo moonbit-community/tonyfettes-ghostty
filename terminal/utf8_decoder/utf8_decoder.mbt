@@ -89,7 +89,14 @@ pub fn Utf8Decoder::next(self : Utf8Decoder, byte : Byte) -> Utf8Decoded {
 }
 
 ///|
-pub extend Utf8Decoder with Eq::{not_equal, equal}
+pub extend Utf8Decoder with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Utf8Decoder with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Utf8Decoder with @debug.Debug::{to_repr}

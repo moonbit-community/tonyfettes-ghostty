@@ -433,22 +433,45 @@ fn name_from_code(code : Byte) -> @color.Name {
 }
 
 ///|
-pub extend SgrUnderline with Eq::{not_equal, equal}
+pub extend SgrUnderline with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SgrUnderline with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SgrUnderline with @debug.Debug::{to_repr}
 
 ///|
-pub extend SgrUnknown with Eq::{not_equal, equal}
+pub extend SgrUnknown with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SgrUnknown with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SgrUnknown with @debug.Debug::{to_repr}
 
 ///|
-pub extend SgrAttribute with Eq::{not_equal, equal}
+pub extend SgrAttribute with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SgrAttribute with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SgrAttribute with @debug.Debug::{to_repr}
 
 ///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SgrParser with @debug.Debug::{to_repr}

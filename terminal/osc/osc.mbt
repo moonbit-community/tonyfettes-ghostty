@@ -1119,55 +1119,118 @@ fn parse_decimal(buffer : BytesView, start : Int32, end_ : Int32) -> Int32? {
 }
 
 ///|
-pub extend Terminator with Eq::{not_equal, equal}
+pub extend Terminator with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Terminator with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Terminator with @debug.Debug::{to_repr}
 
 ///|
-pub extend ColorOperation with Eq::{not_equal, equal}
+pub extend ColorOperation with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ColorOperation with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ColorOperation with @debug.Debug::{to_repr}
 
 ///|
-pub extend ColorTarget with Eq::{not_equal, equal}
+pub extend ColorTarget with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ColorTarget with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ColorTarget with @debug.Debug::{to_repr}
 
 ///|
-pub extend ColoredTarget with Eq::{not_equal, equal}
+pub extend ColoredTarget with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ColoredTarget with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ColoredTarget with @debug.Debug::{to_repr}
 
 ///|
-pub extend ColorRequest with Eq::{not_equal, equal}
+pub extend ColorRequest with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ColorRequest with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ColorRequest with @debug.Debug::{to_repr}
 
 ///|
-pub extend ColorCommand with Eq::{not_equal, equal}
+pub extend ColorCommand with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ColorCommand with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ColorCommand with @debug.Debug::{to_repr}
 
 ///|
-pub extend HyperlinkStart with Eq::{not_equal, equal}
+pub extend HyperlinkStart with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend HyperlinkStart with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend HyperlinkStart with @debug.Debug::{to_repr}
 
 ///|
-pub extend ClipboardContents with Eq::{not_equal, equal}
+pub extend ClipboardContents with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ClipboardContents with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ClipboardContents with @debug.Debug::{to_repr}
 
 ///|
-pub extend Command with Eq::{not_equal, equal}
+pub extend Command with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Command with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Command with @debug.Debug::{to_repr}

@@ -36,4 +36,6 @@ pub fn SepList::count(self : SepList) -> Int32 {
 }
 
 ///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SepList with @debug.Debug::{to_repr}

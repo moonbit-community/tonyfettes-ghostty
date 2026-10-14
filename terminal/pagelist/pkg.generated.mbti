@@ -77,20 +77,16 @@ pub fn ScreenCharsetState::gl(Self) -> @charsets.Slots
 pub fn ScreenCharsetState::gr(Self) -> @charsets.Slots
 pub fn ScreenCharsetState::invoke(Self, @charsets.ActiveSlot, @charsets.Slots, Bool) -> Unit
 pub fn ScreenCharsetState::new() -> Self
-pub fn ScreenCharsetState::not_equal(Self, Self) -> Bool
 pub fn ScreenCharsetState::reset(Self) -> Unit
 pub fn ScreenCharsetState::single_shift(Self) -> @charsets.Slots?
-pub fn ScreenCharsetState::to_repr(Self) -> @debug.Repr
 
 type ScreenSavedCursor derive(Eq, @debug.Debug)
 pub fn ScreenSavedCursor::charset(Self) -> ScreenCharsetState
 pub fn ScreenSavedCursor::cursor_protected(Self) -> Bool
 pub fn ScreenSavedCursor::equal(Self, Self) -> Bool
-pub fn ScreenSavedCursor::not_equal(Self, Self) -> Bool
 pub fn ScreenSavedCursor::origin(Self) -> Bool
 pub fn ScreenSavedCursor::pending_wrap(Self) -> Bool
 pub fn ScreenSavedCursor::style(Self) -> @style.CellStyle
-pub fn ScreenSavedCursor::to_repr(Self) -> @debug.Repr
 pub fn ScreenSavedCursor::x(Self) -> UInt16
 pub fn ScreenSavedCursor::y(Self) -> UInt16
 
@@ -98,28 +94,22 @@ type ScreenSavedCursorState derive(Eq, @debug.Debug)
 pub fn ScreenSavedCursorState::equal(Self, Self) -> Bool
 pub fn ScreenSavedCursorState::has_saved(Self) -> Bool
 pub fn ScreenSavedCursorState::new() -> Self
-pub fn ScreenSavedCursorState::not_equal(Self, Self) -> Bool
 pub fn ScreenSavedCursorState::reset(Self) -> Unit
 pub fn ScreenSavedCursorState::resize(Self, PageListPoint?, UInt16) -> Unit
 pub fn ScreenSavedCursorState::restore(Self) -> ScreenSavedCursor
 pub fn ScreenSavedCursorState::save(Self, @cursor.TerminalCursorState, @style.CellStyle, Bool, Bool, ScreenCharsetState) -> Unit
-pub fn ScreenSavedCursorState::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TerminalScreen {
   Primary
   Alternate
 } derive(Eq, @debug.Debug)
 pub fn TerminalScreen::equal(Self, Self) -> Bool
-pub fn TerminalScreen::not_equal(Self, Self) -> Bool
-pub fn TerminalScreen::to_repr(Self) -> @debug.Repr
 
 type TerminalScrollbar derive(Eq, @debug.Debug)
 pub fn TerminalScrollbar::equal(Self, Self) -> Bool
 pub fn TerminalScrollbar::len(Self) -> UInt
 pub fn TerminalScrollbar::new(UInt, UInt, UInt) -> Self
-pub fn TerminalScrollbar::not_equal(Self, Self) -> Bool
 pub fn TerminalScrollbar::offset(Self) -> UInt
-pub fn TerminalScrollbar::to_repr(Self) -> @debug.Repr
 pub fn TerminalScrollbar::total(Self) -> UInt
 
 // Type aliases

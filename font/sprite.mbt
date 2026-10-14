@@ -87,7 +87,14 @@ pub fn Sprite::from_codepoint(codepoint : UInt32) -> Sprite? {
 }
 
 ///|
-pub extend Sprite with Eq::{not_equal, equal}
+pub extend Sprite with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Sprite with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Sprite with @debug.Debug::{to_repr}

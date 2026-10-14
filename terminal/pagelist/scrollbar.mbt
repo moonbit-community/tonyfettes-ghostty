@@ -30,7 +30,14 @@ pub fn TerminalScrollbar::len(self : TerminalScrollbar) -> UInt32 {
 }
 
 ///|
-pub extend TerminalScrollbar with Eq::{not_equal, equal}
+pub extend TerminalScrollbar with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalScrollbar with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend TerminalScrollbar with @debug.Debug::{to_repr}

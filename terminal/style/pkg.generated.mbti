@@ -32,10 +32,8 @@ pub fn CellStyle::invisible(Self) -> Bool
 pub fn CellStyle::is_default(Self) -> Bool
 pub fn CellStyle::italic(Self) -> Bool
 pub fn CellStyle::new() -> Self
-pub fn CellStyle::not_equal(Self, Self) -> Bool
 pub fn CellStyle::overline(Self) -> Bool
 pub fn CellStyle::strikethrough(Self) -> Bool
-pub fn CellStyle::to_repr(Self) -> @debug.Repr
 pub fn CellStyle::underline(Self) -> @sgr.SgrUnderline
 pub fn CellStyle::underline_color(Self) -> StyleColor
 pub fn CellStyle::with_bg_color(Self, StyleColor) -> Self
@@ -47,13 +45,11 @@ pub fn StyleColor::hash(Self) -> Int
 pub fn StyleColor::hash_combine(Self, Hasher) -> Unit
 pub fn StyleColor::is_default(Self) -> Bool
 pub fn StyleColor::none() -> Self
-pub fn StyleColor::not_equal(Self, Self) -> Bool
 pub fn StyleColor::palette(Byte) -> Self
 pub fn StyleColor::palette_index(Self) -> Byte?
 pub fn StyleColor::resolve(Self, Array[@color.RGB]) -> @color.RGB?
 pub fn StyleColor::rgb(@color.RGB) -> Self
 pub fn StyleColor::rgb_value(Self) -> @color.RGB?
-pub fn StyleColor::to_repr(Self) -> @debug.Repr
 
 type StyleId derive(Eq, Hash, @debug.Debug)
 pub fn StyleId::equal(Self, Self) -> Bool
@@ -61,8 +57,6 @@ pub fn StyleId::from_uint16(UInt16) -> Self
 pub fn StyleId::hash(Self) -> Int
 pub fn StyleId::hash_combine(Self, Hasher) -> Unit
 pub fn StyleId::is_default(Self) -> Bool
-pub fn StyleId::not_equal(Self, Self) -> Bool
-pub fn StyleId::to_repr(Self) -> @debug.Repr
 pub fn StyleId::to_uint16(Self) -> UInt16
 
 pub struct StyleTable {

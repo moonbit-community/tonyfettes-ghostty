@@ -214,7 +214,14 @@ fn cont_ok(lead : Int32, ci : Int32, cb : Int32) -> Bool {
 }
 
 ///|
-pub extend DecodeResult with Eq::{not_equal, equal}
+pub extend DecodeResult with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DecodeResult with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DecodeResult with @debug.Debug::{to_repr}

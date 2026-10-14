@@ -119,7 +119,14 @@ fn TerminalTabstopsState::in_bounds(
 }
 
 ///|
-pub extend TerminalTabstopsState with Eq::{not_equal, equal}
+pub extend TerminalTabstopsState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalTabstopsState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend TerminalTabstopsState with @debug.Debug::{to_repr}

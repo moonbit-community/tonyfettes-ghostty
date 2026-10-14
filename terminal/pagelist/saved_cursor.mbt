@@ -242,19 +242,40 @@ fn copy_charset_state(state : ScreenCharsetState) -> ScreenCharsetState {
 }
 
 ///|
-pub extend ScreenCharsetState with Eq::{not_equal, equal}
+pub extend ScreenCharsetState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ScreenCharsetState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ScreenCharsetState with @debug.Debug::{to_repr}
 
 ///|
-pub extend ScreenSavedCursor with Eq::{not_equal, equal}
+pub extend ScreenSavedCursor with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ScreenSavedCursor with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ScreenSavedCursor with @debug.Debug::{to_repr}
 
 ///|
-pub extend ScreenSavedCursorState with Eq::{not_equal, equal}
+pub extend ScreenSavedCursorState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ScreenSavedCursorState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ScreenSavedCursorState with @debug.Debug::{to_repr}

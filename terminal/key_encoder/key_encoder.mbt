@@ -927,13 +927,27 @@ pub fn KeyEncoder::encode(self : KeyEncoder, event : @input.KeyEvent) -> Bytes {
 }
 
 ///|
-pub extend OptionAsAlt with Eq::{not_equal, equal}
+pub extend OptionAsAlt with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend OptionAsAlt with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend OptionAsAlt with @debug.Debug::{to_repr}
 
 ///|
-pub extend KeyEncoder with Eq::{not_equal, equal}
+pub extend KeyEncoder with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyEncoder with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KeyEncoder with @debug.Debug::{to_repr}

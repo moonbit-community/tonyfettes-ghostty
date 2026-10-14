@@ -120,6 +120,29 @@ Worker audits:
 - [Core maintenance](2026-10-14-m1-core-maintenance.md)
 - [Examples and benchmarks](2026-10-14-m1-example-maintenance.md)
 
+## M1.1: core extension policy correction
+
+The user explicitly requested that `not_equal` and `to_repr` follow core's
+policy. Keep `equal` as a regular promoted method. Retain compatibility
+extensions for `not_equal` and `to_repr` with core's `#deprecated(...,
+skip_current_package=true)` and `#doc(hidden)` annotations, directing callers
+to `!=` and `Debug::to_repr` respectively. Existing derives and implementations
+stay unchanged. This supersedes the initial choice to list all 564 promoted
+methods in the generated interface: 367 legacy methods will be hidden, while
+the 183 `equal` and 14 hash-related methods remain visible.
+
+Source of truth: installed core `hashset/extends.mbt` and its generated
+interface. This is a user-approved compatibility-annotation adjustment,
+without new adapter implementations or parser/storage behavior changes.
+Validation and review completed: strict all-target check passes; 666 tests per
+Wasm/Wasm-GC/Native target and 688 on JS pass. Coverage remains 13341/13944
+points; no executable code changed. Downstream smoke checks confirm legacy
+dot calls still compile with the two expected warnings, and canonical calls
+pass with `--deny-warn`. Main's independent source/interface audit confirms
+exactly the requested declaration annotations and 367 hidden interface entries,
+with no other signature change. See the
+[extension policy audit](2026-10-14-m1-core-extension-policy.md).
+
 ## Commit scope
 
 One green Conventional Commit for the compatibility/format maintenance batch,

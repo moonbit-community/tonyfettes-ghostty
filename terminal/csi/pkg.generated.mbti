@@ -17,8 +17,6 @@ pub(all) enum SizeReportStyle {
   Csi21t
 } derive(Eq, @debug.Debug)
 pub fn SizeReportStyle::equal(Self, Self) -> Bool
-pub fn SizeReportStyle::not_equal(Self, Self) -> Bool
-pub fn SizeReportStyle::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

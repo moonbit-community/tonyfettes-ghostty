@@ -19,7 +19,14 @@ pub fn FocusEvent::encode(self : FocusEvent) -> Bytes {
 }
 
 ///|
-pub extend FocusEvent with Eq::{not_equal, equal}
+pub extend FocusEvent with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FocusEvent with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend FocusEvent with @debug.Debug::{to_repr}

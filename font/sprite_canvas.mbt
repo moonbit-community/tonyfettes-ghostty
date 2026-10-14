@@ -318,49 +318,105 @@ pub fn SpriteCanvas::flip_vertical(self : SpriteCanvas) -> Unit {
 }
 
 ///|
-pub extend SpriteColor with Eq::{not_equal, equal}
+pub extend SpriteColor with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpriteColor with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpriteColor with @debug.Debug::{to_repr}
 
 ///|
-pub extend SpritePoint with Eq::{not_equal, equal}
+pub extend SpritePoint with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpritePoint with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpritePoint with @debug.Debug::{to_repr}
 
 ///|
-pub extend SpriteLine with Eq::{not_equal, equal}
+pub extend SpriteLine with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpriteLine with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpriteLine with @debug.Debug::{to_repr}
 
 ///|
-pub extend SpriteBox with Eq::{not_equal, equal}
+pub extend SpriteBox with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpriteBox with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpriteBox with @debug.Debug::{to_repr}
 
 ///|
-pub extend SpriteRect with Eq::{not_equal, equal}
+pub extend SpriteRect with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpriteRect with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpriteRect with @debug.Debug::{to_repr}
 
 ///|
-pub extend SpriteTriangle with Eq::{not_equal, equal}
+pub extend SpriteTriangle with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpriteTriangle with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpriteTriangle with @debug.Debug::{to_repr}
 
 ///|
-pub extend SpriteQuad with Eq::{not_equal, equal}
+pub extend SpriteQuad with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpriteQuad with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpriteQuad with @debug.Debug::{to_repr}
 
 ///|
-pub extend SpriteCanvas with Eq::{not_equal, equal}
+pub extend SpriteCanvas with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend SpriteCanvas with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend SpriteCanvas with @debug.Debug::{to_repr}

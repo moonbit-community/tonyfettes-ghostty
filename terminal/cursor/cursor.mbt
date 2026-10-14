@@ -294,13 +294,27 @@ fn min_cursor_coordinate(
 }
 
 ///|
-pub extend CursorVisualStyle with Eq::{not_equal, equal}
+pub extend CursorVisualStyle with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CursorVisualStyle with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend CursorVisualStyle with @debug.Debug::{to_repr}
 
 ///|
-pub extend TerminalCursorState with Eq::{not_equal, equal}
+pub extend TerminalCursorState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend TerminalCursorState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend TerminalCursorState with @debug.Debug::{to_repr}

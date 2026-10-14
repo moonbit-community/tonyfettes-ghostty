@@ -316,25 +316,53 @@ fn kitty_clipboard_is_whitespace(value : Byte) -> Bool {
 }
 
 ///|
-pub extend KittyClipboardLocation with Eq::{not_equal, equal}
+pub extend KittyClipboardLocation with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyClipboardLocation with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyClipboardLocation with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyClipboardOperation with Eq::{not_equal, equal}
+pub extend KittyClipboardOperation with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyClipboardOperation with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyClipboardOperation with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyClipboardStatus with Eq::{not_equal, equal}
+pub extend KittyClipboardStatus with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyClipboardStatus with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyClipboardStatus with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyClipboardOsc with Eq::{not_equal, equal}
+pub extend KittyClipboardOsc with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyClipboardOsc with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyClipboardOsc with @debug.Debug::{to_repr}

@@ -213,43 +213,92 @@ pub(all) enum ProtectedMode {
 } derive(Eq, Debug)
 
 ///|
-pub extend C0 with Eq::{not_equal, equal}
+pub extend C0 with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend C0 with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend C0 with @debug.Debug::{to_repr}
 
 ///|
-pub extend RenditionAspect with Eq::{not_equal, equal}
+pub extend RenditionAspect with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend RenditionAspect with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend RenditionAspect with @debug.Debug::{to_repr}
 
 ///|
-pub extend CursorStyle with Eq::{not_equal, equal}
+pub extend CursorStyle with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CursorStyle with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend CursorStyle with @debug.Debug::{to_repr}
 
 ///|
-pub extend StatusLineType with Eq::{not_equal, equal}
+pub extend StatusLineType with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StatusLineType with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend StatusLineType with @debug.Debug::{to_repr}
 
 ///|
-pub extend StatusDisplay with Eq::{not_equal, equal}
+pub extend StatusDisplay with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StatusDisplay with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend StatusDisplay with @debug.Debug::{to_repr}
 
 ///|
-pub extend ModifyKeyFormat with Eq::{not_equal, equal}
+pub extend ModifyKeyFormat with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ModifyKeyFormat with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ModifyKeyFormat with @debug.Debug::{to_repr}
 
 ///|
-pub extend ProtectedMode with Eq::{not_equal, equal}
+pub extend ProtectedMode with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ProtectedMode with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ProtectedMode with @debug.Debug::{to_repr}

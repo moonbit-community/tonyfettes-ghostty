@@ -16,8 +16,6 @@ pub(all) enum FocusEvent {
 } derive(Eq, @debug.Debug)
 pub fn FocusEvent::encode(Self) -> Bytes
 pub fn FocusEvent::equal(Self, Self) -> Bool
-pub fn FocusEvent::not_equal(Self, Self) -> Bool
-pub fn FocusEvent::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

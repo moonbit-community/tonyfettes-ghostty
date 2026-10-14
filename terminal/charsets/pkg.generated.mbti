@@ -16,8 +16,6 @@ pub(all) enum ActiveSlot {
   Gr
 } derive(Eq, @debug.Debug)
 pub fn ActiveSlot::equal(Self, Self) -> Bool
-pub fn ActiveSlot::not_equal(Self, Self) -> Bool
-pub fn ActiveSlot::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Charset {
   Utf8
@@ -26,8 +24,6 @@ pub(all) enum Charset {
   DecSpecial
 } derive(Eq, @debug.Debug)
 pub fn Charset::equal(Self, Self) -> Bool
-pub fn Charset::not_equal(Self, Self) -> Bool
-pub fn Charset::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Slots {
   G0
@@ -36,8 +32,6 @@ pub(all) enum Slots {
   G3
 } derive(Eq, @debug.Debug)
 pub fn Slots::equal(Self, Self) -> Bool
-pub fn Slots::not_equal(Self, Self) -> Bool
-pub fn Slots::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 pub type CharsetTable = ReadOnlyArray[UInt16]

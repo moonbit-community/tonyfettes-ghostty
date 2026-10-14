@@ -1192,49 +1192,105 @@ fn mode_ansi(intermediates : ArrayView[Byte]) -> Bool? {
 }
 
 ///|
-pub extend InvokeCharsetAction with Eq::{not_equal, equal}
+pub extend InvokeCharsetAction with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend InvokeCharsetAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend InvokeCharsetAction with @debug.Debug::{to_repr}
 
 ///|
-pub extend ConfigureCharsetAction with Eq::{not_equal, equal}
+pub extend ConfigureCharsetAction with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConfigureCharsetAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ConfigureCharsetAction with @debug.Debug::{to_repr}
 
 ///|
-pub extend CursorMovement with Eq::{not_equal, equal}
+pub extend CursorMovement with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CursorMovement with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend CursorMovement with @debug.Debug::{to_repr}
 
 ///|
-pub extend CursorPosition with Eq::{not_equal, equal}
+pub extend CursorPosition with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CursorPosition with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend CursorPosition with @debug.Debug::{to_repr}
 
 ///|
-pub extend Margin with Eq::{not_equal, equal}
+pub extend Margin with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Margin with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Margin with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyKeyboardFlags with Eq::{not_equal, equal}
+pub extend KittyKeyboardFlags with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyKeyboardFlags with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyKeyboardFlags with @debug.Debug::{to_repr}
 
 ///|
-pub extend DcsHookPayload with Eq::{not_equal, equal}
+pub extend DcsHookPayload with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DcsHookPayload with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DcsHookPayload with @debug.Debug::{to_repr}
 
 ///|
-pub extend StreamAction with Eq::{not_equal, equal}
+pub extend StreamAction with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend StreamAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend StreamAction with @debug.Debug::{to_repr}

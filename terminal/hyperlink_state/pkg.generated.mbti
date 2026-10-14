@@ -21,9 +21,7 @@ pub fn ScreenHyperlinkState::full_reset(Self) -> Unit
 pub fn ScreenHyperlinkState::implicit_id(Self) -> Int?
 pub fn ScreenHyperlinkState::new() -> Self
 pub fn ScreenHyperlinkState::next_implicit_id(Self) -> Int
-pub fn ScreenHyperlinkState::not_equal(Self, Self) -> Bool
 pub fn ScreenHyperlinkState::start(Self, String, String?) -> Unit
-pub fn ScreenHyperlinkState::to_repr(Self) -> @debug.Repr
 pub fn ScreenHyperlinkState::uri(Self) -> String?
 
 // Type aliases

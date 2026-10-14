@@ -125,18 +125,32 @@ pub fn HyperlinkTable::get(
 }
 
 ///|
-pub extend CellHyperlink with Eq::{not_equal, equal}
+pub extend CellHyperlink with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend CellHyperlink with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend CellHyperlink with @debug.Debug::{to_repr}
 
 ///|
 pub extend CellHyperlink with Hash::{hash, hash_combine}
 
 ///|
-pub extend HyperlinkId with Eq::{not_equal, equal}
+pub extend HyperlinkId with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend HyperlinkId with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend HyperlinkId with @debug.Debug::{to_repr}
 
 ///|

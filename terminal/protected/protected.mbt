@@ -56,7 +56,14 @@ pub fn ScreenProtectedState::set_cursor_protected(
 }
 
 ///|
-pub extend ScreenProtectedState with Eq::{not_equal, equal}
+pub extend ScreenProtectedState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ScreenProtectedState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ScreenProtectedState with @debug.Debug::{to_repr}

@@ -105,19 +105,40 @@ fn hash_optional_string(hasher : Hasher, value : String?) -> Unit {
 }
 
 ///|
-pub extend FontVariationId with Eq::{not_equal, equal}
+pub extend FontVariationId with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FontVariationId with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend FontVariationId with @debug.Debug::{to_repr}
 
 ///|
-pub extend FontVariation with Eq::{not_equal, equal}
+pub extend FontVariation with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend FontVariation with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend FontVariation with @debug.Debug::{to_repr}
 
 ///|
-pub extend Descriptor with Eq::{not_equal, equal}
+pub extend Descriptor with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Descriptor with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Descriptor with @debug.Debug::{to_repr}

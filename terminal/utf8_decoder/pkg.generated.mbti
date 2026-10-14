@@ -16,8 +16,6 @@ pub struct DecodeResult {
   decoded : Int
 } derive(Eq, @debug.Debug)
 pub fn DecodeResult::equal(Self, Self) -> Bool
-pub fn DecodeResult::not_equal(Self, Self) -> Bool
-pub fn DecodeResult::to_repr(Self) -> @debug.Repr
 
 pub struct Utf8Decoded {
   value : UInt?
@@ -29,8 +27,6 @@ pub fn Utf8Decoder::equal(Self, Self) -> Bool
 pub fn Utf8Decoder::is_accept_state(Self) -> Bool
 pub fn Utf8Decoder::new() -> Self
 pub fn Utf8Decoder::next(Self, Byte) -> Utf8Decoded
-pub fn Utf8Decoder::not_equal(Self, Self) -> Bool
-pub fn Utf8Decoder::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

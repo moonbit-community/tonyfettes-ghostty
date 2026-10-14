@@ -268,37 +268,79 @@ fn conemu_progress_or_notification(buffer : BytesView) -> Command {
 }
 
 ///|
-pub extend ConEmuTabTitleChange with Eq::{not_equal, equal}
+pub extend ConEmuTabTitleChange with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConEmuTabTitleChange with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ConEmuTabTitleChange with @debug.Debug::{to_repr}
 
 ///|
-pub extend ConEmuProgressState with Eq::{not_equal, equal}
+pub extend ConEmuProgressState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConEmuProgressState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ConEmuProgressState with @debug.Debug::{to_repr}
 
 ///|
-pub extend DesktopNotification with Eq::{not_equal, equal}
+pub extend DesktopNotification with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DesktopNotification with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DesktopNotification with @debug.Debug::{to_repr}
 
 ///|
-pub extend ConEmuSleep with Eq::{not_equal, equal}
+pub extend ConEmuSleep with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConEmuSleep with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ConEmuSleep with @debug.Debug::{to_repr}
 
 ///|
-pub extend ConEmuProgressReport with Eq::{not_equal, equal}
+pub extend ConEmuProgressReport with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConEmuProgressReport with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ConEmuProgressReport with @debug.Debug::{to_repr}
 
 ///|
-pub extend ConEmuXtermEmulation with Eq::{not_equal, equal}
+pub extend ConEmuXtermEmulation with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ConEmuXtermEmulation with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ConEmuXtermEmulation with @debug.Debug::{to_repr}

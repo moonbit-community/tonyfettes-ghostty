@@ -676,4 +676,9 @@ fn default_render_foreground() -> @color.RGB {
 }
 
 ///|
-pub extend RenderDirty with Eq::{not_equal, equal}
+pub extend RenderDirty with Eq::{equal}
+
+///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend RenderDirty with Eq::{not_equal}

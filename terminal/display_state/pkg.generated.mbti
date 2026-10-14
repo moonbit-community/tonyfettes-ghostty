@@ -17,11 +17,9 @@ pub fn TerminalDisplayState::equal(Self, Self) -> Bool
 pub fn TerminalDisplayState::full_reset(Self) -> Unit
 pub fn TerminalDisplayState::mouse_shape(Self) -> @input.MouseShape
 pub fn TerminalDisplayState::new() -> Self
-pub fn TerminalDisplayState::not_equal(Self, Self) -> Bool
 pub fn TerminalDisplayState::set_mouse_shape(Self, @input.MouseShape) -> Unit
 pub fn TerminalDisplayState::set_status_display(Self, @ansi.StatusDisplay) -> Unit
 pub fn TerminalDisplayState::status_display(Self) -> @ansi.StatusDisplay
-pub fn TerminalDisplayState::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

@@ -207,31 +207,66 @@ fn trim_ascii_spaces(
 }
 
 ///|
-pub extend KittyColorSpecial with Eq::{not_equal, equal}
+pub extend KittyColorSpecial with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorSpecial with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyColorSpecial with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyColorKind with Eq::{not_equal, equal}
+pub extend KittyColorKind with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorKind with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyColorKind with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyColorSet with Eq::{not_equal, equal}
+pub extend KittyColorSet with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorSet with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyColorSet with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyColorRequest with Eq::{not_equal, equal}
+pub extend KittyColorRequest with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorRequest with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyColorRequest with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyColorOsc with Eq::{not_equal, equal}
+pub extend KittyColorOsc with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyColorOsc with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyColorOsc with @debug.Debug::{to_repr}

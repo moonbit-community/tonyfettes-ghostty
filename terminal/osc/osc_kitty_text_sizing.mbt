@@ -212,19 +212,40 @@ fn kitty_text_contains_escape_control(text : String) -> Bool {
 }
 
 ///|
-pub extend KittyTextSizingVerticalAlign with Eq::{not_equal, equal}
+pub extend KittyTextSizingVerticalAlign with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyTextSizingVerticalAlign with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyTextSizingVerticalAlign with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyTextSizingHorizontalAlign with Eq::{not_equal, equal}
+pub extend KittyTextSizingHorizontalAlign with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyTextSizingHorizontalAlign with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyTextSizingHorizontalAlign with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyTextSizingOsc with Eq::{not_equal, equal}
+pub extend KittyTextSizingOsc with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyTextSizingOsc with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyTextSizingOsc with @debug.Debug::{to_repr}

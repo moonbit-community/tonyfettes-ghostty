@@ -620,55 +620,118 @@ fn kitty_min_int(left : Int32, right : Int32) -> Int32 {
 }
 
 ///|
-pub extend KittyGraphicsFormat with Eq::{not_equal, equal}
+pub extend KittyGraphicsFormat with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyGraphicsFormat with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyGraphicsFormat with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyGraphicsCompression with Eq::{not_equal, equal}
+pub extend KittyGraphicsCompression with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyGraphicsCompression with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyGraphicsCompression with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyPlacementLayer with Eq::{not_equal, equal}
+pub extend KittyPlacementLayer with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyPlacementLayer with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyPlacementLayer with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyImage with Eq::{not_equal, equal}
+pub extend KittyImage with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyImage with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyImage with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyPlacementPixelSize with Eq::{not_equal, equal}
+pub extend KittyPlacementPixelSize with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyPlacementPixelSize with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyPlacementPixelSize with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyPlacementGridSize with Eq::{not_equal, equal}
+pub extend KittyPlacementGridSize with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyPlacementGridSize with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyPlacementGridSize with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyPlacementSourceRect with Eq::{not_equal, equal}
+pub extend KittyPlacementSourceRect with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyPlacementSourceRect with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyPlacementSourceRect with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyPlacementViewportPosition with Eq::{not_equal, equal}
+pub extend KittyPlacementViewportPosition with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyPlacementViewportPosition with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyPlacementViewportPosition with @debug.Debug::{to_repr}
 
 ///|
-pub extend KittyPlacementRenderInfo with Eq::{not_equal, equal}
+pub extend KittyPlacementRenderInfo with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KittyPlacementRenderInfo with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KittyPlacementRenderInfo with @debug.Debug::{to_repr}

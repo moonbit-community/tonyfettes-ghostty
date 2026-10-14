@@ -119,7 +119,14 @@ fn bytes_equal_at(haystack : Bytes, start : Int32, needle : Bytes) -> Bool {
 }
 
 ///|
-pub extend PasteOptions with Eq::{not_equal, equal}
+pub extend PasteOptions with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend PasteOptions with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend PasteOptions with @debug.Debug::{to_repr}

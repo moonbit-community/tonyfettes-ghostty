@@ -23,29 +23,21 @@ pub(all) struct ConfigureCharsetAction {
   charset : @charsets.Charset
 } derive(Eq, @debug.Debug)
 pub fn ConfigureCharsetAction::equal(Self, Self) -> Bool
-pub fn ConfigureCharsetAction::not_equal(Self, Self) -> Bool
-pub fn ConfigureCharsetAction::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CursorMovement(UInt16) derive(Eq, @debug.Debug)
 pub fn CursorMovement::equal(Self, Self) -> Bool
-pub fn CursorMovement::not_equal(Self, Self) -> Bool
-pub fn CursorMovement::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CursorPosition {
   row : UInt16
   col : UInt16
 } derive(Eq, @debug.Debug)
 pub fn CursorPosition::equal(Self, Self) -> Bool
-pub fn CursorPosition::not_equal(Self, Self) -> Bool
-pub fn CursorPosition::to_repr(Self) -> @debug.Repr
 
 type DcsHookPayload derive(Eq, @debug.Debug)
 pub fn DcsHookPayload::equal(Self, Self) -> Bool
 pub fn DcsHookPayload::final_byte(Self) -> Byte
 pub fn DcsHookPayload::intermediates(Self) -> Bytes
-pub fn DcsHookPayload::not_equal(Self, Self) -> Bool
 pub fn DcsHookPayload::params(Self) -> ReadOnlyArray[UInt16]
-pub fn DcsHookPayload::to_repr(Self) -> @debug.Repr
 
 pub(all) struct InvokeCharsetAction {
   bank : @charsets.ActiveSlot
@@ -53,21 +45,15 @@ pub(all) struct InvokeCharsetAction {
   locking : Bool
 } derive(Eq, @debug.Debug)
 pub fn InvokeCharsetAction::equal(Self, Self) -> Bool
-pub fn InvokeCharsetAction::not_equal(Self, Self) -> Bool
-pub fn InvokeCharsetAction::to_repr(Self) -> @debug.Repr
 
 pub(all) struct KittyKeyboardFlags(Byte) derive(Eq, @debug.Debug)
 pub fn KittyKeyboardFlags::equal(Self, Self) -> Bool
-pub fn KittyKeyboardFlags::not_equal(Self, Self) -> Bool
-pub fn KittyKeyboardFlags::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Margin {
   top_left : UInt16
   bottom_right : UInt16
 } derive(Eq, @debug.Debug)
 pub fn Margin::equal(Self, Self) -> Bool
-pub fn Margin::not_equal(Self, Self) -> Bool
-pub fn Margin::to_repr(Self) -> @debug.Repr
 
 type Stream[H]
 pub fn[H : StreamHandler] Stream::deinit(Self[H]) -> Unit
@@ -172,8 +158,6 @@ pub(all) enum StreamAction {
   StreamApcEnd
 } derive(Eq, @debug.Debug)
 pub fn StreamAction::equal(Self, Self) -> Bool
-pub fn StreamAction::not_equal(Self, Self) -> Bool
-pub fn StreamAction::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

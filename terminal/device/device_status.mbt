@@ -73,19 +73,40 @@ pub fn device_status_request_from_int(
 }
 
 ///|
-pub extend ColorScheme with Eq::{not_equal, equal}
+pub extend ColorScheme with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ColorScheme with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ColorScheme with @debug.Debug::{to_repr}
 
 ///|
-pub extend DeviceStatusRequest with Eq::{not_equal, equal}
+pub extend DeviceStatusRequest with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceStatusRequest with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DeviceStatusRequest with @debug.Debug::{to_repr}
 
 ///|
-pub extend DeviceStatusTag with Eq::{not_equal, equal}
+pub extend DeviceStatusTag with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend DeviceStatusTag with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend DeviceStatusTag with @debug.Debug::{to_repr}

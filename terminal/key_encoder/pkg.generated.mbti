@@ -25,7 +25,6 @@ pub fn KeyEncoder::kitty_flags(Self) -> @stream.KittyKeyboardFlags
 pub fn KeyEncoder::macos_option_as_alt(Self) -> OptionAsAlt
 pub fn KeyEncoder::modify_other_keys_state_2(Self) -> Bool
 pub fn KeyEncoder::new() -> Self
-pub fn KeyEncoder::not_equal(Self, Self) -> Bool
 pub fn KeyEncoder::set_alt_esc_prefix(Self, Bool) -> Unit
 pub fn KeyEncoder::set_backarrow_key_mode(Self, Bool) -> Unit
 pub fn KeyEncoder::set_cursor_key_application(Self, Bool) -> Unit
@@ -36,7 +35,6 @@ pub fn KeyEncoder::set_kitty_flags(Self, @stream.KittyKeyboardFlags) -> Unit
 pub fn KeyEncoder::set_macos_option_as_alt(Self, OptionAsAlt) -> Unit
 pub fn KeyEncoder::set_modify_other_keys_state_2(Self, Bool) -> Unit
 pub fn KeyEncoder::sync(Self, cursor_key_application~ : Bool, keypad_key_application~ : Bool, ignore_keypad_with_numlock~ : Bool, alt_esc_prefix~ : Bool, modify_other_keys_state_2~ : Bool, kitty_flags~ : @stream.KittyKeyboardFlags, backarrow_key_mode~ : Bool) -> Unit
-pub fn KeyEncoder::to_repr(Self) -> @debug.Repr
 
 pub(all) enum OptionAsAlt {
   False
@@ -45,8 +43,6 @@ pub(all) enum OptionAsAlt {
   True
 } derive(Eq, @debug.Debug)
 pub fn OptionAsAlt::equal(Self, Self) -> Bool
-pub fn OptionAsAlt::not_equal(Self, Self) -> Bool
-pub fn OptionAsAlt::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

@@ -96,7 +96,14 @@ pub fn ScreenHyperlinkState::full_reset(self : ScreenHyperlinkState) -> Unit {
 }
 
 ///|
-pub extend ScreenHyperlinkState with Eq::{not_equal, equal}
+pub extend ScreenHyperlinkState with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend ScreenHyperlinkState with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend ScreenHyperlinkState with @debug.Debug::{to_repr}

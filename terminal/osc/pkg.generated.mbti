@@ -14,8 +14,6 @@ pub suberror SemanticPromptDecodeError {
   DecodeError
 } derive(Eq, @debug.Debug)
 pub fn SemanticPromptDecodeError::equal(Self, Self) -> Bool
-pub fn SemanticPromptDecodeError::not_equal(Self, Self) -> Bool
-pub fn SemanticPromptDecodeError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct ClipboardContents {
@@ -25,8 +23,6 @@ pub struct ClipboardContents {
 pub fn ClipboardContents::data(Self) -> String
 pub fn ClipboardContents::equal(Self, Self) -> Bool
 pub fn ClipboardContents::kind(Self) -> Byte
-pub fn ClipboardContents::not_equal(Self, Self) -> Bool
-pub fn ClipboardContents::to_repr(Self) -> @debug.Repr
 
 pub struct ColorCommand {
   op : ColorOperation
@@ -35,11 +31,9 @@ pub struct ColorCommand {
 } derive(Eq, @debug.Debug)
 pub fn ColorCommand::equal(Self, Self) -> Bool
 pub fn ColorCommand::new(ColorOperation, Array[ColorRequest], Terminator) -> Self
-pub fn ColorCommand::not_equal(Self, Self) -> Bool
 pub fn ColorCommand::op(Self) -> ColorOperation
 pub fn ColorCommand::requests(Self) -> Array[ColorRequest]
 pub fn ColorCommand::terminator(Self) -> Terminator
-pub fn ColorCommand::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ColorOperation {
   Osc4
@@ -67,8 +61,6 @@ pub(all) enum ColorOperation {
   Osc119
 } derive(Eq, @debug.Debug)
 pub fn ColorOperation::equal(Self, Self) -> Bool
-pub fn ColorOperation::not_equal(Self, Self) -> Bool
-pub fn ColorOperation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ColorRequest {
   Set(ColoredTarget)
@@ -77,8 +69,6 @@ pub(all) enum ColorRequest {
   ResetPalette
 } derive(Eq, @debug.Debug)
 pub fn ColorRequest::equal(Self, Self) -> Bool
-pub fn ColorRequest::not_equal(Self, Self) -> Bool
-pub fn ColorRequest::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ColorTarget {
   Palette(Byte)
@@ -86,8 +76,6 @@ pub(all) enum ColorTarget {
   Dynamic(@color.Dynamic)
 } derive(Eq, @debug.Debug)
 pub fn ColorTarget::equal(Self, Self) -> Bool
-pub fn ColorTarget::not_equal(Self, Self) -> Bool
-pub fn ColorTarget::to_repr(Self) -> @debug.Repr
 
 pub struct ColoredTarget {
   target : ColorTarget
@@ -96,9 +84,7 @@ pub struct ColoredTarget {
 pub fn ColoredTarget::color(Self) -> @color.RGB
 pub fn ColoredTarget::equal(Self, Self) -> Bool
 pub fn ColoredTarget::new(ColorTarget, @color.RGB) -> Self
-pub fn ColoredTarget::not_equal(Self, Self) -> Bool
 pub fn ColoredTarget::target(Self) -> ColorTarget
-pub fn ColoredTarget::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Command {
   Invalid
@@ -128,18 +114,14 @@ pub(all) enum Command {
   ColorOperation(ColorCommand)
 } derive(Eq, @debug.Debug)
 pub fn Command::equal(Self, Self) -> Bool
-pub fn Command::not_equal(Self, Self) -> Bool
-pub fn Command::to_repr(Self) -> @debug.Repr
 
 pub struct ConEmuProgressReport {
   state : ConEmuProgressState
   progress : Byte?
 } derive(Eq, @debug.Debug)
 pub fn ConEmuProgressReport::equal(Self, Self) -> Bool
-pub fn ConEmuProgressReport::not_equal(Self, Self) -> Bool
 pub fn ConEmuProgressReport::progress(Self) -> Byte?
 pub fn ConEmuProgressReport::state(Self) -> ConEmuProgressState
-pub fn ConEmuProgressReport::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ConEmuProgressState {
   ConEmuProgressRemove
@@ -149,37 +131,27 @@ pub(all) enum ConEmuProgressState {
   ConEmuProgressPause
 } derive(Eq, @debug.Debug)
 pub fn ConEmuProgressState::equal(Self, Self) -> Bool
-pub fn ConEmuProgressState::not_equal(Self, Self) -> Bool
-pub fn ConEmuProgressState::to_repr(Self) -> @debug.Repr
 
 type ConEmuSleep derive(Eq, @debug.Debug)
 pub fn ConEmuSleep::duration_ms(Self) -> UInt16
 pub fn ConEmuSleep::equal(Self, Self) -> Bool
-pub fn ConEmuSleep::not_equal(Self, Self) -> Bool
-pub fn ConEmuSleep::to_repr(Self) -> @debug.Repr
 
 pub enum ConEmuTabTitleChange {
   ConEmuTabTitleReset
   ConEmuTabTitleValue(String)
 } derive(Eq, @debug.Debug)
 pub fn ConEmuTabTitleChange::equal(Self, Self) -> Bool
-pub fn ConEmuTabTitleChange::not_equal(Self, Self) -> Bool
-pub fn ConEmuTabTitleChange::to_repr(Self) -> @debug.Repr
 
 type ConEmuXtermEmulation derive(Eq, @debug.Debug)
 pub fn ConEmuXtermEmulation::equal(Self, Self) -> Bool
 pub fn ConEmuXtermEmulation::keyboard(Self) -> Bool?
-pub fn ConEmuXtermEmulation::not_equal(Self, Self) -> Bool
 pub fn ConEmuXtermEmulation::output(Self) -> Bool?
-pub fn ConEmuXtermEmulation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ContextSignalAction {
   ContextSignalStart
   ContextSignalEnd
 } derive(Eq, @debug.Debug)
 pub fn ContextSignalAction::equal(Self, Self) -> Bool
-pub fn ContextSignalAction::not_equal(Self, Self) -> Bool
-pub fn ContextSignalAction::to_repr(Self) -> @debug.Repr
 
 pub enum ContextSignalExitStatus {
   ContextSignalExitSuccess
@@ -188,8 +160,6 @@ pub enum ContextSignalExitStatus {
   ContextSignalExitInterrupt
 } derive(Eq, @debug.Debug)
 pub fn ContextSignalExitStatus::equal(Self, Self) -> Bool
-pub fn ContextSignalExitStatus::not_equal(Self, Self) -> Bool
-pub fn ContextSignalExitStatus::to_repr(Self) -> @debug.Repr
 
 type ContextSignalOsc derive(Eq, @debug.Debug)
 pub fn ContextSignalOsc::action(Self) -> ContextSignalAction
@@ -205,7 +175,6 @@ pub fn ContextSignalOsc::hostname(Self) -> String?
 pub fn ContextSignalOsc::id(Self) -> String
 pub fn ContextSignalOsc::machineid(Self) -> String?
 pub fn ContextSignalOsc::metadata(Self) -> String
-pub fn ContextSignalOsc::not_equal(Self, Self) -> Bool
 pub fn ContextSignalOsc::pid(Self) -> UInt64?
 pub fn ContextSignalOsc::pidfdid(Self) -> UInt64?
 pub fn ContextSignalOsc::sessionid(Self) -> String?
@@ -213,7 +182,6 @@ pub fn ContextSignalOsc::signal(Self) -> String?
 pub fn ContextSignalOsc::status(Self) -> UInt64?
 pub fn ContextSignalOsc::targethost(Self) -> String?
 pub fn ContextSignalOsc::targetuser(Self) -> String?
-pub fn ContextSignalOsc::to_repr(Self) -> @debug.Repr
 pub fn ContextSignalOsc::user(Self) -> String?
 pub fn ContextSignalOsc::vm(Self) -> String?
 
@@ -232,8 +200,6 @@ pub(all) enum ContextSignalType {
   ContextSignalSession
 } derive(Eq, @debug.Debug)
 pub fn ContextSignalType::equal(Self, Self) -> Bool
-pub fn ContextSignalType::not_equal(Self, Self) -> Bool
-pub fn ContextSignalType::to_repr(Self) -> @debug.Repr
 
 pub struct DesktopNotification {
   title : String
@@ -241,9 +207,7 @@ pub struct DesktopNotification {
 } derive(Eq, @debug.Debug)
 pub fn DesktopNotification::body(Self) -> String
 pub fn DesktopNotification::equal(Self, Self) -> Bool
-pub fn DesktopNotification::not_equal(Self, Self) -> Bool
 pub fn DesktopNotification::title(Self) -> String
-pub fn DesktopNotification::to_repr(Self) -> @debug.Repr
 
 pub struct HyperlinkStart {
   uri : String
@@ -251,16 +215,12 @@ pub struct HyperlinkStart {
 } derive(Eq, @debug.Debug)
 pub fn HyperlinkStart::equal(Self, Self) -> Bool
 pub fn HyperlinkStart::id(Self) -> String?
-pub fn HyperlinkStart::not_equal(Self, Self) -> Bool
-pub fn HyperlinkStart::to_repr(Self) -> @debug.Repr
 pub fn HyperlinkStart::uri(Self) -> String
 
 pub enum KittyClipboardLocation {
   KittyClipboardPrimary
 } derive(Eq, @debug.Debug)
 pub fn KittyClipboardLocation::equal(Self, Self) -> Bool
-pub fn KittyClipboardLocation::not_equal(Self, Self) -> Bool
-pub fn KittyClipboardLocation::to_repr(Self) -> @debug.Repr
 
 pub(all) enum KittyClipboardOperation {
   KittyClipboardRead
@@ -269,8 +229,6 @@ pub(all) enum KittyClipboardOperation {
   KittyClipboardWrite
 } derive(Eq, @debug.Debug)
 pub fn KittyClipboardOperation::equal(Self, Self) -> Bool
-pub fn KittyClipboardOperation::not_equal(Self, Self) -> Bool
-pub fn KittyClipboardOperation::to_repr(Self) -> @debug.Repr
 
 type KittyClipboardOsc derive(Eq, @debug.Debug)
 pub fn KittyClipboardOsc::equal(Self, Self) -> Bool
@@ -279,14 +237,12 @@ pub fn KittyClipboardOsc::location(Self) -> KittyClipboardLocation?
 pub fn KittyClipboardOsc::metadata(Self) -> String
 pub fn KittyClipboardOsc::mime(Self) -> String?
 pub fn KittyClipboardOsc::name(Self) -> String?
-pub fn KittyClipboardOsc::not_equal(Self, Self) -> Bool
 pub fn KittyClipboardOsc::operation(Self) -> KittyClipboardOperation?
 pub fn KittyClipboardOsc::password(Self) -> String?
 pub fn KittyClipboardOsc::payload(Self) -> String?
 pub fn KittyClipboardOsc::pw(Self) -> String?
 pub fn KittyClipboardOsc::status(Self) -> KittyClipboardStatus?
 pub fn KittyClipboardOsc::terminator(Self) -> Terminator
-pub fn KittyClipboardOsc::to_repr(Self) -> @debug.Repr
 
 pub(all) enum KittyClipboardStatus {
   KittyClipboardData
@@ -299,26 +255,20 @@ pub(all) enum KittyClipboardStatus {
   KittyClipboardOk
 } derive(Eq, @debug.Debug)
 pub fn KittyClipboardStatus::equal(Self, Self) -> Bool
-pub fn KittyClipboardStatus::not_equal(Self, Self) -> Bool
-pub fn KittyClipboardStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) enum KittyColorKind {
   KittyPalette(Byte)
   KittySpecial(KittyColorSpecial)
 } derive(Eq, @debug.Debug)
 pub fn KittyColorKind::equal(Self, Self) -> Bool
-pub fn KittyColorKind::not_equal(Self, Self) -> Bool
-pub fn KittyColorKind::to_repr(Self) -> @debug.Repr
 
 pub struct KittyColorOsc {
   requests : Array[KittyColorRequest]
   terminator : Terminator
 } derive(Eq, @debug.Debug)
 pub fn KittyColorOsc::equal(Self, Self) -> Bool
-pub fn KittyColorOsc::not_equal(Self, Self) -> Bool
 pub fn KittyColorOsc::requests(Self) -> Array[KittyColorRequest]
 pub fn KittyColorOsc::terminator(Self) -> Terminator
-pub fn KittyColorOsc::to_repr(Self) -> @debug.Repr
 
 pub(all) enum KittyColorRequest {
   KittyQuery(KittyColorKind)
@@ -326,8 +276,6 @@ pub(all) enum KittyColorRequest {
   KittyReset(KittyColorKind)
 } derive(Eq, @debug.Debug)
 pub fn KittyColorRequest::equal(Self, Self) -> Bool
-pub fn KittyColorRequest::not_equal(Self, Self) -> Bool
-pub fn KittyColorRequest::to_repr(Self) -> @debug.Repr
 
 pub struct KittyColorSet {
   key : KittyColorKind
@@ -337,8 +285,6 @@ pub fn KittyColorSet::color(Self) -> @color.RGB
 pub fn KittyColorSet::equal(Self, Self) -> Bool
 pub fn KittyColorSet::key(Self) -> KittyColorKind
 pub fn KittyColorSet::new(KittyColorKind, @color.RGB) -> Self
-pub fn KittyColorSet::not_equal(Self, Self) -> Bool
-pub fn KittyColorSet::to_repr(Self) -> @debug.Repr
 
 pub(all) enum KittyColorSpecial {
   KittyForeground
@@ -351,8 +297,6 @@ pub(all) enum KittyColorSpecial {
   KittySecondTransparentBackground
 } derive(Eq, @debug.Debug)
 pub fn KittyColorSpecial::equal(Self, Self) -> Bool
-pub fn KittyColorSpecial::not_equal(Self, Self) -> Bool
-pub fn KittyColorSpecial::to_repr(Self) -> @debug.Repr
 
 pub(all) enum KittyTextSizingHorizontalAlign {
   KittyTextSizingHLeft
@@ -360,19 +304,15 @@ pub(all) enum KittyTextSizingHorizontalAlign {
   KittyTextSizingHCenter
 } derive(Eq, @debug.Debug)
 pub fn KittyTextSizingHorizontalAlign::equal(Self, Self) -> Bool
-pub fn KittyTextSizingHorizontalAlign::not_equal(Self, Self) -> Bool
-pub fn KittyTextSizingHorizontalAlign::to_repr(Self) -> @debug.Repr
 
 type KittyTextSizingOsc derive(Eq, @debug.Debug)
 pub fn KittyTextSizingOsc::denominator(Self) -> Byte
 pub fn KittyTextSizingOsc::equal(Self, Self) -> Bool
 pub fn KittyTextSizingOsc::halign(Self) -> KittyTextSizingHorizontalAlign
-pub fn KittyTextSizingOsc::not_equal(Self, Self) -> Bool
 pub fn KittyTextSizingOsc::numerator(Self) -> Byte
 pub fn KittyTextSizingOsc::scale(Self) -> Byte
 pub fn KittyTextSizingOsc::terminator(Self) -> Terminator
 pub fn KittyTextSizingOsc::text(Self) -> String
-pub fn KittyTextSizingOsc::to_repr(Self) -> @debug.Repr
 pub fn KittyTextSizingOsc::valign(Self) -> KittyTextSizingVerticalAlign
 pub fn KittyTextSizingOsc::width(Self) -> Byte
 
@@ -382,8 +322,6 @@ pub(all) enum KittyTextSizingVerticalAlign {
   KittyTextSizingVCenter
 } derive(Eq, @debug.Debug)
 pub fn KittyTextSizingVerticalAlign::equal(Self, Self) -> Bool
-pub fn KittyTextSizingVerticalAlign::not_equal(Self, Self) -> Bool
-pub fn KittyTextSizingVerticalAlign::to_repr(Self) -> @debug.Repr
 
 type OscParser
 pub fn OscParser::deinit(Self) -> Unit
@@ -407,11 +345,9 @@ pub fn SemanticPrompt::equal(Self, Self) -> Bool
 pub fn SemanticPrompt::err(Self) -> String?
 pub fn SemanticPrompt::exit_code(Self) -> Int?
 pub fn SemanticPrompt::new(SemanticPromptAction, Bytes) -> Self
-pub fn SemanticPrompt::not_equal(Self, Self) -> Bool
 pub fn SemanticPrompt::prompt_kind(Self) -> SemanticPromptKind?
 pub fn SemanticPrompt::redraw(Self) -> SemanticPromptRedraw?
 pub fn SemanticPrompt::special_key(Self) -> Bool?
-pub fn SemanticPrompt::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SemanticPromptAction {
   FreshLine
@@ -424,8 +360,6 @@ pub(all) enum SemanticPromptAction {
   EndCommand
 } derive(Eq, @debug.Debug)
 pub fn SemanticPromptAction::equal(Self, Self) -> Bool
-pub fn SemanticPromptAction::not_equal(Self, Self) -> Bool
-pub fn SemanticPromptAction::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SemanticPromptClick {
   Line
@@ -434,8 +368,6 @@ pub(all) enum SemanticPromptClick {
   SmartVertical
 } derive(Eq, @debug.Debug)
 pub fn SemanticPromptClick::equal(Self, Self) -> Bool
-pub fn SemanticPromptClick::not_equal(Self, Self) -> Bool
-pub fn SemanticPromptClick::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SemanticPromptKind {
   Initial
@@ -444,8 +376,6 @@ pub(all) enum SemanticPromptKind {
   Secondary
 } derive(Eq, @debug.Debug)
 pub fn SemanticPromptKind::equal(Self, Self) -> Bool
-pub fn SemanticPromptKind::not_equal(Self, Self) -> Bool
-pub fn SemanticPromptKind::to_repr(Self) -> @debug.Repr
 
 pub(all) enum SemanticPromptRedraw {
   Enabled
@@ -453,16 +383,12 @@ pub(all) enum SemanticPromptRedraw {
   Last
 } derive(Eq, @debug.Debug)
 pub fn SemanticPromptRedraw::equal(Self, Self) -> Bool
-pub fn SemanticPromptRedraw::not_equal(Self, Self) -> Bool
-pub fn SemanticPromptRedraw::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Terminator {
   St
   Bel
 } derive(Eq, @debug.Debug)
 pub fn Terminator::equal(Self, Self) -> Bool
-pub fn Terminator::not_equal(Self, Self) -> Bool
-pub fn Terminator::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

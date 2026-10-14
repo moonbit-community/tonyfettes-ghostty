@@ -568,31 +568,66 @@ fn key_mods_with_side(raw : UInt16, mask : UInt16, side : KeyModSide) -> UInt16 
 }
 
 ///|
-pub extend KeyAction with Eq::{not_equal, equal}
+pub extend KeyAction with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyAction with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KeyAction with @debug.Debug::{to_repr}
 
 ///|
-pub extend KeyModSide with Eq::{not_equal, equal}
+pub extend KeyModSide with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyModSide with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KeyModSide with @debug.Debug::{to_repr}
 
 ///|
-pub extend KeyMods with Eq::{not_equal, equal}
+pub extend KeyMods with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyMods with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KeyMods with @debug.Debug::{to_repr}
 
 ///|
-pub extend Key with Eq::{not_equal, equal}
+pub extend Key with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend Key with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend Key with @debug.Debug::{to_repr}
 
 ///|
-pub extend KeyEvent with Eq::{not_equal, equal}
+pub extend KeyEvent with Eq::{equal}
 
 ///|
+#deprecated("Use `!=` instead", skip_current_package=true)
+#doc(hidden)
+pub extend KeyEvent with Eq::{not_equal}
+
+///|
+#deprecated("Use `Debug::to_repr` instead", skip_current_package=true)
+#doc(hidden)
 pub extend KeyEvent with @debug.Debug::{to_repr}
