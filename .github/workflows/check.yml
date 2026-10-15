@@ -9,31 +9,15 @@ jobs:
   build:
     permissions:
       contents: read
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      # Build the native target with MSVC + the Windows SDK. mingw's headers ship
-      # an incomplete winsock/shellapi surface (missing SO_REUSE_MULTICASTPORT,
-      # broken shellapi.h), which the C FFI in the examples needs.
-      - name: setup-msvc
-        if: ${{ matrix.os == 'windows-latest' }}
-        uses: ilammy/msvc-dev-cmd@v1
       - name: install-ubuntu
-        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
-      - name: install-windows
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser; irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
-          "C:\Users\runneradmin\.moon\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-          "MOON_CC=cl" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: post install
         run: |
@@ -42,11 +26,11 @@ jobs:
 
       - name: moon check
         run: |
-          moon check --target all
+          moon check --target wasm
 
       - name: moon test
         run: |
-          moon test --target all
+          moon test --target wasm
 
       - name: lint
         run: |

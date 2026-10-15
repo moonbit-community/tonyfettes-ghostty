@@ -190,6 +190,24 @@ post-implementation auditing.
 
 ## Phase board
 
+### Maintenance M2: Single-platform Wasm CI
+
+Status: `done`
+
+- User-requested CI scope: run the library check and test jobs on
+  `ubuntu-latest` with `--target wasm`, replacing the three-OS/all-backend
+  matrix. Retain formatting and generated-interface checks.
+- Target: `.github/workflows/check.yml`; no upstream translation symbols,
+  MoonBit implementation, storage, or public API changes.
+- Native, JS, and Wasm-GC backend tests are outside this CI job's scope.
+- Validation: `moon check --target wasm`, `moon test --target wasm`,
+  `moon fmt`, `moon info`, and review of the workflow/documentation diff.
+- Coverage audit: not applicable; no executable MoonBit lines changed.
+- Validation result (2026-10-15, based on `abc046b7`): local Wasm check passed; all 674 Wasm
+  tests passed; formatting and interface generation produced no source or
+  `.mbti` changes; `git diff --check` passed. Workflow diff reviewed.
+  The GitHub-hosted Ubuntu job has not been run as part of this change.
+
 ### Maintenance M1: Current-toolchain compatibility and formatting
 
 Status: `done`
