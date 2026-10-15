@@ -82,9 +82,10 @@ pub(all) enum ColorRequest {
 } derive(Eq, Debug)
 
 ///|
+#valtype
 pub struct ColorCommand {
-  op : ColorOperation
   requests : Array[ColorRequest]
+  op : ColorOperation
   terminator : Terminator
 } derive(Eq, Debug)
 
