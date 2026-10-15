@@ -425,20 +425,24 @@ A faithful MoonBit translation should preserve these properties:
 - `Termio` integration should continue to accept slices of bytes and feed the
   same layered parser pipeline.
 
-## Suggested MoonBit Translation Units
+## Current MoonBit Implementation
 
-For a line-by-line port, the closest structural match is:
+The translated parser layers now live in separate packages:
 
-- `terminal/parse_table.mbt`
-- `terminal/parser.mbt`
-- `terminal/utf8_decoder.mbt`
-- `terminal/stream.mbt`
-- `terminal/osc.mbt`
-- `terminal/dcs.mbt`
-- `terminal/sgr.mbt`
-- `terminal/stream_terminal.mbt`
-- `termio/termio_parser_bridge.mbt` or equivalent host integration module
+| Upstream layer | MoonBit location |
+|---|---|
+| `Parser.zig` and `parse_table.zig` | [`terminal/parser/`](../terminal/parser/) |
+| `UTF8Decoder.zig` | [`terminal/utf8_decoder/`](../terminal/utf8_decoder/) |
+| `stream.zig` | [`terminal/stream/`](../terminal/stream/) |
+| `osc.zig` and its decoders | [`terminal/osc/`](../terminal/osc/) |
+| `sgr.zig` | [`terminal/sgr/`](../terminal/sgr/) |
+| Terminal facade and action application | [`stream_terminal.mbt`](../terminal/stream_terminal.mbt) and [`stream_terminal_bridge.mbt`](../terminal/stream_terminal_bridge.mbt) |
 
-The main rule is to preserve the upstream ownership boundaries. In Ghostty, the
-parser stack is already factored into reusable layers. The MoonBit port should
-translate those layers directly instead of collapsing them into one parser file.
+DCS lifecycle events pass through the parser and stream packages. APC handling
+and Kitty graphics integration remain in the `terminal` package. Host effects
+are supplied through the facade's callbacks; the upstream `Termio` runtime
+described above is not a translated module in this repository.
+
+See the [terminal package navigation map](terminal-package.md) for the current
+state-model, encoder, and output packages, and the [README](../README.md#scope)
+for project scope.

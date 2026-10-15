@@ -5,7 +5,7 @@ A MoonBit translation of the Ghostty terminal parser stack and terminal surface.
 This repository is not a Ghostty frontend. It focuses on the terminal parsing,
 state, formatting, input encoding, and host-facing terminal APIs that sit behind
 Ghostty's UI. The upstream source of truth is vendored as a submodule under
-`upstream/ghostty`, and the translation plan is tracked in `docs/`.
+`upstream/ghostty`. Architecture and package guides live in `docs/`.
 
 ## Scope
 
@@ -20,6 +20,13 @@ and terminal model layers:
 - input encoders, mouse helpers, selections, colors, palette state, and Kitty
   graphics metadata needed by the terminal surface
 
+The approved extension into pure font and headless renderer code is underway.
+The `font/` package currently contains font values, metrics, codepoint mapping,
+atlas storage, and the pure sprite-font substrate. Face contracts, shaping, and
+headless renderer helpers are not yet implemented; platform font backends,
+system font discovery, GPU rendering, and external rasterizer/image-decoder
+adapters are outside the current implementation scope.
+
 Out of scope for now:
 
 - GTK, macOS, or other Ghostty frontend code
@@ -30,8 +37,7 @@ Out of scope for now:
 For the detailed upstream-to-MoonBit architecture, read
 [`docs/architecture.md`](docs/architecture.md). For a map of how the
 `terminal` package and its sub-packages are organized (what lives where and how
-to read it), see [`docs/terminal-package.md`](docs/terminal-package.md). For the
-execution plan and quality gates, read [`docs/plan.md`](docs/plan.md).
+to read it), see [`docs/terminal-package.md`](docs/terminal-package.md).
 
 ## Package
 
@@ -77,9 +83,9 @@ The generated public interface lives at
 
 ```text
 terminal/                      MoonBit terminal parser and model package
+font/                          Pure font values, atlas, and sprite-font substrate
 docs/architecture.md           Parser stack architecture notes
-docs/plan.md                   Translation plan, scope, and quality gates
-docs/plans/                    Task-specific implementation plans and audits
+docs/terminal-package.md       Current terminal package navigation
 examples/rabbita_asciinema/    Browser asciinema player using StreamTerminal
 examples/terminal_playground/  Browser terminal playground (web shell + wasm-gc core/)
 examples/tmux/                 Native mini tmux-like PTY multiplexer demo
@@ -89,20 +95,25 @@ upstream/ghostty/              Upstream Ghostty submodule
 
 ## Development
 
-Install MoonBit, then from the repository root run the core validation commands:
+Install MoonBit, then from the repository root use the checks run by the
+library's Ubuntu/Wasm CI:
 
 ```sh
-moon check --target native
-moon test --target native
-moon check --target js
-moon test --target js
-moon coverage analyze -- -f summary
+moon check --target wasm
+moon test --target wasm
 moon fmt
 moon info
 ```
 
+Choose additional targets (`native`, `js`, or `wasm-gc`) when the change affects
+their behavior. For changes that need a coverage review, collect coverage with
+`moon test --target wasm --enable-coverage`, then inspect it with
+`moon coverage analyze -- -f summary`. Review generated `.mbti` changes when
+the public interface changes. Documentation-only edits need a content and link
+check, rather than a MoonBit test run.
+
 The examples live in a separate MoonBit module under `examples/` and contain
-mixed target packages. Use explicit targets:
+mixed target packages. Choose the target relevant to the example being changed:
 
 ```sh
 moon -C examples check --target js
@@ -126,8 +137,7 @@ The translation is intentionally conservative:
 - terminal state and host callbacks are kept distinct
 - public MoonBit APIs are reviewed through generated `.mbti` files
 
-When changing MoonBit source, run the validation commands above and review any
-generated interface churn before committing.
+Keep validation focused on the behavior and targets affected by the change.
 
 ## License
 

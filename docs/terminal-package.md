@@ -1,144 +1,130 @@
 # The `terminal` Package — Navigation Map
 
-This is a reading guide for the `tonyfettes/ghostty/terminal` package and its
-sub-packages. For the upstream-to-MoonBit parser architecture and invariants,
-see [`architecture.md`](architecture.md); this document maps the *current*
-MoonBit code so you know what lives where and how the pieces fit.
+This is a reading guide for `tonyfettes/ghostty/terminal` and its sub-packages.
+For the upstream parser architecture and invariants, see
+[`architecture.md`](architecture.md). This document maps the current MoonBit
+code; the [README](../README.md#scope) describes project scope.
 
 ## Big picture: one data flow
 
-```
+```text
 host bytes
     │
     ▼
-StreamTerminal::next_slice            (stream_terminal.mbt + stream_terminal_bridge.mbt)
-    │   feeds bytes into…
+StreamTerminal::next_slice                 terminal/stream_terminal.mbt
+    │
     ▼
-Stream  ── UTF-8 fast path ──────────▶ @utf8_decoder
-    │   control bytes →
+@stream.Stream                            terminal/stream/stream.mbt
+    ├── ground-state UTF-8 ──────────────▶ @utf8_decoder
+    └── control parser ──────────────────▶ @parser (embeds @osc)
+    │   CSI / ESC / OSC semantics; SGR attributes decoded by @sgr
     ▼
-@parser  (Parser.next → Action)        ANSI state machine (Layer 1)
-    │   actions: CSI / OSC / DCS / ESC / print / execute
-    ├── CSI · SGR ───────────────────▶ @sgr  (attribute parser)
-    ├── OSC ─────────────────────────▶ @osc  (osc/kitty-color/clipboard/semantic…)
-    └── colors / charsets ───────────▶ @color · @charsets
-    │   the bridge applies each action to…
-    ▼
-Terminal state model                   (terminal_*_state.mbt, screen_*_state.mbt)
-    │   screen buffer · cursor · styles · modes · kitty placements · …
-    ▼
-Output:  Formatter (plain/VT/HTML)  ·  RenderState  ·  encoders (key/mouse → bytes)
+StreamTerminalHandler → bridge            terminal/stream_terminal_bridge.mbt
+    ├── terminal state ──────────────────▶ @grid · @pagelist · state packages
+    └── host effects ────────────────────▶ callbacks (PTY writes, bell, title…)
+
+terminal state → Formatter (plain/VT/HTML) · RenderState
+input events + terminal modes → key/mouse encoders → bytes
 ```
 
-Everything below `@parser` in that diagram is an **extracted sub-package** (a
-clean, faithful decoder layer). Everything from "apply actions" up is the
-**hub** — the integrated terminal core that lives directly in `terminal/`.
+The top-level `terminal` package integrates the parser, state packages, host
+callbacks, and output helpers. Sub-packages own both decoder layers and reusable
+state or encoding components.
 
-## Sub-packages (the extracted layers)
+## Sub-packages
 
-These were split out so the layer boundaries from `architecture.md` are enforced
-by the compiler. Each is imported by the hub (and by one another, in this order):
+Paths below are relative to `terminal/`. Package imports in each `moon.pkg` are
+the source of truth for dependencies; the table is grouped by responsibility,
+not import order.
 
 | Package | Role |
 |---|---|
-| `ascii` | low-level ASCII/byte parse+write helpers (`find_byte`, `parse_*_ascii`, `write_uint_ascii`) |
-| `charsets` | VT character-set tables (`Charset`, `Slots`) |
-| `color` | RGB, palette (`Name`/`Special`/`Dynamic`), `TerminalColors`, x11 names |
-| `utf8_decoder` | ground-state UTF-8 decoder (`Utf8Decoder`) |
-| `result_code` | `TerminalResultCode` status enum |
-| `osc` | OSC semantic decoders (colors, kitty color/clipboard/text-sizing, semantic prompt, context signal) |
-| `parser` | DEC ANSI state machine — `Parser`, `Action`, `Csi`/`Dcs`/`Esc` (embeds an `@osc.OscParser`) |
-| `sgr` | SGR attribute parser (`SgrParser`, `SgrAttribute`) |
-| `input` | input event **data model** (`Key`/`KeyEvent`, `Mouse*`) — the encoders stay in the hub |
+| [`ascii`](../terminal/ascii/), [`ansi`](../terminal/ansi/) | ASCII parsing/writing and terminal control constants |
+| [`utf8_decoder`](../terminal/utf8_decoder/) | Ground-state UTF-8 decoding and control-byte boundaries |
+| [`parser`](../terminal/parser/) | DEC ANSI state machine, transition table, and structural actions |
+| [`osc`](../terminal/osc/) | OSC parsing, including colors, clipboard, semantic prompt, and context signals |
+| [`sgr`](../terminal/sgr/), [`seplist`](../terminal/seplist/) | SGR attributes and CSI parameter-separator representation |
+| [`stream`](../terminal/stream/), [`csi`](../terminal/csi/) | Byte-stream orchestration, semantic action dispatch, and CSI helpers |
+| [`page`](../terminal/page/), [`grid`](../terminal/grid/) | Cell/row values, graphemes, and active-grid mutations |
+| [`pagelist`](../terminal/pagelist/) | Scrollback, viewport, pins, resize/reflow, and saved-cursor state |
+| [`cursor`](../terminal/cursor/), [`tabstops`](../terminal/tabstops/), [`mode`](../terminal/mode/) | Cursor geometry, tab stops, and terminal modes |
+| [`style`](../terminal/style/), [`color`](../terminal/color/) | Cell styles and style interning, RGB/palette state, and X11 color names |
+| [`charsets`](../terminal/charsets/) | VT character-set tables and slots |
+| [`hyperlink`](../terminal/hyperlink/), [`hyperlink_state`](../terminal/hyperlink_state/) | Hyperlink storage and current OSC-8 state |
+| [`semantic`](../terminal/semantic/), [`metadata`](../terminal/metadata/) | Semantic prompt state and title/working-directory metadata |
+| [`protected`](../terminal/protected/), [`display_state`](../terminal/display_state/) | Protected cells and display-related state |
+| [`selection`](../terminal/selection/), [`point`](../terminal/point/), [`size`](../terminal/size/) | Selection pins and geometry values |
+| [`input`](../terminal/input/) | Key and mouse event data models |
+| [`key_encoder`](../terminal/key_encoder/), [`mouse_encoder`](../terminal/mouse_encoder/) | Input-event encoding, configured from terminal modes by the facade |
+| [`device`](../terminal/device/), [`size_report`](../terminal/size_report/) | Device and terminal-size report values/encoders |
+| [`focus`](../terminal/focus/), [`paste`](../terminal/paste/) | Focus reports and bracketed-paste encoding |
+| [`result_code`](../terminal/result_code/) | Terminal operation result codes |
+| [`internal/bridge_effects`](../terminal/internal/bridge_effects/) | Host callback plumbing used by the terminal bridge |
 
-Dependency order (no cycles): `ascii → utf8_decoder → osc → parser → sgr`, with
-`color`/`charsets`/`result_code`/`input` as side leaves. The hub sits on top and
-imports all of them.
+For example, `stream` imports the parser and decoders; `parser` imports `osc`
+and `seplist`. The state path has a separate dependency chain: `pagelist`
+uses `grid`, which uses cell, cursor, style, and hyperlink values. These are
+separate packages rather than one linear decoder dependency chain.
 
 ## The hub: `terminal/` files, grouped by job
 
-44 source files (~18k lines). MoonBit packages are a single directory, so the
-grouping below is by **naming convention**, not folders.
+The files below live directly in `terminal/`; related state and decoder code
+lives in the sub-packages above.
 
-### ① Facade / entry points
-- `stream_terminal.mbt` — `StreamTerminal` struct + state accessors. The public
-  entry: `new`, `next`, `next_slice`, `resize`.
-- `stream_terminal_bridge.mbt` — the bulk of `StreamTerminal`'s methods: applies
-  each parser action to the state model and produces host-facing effects
-  (responses, callbacks). The single biggest file; start here to see how an
-  action becomes a state change.
+### Facade and action application
 
-### ② Parse pipeline (bytes → actions)
-- `stream.mbt` — `Stream`: UTF-8 ground-state fast path, drives `@parser`, and
-  dispatches CSI/OSC/DCS/ESC actions. CSI semantics live here; SGR is delegated
-  to `@sgr`.
-- `ansi.mbt` — C0/C1 and escape-sequence constants and helpers.
-- `csi.mbt`, `apc.mbt` — small CSI helper and the APC handler.
+- [`stream_terminal.mbt`](../terminal/stream_terminal.mbt) defines
+  `StreamTerminal`, its stream handler, and public methods such as `new`,
+  `next`, `next_slice`, and `resize`. It also synchronizes terminal modes into
+  the separate key and mouse encoders.
+- [`stream_terminal_bridge.mbt`](../terminal/stream_terminal_bridge.mbt)
+  applies stream actions to terminal state and emits host effects. Start here
+  to follow cursor movement, printing, SGR application, or a query response.
+- [`apc.mbt`](../terminal/apc.mbt) handles the APC lifecycle and payload.
 
-### ③ State model (the terminal's mutable data)
-- `terminal_screen_state.mbt` — `TerminalScreen` + `PageList` (the scrollback
-  buffer, a doubly-linked list of pages). Largest state file.
-- `screen_grid_state.mbt` — `ScreenGridState`, the active cell grid.
-- `page_state.mbt` — the cell model (`PageCellState`, `PageRowState`, wide-char).
-- `terminal_cursor_state.mbt`, `terminal_saved_cursor_state.mbt` — cursor + DECSC.
-- `terminal_style.mbt` — cell styling (uses `@color`, `@sgr`).
-- `terminal_tabstops_state.mbt`, `terminal_input_state.mbt`,
-  `terminal_metadata_state.mbt`, `terminal_protected_state.mbt`,
-  `terminal_display_state.mbt`, `terminal_scrollbar.mbt` — focused state slices.
-- `screen_semantic_state.mbt`, `screen_hyperlink_state.mbt` — semantic prompt
-  zones and OSC-8 hyperlinks.
-- `selection.mbt` — selection rectangles (depends on `TerminalScreen`).
-- `point.mbt`, `size.mbt` — `Point`/`Coordinate`/`Size` geometry primitives.
+### Integrated state
 
-### ④ Output (state → text/bytes)
-- `formatter.mbt` — `Formatter`: renders the screen to Plain / VT / HTML
-  (`Formatter::new_terminal`, `Formatter::format`).
-- `render_state.mbt`, `render_row_iterator.mbt` — render snapshot + row walking.
+- [`terminal_screen_storage.mbt`](../terminal/terminal_screen_storage.mbt)
+  groups the grid, cursor, saved cursor, scrollback, graphics, and semantic
+  state for primary/alternate screens.
+- [`terminal_input_state.mbt`](../terminal/terminal_input_state.mbt) holds
+  terminal input flags and Kitty keyboard state.
+- [`selection_reexport.mbt`](../terminal/selection_reexport.mbt) exposes the
+  selection package through the facade package.
 
-### ⑤ Features (self-contained, hub-integrated)
-- Kitty graphics: `kitty_graphics_command.mbt` (protocol parse),
-  `kitty_graphics_state.mbt` (placement state on the screen),
-  `kitty_graphics.mbt` (screen integration). Tied to the screen model, so it
-  stays in the hub.
-- Input encoders: `key_encoder.mbt`, `key_encoder_function_keys.mbt`,
-  `key_encoder_kitty_table.mbt`, `mouse_encoder.mbt`. They read `StreamTerminal`
-  state to encode `@input` events into bytes, so they stay in the hub.
-- `modes.mbt` — DEC/ANSI mode state. `device_attributes.mbt`/`device_status.mbt`
-  — DA/DSR query replies. `paste.mbt` — bracketed paste. `focus.mbt` — focus
-  reporting. `size_report.mbt` — XTWINOPS-style size reports.
-- `terminal_system.mbt` — host hooks (PNG decode, logging).
-  `terminal_surface_registry.mbt` — C-surface type registry.
+### Output and graphics
 
-### ⑥ Build metadata
-- `build_info.mbt` + `build_info_optimize_{debug,release}.mbt` — target/build
-  flags (selected per target in `moon.pkg`).
+- [`formatter.mbt`](../terminal/formatter.mbt) formats terminal contents as
+  plain text, VT, or HTML.
+- [`render_state.mbt`](../terminal/render_state.mbt) and
+  [`render_row_iterator.mbt`](../terminal/render_row_iterator.mbt) provide
+  render snapshots and row iteration.
+- [`kitty_graphics_command.mbt`](../terminal/kitty_graphics_command.mbt),
+  [`kitty_graphics_state.mbt`](../terminal/kitty_graphics_state.mbt), and
+  [`kitty_graphics.mbt`](../terminal/kitty_graphics.mbt) cover graphics command
+  parsing, image/placement state, and terminal integration.
+
+### Host services and package metadata
+
+- [`terminal_system.mbt`](../terminal/terminal_system.mbt) provides host hooks
+  such as PNG decoding and logging.
+- [`terminal_surface_registry.mbt`](../terminal/terminal_surface_registry.mbt)
+  records the translated C-surface type registry.
+- [`build_info.mbt`](../terminal/build_info.mbt),
+  [`build_info_optimize_debug.mbt`](../terminal/build_info_optimize_debug.mbt),
+  and [`build_info_optimize_release.mbt`](../terminal/build_info_optimize_release.mbt)
+  expose build information; `moon.pkg` selects debug/release variants.
 
 ## Where to start reading
 
-1. **Entry → action**: `stream_terminal.mbt` (`next_slice`) → `stream.mbt`
-   (parse loop) → see `@parser` for the state machine.
-2. **Action → state**: pick any `StreamTerminal::…` method in
-   `stream_terminal_bridge.mbt` (e.g. cursor movement, SGR apply) and follow it
-   into the relevant `*_state.mbt` file.
-3. **State → output**: `formatter.mbt`.
+1. **Bytes → actions:** `stream_terminal.mbt` → `stream/stream.mbt` →
+   `parser/parser.mbt`; follow `osc/` or `sgr/` for sequence-specific decoding.
+2. **Actions → state:** `stream_terminal_bridge.mbt` → the relevant state
+   package, such as `grid/`, `pagelist/`, or `style/`.
+3. **State → output:** `formatter.mbt` or `render_state.mbt`.
+4. **Input → bytes:** `input/` → `key_encoder/` or `mouse_encoder/`, with
+   `StreamTerminal::sync_key_encoder` / `sync_mouse_encoder` supplying modes.
 
-## Why the hub is not split further
-
-The hub is the *integrated* terminal core, and three things make further
-package extraction unprofitable or impossible:
-
-- **Bidirectional coupling.** Kitty graphics holds the screen (`TerminalScreen`,
-  `PageList`) *and* the screen state holds `KittyGraphicsState`. Splitting them
-  would create an import cycle (forbidden) for no encapsulation gain.
-- **Cross-package mutation.** The bridge builds many feature structs by mutating
-  their fields directly; moving the types out would force `pub(all)` on all of
-  them, exposing internals instead of hiding them.
-- **The state model is one web.** `PageList` is not a generic list — it is the
-  scrollback buffer welded to the cell grid, cursor, styles, and kitty state.
-  It can only move as one large, deeply-interconnected `state` package, with a
-  big public surface and marginal benefit (the hub's logic still sits on top).
-
-So `terminal/` being large is expected: it is the cohesive terminal engine
-behind the public `@terminal.StreamTerminal` / `@terminal.Formatter` API. The
-decoder layers (`parser`, `osc`, `sgr`, …) are what factor out cleanly, and they
-already have.
+The generated interface in [`terminal/pkg.generated.mbti`](../terminal/pkg.generated.mbti)
+is the public facade reference. Each sub-package also has its own generated
+interface and `moon.pkg` import list.
