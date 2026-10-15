@@ -1569,3 +1569,70 @@ test "screen grid/empty shared row erase does not intern a background" {
   assert_eq(styles.len(), count)
   assert_eq(grid.row_state(0), @page.PageRowState::new().with_dirty(true))
 }
+
+///|
+test "screen grid/full row erase preserves extra backing cells" {
+  let sentinel = @page.PageCellState::init(b'S'.to_uint())
+  let background = @style.CellStyle::new().with_bg_color(
+    @style.StyleColor::palette(5),
+  )
+  for width in [1, 7, 8, 9, 15, 16, 17, 80, 81, 65535] {
+    let backing = FixedArray::make(width + 2, sentinel)
+    let styles = @style.StyleTable::new()
+    let grid = ScreenGridState::from_shared_storage(
+      1,
+      width.to_uint16(),
+      FixedArray::make(1, @page.PageRowState::new().with_wrap(true)),
+      FixedArray::make(1, backing),
+      FixedArray::make(1, None),
+      styles,
+      @hyperlink.HyperlinkTable::new(),
+      @page.GraphemeTable::new(),
+    )
+    grid.clear_full_row(0, background, false)
+    for col in 0..<width {
+      assert_eq(backing[col].codepoint(), 0U)
+      assert_eq(styles.get(backing[col].style_id()), background)
+    }
+    assert_eq(backing[width], sentinel)
+    assert_eq(backing[width + 1], sentinel)
+    assert_eq(
+      grid.row_state(0),
+      @page.PageRowState::new().with_styled(true).with_dirty(true),
+    )
+  }
+}
+
+///|
+test "panic screen grid/full row erase rejects a short backing buffer" {
+  let grid = ScreenGridState::from_shared_storage(
+    1,
+    2,
+    FixedArray::make(1, @page.PageRowState::new()),
+    FixedArray::make(1, FixedArray::make(1, @page.default_page_cell_state)),
+    FixedArray::make(1, None),
+    @style.StyleTable::new(),
+    @hyperlink.HyperlinkTable::new(),
+    @page.GraphemeTable::new(),
+  )
+  grid.clear_full_row(
+    0,
+    @style.CellStyle::new().with_bg_color(@style.StyleColor::palette(7)),
+    false,
+  )
+}
+
+///|
+test "panic screen grid/full row erase rejects empty backing for positive width" {
+  let grid = ScreenGridState::from_shared_storage(
+    1,
+    1,
+    FixedArray::make(1, @page.PageRowState::new()),
+    FixedArray::make(1, FixedArray::make(0, @page.default_page_cell_state)),
+    FixedArray::make(1, None),
+    @style.StyleTable::new(),
+    @hyperlink.HyperlinkTable::new(),
+    @page.GraphemeTable::new(),
+  )
+  grid.clear_full_row(0, @style.CellStyle::new(), false)
+}

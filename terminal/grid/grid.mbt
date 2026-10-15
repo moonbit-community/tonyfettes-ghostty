@@ -139,7 +139,9 @@ pub fn ScreenGridState::new_with_table(
 ///|
 /// Construct the persistent grid that shares one `PageListPage`'s parallel row
 /// arrays and intern tables. The incoming arrays are normalized: physical slot
-/// zero is logical row zero.
+/// zero is logical row zero. Each row buffer must contain at least `cols`
+/// cells; extra backing cells are outside the logical grid. Zero columns are
+/// allowed when constructing shared storage.
 pub fn ScreenGridState::from_shared_storage(
   rows : @size.CellCountInt,
   cols : @size.CellCountInt,
@@ -1446,8 +1448,11 @@ fn ScreenGridState::clear_full_row(
       // Like upstream's @memset(cells, self.blankCell()), construct one packed
       // value for the row. An empty shared row must not intern an unused style.
       let blank = blank_cell(style, self.style_table)
+      // Checking the last logical cell validates the entire fixed range below.
+      ignore(row_cells[cols - 1])
+      // No callbacks or buffer resizing can invalidate the checked range.
       for col_idx in 0..<cols {
-        row_cells[col_idx] = blank
+        row_cells.unsafe_set(col_idx, blank)
       }
     }
     // Reset to a blank descriptor, then restore `styled`: `full_reset` cleared
