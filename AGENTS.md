@@ -1,163 +1,56 @@
-# Project Agents.md Guide
+# Project Guide
 
-## Project goal
+## Scope and references
 
-- The current goal of this repository is a faithful MoonBit translation of the
-  upstream Ghostty terminal parser stack under `upstream/ghostty`.
+- This repository translates Ghostty's terminal parser and terminal model into
+  MoonBit. Upstream source lives in `upstream/ghostty`.
+- The repository also includes pure MoonBit font work and a headless renderer
+  extension scope. Keep changes within the requested area; platform
+  frontends, GPU backends, and native C ABI parity remain outside current scope.
+- Read the documentation relevant to the task:
+  - `docs/architecture.md`: upstream parser architecture and invariants.
+  - `docs/terminal-package.md`: current MoonBit package navigation.
 
-- Unless the user explicitly changes scope, keep the work focused on the parser
-  stack. Do not expand into unrelated Ghostty UI, renderer, or platform
-  frontend code.
+## Working style
 
-## Source of truth
+- Work directly from the user's request and make reasonable implementation
+  decisions. Do not create or maintain task plans, roadmaps, phase boards, or
+  subplans unless the user explicitly asks for one.
+- Routine refactors, helper functions, and MoonBit compatibility adaptations
+  do not need a separate approval or deviation report. Explain significant
+  tradeoffs; ask when the intended behavior or scope is genuinely unclear.
+- Investigate and fix failures within the task. Report blockers and unresolved
+  failures with enough detail to reproduce them.
+- Use subagents and worktrees when they help. Keep concurrent write boundaries
+  clear and review the combined result; no fixed explorer/worker/reviewer
+  sequence or task subplan is required.
+- Update technical and usage documentation when the change calls for it.
 
-- Read `docs/architecture.md` for the upstream parser architecture and module
-  boundaries.
+## Implementation principles
 
-- Follow `docs/plan.md` as the ordered execution plan for the translation.
-
-## Plan discipline
-
-- Follow `docs/plan.md` in order unless the user explicitly reprioritizes the
-  work.
-
-- When a planned task is completed, update `docs/plan.md` in the same commit as
-  the work for that task.
-
-- Do not structure tasks so they require a red intermediate commit. Every
-  implementation task should be able to finish in a green state with its tests
-  and validation in the same commit batch.
-
-- Keep the translation faithful to upstream structure: preserve module
-  boundaries, state machines, action ordering, and data contracts whenever
-  MoonBit can express them directly.
-
-- Prefer line-by-line translation over stylistic rewrites. Refactor only when
-  needed to express the same semantics safely in MoonBit.
-
-## Plan execution contract
-
-- Before editing implementation files, identify the active plan file, exact
-  phase/step, upstream source section, MoonBit target files, and validation
-  command for the next change. State this to the user and wait for confirmation
-  when the task changes architecture, storage model, public API, or workflow.
-
-- Every implementation edit must map to a named upstream symbol or to an
-  explicitly approved compatibility adapter recorded in the active plan.
-
-- Do not introduce helper types, helper functions, or intermediate models that
-  are not present in upstream or the active plan. If such a helper appears
-  necessary, stop before editing and send a deviation report.
-
-- A deviation report must include:
-  - the active plan step
-  - the upstream symbol or behavior being translated
-  - the exact missing MoonBit capability or existing API conflict
-  - the proposed adapter name and code shape
-  - why continuing without approval would diverge from the plan
-
-- After each completed phase, update the active plan with validation results
-  before starting the next phase.
-
-- If RED/GREEN/VERIFY produces an unexpected failure, stop and report the exact
-  command, failing test, failing file/line, and current hypothesis before
-  expanding scope.
-
-## Delegation First
-
-- Before deep reading or editing, decide whether the task should be split into
-  explorer and worker subagents.
-
-- Default to delegation for non-trivial planning, file mapping, translation,
-  and test-porting work when subagents are available and authorized.
-
-- Treat the main agent as planner, boundary owner, reviewer, and integrator.
-  Do not pull large implementation tasks back into the main context unless
-  delegation is blocked or the user wants the work kept local.
-
-- If a task crosses parser layers, first use an explorer subagent to produce
-  the dependency map and must-preserve invariants before any worker starts
-  porting.
-
-## Delegation rules
-
-- Use a separate worktree per worker when available.
-
-- In every worker prompt, include the exact upstream file set, the MoonBit
-  target module(s), the write ownership boundary, acceptance criteria, and the
-  validation commands.
-
-- Prefer explorers for mapping upstream behavior, hidden dependencies, and test
-  surfaces. Prefer workers for isolated code or doc changes in distinct write
-  sets.
-
-- For non-trivial delegated work, require a task-specific subplan under
-  `docs/plans/` that records goal, upstream files, MoonBit targets,
-  dependencies, acceptance criteria, validation commands, and audit notes.
-
-- After a worker finishes, review the boundary and acceptance criteria yourself
-  or spawn a dedicated review task. If you find bugs or missed requirements,
-  resume the worker and keep the task open.
-
-- Do not redo the entire implementation in the main context unless the boundary
-  review fails so badly that resuming the worker is no longer efficient.
-
-## Git workflow
-
-- Use Conventional Commits.
-
-- Keep commits clean and atomic. Each commit should represent one logical step
-  and should not mix unrelated edits.
-
-- When work is split into multiple steps, make one commit per completed step
-  before moving to the next step.
+- Preserve upstream behavior, parser state transitions, action ordering,
+  UTF-8 retry semantics, and the separation of parsing, terminal state, and
+  host effects. Follow upstream structure where it remains useful in MoonBit.
+- Prefer clear MoonBit code over mechanical copies of Zig allocation or C ABI
+  plumbing. Record non-obvious compatibility choices where they help future
+  maintenance.
+- Keep implementation details private by default. Public APIs and mutable
+  fields should serve callers; white-box tests can use `_wbtest.mbt` files.
+- Keep changes focused. When committing, use Conventional Commits and group
+  related code, tests, and documentation together; no commit per plan step is
+  required.
 
 ## Validation
 
-- For MoonBit source changes, the expected quality gate is:
-  - `moon check`
-  - `moon test`
-  - `moon coverage analyze`
-  - `moon fmt`
-  - `moon info`
-
-- Treat coverage as a completion gate, not a nice-to-have. After
-  `moon coverage analyze`, review uncovered lines in the files touched by the
-  task.
-
-- Do not close a MoonBit implementation task while touched executable lines are
-  left uncovered without an explicit note in the task subplan or audit trail
-  explaining why the uncovered lines are acceptable for now.
-
-- The main agent is responsible for enforcing this coverage gate on both local
-  work and delegated work. Worker validation is not complete until coverage
-  findings for the touched files have been reviewed.
-
-- Review any `.mbti` or formatting churn and confirm it is intentional before
-  handoff or commit.
-
-## Public API audit
-
-- Treat public API shape as a quality gate, not a cleanup task for later.
-
-- During review of MoonBit source changes, inspect the `.mbti` diff and ask
-  whether each public item has an external consumer story.
-
-- Public mutable fields are banned unless caller mutation is an intentional and
-  documented part of the API contract.
-
-- Parser state machines, transition tables, accumulators, parse buffers,
-  embedded helper parsers, and other implementation-detail structs or enums are
-  internal by default. Do not expose them publicly just because tests or the
-  current translation scaffolding can see them.
-
-- White-box tests are not justification for public visibility. Prefer keeping
-  internals package-private and testing them from `_wbtest.mbt` files.
-
-- If a task must temporarily expose internals to unblock translation, record
-  that exposure as temporary debt in the task subplan and add a follow-up task
-  to remove it.
-
-- Reviewer prompts for delegated review should explicitly ask for public API
-  quality findings, including pre-existing unjustified public surface in the
-  touched area.
+- For MoonBit changes, normally run `moon check --target wasm`,
+  `moon test --target wasm`, and `moon fmt`. These match the current CI target.
+- Run relevant additional backends or example checks when the change affects
+  them. See `README.md` for commands.
+- Run `moon info` when source changes may affect generated interfaces, and
+  review the `.mbti` diff for intentional API changes.
+- Add or update tests for changed behavior. Use coverage to investigate test
+  gaps in substantial logic changes and benchmarks to assess performance work;
+  neither needs a separate signoff or per-line audit for every edit.
+- For documentation-only changes, check accuracy, links, and `git diff --check`.
+  MoonBit tests are unnecessary unless code or executable examples also change.
+- In the handoff, summarize the change, relevant checks, and any known limits.
