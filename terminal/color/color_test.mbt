@@ -109,6 +109,28 @@ test "color/rgb parse accepts hash rgb rgbi and x11 names" {
 }
 
 ///|
+test "color/rgb hex scaling preserves floor boundaries for every width" {
+  let cases : Array[(Bytes, @color.RGB)] = [
+    (b"rgb:0/1/f", @color.RGB::new(0, 17, 255)),
+    (b"rgb:7/8/e", @color.RGB::new(119, 136, 238)),
+    (b"rgb:00/01/ff", @color.RGB::new(0, 1, 255)),
+    (b"rgb:7f/80/fe", @color.RGB::new(127, 128, 254)),
+    (b"rgb:010/011/807", @color.RGB::new(0, 1, 127)),
+    (b"rgb:808/ffe/fff", @color.RGB::new(128, 254, 255)),
+    (b"rgb:0100/0101/8000", @color.RGB::new(0, 1, 127)),
+    (b"rgb:807f/8080/fffe", @color.RGB::new(127, 128, 254)),
+    (b"rgb:ffff/0000/ffff", @color.RGB::new(255, 0, 255)),
+    (b"#178", @color.RGB::new(17, 119, 136)),
+    (b"#017f80", @color.RGB::new(1, 127, 128)),
+    (b"#010011807", @color.RGB::new(0, 1, 127)),
+    (b"#807f8080fffe", @color.RGB::new(127, 128, 254)),
+  ]
+  for entry in cases {
+    @debug.assert_eq(@color.RGB::parse(entry.0), entry.1)
+  }
+}
+
+///|
 test "color/rgb constructor and accessors" {
   let rgb = @color.RGB::new(1, 2, 3)
   assert_eq(rgb.r(), 1)

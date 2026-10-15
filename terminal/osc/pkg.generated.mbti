@@ -25,8 +25,8 @@ pub fn ClipboardContents::equal(Self, Self) -> Bool
 pub fn ClipboardContents::kind(Self) -> Byte
 
 pub struct ColorCommand {
-  op : ColorOperation
   requests : Array[ColorRequest]
+  op : ColorOperation
   terminator : Terminator
 } derive(Eq, @debug.Debug)
 pub fn ColorCommand::equal(Self, Self) -> Bool
