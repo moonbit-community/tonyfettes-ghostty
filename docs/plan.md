@@ -532,6 +532,7 @@ Status: `done`
 | P7.3.7 | done | `stream.nextNonUtf8`, `Parser.next` | user-approved opaque `Parser.next_stream` CSI compatibility adapter + stream call | P7.3.6 | none | `[W]` | generic parser unchanged; CSI fast paths + faithful inline fallback; paired SGR/query/TUI gains, accepted +1.27% APC cost, full gates and native touched-line coverage reviewed; see `docs/plans/2026-10-14-csi-fast-path.md` | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(parser)` |
 | P7.3.8 | done | `stream.nextNonUtf8` | consume three action slots before dispatch | P7.3.7 | none | `[W]` | remove two redundant ARC pairs and 32 native instructions; end-to-end gain unproven in noisy paired measurements; unchanged API/order and full native touched-site coverage; see `docs/plans/2026-10-14-action-lifetime.md` | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(stream)` |
 | P7.3.9 | done | `stream.csiDispatch`, `StreamTerminal.vt`, `Terminal.setAttribute` | approved typed SGR handler adapter with default event compatibility | P7.3.8 | none | `[W]` | terminal wrapper allocation removed; default handler/Unknown/style parity and full gates passed; paired SGR/TUI gains with accepted small APC cost; see `docs/plans/2026-10-14-sgr-handler-fast-path.md` | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(stream)` |
+| P7.3.10 | done | `Parser.Action.CSI`, `CSI.SepList`, `Parser.next/doAction`, `stream.nextNonUtf8/csiDispatch` | inline `Csi` payload and read-only public `SepList` representation | P7.3.9 | none | `[W]` | one fewer allocation per CSI; paired SGR -10.81%, TUI -4.88%, query -5.36% time with accepted 0.45–0.74% control costs; all-target tests, native coverage and API audit passed; see `docs/plans/2026-10-15-csi-value-payload.md` | `moon check --target all && moon test --target all && moon test --target native --enable-coverage && moon coverage analyze && moon fmt && moon info` | `[R]` main | `perf(parser)` |
 
 Phase 7 gate:
 
@@ -557,6 +558,11 @@ Phase 7 gate:
 - P7.3.9 is `done`; typed SGR dispatch preserves default events and removes
   the terminal wrapper allocation. Independent timings, accepted APC cost and
   coverage are in [2026-10-14-sgr-handler-fast-path.md](plans/2026-10-14-sgr-handler-fast-path.md).
+
+- P7.3.10 is `done`; CSI payload value representation removes one allocation.
+  Paired measurements, the accepted small control costs, all-target validation
+  and coverage/API review are in
+  [2026-10-15-csi-value-payload.md](plans/2026-10-15-csi-value-payload.md).
 
 #### Phase 7 outputs
 

@@ -1,7 +1,8 @@
 ///|
-/// Abstract (no `pub`): a colon-vs-semicolon separator bitset built and read
-/// only through `init_empty`/`set`/`is_set`/`count`, so its backing word stays
-/// sealed across the package boundary. An immutable `UInt64` newtype — like
+/// A colon-vs-semicolon separator bitset built through `init_empty`/`set` and
+/// read through `is_set`/`count`. Its immutable representation is public so the
+/// parser's by-value CSI payload can embed this shared metadata. Construction
+/// remains package-private. An immutable `UInt64` newtype — like
 /// upstream's `SepList = std.StaticBitSet(MAX_PARAMS)` (an `IntegerBitSet`, i.e.
 /// an inline integer value), `set` returns a new bitset and the holder rebinds
 /// its field, so the value is unboxed with no per-sequence heap allocation.
@@ -11,7 +12,7 @@
 /// needed from `parser` was this type). Mirrors how upstream `sgr.zig` reaches
 /// for `Parser.zig`'s `SepList`, but as a shared dependency rather than a
 /// back-reference.
-struct SepList(UInt64) derive(Debug)
+pub struct SepList(UInt64) derive(Debug)
 
 ///|
 pub fn SepList::init_empty() -> SepList {
