@@ -18,6 +18,9 @@ const MaxParamValue : UInt16 = 65535
 /// `Parser::next_stream`, or `Parser::enter_escape`
 /// rewinds and overwrites those buffers via `clear()`. Consumers must read them
 /// during dispatch and copy (not store) anything that must outlive it.
+/// The record is passed by value, matching upstream `Action.CSI`; its views
+/// still borrow the same buffers, so copying the record does not snapshot them.
+#valtype
 pub(all) struct Csi {
   intermediates : ArrayView[Byte]
   params : ArrayView[UInt16]
