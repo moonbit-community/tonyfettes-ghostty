@@ -307,7 +307,9 @@ Commit scope:
 
 ### P16.6: GitHub Pages deployment
 
-Status: ready for first publish.
+Status: retired on 2026-10-15 at the user's request. The original deployment
+specification below is retained as history; automated Pages deployment is no
+longer an acceptance requirement for P16.
 
 Deploy the finished demo to GitHub Pages from GitHub Actions. Use
 `rabbita_xterm/.github/workflows/pages.yml` as the local reference pattern:
@@ -412,3 +414,19 @@ Commit scope:
   `25277265241` for commit `e69d0a59f09d775ced7868d724524b3afcf5db37`.
 - Published demo URL:
   `https://moonbit-community.github.io/tonyfettes-ghostty/demo/rabbita_asciinema/`.
+
+### 2026-10-15: Retire automatic Pages deployment
+
+- Runs [38545175809](https://github.com/moonbit-community/tonyfettes-ghostty/actions/runs/38545175809)
+  and [38521520721](https://github.com/moonbit-community/tonyfettes-ghostty/actions/runs/38521520721)
+  failed at `moon -C demo/rabbita_asciinema check --target js` because that
+  directory no longer exists. The current player is under
+  `examples/rabbita_asciinema` in the shared examples module.
+- Removed `.github/workflows/pages.yml` and updated the demo README. Local
+  demo sources and `.github/workflows/check.yml` are unchanged.
+- Validation: `git diff --check`; confirmed no Pages deployment actions remain
+  in `.github/workflows` and the main check workflow is unchanged.
+- No MoonBit source or public API changed, so MoonBit tests, coverage, formatting,
+  and interface generation are not required for this CI-only removal.
+- This change stops future automated publishing once merged; it does not
+  change repository Pages settings or delete an existing hosted site.

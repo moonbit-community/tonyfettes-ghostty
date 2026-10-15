@@ -24,14 +24,5 @@ local `.cast` file.
 
 ## GitHub Pages
 
-The repository workflow publishes the demo with GitHub Pages Actions. The
-repository's Pages source must be configured to **GitHub Actions**.
-
-Expected URL shape after the first successful deployment:
-
-```text
-https://<owner>.github.io/<repo>/examples/rabbita_asciinema/
-```
-
-The workflow publishes the examples directory plus `_build/js`, so the static
-entry point uses the same relative path locally and on Pages.
+Automatic GitHub Pages deployment was removed. Build and serve the demo locally
+using the commands above.

@@ -798,6 +798,11 @@ xterm.js.
 
 #### Phase 16 outputs
 
+- P16.6 deployment retired on 2026-10-15 at the user's request. Removed
+  `.github/workflows/pages.yml`, which still referenced the missing
+  `demo/rabbita_asciinema` directory. The player remains available locally at
+  `examples/rabbita_asciinema`; the original deployment target and validation
+  commands in the completed P16 row above are historical.
 - Completed P16 plan and audit lives in:
   [2026-05-03-p16-rabbita-asciinema-player.md](/Users/haoxiang/Workspace/moonbit/feihaoxiang/ghostty/docs/plans/2026-05-03-p16-rabbita-asciinema-player.md)
 
