@@ -10,7 +10,7 @@ import {
 // Errors
 
 // Types and methods
-type SepList derive(@debug.Debug)
+pub struct SepList(UInt64) derive(@debug.Debug)
 pub fn SepList::count(Self) -> Int
 pub fn SepList::init_empty() -> Self
 pub fn SepList::is_set(Self, Int) -> Bool
