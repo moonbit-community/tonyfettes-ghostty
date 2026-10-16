@@ -896,17 +896,16 @@ fn parse_hex_component(
     i += 1
   }
 
-  let divisor = if width == 1 {
-    0xF
+  if width == 1 {
+    (result * 17).to_byte()
   } else if width == 2 {
-    0xFF
+    result.to_byte()
   } else if width == 3 {
-    0xFFF
+    (result * 255 / 4095).to_byte()
   } else {
-    0xFFFF
+    // 65535 = 255 * 257; preserve floor scaling, not high-byte truncation.
+    (result / 257).to_byte()
   }
-
-  (result * 0xFF / divisor).to_byte()
 }
 
 ///|
