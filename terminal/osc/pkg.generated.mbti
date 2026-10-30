@@ -343,7 +343,7 @@ pub fn SemanticPrompt::cmdline_url(Self) -> String?
 pub fn SemanticPrompt::decoded_command_line(Self) -> String? raise SemanticPromptDecodeError
 pub fn SemanticPrompt::equal(Self, Self) -> Bool
 pub fn SemanticPrompt::err(Self) -> String?
-pub fn SemanticPrompt::exit_code(Self) -> Int?
+pub fn SemanticPrompt::exit_code(Self) -> Int32?
 pub fn SemanticPrompt::new(SemanticPromptAction, Bytes) -> Self
 pub fn SemanticPrompt::prompt_kind(Self) -> SemanticPromptKind?
 pub fn SemanticPrompt::redraw(Self) -> SemanticPromptRedraw?

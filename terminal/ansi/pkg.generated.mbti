@@ -8,13 +8,13 @@ import {
 // Values
 pub fn c0_from_byte(Byte) -> C0?
 
-pub fn cursor_style_from_int(Int) -> CursorStyle?
+pub fn cursor_style_from_int(Int32) -> CursorStyle?
 
-pub fn modify_key_format_from_int(Int) -> ModifyKeyFormat?
+pub fn modify_key_format_from_int(Int32) -> ModifyKeyFormat?
 
 pub fn rendition_aspect_from_int(UInt16) -> RenditionAspect?
 
-pub fn status_display_from_int(Int) -> StatusDisplay?
+pub fn status_display_from_int(Int32) -> StatusDisplay?
 
 pub fn status_line_type_from_int(UInt16) -> StatusLineType?
 
@@ -49,7 +49,7 @@ pub(all) enum CursorStyle {
   SteadyBar
 } derive(Eq, @debug.Debug)
 pub fn CursorStyle::equal(Self, Self) -> Bool
-pub fn CursorStyle::ordinal(Self) -> Int
+pub fn CursorStyle::ordinal(Self) -> Int32
 
 pub(all) enum ModifyKeyFormat {
   Legacy
@@ -60,7 +60,7 @@ pub(all) enum ModifyKeyFormat {
   OtherKeysNumeric
 } derive(Eq, @debug.Debug)
 pub fn ModifyKeyFormat::equal(Self, Self) -> Bool
-pub fn ModifyKeyFormat::ordinal(Self) -> Int
+pub fn ModifyKeyFormat::ordinal(Self) -> Int32
 
 pub(all) enum ProtectedMode {
   Off
@@ -83,7 +83,7 @@ pub(all) enum StatusDisplay {
   StatusLine
 } derive(Eq, @debug.Debug)
 pub fn StatusDisplay::equal(Self, Self) -> Bool
-pub fn StatusDisplay::ordinal(Self) -> Int
+pub fn StatusDisplay::ordinal(Self) -> Int32
 
 pub(all) enum StatusLineType {
   None

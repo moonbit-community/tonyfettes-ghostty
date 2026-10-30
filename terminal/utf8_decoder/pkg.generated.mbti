@@ -6,19 +6,19 @@ import {
 }
 
 // Values
-pub fn decode_utf8_until_control_seq(BytesView, FixedArray[UInt]) -> DecodeResult
+pub fn decode_utf8_until_control_seq(BytesView, FixedArray[UInt32]) -> DecodeResult
 
 // Errors
 
 // Types and methods
 pub struct DecodeResult {
-  consumed : Int
-  decoded : Int
+  consumed : Int32
+  decoded : Int32
 } derive(Eq, @debug.Debug)
 pub fn DecodeResult::equal(Self, Self) -> Bool
 
 pub struct Utf8Decoded {
-  value : UInt?
+  value : UInt32?
   consumed : Bool
 }
 

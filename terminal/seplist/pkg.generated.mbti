@@ -11,10 +11,10 @@ import {
 
 // Types and methods
 pub struct SepList(UInt64) derive(@debug.Debug)
-pub fn SepList::count(Self) -> Int
+pub fn SepList::count(Self) -> Int32
 pub fn SepList::init_empty() -> Self
-pub fn SepList::is_set(Self, Int) -> Bool
-pub fn SepList::set(Self, Int) -> Self
+pub fn SepList::is_set(Self, Int32) -> Bool
+pub fn SepList::set(Self, Int32) -> Self
 
 // Type aliases
 

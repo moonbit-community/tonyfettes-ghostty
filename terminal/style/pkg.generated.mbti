@@ -25,7 +25,7 @@ pub fn CellStyle::equal(Self, Self) -> Bool
 pub fn CellStyle::faint(Self) -> Bool
 pub fn CellStyle::fg_color(Self) -> StyleColor
 pub fn CellStyle::fg_rgb(Self, Array[@color.RGB]) -> @color.RGB?
-pub fn CellStyle::hash(Self) -> Int
+pub fn CellStyle::hash(Self) -> Int32
 pub fn CellStyle::hash_combine(Self, Hasher) -> Unit
 pub fn CellStyle::inverse(Self) -> Bool
 pub fn CellStyle::invisible(Self) -> Bool
@@ -41,7 +41,7 @@ pub fn CellStyle::with_fg_color(Self, StyleColor) -> Self
 
 type StyleColor derive(Eq, Hash, @debug.Debug)
 pub fn StyleColor::equal(Self, Self) -> Bool
-pub fn StyleColor::hash(Self) -> Int
+pub fn StyleColor::hash(Self) -> Int32
 pub fn StyleColor::hash_combine(Self, Hasher) -> Unit
 pub fn StyleColor::is_default(Self) -> Bool
 pub fn StyleColor::none() -> Self
@@ -54,7 +54,7 @@ pub fn StyleColor::rgb_value(Self) -> @color.RGB?
 type StyleId derive(Eq, Hash, @debug.Debug)
 pub fn StyleId::equal(Self, Self) -> Bool
 pub fn StyleId::from_uint16(UInt16) -> Self
-pub fn StyleId::hash(Self) -> Int
+pub fn StyleId::hash(Self) -> Int32
 pub fn StyleId::hash_combine(Self, Hasher) -> Unit
 pub fn StyleId::is_default(Self) -> Bool
 pub fn StyleId::to_uint16(Self) -> UInt16
@@ -64,7 +64,7 @@ pub struct StyleTable {
 }
 pub fn StyleTable::get(Self, StyleId) -> CellStyle
 pub fn StyleTable::intern(Self, CellStyle) -> StyleId
-pub fn StyleTable::len(Self) -> Int
+pub fn StyleTable::len(Self) -> Int32
 pub fn StyleTable::new() -> Self
 
 // Type aliases

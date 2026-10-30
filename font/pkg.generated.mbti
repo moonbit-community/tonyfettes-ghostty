@@ -21,19 +21,19 @@ pub fn ModifierParseError::equal(Self, Self) -> Bool
 // Types and methods
 pub(all) struct Atlas {
   mut data : Array[Byte]
-  mut size : UInt
+  mut size : UInt32
   mut nodes : Array[AtlasNode]
   mut format : AtlasFormat
-  mut modified : UInt
-  mut resized : UInt
+  mut modified : UInt32
+  mut resized : UInt32
 } derive(Eq, @debug.Debug)
 pub fn Atlas::clear(Self) -> Unit
 pub fn Atlas::equal(Self, Self) -> Bool
-pub fn Atlas::grow(Self, UInt) -> Unit
-pub fn Atlas::new(UInt, AtlasFormat) -> Self
-pub fn Atlas::reserve(Self, UInt, UInt) -> AtlasRegion raise AtlasError
+pub fn Atlas::grow(Self, UInt32) -> Unit
+pub fn Atlas::new(UInt32, AtlasFormat) -> Self
+pub fn Atlas::reserve(Self, UInt32, UInt32) -> AtlasRegion raise AtlasError
 pub fn Atlas::set(Self, AtlasRegion, ArrayView[Byte]) -> Unit
-pub fn Atlas::set_from_larger(Self, AtlasRegion, ArrayView[Byte], UInt, UInt, UInt) -> Unit
+pub fn Atlas::set_from_larger(Self, AtlasRegion, ArrayView[Byte], UInt32, UInt32, UInt32) -> Unit
 
 pub(all) enum AtlasFormat {
   Grayscale
@@ -44,17 +44,17 @@ pub fn AtlasFormat::depth(Self) -> Byte
 pub fn AtlasFormat::equal(Self, Self) -> Bool
 
 pub(all) struct AtlasNode {
-  mut x : UInt
-  mut y : UInt
-  mut width : UInt
+  mut x : UInt32
+  mut y : UInt32
+  mut width : UInt32
 } derive(Eq, @debug.Debug)
 pub fn AtlasNode::equal(Self, Self) -> Bool
 
 pub(all) struct AtlasRegion {
-  mut x : UInt
-  mut y : UInt
-  width : UInt
-  height : UInt
+  mut x : UInt32
+  mut y : UInt32
+  width : UInt32
+  height : UInt32
 } derive(Eq, @debug.Debug)
 pub fn AtlasRegion::equal(Self, Self) -> Bool
 
@@ -63,12 +63,12 @@ pub(all) struct CodepointMap {
 } derive(Eq, @debug.Debug)
 pub fn CodepointMap::add(Self, CodepointMapEntry) -> Unit
 pub fn CodepointMap::equal(Self, Self) -> Bool
-pub fn CodepointMap::get(Self, UInt) -> Descriptor?
-pub fn CodepointMap::hashcode(Self) -> UInt
+pub fn CodepointMap::get(Self, UInt32) -> Descriptor?
+pub fn CodepointMap::hashcode(Self) -> UInt32
 pub fn CodepointMap::new() -> Self
 
 pub(all) struct CodepointMapEntry {
-  range : (UInt, UInt)
+  range : (UInt32, UInt32)
   descriptor : Descriptor
 } derive(Eq, @debug.Debug)
 pub fn CodepointMapEntry::equal(Self, Self) -> Bool
@@ -76,7 +76,7 @@ pub fn CodepointMapEntry::equal(Self, Self) -> Bool
 pub(all) struct Descriptor {
   family : String?
   style : String?
-  codepoint : UInt
+  codepoint : UInt32
   size : Float
   bold : Bool
   italic : Bool
@@ -84,8 +84,8 @@ pub(all) struct Descriptor {
   variations : ReadOnlyArray[FontVariation]
 } derive(Eq, @debug.Debug)
 pub fn Descriptor::equal(Self, Self) -> Bool
-pub fn Descriptor::hashcode(Self) -> UInt
-pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt, size? : Float, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : ArrayView[FontVariation]) -> Self
+pub fn Descriptor::hashcode(Self) -> UInt32
+pub fn Descriptor::new(family? : String?, style? : String?, codepoint? : UInt32, size? : Float, bold? : Bool, italic? : Bool, monospace? : Bool, variations? : ArrayView[FontVariation]) -> Self
 
 pub(all) struct FaceMetrics {
   px_per_em : Double
@@ -130,12 +130,12 @@ pub fn FontVariationId::init(BytesView) -> Self
 pub fn FontVariationId::str(Self) -> Bytes
 
 pub(all) struct Glyph {
-  width : UInt
-  height : UInt
-  offset_x : Int
-  offset_y : Int
-  atlas_x : UInt
-  atlas_y : UInt
+  width : UInt32
+  height : UInt32
+  offset_x : Int32
+  offset_y : Int32
+  atlas_x : UInt32
+  atlas_y : UInt32
 } derive(Eq, @debug.Debug)
 pub fn Glyph::equal(Self, Self) -> Bool
 
@@ -159,22 +159,22 @@ pub(all) enum MetricKey {
   FaceY
 } derive(Eq, Hash, @debug.Debug)
 pub fn MetricKey::equal(Self, Self) -> Bool
-pub fn MetricKey::hash(Self) -> Int
+pub fn MetricKey::hash(Self) -> Int32
 pub fn MetricKey::hash_combine(Self, Hasher) -> Unit
 
 pub(all) struct Metrics {
-  mut cell_width : UInt
-  mut cell_height : UInt
-  mut cell_baseline : UInt
-  mut underline_position : UInt
-  mut underline_thickness : UInt
-  mut strikethrough_position : UInt
-  mut strikethrough_thickness : UInt
-  mut overline_position : Int
-  mut overline_thickness : UInt
-  mut box_thickness : UInt
-  mut cursor_thickness : UInt
-  mut cursor_height : UInt
+  mut cell_width : UInt32
+  mut cell_height : UInt32
+  mut cell_baseline : UInt32
+  mut underline_position : UInt32
+  mut underline_thickness : UInt32
+  mut strikethrough_position : UInt32
+  mut strikethrough_thickness : UInt32
+  mut overline_position : Int32
+  mut overline_thickness : UInt32
+  mut box_thickness : UInt32
+  mut cursor_thickness : UInt32
+  mut cursor_height : UInt32
   mut icon_height : Double
   mut icon_height_single : Double
   mut face_width : Double
@@ -187,7 +187,7 @@ pub fn Metrics::equal(Self, Self) -> Bool
 
 pub(all) enum Modifier {
   Percent(Double)
-  Absolute(Int)
+  Absolute(Int32)
 } derive(Eq, @debug.Debug)
 pub fn Modifier::equal(Self, Self) -> Bool
 pub fn Modifier::parse(String) -> Self raise ModifierParseError
@@ -198,16 +198,16 @@ pub fn ModifierSet::new() -> Self
 pub fn ModifierSet::set(Self, MetricKey, Modifier) -> Unit
 
 type Sprite derive(Eq, @debug.Debug)
-pub fn Sprite::codepoint(Self) -> UInt
+pub fn Sprite::codepoint(Self) -> UInt32
 pub fn Sprite::cursor_bar() -> Self
 pub fn Sprite::cursor_hollow_rect() -> Self
 pub fn Sprite::cursor_rect() -> Self
 pub fn Sprite::cursor_underline() -> Self
-pub fn Sprite::end() -> UInt
+pub fn Sprite::end() -> UInt32
 pub fn Sprite::equal(Self, Self) -> Bool
-pub fn Sprite::from_codepoint(UInt) -> Self?
+pub fn Sprite::from_codepoint(UInt32) -> Self?
 pub fn Sprite::overline() -> Self
-pub fn Sprite::start() -> UInt
+pub fn Sprite::start() -> UInt32
 pub fn Sprite::strikethrough() -> Self
 pub fn Sprite::underline() -> Self
 pub fn Sprite::underline_curly() -> Self
@@ -220,28 +220,28 @@ pub(all) struct SpriteBox[T] {
   p1 : SpritePoint[T]
 } derive(Eq, @debug.Debug)
 pub fn[T : Eq] SpriteBox::equal(Self[T], Self[T]) -> Bool
-pub fn SpriteBox::rect(Self[Int]) -> SpriteRect[Int]
+pub fn SpriteBox::rect(Self[Int32]) -> SpriteRect[Int32]
 
 pub(all) struct SpriteCanvas {
   mut data : Array[Byte]
-  width : UInt
-  height : UInt
-  padding_x : UInt
-  padding_y : UInt
-  mut clip_top : UInt
-  mut clip_left : UInt
-  mut clip_right : UInt
-  mut clip_bottom : UInt
+  width : UInt32
+  height : UInt32
+  padding_x : UInt32
+  padding_y : UInt32
+  mut clip_top : UInt32
+  mut clip_left : UInt32
+  mut clip_right : UInt32
+  mut clip_bottom : UInt32
 } derive(Eq, @debug.Debug)
-pub fn SpriteCanvas::box(Self, Int, Int, Int, Int, SpriteColor) -> Unit
+pub fn SpriteCanvas::box(Self, Int32, Int32, Int32, Int32, SpriteColor) -> Unit
 pub fn SpriteCanvas::clear_clipping_regions(Self) -> Unit
 pub fn SpriteCanvas::equal(Self, Self) -> Bool
 pub fn SpriteCanvas::flip_horizontal(Self) -> Unit
 pub fn SpriteCanvas::flip_vertical(Self) -> Unit
 pub fn SpriteCanvas::invert(Self) -> Unit
-pub fn SpriteCanvas::new(UInt, UInt, UInt, UInt) -> Self
-pub fn SpriteCanvas::pixel(Self, Int, Int, SpriteColor) -> Unit
-pub fn SpriteCanvas::rect(Self, SpriteRect[Int], SpriteColor) -> Unit
+pub fn SpriteCanvas::new(UInt32, UInt32, UInt32, UInt32) -> Self
+pub fn SpriteCanvas::pixel(Self, Int32, Int32, SpriteColor) -> Unit
+pub fn SpriteCanvas::rect(Self, SpriteRect[Int32], SpriteColor) -> Unit
 pub fn SpriteCanvas::write_atlas(Self, Atlas) -> AtlasRegion raise AtlasError
 
 type SpriteColor derive(Eq, @debug.Debug)

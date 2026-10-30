@@ -19,15 +19,15 @@ import {
 // Types and methods
 type PageList
 pub fn PageList::active_grid(Self) -> @grid.ScreenGridState
-pub fn PageList::capture_full_screen_scroll_down(Self, @grid.ScreenGridState, Int) -> Unit
-pub fn PageList::capture_top_scroll_region_up(Self, @grid.ScreenGridState, Int, Int) -> Unit
+pub fn PageList::capture_full_screen_scroll_down(Self, @grid.ScreenGridState, Int32) -> Unit
+pub fn PageList::capture_top_scroll_region_up(Self, @grid.ScreenGridState, Int32, Int32) -> Unit
 pub fn PageList::cell(Self, @grid.ScreenGridState, UInt16, UInt16) -> @page.PageCellState?
 pub fn PageList::cell_at_point(Self, @grid.ScreenGridState, @point.Point) -> @page.PageCellState?
 pub fn PageList::cell_hyperlink(Self, @grid.ScreenGridState, UInt16, UInt16) -> @hyperlink.CellHyperlink?
 pub fn PageList::cell_hyperlink_id(Self, @grid.ScreenGridState, UInt16, UInt16) -> @hyperlink.HyperlinkId
 pub fn PageList::clear_history(Self) -> Unit
 pub fn PageList::full_reset(Self, UInt16) -> Unit
-pub fn PageList::new(UInt16, UInt16, Int) -> Self
+pub fn PageList::new(UInt16, UInt16, Int32) -> Self
 pub fn PageList::pin(Self, @grid.ScreenGridState, @point.Point) -> PageListPin?
 pub fn PageList::pin_from_tracked_pin(Self, PageListPin) -> PageListPin?
 pub fn PageList::pin_x(Self, PageListPin) -> UInt16?
@@ -40,15 +40,15 @@ pub fn PageList::screen_cell(Self, @grid.ScreenGridState, UInt16, UInt16) -> @pa
 pub fn PageList::screen_cell_hyperlink(Self, @grid.ScreenGridState, UInt16, UInt16) -> @hyperlink.CellHyperlink?
 pub fn PageList::screen_row(Self, @grid.ScreenGridState, UInt16) -> @page.PageRowState?
 pub fn PageList::scroll_bottom(Self) -> Unit
-pub fn PageList::scroll_delta(Self, Int) -> Unit
+pub fn PageList::scroll_delta(Self, Int32) -> Unit
 pub fn PageList::scroll_top(Self) -> Unit
-pub fn PageList::scrollback_rows(Self) -> UInt
+pub fn PageList::scrollback_rows(Self) -> UInt32
 pub fn PageList::scrollbar(Self, UInt16) -> TerminalScrollbar
-pub fn PageList::total_rows(Self, UInt16) -> UInt
+pub fn PageList::total_rows(Self, UInt16) -> UInt32
 pub fn PageList::track_pin_at_point(Self, @grid.ScreenGridState, @point.Point) -> PageListPin?
 pub fn PageList::untrack_pin(Self, PageListPin) -> Unit
 pub fn PageList::untrack_pin_ref(Self, Pin) -> Unit
-pub fn PageList::viewport_row_offset(Self) -> Int
+pub fn PageList::viewport_row_offset(Self) -> Int32
 
 type PageListPin
 
@@ -107,10 +107,10 @@ pub fn TerminalScreen::equal(Self, Self) -> Bool
 
 type TerminalScrollbar derive(Eq, @debug.Debug)
 pub fn TerminalScrollbar::equal(Self, Self) -> Bool
-pub fn TerminalScrollbar::len(Self) -> UInt
-pub fn TerminalScrollbar::new(UInt, UInt, UInt) -> Self
-pub fn TerminalScrollbar::offset(Self) -> UInt
-pub fn TerminalScrollbar::total(Self) -> UInt
+pub fn TerminalScrollbar::len(Self) -> UInt32
+pub fn TerminalScrollbar::new(UInt32, UInt32, UInt32) -> Self
+pub fn TerminalScrollbar::offset(Self) -> UInt32
+pub fn TerminalScrollbar::total(Self) -> UInt32
 
 // Type aliases
 

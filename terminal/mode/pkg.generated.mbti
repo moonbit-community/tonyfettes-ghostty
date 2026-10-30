@@ -96,7 +96,7 @@ pub(all) enum ReportState {
   PermanentlySet
   PermanentlyReset
 } derive(Eq, @debug.Debug)
-pub fn ReportState::code(Self) -> Int
+pub fn ReportState::code(Self) -> Int32
 pub fn ReportState::equal(Self, Self) -> Bool
 
 // Type aliases
