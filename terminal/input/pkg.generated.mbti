@@ -189,7 +189,7 @@ pub(all) enum Key {
   Cut
   Paste
 } derive(Eq, @debug.Debug)
-pub fn Key::codepoint(Self) -> UInt?
+pub fn Key::codepoint(Self) -> UInt32?
 pub fn Key::equal(Self, Self) -> Bool
 
 pub(all) enum KeyAction {
@@ -213,9 +213,9 @@ pub fn KeyEvent::set_composing(Self, Bool) -> Unit
 pub fn KeyEvent::set_consumed_mods(Self, KeyMods) -> Unit
 pub fn KeyEvent::set_key(Self, Key) -> Unit
 pub fn KeyEvent::set_mods(Self, KeyMods) -> Unit
-pub fn KeyEvent::set_unshifted_codepoint(Self, UInt) -> Unit
+pub fn KeyEvent::set_unshifted_codepoint(Self, UInt32) -> Unit
 pub fn KeyEvent::set_utf8(Self, Bytes) -> Unit
-pub fn KeyEvent::unshifted_codepoint(Self) -> UInt
+pub fn KeyEvent::unshifted_codepoint(Self) -> UInt32
 pub fn KeyEvent::utf8(Self) -> Bytes
 
 pub(all) enum KeyModSide {

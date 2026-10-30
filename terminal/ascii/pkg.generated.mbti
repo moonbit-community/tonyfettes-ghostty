@@ -6,21 +6,21 @@ import {
 }
 
 // Values
-pub fn find_byte(BytesView, Int, Int, Byte) -> Int?
+pub fn find_byte(BytesView, Int32, Int32, Byte) -> Int32?
 
-pub fn hex_digit_upper(Int) -> Byte
+pub fn hex_digit_upper(Int32) -> Byte
 
-pub fn parse_i32_ascii(BytesView, Int, Int) -> Int?
+pub fn parse_i32_ascii(BytesView, Int32, Int32) -> Int32?
 
-pub fn parse_kitty_graphics_i32(Array[Byte]) -> Int?
+pub fn parse_kitty_graphics_i32(Array[Byte]) -> Int32?
 
-pub fn parse_kitty_graphics_u32(Array[Byte]) -> UInt?
+pub fn parse_kitty_graphics_u32(Array[Byte]) -> UInt32?
 
-pub fn parse_u32_ascii(BytesView, Int, Int) -> UInt?
+pub fn parse_u32_ascii(BytesView, Int32, Int32) -> UInt32?
 
-pub fn slice_equals_ascii(BytesView, Int, Int, String) -> Bool
+pub fn slice_equals_ascii(BytesView, Int32, Int32, String) -> Bool
 
-pub fn write_hex8(@buffer.Buffer, UInt) -> Unit
+pub fn write_hex8(@buffer.Buffer, UInt32) -> Unit
 
 pub fn write_uint_ascii(@buffer.Buffer, UInt64) -> Unit
 

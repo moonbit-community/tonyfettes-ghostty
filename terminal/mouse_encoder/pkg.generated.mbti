@@ -29,16 +29,16 @@ pub fn MouseEncoder::sync(Self, @input.MouseEvent, @input.MouseFormat) -> Unit
 pub fn MouseEncoder::track_last_cell(Self) -> Bool
 
 type MouseEncoderSize derive(Eq, @debug.Debug)
-pub fn MouseEncoderSize::cell_height(Self) -> UInt
-pub fn MouseEncoderSize::cell_width(Self) -> UInt
+pub fn MouseEncoderSize::cell_height(Self) -> UInt32
+pub fn MouseEncoderSize::cell_width(Self) -> UInt32
 pub fn MouseEncoderSize::equal(Self, Self) -> Bool
-pub fn MouseEncoderSize::new(UInt, UInt, UInt, UInt, padding_top? : UInt, padding_bottom? : UInt, padding_right? : UInt, padding_left? : UInt) -> Self?
-pub fn MouseEncoderSize::padding_bottom(Self) -> UInt
-pub fn MouseEncoderSize::padding_left(Self) -> UInt
-pub fn MouseEncoderSize::padding_right(Self) -> UInt
-pub fn MouseEncoderSize::padding_top(Self) -> UInt
-pub fn MouseEncoderSize::screen_height(Self) -> UInt
-pub fn MouseEncoderSize::screen_width(Self) -> UInt
+pub fn MouseEncoderSize::new(UInt32, UInt32, UInt32, UInt32, padding_top? : UInt32, padding_bottom? : UInt32, padding_right? : UInt32, padding_left? : UInt32) -> Self?
+pub fn MouseEncoderSize::padding_bottom(Self) -> UInt32
+pub fn MouseEncoderSize::padding_left(Self) -> UInt32
+pub fn MouseEncoderSize::padding_right(Self) -> UInt32
+pub fn MouseEncoderSize::padding_top(Self) -> UInt32
+pub fn MouseEncoderSize::screen_height(Self) -> UInt32
+pub fn MouseEncoderSize::screen_width(Self) -> UInt32
 
 // Type aliases
 

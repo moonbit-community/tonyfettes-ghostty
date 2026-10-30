@@ -127,8 +127,8 @@ type TertiaryDeviceAttributes derive(Eq, @debug.Debug)
 pub fn TertiaryDeviceAttributes::default() -> Self
 pub fn TertiaryDeviceAttributes::encode(Self) -> Bytes
 pub fn TertiaryDeviceAttributes::equal(Self, Self) -> Bool
-pub fn TertiaryDeviceAttributes::new(UInt) -> Self
-pub fn TertiaryDeviceAttributes::unit_id(Self) -> UInt
+pub fn TertiaryDeviceAttributes::new(UInt32) -> Self
+pub fn TertiaryDeviceAttributes::unit_id(Self) -> UInt32
 
 // Type aliases
 

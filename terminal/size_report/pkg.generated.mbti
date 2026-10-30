@@ -12,11 +12,11 @@ pub fn encode(Style, Size) -> Bytes
 
 // Types and methods
 type Size derive(Eq, @debug.Debug)
-pub fn Size::cell_height(Self) -> UInt
-pub fn Size::cell_width(Self) -> UInt
+pub fn Size::cell_height(Self) -> UInt32
+pub fn Size::cell_width(Self) -> UInt32
 pub fn Size::columns(Self) -> UInt16
 pub fn Size::equal(Self, Self) -> Bool
-pub fn Size::new(UInt16, UInt16, UInt, UInt) -> Self
+pub fn Size::new(UInt16, UInt16, UInt32, UInt32) -> Self
 pub fn Size::rows(Self) -> UInt16
 
 pub(all) enum Style {

@@ -2,33 +2,33 @@
 package "tonyfettes/ghostty-examples/terminal_playground/core"
 
 // Values
-pub fn playground_apply_text(Int, String) -> Unit
+pub fn playground_apply_text(Int32, String) -> Unit
 
-pub fn playground_cell_json(Int, Int, Int) -> String
+pub fn playground_cell_json(Int32, Int32, Int32) -> String
 
-pub fn playground_clear_pty_output(Int) -> Unit
+pub fn playground_clear_pty_output(Int32) -> Unit
 
-pub fn playground_free(Int) -> Unit
+pub fn playground_free(Int32) -> Unit
 
-pub fn playground_kitty_json(Int) -> String
+pub fn playground_kitty_json(Int32) -> String
 
-pub fn playground_new(Int, Int) -> Int
+pub fn playground_new(Int32, Int32) -> Int32
 
-pub fn playground_pty_output(Int) -> String
+pub fn playground_pty_output(Int32) -> String
 
-pub fn playground_render_html(Int) -> String
+pub fn playground_render_html(Int32) -> String
 
-pub fn playground_render_plain(Int) -> String
+pub fn playground_render_plain(Int32) -> String
 
-pub fn playground_render_vt(Int) -> String
+pub fn playground_render_vt(Int32) -> String
 
-pub fn playground_reset(Int) -> Unit
+pub fn playground_reset(Int32) -> Unit
 
-pub fn playground_resize(Int, Int, Int) -> Int
+pub fn playground_resize(Int32, Int32, Int32) -> Int32
 
-pub fn playground_scroll_delta(Int, Int) -> Unit
+pub fn playground_scroll_delta(Int32, Int32) -> Unit
 
-pub fn playground_state_json(Int) -> String
+pub fn playground_state_json(Int32) -> String
 
 // Errors
 

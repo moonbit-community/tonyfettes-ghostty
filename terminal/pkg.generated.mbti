@@ -53,9 +53,9 @@ pub fn BuildInfo::version_string(Self) -> String
 type BuildVersion derive(Eq, @debug.Debug)
 pub fn BuildVersion::build(Self) -> String?
 pub fn BuildVersion::equal(Self, Self) -> Bool
-pub fn BuildVersion::major(Self) -> UInt
-pub fn BuildVersion::minor(Self) -> UInt
-pub fn BuildVersion::patch(Self) -> UInt
+pub fn BuildVersion::major(Self) -> UInt32
+pub fn BuildVersion::minor(Self) -> UInt32
+pub fn BuildVersion::patch(Self) -> UInt32
 pub fn BuildVersion::pre(Self) -> String?
 pub fn BuildVersion::string(Self) -> String
 
@@ -88,8 +88,8 @@ pub fn FormatterTerminalExtra::none() -> Self
 pub fn FormatterTerminalExtra::styles() -> Self
 
 type KittyGraphics
-pub fn KittyGraphics::image(Self, UInt) -> KittyImage?
-pub fn KittyGraphics::image_storage_limit(Self) -> UInt
+pub fn KittyGraphics::image(Self, UInt32) -> KittyImage?
+pub fn KittyGraphics::image_storage_limit(Self) -> UInt32
 pub fn KittyGraphics::placement_iterator(Self, layer? : KittyPlacementLayer) -> KittyPlacementIterator
 pub fn KittyGraphics::supports_file_medium(Self) -> Bool
 pub fn KittyGraphics::supports_shared_memory_medium(Self) -> Bool
@@ -113,10 +113,10 @@ pub fn KittyImage::compression(Self) -> KittyGraphicsCompression
 pub fn KittyImage::data(Self) -> Bytes
 pub fn KittyImage::equal(Self, Self) -> Bool
 pub fn KittyImage::format(Self) -> KittyGraphicsFormat
-pub fn KittyImage::height(Self) -> UInt
-pub fn KittyImage::id(Self) -> UInt
-pub fn KittyImage::number(Self) -> UInt
-pub fn KittyImage::width(Self) -> UInt
+pub fn KittyImage::height(Self) -> UInt32
+pub fn KittyImage::id(Self) -> UInt32
+pub fn KittyImage::number(Self) -> UInt32
+pub fn KittyImage::width(Self) -> UInt32
 
 type KittyKeyboardState derive(Eq, @debug.Debug)
 pub fn KittyKeyboardState::current(Self) -> @stream.KittyKeyboardFlags
@@ -130,30 +130,30 @@ pub fn KittyKeyboardState::set_not(Self, @stream.KittyKeyboardFlags) -> Unit
 pub fn KittyKeyboardState::set_or(Self, @stream.KittyKeyboardFlags) -> Unit
 
 type KittyPlacement
-pub fn KittyPlacement::columns(Self) -> UInt
+pub fn KittyPlacement::columns(Self) -> UInt32
 pub fn KittyPlacement::grid_size(Self) -> KittyPlacementGridSize
 pub fn KittyPlacement::image(Self) -> KittyImage
-pub fn KittyPlacement::image_id(Self) -> UInt
+pub fn KittyPlacement::image_id(Self) -> UInt32
 pub fn KittyPlacement::is_virtual(Self) -> Bool
 pub fn KittyPlacement::pixel_size(Self) -> KittyPlacementPixelSize
-pub fn KittyPlacement::placement_id(Self) -> UInt
+pub fn KittyPlacement::placement_id(Self) -> UInt32
 pub fn KittyPlacement::rect(Self) -> @selection.Selection?
 pub fn KittyPlacement::render_info(Self) -> KittyPlacementRenderInfo
-pub fn KittyPlacement::rows(Self) -> UInt
-pub fn KittyPlacement::source_height(Self) -> UInt
+pub fn KittyPlacement::rows(Self) -> UInt32
+pub fn KittyPlacement::source_height(Self) -> UInt32
 pub fn KittyPlacement::source_rect(Self) -> KittyPlacementSourceRect
-pub fn KittyPlacement::source_width(Self) -> UInt
-pub fn KittyPlacement::source_x(Self) -> UInt
-pub fn KittyPlacement::source_y(Self) -> UInt
+pub fn KittyPlacement::source_width(Self) -> UInt32
+pub fn KittyPlacement::source_x(Self) -> UInt32
+pub fn KittyPlacement::source_y(Self) -> UInt32
 pub fn KittyPlacement::viewport_position(Self) -> KittyPlacementViewportPosition?
-pub fn KittyPlacement::x_offset(Self) -> UInt
-pub fn KittyPlacement::y_offset(Self) -> UInt
-pub fn KittyPlacement::z(Self) -> Int
+pub fn KittyPlacement::x_offset(Self) -> UInt32
+pub fn KittyPlacement::y_offset(Self) -> UInt32
+pub fn KittyPlacement::z(Self) -> Int32
 
 type KittyPlacementGridSize derive(Eq, @debug.Debug)
-pub fn KittyPlacementGridSize::cols(Self) -> UInt
+pub fn KittyPlacementGridSize::cols(Self) -> UInt32
 pub fn KittyPlacementGridSize::equal(Self, Self) -> Bool
-pub fn KittyPlacementGridSize::rows(Self) -> UInt
+pub fn KittyPlacementGridSize::rows(Self) -> UInt32
 
 type KittyPlacementIterator
 pub fn KittyPlacementIterator::next(Self) -> KittyPlacement?
@@ -168,8 +168,8 @@ pub fn KittyPlacementLayer::equal(Self, Self) -> Bool
 
 type KittyPlacementPixelSize derive(Eq, @debug.Debug)
 pub fn KittyPlacementPixelSize::equal(Self, Self) -> Bool
-pub fn KittyPlacementPixelSize::height(Self) -> UInt
-pub fn KittyPlacementPixelSize::width(Self) -> UInt
+pub fn KittyPlacementPixelSize::height(Self) -> UInt32
+pub fn KittyPlacementPixelSize::width(Self) -> UInt32
 
 type KittyPlacementRenderInfo derive(Eq, @debug.Debug)
 pub fn KittyPlacementRenderInfo::equal(Self, Self) -> Bool
@@ -180,15 +180,15 @@ pub fn KittyPlacementRenderInfo::viewport_position(Self) -> KittyPlacementViewpo
 
 type KittyPlacementSourceRect derive(Eq, @debug.Debug)
 pub fn KittyPlacementSourceRect::equal(Self, Self) -> Bool
-pub fn KittyPlacementSourceRect::height(Self) -> UInt
-pub fn KittyPlacementSourceRect::width(Self) -> UInt
-pub fn KittyPlacementSourceRect::x(Self) -> UInt
-pub fn KittyPlacementSourceRect::y(Self) -> UInt
+pub fn KittyPlacementSourceRect::height(Self) -> UInt32
+pub fn KittyPlacementSourceRect::width(Self) -> UInt32
+pub fn KittyPlacementSourceRect::x(Self) -> UInt32
+pub fn KittyPlacementSourceRect::y(Self) -> UInt32
 
 type KittyPlacementViewportPosition derive(Eq, @debug.Debug)
-pub fn KittyPlacementViewportPosition::col(Self) -> Int
+pub fn KittyPlacementViewportPosition::col(Self) -> Int32
 pub fn KittyPlacementViewportPosition::equal(Self, Self) -> Bool
-pub fn KittyPlacementViewportPosition::row(Self) -> Int
+pub fn KittyPlacementViewportPosition::row(Self) -> Int32
 
 pub(all) enum OptimizeMode {
   Debug
@@ -208,7 +208,7 @@ pub fn RenderDirty::equal(Self, Self) -> Bool
 type RenderRowCells
 pub fn RenderRowCells::background_color(Self) -> @color.RGB?
 pub fn RenderRowCells::cell(Self) -> @page.PageCellState?
-pub fn RenderRowCells::cell_grapheme_codepoints(Self) -> ReadOnlyArray[UInt]
+pub fn RenderRowCells::cell_grapheme_codepoints(Self) -> ReadOnlyArray[UInt32]
 pub fn RenderRowCells::cell_hyperlink(Self) -> @hyperlink.CellHyperlink?
 pub fn RenderRowCells::cell_style(Self) -> @style.CellStyle?
 pub fn RenderRowCells::foreground_color(Self) -> @color.RGB?
@@ -273,7 +273,7 @@ pub fn StreamTerminal::default_foreground_color(Self) -> @color.RGB?
 pub fn StreamTerminal::default_palette(Self) -> Array[@color.RGB]
 pub fn StreamTerminal::deinit(Self) -> Unit
 pub fn StreamTerminal::foreground_color(Self) -> @color.RGB?
-pub fn StreamTerminal::height_px(Self) -> UInt
+pub fn StreamTerminal::height_px(Self) -> UInt32
 pub fn StreamTerminal::kitty_graphics(Self) -> KittyGraphics
 pub fn StreamTerminal::kitty_keyboard_flags(Self) -> @stream.KittyKeyboardFlags
 pub fn StreamTerminal::mode_get(Self, @mode.Mode) -> Bool
@@ -288,17 +288,17 @@ pub fn StreamTerminal::pin(Self, @point.Point) -> @pagelist.Pin?
 pub fn StreamTerminal::point_from_pin(Self, @pagelist.Pin, @point.Tag) -> @point.Coordinate?
 pub fn StreamTerminal::pwd(Self) -> String?
 pub fn StreamTerminal::reset(Self) -> Unit
-pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt, UInt) -> @result_code.TerminalResultCode
+pub fn StreamTerminal::resize(Self, UInt16, UInt16, UInt32, UInt32) -> @result_code.TerminalResultCode
 pub fn StreamTerminal::rows(Self) -> UInt16
-pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(Self, UInt16, UInt16) -> ReadOnlyArray[UInt]
+pub fn StreamTerminal::screen_cell_grapheme_codepoints_snapshot(Self, UInt16, UInt16) -> ReadOnlyArray[UInt32]
 pub fn StreamTerminal::screen_cell_hyperlink_snapshot(Self, UInt16, UInt16) -> @hyperlink.CellHyperlink?
 pub fn StreamTerminal::screen_cell_snapshot(Self, UInt16, UInt16) -> @page.PageCellState?
 pub fn StreamTerminal::screen_cell_style_snapshot(Self, UInt16, UInt16) -> @style.CellStyle?
 pub fn StreamTerminal::screen_row_snapshot(Self, UInt16) -> @page.PageRowState?
 pub fn StreamTerminal::scroll_viewport_bottom(Self) -> Unit
-pub fn StreamTerminal::scroll_viewport_delta(Self, Int) -> Unit
+pub fn StreamTerminal::scroll_viewport_delta(Self, Int32) -> Unit
 pub fn StreamTerminal::scroll_viewport_top(Self) -> Unit
-pub fn StreamTerminal::scrollback_rows(Self) -> UInt
+pub fn StreamTerminal::scrollback_rows(Self) -> UInt32
 pub fn StreamTerminal::scrollbar(Self) -> @pagelist.TerminalScrollbar
 pub fn StreamTerminal::selection(Self, @point.Point, @point.Point, Bool) -> @selection.Selection?
 pub fn StreamTerminal::semantic_prompt_row_range(Self, UInt16) -> (UInt16, UInt16)?
@@ -320,17 +320,17 @@ pub fn StreamTerminal::sync_key_encoder(Self, @key_encoder.KeyEncoder) -> Unit
 pub fn StreamTerminal::sync_mouse_encoder(Self, @mouse_encoder.MouseEncoder) -> Unit
 pub fn StreamTerminal::take_scrollback_cleared(Self) -> Bool
 pub fn StreamTerminal::title(Self) -> String?
-pub fn StreamTerminal::total_rows(Self) -> UInt
+pub fn StreamTerminal::total_rows(Self) -> UInt32
 pub fn StreamTerminal::untrack_pin(Self, @pagelist.Pin) -> Unit
 pub fn StreamTerminal::untrack_selection(Self, @selection.Selection) -> Unit
-pub fn StreamTerminal::width_px(Self) -> UInt
+pub fn StreamTerminal::width_px(Self) -> UInt32
 
 type SystemImage derive(Eq, @debug.Debug)
 pub fn SystemImage::data(Self) -> Bytes
 pub fn SystemImage::equal(Self, Self) -> Bool
-pub fn SystemImage::height(Self) -> UInt
-pub fn SystemImage::new(UInt, UInt, Bytes) -> Self
-pub fn SystemImage::width(Self) -> UInt
+pub fn SystemImage::height(Self) -> UInt32
+pub fn SystemImage::new(UInt32, UInt32, Bytes) -> Self
+pub fn SystemImage::width(Self) -> UInt32
 
 pub(all) enum SystemLogLevel {
   Error

@@ -63,7 +63,7 @@ pub fn[H : StreamHandler] Stream::next(Self[H], Byte) -> Unit
 pub fn[H : StreamHandler] Stream::next_slice(Self[H], Bytes) -> Unit
 
 pub(all) enum StreamAction {
-  StreamPrint(UInt)
+  StreamPrint(UInt32)
   StreamPrintRepeat(UInt16)
   StreamBell
   StreamBackspace
@@ -164,7 +164,7 @@ pub fn StreamAction::equal(Self, Self) -> Bool
 // Traits
 pub(open) trait StreamHandler {
   fn vt(Self, StreamAction) -> Unit
-  fn print(Self, UInt) -> Unit
+  fn print(Self, UInt32) -> Unit
   fn set_attribute(Self, @sgr.SgrAttribute) -> Unit = _
   fn deinit(Self) -> Unit
 }
